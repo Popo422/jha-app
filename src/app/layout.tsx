@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ReduxProvider from "@/providers/ReduxProvider";
+import AuthProvider from "@/providers/AuthProvider";
+import ThemeProvider from "@/components/ThemeProvider";
+import ThemeInitializer from "@/components/ThemeInitializer";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +32,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ReduxProvider>
+          <ThemeInitializer />
+          <AuthProvider>
+            <ThemeProvider>
+              <ProtectedRoute>
+                {children}
+              </ProtectedRoute>
+            </ThemeProvider>
+          </AuthProvider>
+        </ReduxProvider>
       </body>
     </html>
   );

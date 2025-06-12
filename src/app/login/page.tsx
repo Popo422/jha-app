@@ -1,0 +1,107 @@
+'use client'
+
+import { useState } from 'react'
+import { useAppDispatch, useAppSelector } from '@/lib/hooks'
+import { setLoading, loginSuccess } from '@/lib/features/auth/authSlice'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Eye, EyeOff } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+
+export default function LoginPage() {
+  const [companyCode, setCompanyCode] = useState('')
+  const [showCode, setShowCode] = useState(false)
+  const [error, setError] = useState('')
+  const dispatch = useAppDispatch()
+  const { isLoading } = useAppSelector((state) => state.auth)
+  const router = useRouter()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    dispatch(setLoading(true))
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ companyCode }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Login failed. Please try again.')
+        dispatch(setLoading(false))
+        return
+      }
+
+      // Update Redux state with token and user info
+      dispatch(loginSuccess(data))
+      
+      // Cookie is set by server, redirect to announcements page
+      console.log('Login successful, redirecting to announcements...')
+      router.push('/announcements')
+    } catch (error) {
+      console.error('Login error:', error)
+      setError('Network error. Please check your connection and try again.')
+      dispatch(setLoading(false))
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md">
+        <Card className="border rounded-lg">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl text-center">Contractor Login</CardTitle>
+            <CardDescription className="text-center">
+              Enter your company code to access the system
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="companyCode">Company Code</Label>
+                <div className="relative">
+                  <Input
+                    id="companyCode"
+                    type={showCode ? 'text' : 'password'}
+                    placeholder="Enter company code"
+                    value={companyCode}
+                    onChange={(e) => setCompanyCode(e.target.value)}
+                    className={error ? 'border-destructive' : ''}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowCode(!showCode)}
+                  >
+                    {showCode ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                {error && (
+                  <p className="text-sm text-destructive">{error}</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
+                {isLoading ? 'Logging in...' : 'Login'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}

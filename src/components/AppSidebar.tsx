@@ -1,0 +1,89 @@
+'use client'
+
+import { Bell, ClipboardList, Clock, HardHat, FolderOpen, LogOut } from 'lucide-react'
+import { useAppDispatch, useAppSelector } from '@/lib/hooks'
+import { closeSidebar } from '@/lib/features/sidebar/sidebarSlice'
+import { logout } from '@/lib/features/auth/authSlice'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import Link from 'next/link'
+
+const navigation = [
+  { name: 'Announcements', href: '/announcements', icon: Bell },
+  { name: 'Contractor Forms', href: '/contractor-forms', icon: ClipboardList },
+  { name: 'Time Sheet', href: '/timesheet', icon: Clock },
+  { name: 'Toolbox Talks', href: '/toolbox-talks', icon: HardHat },
+  { name: 'My Submissions', href: '/my-submissions', icon: FolderOpen },
+]
+
+export default function AppSidebar() {
+  const dispatch = useAppDispatch()
+  const isOpen = useAppSelector((state) => state.sidebar.isOpen)
+
+  const handleLinkClick = () => {
+    dispatch(closeSidebar())
+  }
+
+  const handleLogout = () => {
+    dispatch(logout())
+    dispatch(closeSidebar())
+  }
+
+  return (
+    <Sheet open={isOpen} onOpenChange={() => dispatch(closeSidebar())}>
+      <SheetContent side="right" className="w-80 bg-[#242736] dark:bg-background border-slate-700 dark:border-border text-white dark:text-foreground">
+        <SheetHeader className="hidden">
+          <SheetTitle className="text-white dark:text-foreground">Navigation</SheetTitle>
+          <SheetDescription className="text-gray-300 dark:text-muted-foreground">
+            Navigate through the application
+          </SheetDescription>
+        </SheetHeader>
+        
+        <div className="mt-6">
+          <nav className="space-y-2">
+            {navigation.map((item) => {
+              const Icon = item.icon
+              return (
+                <Button
+                  key={item.name}
+                  variant="ghost"
+                  className="w-full justify-start text-white dark:text-foreground hover:bg-white/10 dark:hover:bg-muted"
+                  asChild
+                >
+                  <Link href={item.href} onClick={handleLinkClick}>
+                    <Icon className="h-4 w-4 mr-3" />
+                    {item.name}
+                  </Link>
+                </Button>
+              )
+            })}
+          </nav>
+
+          <Separator className="my-6 bg-slate-600 dark:bg-border" />
+          
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10 dark:text-destructive dark:hover:text-destructive dark:hover:bg-destructive/10"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4 mr-3" />
+            Logout
+          </Button>
+        </div>
+
+        <Separator className="my-6 bg-slate-600 dark:bg-border" />
+
+        <div className="text-sm text-gray-400 dark:text-muted-foreground">
+          JHA App v1.0
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
