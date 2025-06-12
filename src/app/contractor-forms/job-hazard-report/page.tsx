@@ -58,7 +58,7 @@ export default function JobHazardReportPage() {
             <CardHeader>
               <CardTitle className="text-foreground">Report Details</CardTitle>
             </CardHeader>
-            <CardContent>
+            {/* <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -174,7 +174,7 @@ export default function JobHazardReportPage() {
                   </Button>
                 </div>
               </form>
-            </CardContent>
+            </CardContent> */}
           </Card>
         </div>
       </main>

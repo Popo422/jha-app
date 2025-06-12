@@ -1,9 +1,10 @@
 'use client'
 
-import { Bell, ClipboardList, Clock, HardHat, FolderOpen, LogOut } from 'lucide-react'
+import { Bell, ClipboardList, Clock, HardHat, FolderOpen, LogOut, Moon, Sun } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { closeSidebar } from '@/lib/features/sidebar/sidebarSlice'
 import { logout } from '@/lib/features/auth/authSlice'
+import { toggleTheme } from '@/lib/features/theme/themeSlice'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -13,6 +14,17 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import Link from 'next/link'
 
 const navigation = [
@@ -26,6 +38,7 @@ const navigation = [
 export default function AppSidebar() {
   const dispatch = useAppDispatch()
   const isOpen = useAppSelector((state) => state.sidebar.isOpen)
+  const theme = useAppSelector((state) => state.theme.mode)
 
   const handleLinkClick = () => {
     dispatch(closeSidebar())
@@ -54,7 +67,7 @@ export default function AppSidebar() {
                 <Button
                   key={item.name}
                   variant="ghost"
-                  className="w-full justify-start text-white dark:text-foreground hover:bg-white/10 dark:hover:bg-muted"
+                  className="w-full justify-start text-white hover:text-white dark:text-foreground hover:bg-white/10 dark:hover:bg-muted"
                   asChild
                 >
                   <Link href={item.href} onClick={handleLinkClick}>
@@ -70,12 +83,36 @@ export default function AppSidebar() {
           
           <Button
             variant="ghost"
-            className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10 dark:text-destructive dark:hover:text-destructive dark:hover:bg-destructive/10"
-            onClick={handleLogout}
+            className="w-full justify-start text-white hover:text-white dark:text-foreground hover:bg-white/10 dark:hover:bg-muted"
+            onClick={() => dispatch(toggleTheme())}
           >
-            <LogOut className="h-4 w-4 mr-3" />
-            Logout
+            {theme === 'light' ? <Moon className="h-4 w-4 mr-3" /> : <Sun className="h-4 w-4 mr-3" />}
+            Toggle Theme
           </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10 dark:text-destructive dark:hover:text-destructive dark:hover:bg-destructive/10"
+              >
+                <LogOut className="h-4 w-4 mr-3" />
+                Logout
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You will need to login again to access the application.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         <Separator className="my-6 bg-slate-600 dark:bg-border" />
