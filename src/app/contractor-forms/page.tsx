@@ -8,8 +8,8 @@ import Link from "next/link";
 
 const forms = [
   {
-    title: "Job Hazard Report",
-    href: "/contractor-forms/job-hazard-report",
+    title: "Job Hazard Analysis",
+    href: "/contractor-forms/job-hazard-analysis",
     description: "This form tracks all potential job hazards on the worksite. To be completed by all employees.",
   },
   {
