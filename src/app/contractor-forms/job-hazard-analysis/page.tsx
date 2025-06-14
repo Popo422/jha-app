@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, X } from "lucide-react";
 import Link from "next/link";
+import HazardIdentificationSection from "@/components/forms/HazardIdentificationSection";
+import PPERequirementsSection from "@/components/forms/PPERequirementsSection";
+import FallProtectionSection from "@/components/forms/FallProtectionSection";
 
 interface JobHazardAnalysisFormData {
   completedBy: string;
@@ -122,6 +125,8 @@ interface JobHazardAnalysisFormData {
 }
 
 export default function JobHazardReportPage() {
+  const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
+  
   const [formData, setFormData] = useState<JobHazardAnalysisFormData>({
     completedBy: "",
     date: new Date().toISOString().split("T")[0],
@@ -231,10 +236,7 @@ export default function JobHazardReportPage() {
     },
     photos: [],
   });
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement;
-
+  const updateFormData = useCallback((name: string, value: string, type: string, checked: boolean) => {
     if (name.includes(".")) {
       const [section, field] = name.split(".");
       setFormData((prev) => {
@@ -253,9 +255,29 @@ export default function JobHazardReportPage() {
         [name]: type === "checkbox" ? checked : value,
       }));
     }
-  };
+  }, []);
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type, checked } = e.target as HTMLInputElement;
 
-  const handleCheckboxArrayChange = (section: string, field: string, value: string, checked: boolean) => {
+    // For text inputs, use debouncing to reduce state updates
+    if (type === "text" || type === "textarea") {
+      if (debounceTimers.current[name]) {
+        clearTimeout(debounceTimers.current[name]);
+      }
+      
+      debounceTimers.current[name] = setTimeout(() => {
+        updateFormData(name, value, type, checked);
+        delete debounceTimers.current[name];
+      }, 300);
+    } else {
+      // For checkboxes, radio buttons, etc., update immediately
+      updateFormData(name, value, type, checked);
+    }
+  }, [updateFormData]);
+  
+
+
+  const handleCheckboxArrayChange = useCallback((section: string, field: string, value: string, checked: boolean) => {
     setFormData((prev) => {
       const sectionData = prev[section as keyof JobHazardAnalysisFormData];
       const currentArray = (sectionData as any)[field] as string[];
@@ -269,28 +291,28 @@ export default function JobHazardReportPage() {
         },
       };
     });
-  };
+  }, []);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     setFormData((prev) => ({
       ...prev,
       photos: [...prev.photos, ...files],
     }));
-  };
+  }, []);
 
-  const handleDeletePhoto = (indexToDelete: number) => {
+  const handleDeletePhoto = useCallback((indexToDelete: number) => {
     setFormData((prev) => ({
       ...prev,
       photos: prev.photos.filter((_, index) => index !== indexToDelete),
     }));
-  };
+  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     console.log("Job Hazard Report submitted:", formData);
     // Handle form submission here
-  };
+  }, [formData]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -368,392 +390,17 @@ export default function JobHazardReportPage() {
                 </div>
 
                 {/* Work Hazard Identification */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-md md:text-xl">Work Hazard Identification</CardTitle>
-                    <p className="text-sm text-muted-foreground">Are the following hazards present on your Job site?</p>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {[
-                      { key: "slipFallTrips", label: "Slip/Fall/Trips" },
-                      {
-                        key: "pinchPoint",
-                        label:
-                          "Pinch point, caught between (vehicle traffic near or in work zone, active heavy machinery, the movement of large heavy equipment etc ..)",
-                      },
-                      { key: "struckBy", label: "Struck By Hazards" },
-                      { key: "electrical", label: "General Electrical Hazards" },
-                      { key: "shockArcFlash", label: "Shock/ Arc Flash" },
-                      { key: "cuts", label: "Cuts" },
-                      { key: "elevatedWork", label: "Elevated Work (Lifts, Scaffolds, Ladders, Roofs)" },
-                      {
-                        key: "hazardousChemicals",
-                        label: "Hazardous chemicals (sealants, solvents, foams, fuels,etc..)",
-                      },
-                      { key: "lifting", label: "Lifting (Material Handling, Rigging)" },
-                      { key: "noise", label: "Noise" },
-                      { key: "other", label: "Other (Explain)" },
-                    ].map((hazard) => (
-                      <div key={hazard.key} className="space-y-4">
-                        <Label className="flex-1">{hazard.label}</Label>
-                        <div className="flex items-center space-x-3 ">
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              id={`${hazard.key}-yes`}
-                              name={`hazards.${hazard.key}`}
-                              value="true"
-                              checked={formData.hazards[hazard.key as keyof typeof formData.hazards] === true}
-                              onChange={(e) =>
-                                handleInputChange({
-                                  ...e,
-                                  target: {
-                                    ...e.target,
-                                    name: `hazards.${hazard.key}`,
-                                    type: "checkbox",
-                                    checked: e.target.value === "true",
-                                  },
-                                } as any)
-                              }
-                              className="w-4 h-4"
-                            />
-                            <Label htmlFor={`${hazard.key}-yes`}>Yes</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              id={`${hazard.key}-no`}
-                              name={`hazards.${hazard.key}`}
-                              value="false"
-                              checked={formData.hazards[hazard.key as keyof typeof formData.hazards] === false}
-                              onChange={(e) =>
-                                handleInputChange({
-                                  ...e,
-                                  target: {
-                                    ...e.target,
-                                    name: `hazards.${hazard.key}`,
-                                    type: "checkbox",
-                                    checked: e.target.value === "true",
-                                  },
-                                } as any)
-                              }
-                              className="w-4 h-4"
-                            />
-                            <Label htmlFor={`${hazard.key}-no`}>No</Label>
-                          </div>
-                        </div>
-
-                        {formData.hazards[hazard.key as keyof typeof formData.hazards] && (
-                          <div className=" space-y-2 bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg border-l-4 border-orange-400">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                              <span className="text-xs text-orange-700 dark:text-orange-300 font-medium">
-                                Follow-up Question
-                              </span>
-                            </div>
-                            <Label className="text-sm font-medium">
-                              Have you taken action to eliminate this safety hazard?
-                            </Label>
-                            <div className="flex items-center space-x-4">
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="radio"
-                                  id={`${hazard.key}Action-yes`}
-                                  name={`hazards.${hazard.key}Action`}
-                                  value="true"
-                                  checked={
-                                    formData.hazards[`${hazard.key}Action` as keyof typeof formData.hazards] === true
-                                  }
-                                  onChange={(e) =>
-                                    handleInputChange({
-                                      ...e,
-                                      target: {
-                                        ...e.target,
-                                        name: `hazards.${hazard.key}Action`,
-                                        type: "checkbox",
-                                        checked: e.target.value === "true",
-                                      },
-                                    } as any)
-                                  }
-                                  className="w-4 h-4"
-                                />
-                                <Label htmlFor={`${hazard.key}Action-yes`}>Yes</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="radio"
-                                  id={`${hazard.key}Action-no`}
-                                  name={`hazards.${hazard.key}Action`}
-                                  value="false"
-                                  checked={
-                                    formData.hazards[`${hazard.key}Action` as keyof typeof formData.hazards] === false
-                                  }
-                                  onChange={(e) =>
-                                    handleInputChange({
-                                      ...e,
-                                      target: {
-                                        ...e.target,
-                                        name: `hazards.${hazard.key}Action`,
-                                        type: "checkbox",
-                                        checked: e.target.value === "true",
-                                      },
-                                    } as any)
-                                  }
-                                  className="w-4 h-4"
-                                />
-                                <Label htmlFor={`${hazard.key}Action-no`}>No</Label>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-
-                    <div className="space-y-2">
-                      <Label htmlFor="hazardDetails">Details:</Label>
-                      <Textarea
-                        id="hazardDetails"
-                        name="hazards.details"
-                        value={formData.hazards.details}
-                        onChange={handleInputChange}
-                        placeholder="Enter information"
-                        rows={3}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                <HazardIdentificationSection hazards={formData.hazards} onChange={handleInputChange} />
 
                 {/* PPE Requirements */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-md md:text-xl">
-                      Personal Protective Equipment (PPE) Requirements
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Do you have the following list of PPE available to you for use?
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <Label className="font-medium">Work Uniform Requirements:</Label>
-                      <div className="space-y-4">
-                        {[
-                          { key: "hardHat", label: "Hard Hat" },
-                          { key: "boots", label: "Boots" },
-                          { key: "gloves", label: "Gloves" },
-                          { key: "safetyGlasses", label: "Safety Glasses" },
-                          { key: "faceMask", label: "Face Mask (Covid-19)" },
-                        ].map((ppe) => (
-                          <div key={ppe.key} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={ppe.key}
-                              name={`ppe.${ppe.key}`}
-                              checked={formData.ppe[ppe.key as keyof typeof formData.ppe]}
-                              onChange={handleInputChange}
-                              className="w-4 h-4"
-                            />
-                            <Label htmlFor={ppe.key}>{ppe.label}</Label>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        If PPE not selected, email will be sent to safety officer.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <PPERequirementsSection ppe={formData.ppe} onChange={handleInputChange} />
 
                 {/* Fall Protection Pre-use Inspection */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-md md:text-xl">Fall Protection Pre-use Inspection</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="font-medium">Are you using any Fall Protection equipment today?</Label>
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="fallProtection-yes"
-                            name="fallProtection.usingFallProtection"
-                            value="true"
-                            checked={formData.fallProtection.usingFallProtection === true}
-                            onChange={(e) =>
-                              handleInputChange({
-                                ...e,
-                                target: {
-                                  ...e.target,
-                                  name: "fallProtection.usingFallProtection",
-                                  type: "checkbox",
-                                  checked: e.target.value === "true",
-                                },
-                              } as any)
-                            }
-                            className="w-4 h-4"
-                          />
-                          <Label htmlFor="fallProtection-yes">Yes</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="fallProtection-no"
-                            name="fallProtection.usingFallProtection"
-                            value="false"
-                            checked={formData.fallProtection.usingFallProtection === false}
-                            onChange={(e) =>
-                              handleInputChange({
-                                ...e,
-                                target: {
-                                  ...e.target,
-                                  name: "fallProtection.usingFallProtection",
-                                  type: "checkbox",
-                                  checked: e.target.value === "true",
-                                },
-                              } as any)
-                            }
-                            className="w-4 h-4"
-                          />
-                          <Label htmlFor="fallProtection-no">No</Label>
-                        </div>
-                      </div>
-                    </div>
-
-                    {formData.fallProtection.usingFallProtection && (
-                      <div className="space-y-4 bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border-l-4 border-orange-400">
-                        <div className="flex items-center space-x-2 mb-3">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                          <span className="text-xs text-orange-700 dark:text-orange-300 font-medium">
-                            Equipment Inspection Required
-                          </span>
-                        </div>
-                        <Label className="font-medium">
-                          Have you inspected the following equipment and are they in good working order?
-                        </Label>
-
-                        {[
-                          { key: "harness", label: 'Harness "Check stitching and buckles, etc"' },
-                          { key: "decelerator", label: 'Decelerator "Shock Pack"' },
-                          { key: "traumaStrap", label: "Trauma Strap" },
-                          { key: "lifeLine", label: 'Life Line "Rope"' },
-                          { key: "ropeGrab", label: "Rope Grab" },
-                          { key: "carabiner", label: "Carabiner(s)" },
-                          { key: "roofAnchor", label: "Roof Attachment Anchor" },
-                          { key: "horizontalLifeLine", label: "Horizontal Life Line" },
-                          { key: "crossArmStrap", label: "Cross Arm Strap" },
-                          { key: "selfRetractingLifeLines", label: "Self Retracting life lines" },
-                          { key: "auxiliaryLanyard", label: "Auxiliary Lanyard" },
-                          { key: "parapetWallClamp", label: "parapet wall clamp anchors" },
-                          { key: "guardRailSystem", label: "Guard Rail System" },
-                        ].map((equipment) => (
-                          <div key={equipment.key} className="space-y-2">
-                            <Label className="text-sm">{equipment.label}</Label>
-                            <div className="flex items-center space-x-4 ">
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="radio"
-                                  id={`${equipment.key}-yes`}
-                                  name={`fallProtection.${equipment.key}`}
-                                  value="Yes"
-                                  checked={
-                                    formData.fallProtection[equipment.key as keyof typeof formData.fallProtection] ===
-                                    "Yes"
-                                  }
-                                  onChange={handleInputChange}
-                                  className="w-4 h-4"
-                                />
-                                <Label htmlFor={`${equipment.key}-yes`}>Yes</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="radio"
-                                  id={`${equipment.key}-no`}
-                                  name={`fallProtection.${equipment.key}`}
-                                  value="No"
-                                  checked={
-                                    formData.fallProtection[equipment.key as keyof typeof formData.fallProtection] ===
-                                    "No"
-                                  }
-                                  onChange={handleInputChange}
-                                  className="w-4 h-4"
-                                />
-                                <Label htmlFor={`${equipment.key}-no`}>No</Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="radio"
-                                  id={`${equipment.key}-notusing`}
-                                  name={`fallProtection.${equipment.key}`}
-                                  value="Not using"
-                                  checked={
-                                    formData.fallProtection[equipment.key as keyof typeof formData.fallProtection] ===
-                                    "Not using"
-                                  }
-                                  onChange={handleInputChange}
-                                  className="w-4 h-4"
-                                />
-                                <Label htmlFor={`${equipment.key}-notusing`}>Not using</Label>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <Label className="font-medium">
-                        Site-specific safety items in place (Barricade/Flag Line/Caution Tape):
-                      </Label>
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="siteSpecific-yes"
-                            name="siteSpecificSafety"
-                            value="true"
-                            checked={formData.siteSpecificSafety === true}
-                            onChange={(e) =>
-                              handleInputChange({
-                                ...e,
-                                target: {
-                                  ...e.target,
-                                  name: "siteSpecificSafety",
-                                  type: "checkbox",
-                                  checked: e.target.value === "true",
-                                },
-                              } as any)
-                            }
-                            className="w-4 h-4"
-                          />
-                          <Label htmlFor="siteSpecific-yes">Yes</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="siteSpecific-no"
-                            name="siteSpecificSafety"
-                            value="false"
-                            checked={formData.siteSpecificSafety === false}
-                            onChange={(e) =>
-                              handleInputChange({
-                                ...e,
-                                target: {
-                                  ...e.target,
-                                  name: "siteSpecificSafety",
-                                  type: "checkbox",
-                                  checked: e.target.value === "true",
-                                },
-                              } as any)
-                            }
-                            className="w-4 h-4"
-                          />
-                          <Label htmlFor="siteSpecific-no">No</Label>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <FallProtectionSection 
+                  fallProtection={formData.fallProtection} 
+                  siteSpecificSafety={formData.siteSpecificSafety}
+                  onChange={handleInputChange} 
+                />
 
                 {/* Tool Inspection */}
                 <Card>
