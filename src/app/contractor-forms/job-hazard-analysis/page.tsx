@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useSubmitFormMutation } from "@/lib/features/submissions/submissionsApi";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -125,7 +126,7 @@ interface JobHazardAnalysisFormData {
 }
 
 export default function JobHazardReportPage() {
-  const debounceTimers = useRef<Record<string, NodeJS.Timeout>>({});
+  const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
   
   const [formData, setFormData] = useState<JobHazardAnalysisFormData>({
     completedBy: "",
@@ -236,6 +237,126 @@ export default function JobHazardReportPage() {
     },
     photos: [],
   });
+
+  const resetFormData = useCallback(() => {
+    setFormData({
+      completedBy: "",
+      date: new Date().toISOString().split("T")[0],
+      supervisor: "",
+      jobSite: "",
+      company: "",
+      hazards: {
+        slipFallTrips: false,
+        slipFallTripsAction: false,
+        pinchPoint: false,
+        pinchPointAction: false,
+        struckBy: false,
+        struckByAction: false,
+        electrical: false,
+        electricalAction: false,
+        shockArcFlash: false,
+        shockArcFlashAction: false,
+        cuts: false,
+        cutsAction: false,
+        elevatedWork: false,
+        elevatedWorkAction: false,
+        hazardousChemicals: false,
+        hazardousChemicalsAction: false,
+        lifting: false,
+        liftingAction: false,
+        noise: false,
+        noiseAction: false,
+        other: false,
+        otherAction: false,
+        details: "",
+      },
+      ppe: {
+        hardHat: false,
+        boots: false,
+        gloves: false,
+        safetyGlasses: false,
+        faceMask: false,
+      },
+      fallProtection: {
+        usingFallProtection: false,
+        harness: "",
+        decelerator: "",
+        traumaStrap: "",
+        lifeLine: "",
+        ropeGrab: "",
+        carabiner: "",
+        roofAnchor: "",
+        horizontalLifeLine: "",
+        crossArmStrap: "",
+        selfRetractingLifeLines: "",
+        auxiliaryLanyard: "",
+        parapetWallClamp: "",
+        guardRailSystem: "",
+      },
+      siteSpecificSafety: false,
+      toolInspection: {
+        powerToolsGFCI: false,
+        usingLadder: false,
+        ladderType: [],
+      },
+      ladderSafety: {
+        ladderAltered: false,
+        weatherCompromised: false,
+        housekeeping: false,
+        rungsClean: false,
+        feetPositioned: false,
+        livePowerPrecautions: false,
+        threePointContact: false,
+        overheadObstructions: false,
+        stableSurface: false,
+        facingLadder: false,
+      },
+      stepLadder: {
+        stepsCondition: false,
+        labelsReadable: false,
+        topCondition: false,
+        spreaderCondition: false,
+        generalCondition: false,
+        bracingCondition: false,
+        other: "",
+        details: "",
+      },
+      extensionLadder: {
+        rungsCondition: false,
+        railsCondition: false,
+        labelsReadable: false,
+        hardwareCondition: false,
+        shoesCondition: false,
+        ropePulleyCondition: false,
+        bracingCondition: false,
+        generalCondition: false,
+        extendedHeight: false,
+        tieOff: false,
+        positioning: false,
+        reach: false,
+        height: false,
+      },
+      additionalSafety: {
+        warmUpStretch: false,
+        lockoutTagout: false,
+        energizedWorkPermit: false,
+        emergencyPlan: false,
+        emergencyPlanReviewed: false,
+        fireExtinguisher: false,
+        firstAidKit: false,
+        additionalNotes: "",
+      },
+      photos: [],
+    });
+  }, []);
+
+  // Reset form on successful submission
+  useEffect(() => {
+    if (isSuccess) {
+      resetFormData();
+    }
+  }, [isSuccess, resetFormData]);
+
   const updateFormData = useCallback((name: string, value: string, type: string, checked: boolean) => {
     if (name.includes(".")) {
       const [section, field] = name.split(".");
@@ -258,21 +379,7 @@ export default function JobHazardReportPage() {
   }, []);
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target as HTMLInputElement;
-
-    // For text inputs, use debouncing to reduce state updates
-    if (type === "text" || type === "textarea") {
-      if (debounceTimers.current[name]) {
-        clearTimeout(debounceTimers.current[name]);
-      }
-      
-      debounceTimers.current[name] = setTimeout(() => {
-        updateFormData(name, value, type, checked);
-        delete debounceTimers.current[name];
-      }, 300);
-    } else {
-      // For checkboxes, radio buttons, etc., update immediately
-      updateFormData(name, value, type, checked);
-    }
+    updateFormData(name, value, type, checked);
   }, [updateFormData]);
   
 
@@ -308,11 +415,31 @@ export default function JobHazardReportPage() {
     }));
   }, []);
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Job Hazard Report submitted:", formData);
-    // Handle form submission here
-  }, [formData]);
+    reset(); // Reset mutation state
+
+    await submitForm({
+      submissionType: 'job-hazard-analysis',
+      jobSite: formData.jobSite,
+      formData: {
+        completedBy: formData.completedBy,
+        date: formData.date,
+        supervisor: formData.supervisor,
+        company: formData.company,
+        hazards: formData.hazards,
+        ppe: formData.ppe,
+        fallProtection: formData.fallProtection,
+        siteSpecificSafety: formData.siteSpecificSafety,
+        toolInspection: formData.toolInspection,
+        ladderSafety: formData.ladderSafety,
+        stepLadder: formData.stepLadder,
+        extensionLadder: formData.extensionLadder,
+        additionalSafety: formData.additionalSafety,
+      },
+      files: formData.photos,
+    });
+  }, [formData, submitForm, reset]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -951,8 +1078,22 @@ export default function JobHazardReportPage() {
                   </CardContent>
                 </Card>
 
-                <Button type="submit" className="w-full rounded-none">
-                  Submit
+                {isSuccess && (
+                  <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800">
+                    Job Hazard Analysis submitted successfully!
+                  </div>
+                )}
+
+                {isError && (
+                  <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800">
+                    {error && 'data' in error && typeof error.data === 'object' && error.data && 'error' in error.data 
+                      ? (error.data as any).error 
+                      : 'Submission failed'}
+                  </div>
+                )}
+
+                <Button type="submit" disabled={isLoading} className="w-full rounded-none">
+                  {isLoading ? 'Submitting...' : 'Submit'}
                 </Button>
               </form>
             </CardContent>

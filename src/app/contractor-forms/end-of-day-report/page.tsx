@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSubmitFormMutation } from "@/lib/features/submissions/submissionsApi";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,8 @@ export default function EndOfDayReportPage() {
     attachments: [],
   });
 
+  const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
@@ -78,10 +81,56 @@ export default function EndOfDayReportPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Reset form on successful submission
+  useEffect(() => {
+    if (isSuccess) {
+      setFormData({
+        completedBy: "",
+        date: new Date().toISOString().split("T")[0],
+        supervisor: "",
+        jobSite: "",
+        company: "",
+        timeClocked: "",
+        freeFromInjury: null,
+        completedJHA: null,
+        freeFromFever: null,
+        freeFromCovidSymptoms: null,
+        freeFromDirectExposure: null,
+        traveledOutOfCountry: null,
+        physicalDistancing: null,
+        attachments: [],
+      });
+    }
+  }, [isSuccess]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("End of Day Report submitted:", formData);
-    // Handle form submission here
+    reset(); // Reset mutation state
+
+    // Convert time to full datetime for supervisor clock out
+    const clockOutDateTime = formData.timeClocked ? 
+      new Date(`${formData.date}T${formData.timeClocked}`).toISOString() : undefined;
+
+    await submitForm({
+      submissionType: 'end-of-day',
+      jobSite: formData.jobSite,
+      supervisorDateClockedOut: clockOutDateTime,
+      formData: {
+        completedBy: formData.completedBy,
+        date: formData.date,
+        supervisor: formData.supervisor,
+        company: formData.company,
+        timeClocked: formData.timeClocked,
+        freeFromInjury: formData.freeFromInjury,
+        completedJHA: formData.completedJHA,
+        freeFromFever: formData.freeFromFever,
+        freeFromCovidSymptoms: formData.freeFromCovidSymptoms,
+        freeFromDirectExposure: formData.freeFromDirectExposure,
+        traveledOutOfCountry: formData.traveledOutOfCountry,
+        physicalDistancing: formData.physicalDistancing,
+      },
+      files: formData.attachments,
+    });
   };
 
   return (
@@ -467,8 +516,22 @@ export default function EndOfDayReportPage() {
                   </CardContent>
                 </Card>
 
-                <Button type="submit" className="w-full rounded-none">
-                  Submit
+                {isSuccess && (
+                  <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800">
+                    End of Day Report submitted successfully!
+                  </div>
+                )}
+
+                {isError && (
+                  <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800">
+                    {error && 'data' in error && typeof error.data === 'object' && error.data && 'error' in error.data 
+                      ? (error.data as any).error 
+                      : 'Submission failed'}
+                  </div>
+                )}
+
+                <Button type="submit" disabled={isLoading} className="w-full rounded-none">
+                  {isLoading ? 'Submitting...' : 'Submit'}
                 </Button>
               </form>
             </CardContent>
