@@ -12,8 +12,8 @@ export const users = pgTable('users', {
 export const submissions = pgTable('submissions', {
   id: uuid('id').primaryKey().defaultRandom(),
   completedBy: text('completed_by').notNull(),
-  supervisorDateClockedIn: timestamp('supervisor_date_clocked_in'),
-  supervisorDateClockedOut: timestamp('supervisor_date_clocked_out'),
+  date: text('date').notNull(), // Date from the form (YYYY-MM-DD format)
+  dateTimeClocked: timestamp('date_time_clocked'), // Combined date/time when clocked in/out
   company: text('company').notNull(),
   jobSite: text('job_site').notNull(),
   submissionType: text('submission_type').notNull(), // 'end-of-day', 'job-hazard-analysis', 'start-of-day'

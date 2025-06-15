@@ -422,6 +422,7 @@ export default function JobHazardReportPage() {
     await submitForm({
       submissionType: 'job-hazard-analysis',
       jobSite: formData.jobSite,
+      date: formData.date,
       formData: {
         completedBy: formData.completedBy,
         date: formData.date,

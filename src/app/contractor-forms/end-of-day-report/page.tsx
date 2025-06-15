@@ -114,7 +114,8 @@ export default function EndOfDayReportPage() {
     await submitForm({
       submissionType: 'end-of-day',
       jobSite: formData.jobSite,
-      supervisorDateClockedOut: clockOutDateTime,
+      date: formData.date,
+      dateTimeClocked: clockOutDateTime,
       formData: {
         completedBy: formData.completedBy,
         date: formData.date,

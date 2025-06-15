@@ -96,7 +96,8 @@ export default function StartOfDayReportPage() {
     await submitForm({
       submissionType: 'start-of-day',
       jobSite: formData.jobSite,
-      supervisorDateClockedIn: clockInDateTime,
+      date: formData.date,
+      dateTimeClocked: clockInDateTime,
       formData: {
         completedBy: formData.completedBy,
         date: formData.date,

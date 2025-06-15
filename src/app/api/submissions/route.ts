@@ -53,15 +53,15 @@ export async function POST(request: NextRequest) {
     // Parse form data
     const formData = await request.formData()
     const submissionType = formData.get('submissionType') as string
-    const supervisorDateClockedIn = formData.get('supervisorDateClockedIn') as string
-    const supervisorDateClockedOut = formData.get('supervisorDateClockedOut') as string
+    const date = formData.get('date') as string
+    const dateTimeClocked = formData.get('dateTimeClocked') as string
     const jobSite = formData.get('jobSite') as string
     const formDataJson = formData.get('formData') as string
 
     // Validate required fields
-    if (!submissionType || !jobSite || !formDataJson) {
+    if (!submissionType || !jobSite || !formDataJson || !date) {
       return NextResponse.json(
-        { error: 'Missing required fields: submissionType, jobSite, formData' },
+        { error: 'Missing required fields: submissionType, jobSite, date, formData' },
         { status: 400 }
       )
     }
@@ -113,8 +113,8 @@ export async function POST(request: NextRequest) {
     // Create submission record
     const submission = await db.insert(submissions).values({
       completedBy: decoded.user.name,
-      supervisorDateClockedIn: supervisorDateClockedIn ? new Date(supervisorDateClockedIn) : null,
-      supervisorDateClockedOut: supervisorDateClockedOut ? new Date(supervisorDateClockedOut) : null,
+      date: date,
+      dateTimeClocked: dateTimeClocked ? new Date(dateTimeClocked) : null,
       company: decoded.contractor.name,
       jobSite: jobSite,
       submissionType: submissionType,

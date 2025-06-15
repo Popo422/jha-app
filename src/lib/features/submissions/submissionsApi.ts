@@ -4,8 +4,8 @@ import type { RootState } from '@/lib/store'
 export interface SubmissionData {
   submissionType: 'end-of-day' | 'job-hazard-analysis' | 'start-of-day'
   jobSite: string
-  supervisorDateClockedIn?: string
-  supervisorDateClockedOut?: string
+  date: string
+  dateTimeClocked?: string
   formData: Record<string, any>
   files?: File[]
 }
@@ -13,8 +13,8 @@ export interface SubmissionData {
 export interface Submission {
   id: string
   completedBy: string
-  supervisorDateClockedIn?: string
-  supervisorDateClockedOut?: string
+  date: string
+  dateTimeClocked?: string
   company: string
   jobSite: string
   submissionType: string
@@ -63,14 +63,11 @@ export const submissionsApi = createApi({
         // Add form fields
         formData.append('submissionType', data.submissionType)
         formData.append('jobSite', data.jobSite)
+        formData.append('date', data.date)
         formData.append('formData', JSON.stringify(data.formData))
         
-        if (data.supervisorDateClockedIn) {
-          formData.append('supervisorDateClockedIn', data.supervisorDateClockedIn)
-        }
-        
-        if (data.supervisorDateClockedOut) {
-          formData.append('supervisorDateClockedOut', data.supervisorDateClockedOut)
+        if (data.dateTimeClocked) {
+          formData.append('dateTimeClocked', data.dateTimeClocked)
         }
         
         // Add files if any
