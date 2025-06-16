@@ -236,16 +236,55 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
   if (isLoading) {
     return (
       <Card>
+        <CardHeader>
+          <CardTitle>My Submissions</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center space-x-2">
+              <div className="h-8 bg-muted rounded w-16 animate-pulse" />
+            </div>
+            <div className="h-8 bg-muted rounded w-48 animate-pulse" />
+          </div>
+        </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center space-x-4">
-                <div className="h-4 bg-muted rounded w-20 animate-pulse" />
-                <div className="h-4 bg-muted rounded w-32 animate-pulse" />
-                <div className="h-4 bg-muted rounded w-24 animate-pulse" />
-                <div className="h-4 bg-muted rounded w-28 animate-pulse" />
-              </div>
-            ))}
+          <div className="rounded-md border">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="h-8 sm:h-10 px-2 sm:px-4 text-left">
+                      <div className="h-4 bg-muted rounded w-12 animate-pulse" />
+                    </th>
+                    <th className="h-8 sm:h-10 px-2 sm:px-4 text-left">
+                      <div className="h-4 bg-muted rounded w-16 animate-pulse" />
+                    </th>
+                    <th className="h-8 sm:h-10 px-2 sm:px-4 text-left">
+                      <div className="h-4 bg-muted rounded w-12 animate-pulse" />
+                    </th>
+                    <th className="h-8 sm:h-10 px-2 sm:px-4 text-left">
+                      <div className="h-4 bg-muted rounded w-20 animate-pulse" />
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...Array(5)].map((_, i) => (
+                    <tr key={i} className="border-b">
+                      <td className="p-2 sm:p-4">
+                        <div className="h-4 bg-muted/60 rounded w-20 animate-pulse" />
+                      </td>
+                      <td className="p-2 sm:p-4">
+                        <div className="h-6 bg-muted/60 rounded-full w-16 animate-pulse" />
+                      </td>
+                      <td className="p-2 sm:p-4">
+                        <div className="h-4 bg-muted/60 rounded w-24 animate-pulse" />
+                      </td>
+                      <td className="p-2 sm:p-4">
+                        <div className="h-4 bg-muted/60 rounded w-28 animate-pulse" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </CardContent>
       </Card>
