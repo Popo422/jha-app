@@ -70,22 +70,23 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
   // Filter data based on selected form types and search query
   const filteredData = useMemo(() => {
     let filtered = data;
-    
+
     // Filter by form types
     if (selectedFormTypes.length > 0) {
       filtered = filtered.filter((item) => selectedFormTypes.includes(item.submissionType));
     }
-    
+
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((item) => 
-        item.jobSite.toLowerCase().includes(query) ||
-        item.completedBy.toLowerCase().includes(query) ||
-        getFormTypeLabel(item.submissionType).toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (item) =>
+          item.jobSite.toLowerCase().includes(query) ||
+          item.completedBy.toLowerCase().includes(query) ||
+          getFormTypeLabel(item.submissionType).toLowerCase().includes(query)
       );
     }
-    
+
     return filtered;
   }, [data, selectedFormTypes, searchQuery]);
 
@@ -237,7 +238,6 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>My Submissions</CardTitle>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-2">
               <div className="h-8 bg-muted rounded w-16 animate-pulse" />
@@ -294,7 +294,6 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>My Submissions</CardTitle>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center space-x-2">
             <DropdownMenu>
@@ -331,7 +330,7 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
               </Button>
             )}
           </div>
-          
+
           <div className="relative max-w-sm w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
             <Input
@@ -383,7 +382,7 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
                     ) : (
                       <tr>
                         <td colSpan={columns.length} className="h-16 sm:h-24 text-center text-muted-foreground text-sm">
-                          {(selectedFormTypes.length > 0 || searchQuery.trim())
+                          {selectedFormTypes.length > 0 || searchQuery.trim()
                             ? "No submissions match the current filters or search."
                             : "No submissions found."}
                         </td>
