@@ -34,7 +34,7 @@ export default function ContractorFormsPage() {
 
       <main className="p-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8 text-foreground">Contractor Forms</h1>
+          <h1 className="text-3xl font-bold mb-8 text-foreground text-center">Contractor Forms</h1>
 
           <div className="grid gap-6 ">
             {forms.map((form) => (

@@ -11,7 +11,7 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { Filter, X, Search } from "lucide-react";
+import { Filter, X, Search, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -103,15 +103,50 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
     () => [
       {
         accessorKey: "date",
-        header: "Date",
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
+            >
+              Date
+              {column.getIsSorted() === "asc" ? (
+                <ChevronUp className="ml-1 h-3 w-3" />
+              ) : column.getIsSorted() === "desc" ? (
+                <ChevronDown className="ml-1 h-3 w-3" />
+              ) : (
+                <ChevronsUpDown className="ml-1 h-3 w-3" />
+              )}
+            </Button>
+          );
+        },
         cell: ({ row }) => {
           const date = row.getValue("date") as string;
           return <div className="text-xs sm:text-sm font-medium">{format(new Date(date), "MMM dd, yyyy")}</div>;
         },
+        sortingFn: "datetime",
       },
       {
         accessorKey: "submissionType",
-        header: "Type",
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
+            >
+              Type
+              {column.getIsSorted() === "asc" ? (
+                <ChevronUp className="ml-1 h-3 w-3" />
+              ) : column.getIsSorted() === "desc" ? (
+                <ChevronDown className="ml-1 h-3 w-3" />
+              ) : (
+                <ChevronsUpDown className="ml-1 h-3 w-3" />
+              )}
+            </Button>
+          );
+        },
         cell: ({ row }) => {
           const type = row.getValue("submissionType") as string;
           return (
@@ -126,7 +161,24 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
       },
       {
         accessorKey: "jobSite",
-        header: "Site",
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
+            >
+              Site
+              {column.getIsSorted() === "asc" ? (
+                <ChevronUp className="ml-1 h-3 w-3" />
+              ) : column.getIsSorted() === "desc" ? (
+                <ChevronDown className="ml-1 h-3 w-3" />
+              ) : (
+                <ChevronsUpDown className="ml-1 h-3 w-3" />
+              )}
+            </Button>
+          );
+        },
         cell: ({ row }) => {
           const site = row.getValue("jobSite") as string;
           return <div className="text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">{site}</div>;
@@ -134,16 +186,34 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
       },
       {
         accessorKey: "updatedAt",
-        header: "Modified",
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+              className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
+            >
+              Modified
+              {column.getIsSorted() === "asc" ? (
+                <ChevronUp className="ml-1 h-3 w-3" />
+              ) : column.getIsSorted() === "desc" ? (
+                <ChevronDown className="ml-1 h-3 w-3" />
+              ) : (
+                <ChevronsUpDown className="ml-1 h-3 w-3" />
+              )}
+            </Button>
+          );
+        },
         cell: ({ row }) => {
           const date = row.getValue("updatedAt") as string;
           return (
-            <div className="text-xs sm:text-sm text-gray-500">
+            <div className="text-xs sm:text-sm text-muted-foreground">
               <div className="hidden sm:block">{format(new Date(date), "MMM dd, yyyy h:mm a")}</div>
               <div className="sm:hidden">{format(new Date(date), "MMM dd")}</div>
             </div>
           );
         },
+        sortingFn: "datetime",
       },
     ],
     []
@@ -170,10 +240,10 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="flex items-center space-x-4">
-                <div className="h-4 bg-gray-200 rounded w-20 animate-pulse" />
-                <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
-                <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
-                <div className="h-4 bg-gray-200 rounded w-28 animate-pulse" />
+                <div className="h-4 bg-muted rounded w-20 animate-pulse" />
+                <div className="h-4 bg-muted rounded w-32 animate-pulse" />
+                <div className="h-4 bg-muted rounded w-24 animate-pulse" />
+                <div className="h-4 bg-muted rounded w-28 animate-pulse" />
               </div>
             ))}
           </div>
@@ -224,7 +294,7 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
           </div>
           
           <div className="relative max-w-sm w-full sm:w-auto">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
             <Input
               placeholder="Search submissions..."
               value={searchQuery}
@@ -236,7 +306,7 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 text-sm">
+          <div className="text-center py-8 text-muted-foreground text-sm">
             No submissions found. Start by creating your first form submission.
           </div>
         ) : (
@@ -246,11 +316,11 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
                 <table className="w-full">
                   <thead>
                     {table.getHeaderGroups().map((headerGroup) => (
-                      <tr key={headerGroup.id} className="border-b bg-gray-50/50">
+                      <tr key={headerGroup.id} className="border-b bg-muted/50">
                         {headerGroup.headers.map((header) => (
                           <th
                             key={header.id}
-                            className="h-8 sm:h-10 px-2 sm:px-4 text-left align-middle font-medium text-gray-500 text-xs sm:text-sm"
+                            className="h-8 sm:h-10 px-2 sm:px-4 text-left align-middle font-medium text-muted-foreground text-xs sm:text-sm"
                           >
                             {header.isPlaceholder
                               ? null
@@ -263,7 +333,7 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
                   <tbody>
                     {table.getRowModel().rows?.length ? (
                       table.getRowModel().rows.map((row) => (
-                        <tr key={row.id} className="border-b hover:bg-gray-50/50 transition-colors">
+                        <tr key={row.id} className="border-b hover:bg-muted/50 transition-colors">
                           {row.getVisibleCells().map((cell) => (
                             <td key={cell.id} className="p-2 sm:p-4 align-middle">
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -273,7 +343,7 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={columns.length} className="h-16 sm:h-24 text-center text-gray-500 text-sm">
+                        <td colSpan={columns.length} className="h-16 sm:h-24 text-center text-muted-foreground text-sm">
                           {(selectedFormTypes.length > 0 || searchQuery.trim())
                             ? "No submissions match the current filters or search."
                             : "No submissions found."}
@@ -286,7 +356,7 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 sm:space-x-2 py-4">
-              <div className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
+              <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
                 <span className="hidden sm:inline">
                   Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
                   {Math.min(
@@ -307,7 +377,7 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
                 >
                   Previous
                 </Button>
-                <div className="text-xs text-gray-500 px-2">
+                <div className="text-xs text-muted-foreground px-2">
                   {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
                 </div>
                 <Button
