@@ -83,6 +83,7 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
         (item) =>
           item.jobSite.toLowerCase().includes(query) ||
           item.completedBy.toLowerCase().includes(query) ||
+          item.date.toLowerCase().includes(query) ||
           getFormTypeLabel(item.submissionType).toLowerCase().includes(query)
       );
     }
