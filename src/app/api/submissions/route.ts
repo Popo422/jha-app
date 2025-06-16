@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
 
     // Create submission record
     const submission = await db.insert(submissions).values({
+      userId: decoded.user.id,
       completedBy: decoded.user.name,
       date: date,
       dateTimeClocked: dateTimeClocked ? new Date(dateTimeClocked) : null,
@@ -165,8 +166,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    // Build query conditions
-    const conditions = [eq(submissions.company, decoded.contractor.name)]
+    // Build query conditions - filter by user ID for user's own submissions
+    const conditions = [eq(submissions.userId, decoded.user.id)]
     
     if (submissionType) {
       conditions.push(eq(submissions.submissionType, submissionType))
@@ -183,7 +184,7 @@ export async function GET(request: NextRequest) {
       meta: {
         limit,
         offset,
-        company: decoded.contractor.name
+        userId: decoded.user.id
       }
     })
 

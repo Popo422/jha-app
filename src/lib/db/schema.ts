@@ -11,6 +11,7 @@ export const users = pgTable('users', {
 
 export const submissions = pgTable('submissions', {
   id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull(),
   completedBy: text('completed_by').notNull(),
   date: text('date').notNull(), // Date from the form (YYYY-MM-DD format)
   dateTimeClocked: timestamp('date_time_clocked'), // Combined date/time when clocked in/out

@@ -1,0 +1,1 @@
+ALTER TABLE "submissions" ADD COLUMN "user_id" text NOT NULL;

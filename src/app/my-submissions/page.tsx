@@ -1,24 +1,31 @@
-'use client'
+"use client";
 
-import Header from '@/components/Header'
-import AppSidebar from '@/components/AppSidebar'
+import Header from "@/components/Header";
+import AppSidebar from "@/components/AppSidebar";
+import { SubmissionsTable } from "@/components/SubmissionsTable";
+import { useGetSubmissionsQuery } from "@/lib/features/submissions/submissionsApi";
 
 export default function MySubmissionsPage() {
+  const { data, isLoading, error } = useGetSubmissionsQuery({});
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <AppSidebar />
-      
-      <main className="p-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">My Submissions</h1>
-          <div className="bg-card text-card-foreground rounded-lg border p-6">
-            <p className="text-muted-foreground">
-              View and manage your submitted forms and documents here. No submissions found at this time.
-            </p>
-          </div>
+
+      <main className="p-2 md:p-8">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl font-bold mb-6 text-center">My Submissions</h1>
+
+          {error ? (
+            <div className="bg-card text-card-foreground rounded-lg border p-6">
+              <p className="text-destructive">Error loading submissions. Please try again later.</p>
+            </div>
+          ) : (
+            <SubmissionsTable data={data?.submissions || []} isLoading={isLoading} />
+          )}
         </div>
       </main>
     </div>
-  )
+  );
 }

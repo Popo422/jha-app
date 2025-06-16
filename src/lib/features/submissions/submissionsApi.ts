@@ -12,6 +12,7 @@ export interface SubmissionData {
 
 export interface Submission {
   id: string
+  userId: string
   completedBy: string
   date: string
   dateTimeClocked?: string
@@ -34,7 +35,7 @@ export interface GetSubmissionsResponse {
   meta: {
     limit: number
     offset: number
-    company: string
+    userId: string
   }
 }
 
