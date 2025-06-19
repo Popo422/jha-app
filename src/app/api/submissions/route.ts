@@ -4,6 +4,7 @@ import { eq, desc, and } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { submissions } from '@/lib/db/schema'
 import { put } from '@vercel/blob'
+import { sendEventToUser } from '@/lib/sse-service'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -122,6 +123,21 @@ export async function POST(request: NextRequest) {
       formData: parsedFormData,
     }).returning()
 
+    // Send SSE event to user about the new submission
+    console.log('Sending SSE event for submission:', {
+      userId: decoded.user.id,
+      submissionType: submissionType,
+      date: date,
+      jobSite: jobSite,
+      submissionId: submission[0].id
+    })
+    sendEventToUser(decoded.user.id, 'submission_created', {
+      submissionType: submissionType,
+      date: date,
+      jobSite: jobSite,
+      submissionId: submission[0].id
+    })
+
     return NextResponse.json({
       success: true,
       submission: submission[0]
@@ -190,6 +206,85 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Get submissions error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    // Get token from cookie or Authorization header
+    const token = request.cookies.get('authToken')?.value || 
+                  request.headers.get('Authorization')?.replace('Bearer ', '')
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Verify JWT token
+    let decoded: TokenPayload
+    try {
+      decoded = jwt.verify(token, JWT_SECRET) as TokenPayload
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
+    // Get submission ID from URL
+    const { searchParams } = new URL(request.url)
+    const submissionId = searchParams.get('id')
+
+    if (!submissionId) {
+      return NextResponse.json(
+        { error: 'Submission ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // First check if the submission exists and belongs to the user
+    const existingSubmission = await db.select().from(submissions)
+      .where(and(
+        eq(submissions.id, submissionId),
+        eq(submissions.userId, decoded.user.id)
+      ))
+      .limit(1)
+
+    if (existingSubmission.length === 0) {
+      return NextResponse.json(
+        { error: 'Submission not found or you do not have permission to delete it' },
+        { status: 404 }
+      )
+    }
+
+    // Delete the submission
+    await db.delete(submissions)
+      .where(and(
+        eq(submissions.id, submissionId),
+        eq(submissions.userId, decoded.user.id)
+      ))
+
+    // Send SSE event to user about the deleted submission
+    sendEventToUser(decoded.user.id, 'submission_deleted', {
+      submissionId: submissionId,
+      submissionType: existingSubmission[0].submissionType,
+      date: existingSubmission[0].date,
+      jobSite: existingSubmission[0].jobSite
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Submission deleted successfully'
+    })
+
+  } catch (error) {
+    console.error('Delete submission error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

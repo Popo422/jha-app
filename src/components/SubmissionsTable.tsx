@@ -11,7 +11,7 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { Filter, X, Search, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { Filter, X, Search, ChevronUp, ChevronDown, ChevronsUpDown, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,11 +24,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Submission } from "@/lib/features/submissions/submissionsApi";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Submission, useDeleteSubmissionMutation } from "@/lib/features/submissions/submissionsApi";
 
 interface SubmissionsTableProps {
   data: Submission[];
   isLoading?: boolean;
+  onDelete?: (id: string) => void;
 }
 
 const getFormTypeLabel = (type: string) => {
@@ -63,9 +75,10 @@ const formTypeOptions = [
   { value: "job-hazard-analysis", label: "Job Hazard Analysis" },
 ];
 
-export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
+export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTableProps) {
   const [selectedFormTypes, setSelectedFormTypes] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleteSubmission, { isLoading: isDeleting }] = useDeleteSubmissionMutation();
 
   // Filter data based on selected form types and search query
   const filteredData = useMemo(() => {
@@ -100,6 +113,15 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
   const clearFilters = () => {
     setSelectedFormTypes([]);
     setSearchQuery("");
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteSubmission(id).unwrap();
+      onDelete?.(id);
+    } catch (error) {
+      console.error('Failed to delete submission:', error);
+    }
   };
   const columns = useMemo<ColumnDef<Submission>[]>(
     () => [
@@ -217,8 +239,52 @@ export function SubmissionsTable({ data, isLoading }: SubmissionsTableProps) {
         },
         sortingFn: "datetime",
       },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => {
+          const submission = row.original;
+          return (
+            <div className="flex justify-end">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Submission</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this {getFormTypeLabel(submission.submissionType).toLowerCase()} submission for {submission.jobSite} from {format(new Date(submission.date), "MMM dd, yyyy")}?
+                      <br /><br />
+                      <strong>This action cannot be undone.</strong>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDelete(submission.id)}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          );
+        },
+        enableSorting: false,
+      },
     ],
-    []
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isDeleting],
   );
 
   const table = useReactTable({

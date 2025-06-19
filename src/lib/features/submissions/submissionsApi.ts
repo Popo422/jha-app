@@ -39,6 +39,12 @@ export interface GetSubmissionsResponse {
   }
 }
 
+export interface DeleteSubmissionResponse {
+  success: boolean
+  message?: string
+  error?: string
+}
+
 export const submissionsApi = createApi({
   reducerPath: 'submissionsApi',
   baseQuery: fetchBaseQuery({
@@ -105,11 +111,19 @@ export const submissionsApi = createApi({
       },
       providesTags: ['Submission'],
     }),
+    deleteSubmission: builder.mutation<DeleteSubmissionResponse, string>({
+      query: (id) => ({
+        url: `?id=${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Submission'],
+    }),
   }),
 })
 
 export const { 
   useSubmitFormMutation, 
   useGetSubmissionsQuery,
-  useLazyGetSubmissionsQuery 
+  useLazyGetSubmissionsQuery,
+  useDeleteSubmissionMutation
 } = submissionsApi

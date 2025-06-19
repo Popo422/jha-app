@@ -6,7 +6,11 @@ import { SubmissionsTable } from "@/components/SubmissionsTable";
 import { useGetSubmissionsQuery } from "@/lib/features/submissions/submissionsApi";
 
 export default function MySubmissionsPage() {
-  const { data, isLoading, error } = useGetSubmissionsQuery({});
+  const { data, isLoading, error, refetch } = useGetSubmissionsQuery({});
+
+  const handleDelete = (id: string) => {
+    refetch();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -22,7 +26,11 @@ export default function MySubmissionsPage() {
               <p className="text-destructive">Error loading submissions. Please try again later.</p>
             </div>
           ) : (
-            <SubmissionsTable data={data?.submissions || []} isLoading={isLoading} />
+            <SubmissionsTable 
+              data={data?.submissions || []} 
+              isLoading={isLoading} 
+              onDelete={handleDelete}
+            />
           )}
         </div>
       </main>
