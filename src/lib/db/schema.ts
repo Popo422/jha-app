@@ -35,3 +35,11 @@ export const timesheets = pgTable('timesheets', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
+
+export const injuryTimer = pgTable('injury_timer', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  lastResetTime: timestamp('last_reset_time').notNull().defaultNow(),
+  resetBy: text('reset_by'), // User who reset the timer
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})

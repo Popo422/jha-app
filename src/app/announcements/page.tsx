@@ -3,6 +3,7 @@
 import Header from '@/components/Header'
 import AppSidebar from '@/components/AppSidebar'
 import SafetyFormChecklist from '@/components/SafetyFormChecklist'
+import InjuryTimer from '@/components/InjuryTimer'
 
 export default function AnnouncementsPage() {
   return (
@@ -16,6 +17,8 @@ export default function AnnouncementsPage() {
           
           <div className="space-y-6">
             <SafetyFormChecklist />
+            
+            <InjuryTimer />
             
             <div className="bg-card text-card-foreground rounded-lg border p-6">
               <p className="text-muted-foreground">
