@@ -14,7 +14,8 @@ import {
   BarChart3, 
   LogOut, 
   Settings, 
-  HelpCircle 
+  HelpCircle,
+  X
 } from 'lucide-react'
 
 interface SidebarItem {
@@ -24,7 +25,12 @@ interface SidebarItem {
   action?: () => void
 }
 
-export default function AdminSidebar() {
+interface AdminSidebarProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -81,13 +87,36 @@ export default function AdminSidebar() {
   ]
 
   return (
-    <div className="w-64 bg-[#242736] h-full flex flex-col text-white">
-      {/* Logo */}
-      <div className="p-6 border-b border-slate-700">
-        <div className="flex items-center justify-center">
-          <Image src="/logo.png" alt="JHA App" width={140} height={30} />
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={cn(
+        "w-64 bg-[#242736] h-full flex flex-col text-white transition-transform duration-300 ease-in-out",
+        "lg:translate-x-0 lg:static lg:z-auto",
+        "fixed left-0 top-0 z-50",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        {/* Header with close button */}
+        <div className="p-6 border-b border-slate-700">
+          <div className="flex items-center justify-between">
+            <Image src="/logo.png" alt="JHA App" width={140} height={30} />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden text-white hover:text-white hover:bg-white/10 p-1"
+              onClick={onClose}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-      </div>
 
       {/* Main Navigation */}
       <nav className="flex-1 p-4 space-y-2">
@@ -105,7 +134,10 @@ export default function AdminSidebar() {
                   ? "bg-blue-600 text-white hover:bg-blue-600" 
                   : ""
               )}
-              onClick={() => router.push(item.href)}
+              onClick={() => {
+                router.push(item.href)
+                onClose()
+              }}
             >
               <Icon className="mr-3 h-5 w-5" />
               {item.label}
@@ -134,7 +166,10 @@ export default function AdminSidebar() {
                   ? "bg-blue-600 text-white hover:bg-blue-600" 
                   : ""
               )}
-              onClick={() => router.push(item.href)}
+              onClick={() => {
+                router.push(item.href)
+                onClose()
+              }}
             >
               <Icon className="mr-3 h-4 w-4" />
               {item.label}
@@ -152,7 +187,8 @@ export default function AdminSidebar() {
           <LogOut className="mr-3 h-4 w-4" />
           Logout
         </Button>
+        </div>
       </div>
-    </div>
+    </>
   )
 }

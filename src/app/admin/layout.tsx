@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import AdminProtectedRoute from '@/components/AdminProtectedRoute'
 import AdminSidebar from '@/components/AdminSidebar'
@@ -11,6 +12,7 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   
   // Don't apply layout to login page
   if (pathname === '/admin/login') {
@@ -21,12 +23,12 @@ export default function AdminLayout({
     <AdminProtectedRoute>
       <div className="h-screen flex bg-gray-50">
         {/* Sidebar */}
-        <AdminSidebar />
+        <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <AdminHeader />
+          <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
           
           {/* Main Content */}
           <main className="flex-1 overflow-y-auto">
