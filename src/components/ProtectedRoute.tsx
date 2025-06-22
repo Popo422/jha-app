@@ -17,6 +17,10 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (publicRoutes.includes(pathname)) {
     return <>{children}</>
   }
+  // Allow admin routes (they have their own protection)
+  if (pathname.startsWith('/admin')) {
+    return <>{children}</>
+  }
 
   // Show loading state
   if (isLoading) {

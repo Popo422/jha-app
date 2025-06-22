@@ -4,6 +4,7 @@ import sidebarReducer from './features/sidebar/sidebarSlice'
 import authReducer from './features/auth/authSlice'
 import { submissionsApi } from './features/submissions/submissionsApi'
 import { timesheetsApi } from './features/timesheets/timesheetsApi'
+import { authApi } from './features/auth/authApi'
 
 export const store = configureStore({
   reducer: {
@@ -12,9 +13,14 @@ export const store = configureStore({
     auth: authReducer,
     [submissionsApi.reducerPath]: submissionsApi.reducer,
     [timesheetsApi.reducerPath]: timesheetsApi.reducer,
+    [authApi.reducerPath]: authApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(submissionsApi.middleware, timesheetsApi.middleware),
+    getDefaultMiddleware().concat(
+      submissionsApi.middleware, 
+      timesheetsApi.middleware,
+      authApi.middleware
+    ),
 })
 
 export type RootState = ReturnType<typeof store.getState>

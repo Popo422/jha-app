@@ -1,22 +1,23 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAppDispatch } from '@/lib/hooks'
-import { loginSuccess } from '@/lib/features/auth/authSlice'
-import { useLoginMutation } from '@/lib/features/auth/authApi'
+import { adminLoginSuccess } from '@/lib/features/auth/authSlice'
+import { useAdminLoginMutation } from '@/lib/features/auth/authApi'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Eye, EyeOff } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 
-export default function LoginPage() {
-  const [companyCode, setCompanyCode] = useState('')
-  const [showCode, setShowCode] = useState(false)
+export default function AdminLoginPage() {
+  const [employeeId, setEmployeeId] = useState('')
+  const [pin, setPin] = useState('')
+  const [showPin, setShowPin] = useState(false)
   const [error, setError] = useState('')
   const dispatch = useAppDispatch()
-  const [login, { isLoading }] = useLoginMutation()
+  const [adminLogin, { isLoading }] = useAdminLoginMutation()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,16 +25,16 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const result = await login({ companyCode }).unwrap()
+      const result = await adminLogin({ employeeId, pin }).unwrap()
       
-      // Update Redux state with login data
-      dispatch(loginSuccess(result))
+      // Update Redux state with admin login data
+      dispatch(adminLoginSuccess(result))
       
-      // Login successful, redirect to announcements page
-      console.log('Login successful, redirecting to announcements...')
-      router.push('/announcements')
+      // Admin login successful, redirect to admin dashboard
+      console.log('Admin login successful, redirecting to admin dashboard...')
+      router.push('/admin')
     } catch (error: any) {
-      console.error('Login error:', error)
+      console.error('Admin login error:', error)
       setError(error.data?.error || 'Login failed. Please try again.')
     }
   }
@@ -43,22 +44,31 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <Card className="border rounded-lg">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Contractor Login</CardTitle>
-            <CardDescription className="text-center">
-              Enter your company code to access the system
-            </CardDescription>
+            <CardTitle className="text-2xl text-center">Admin Login</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="companyCode">Company Code</Label>
+                <Label htmlFor="employeeId">Employee ID</Label>
+                <Input
+                  id="employeeId"
+                  type="text"
+                  placeholder="Enter employee ID"
+                  value={employeeId}
+                  onChange={(e) => setEmployeeId(e.target.value)}
+                  className={error ? 'border-destructive' : ''}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pin">PIN</Label>
                 <div className="relative">
                   <Input
-                    id="companyCode"
-                    type={showCode ? 'text' : 'password'}
-                    placeholder="Enter company code"
-                    value={companyCode}
-                    onChange={(e) => setCompanyCode(e.target.value)}
+                    id="pin"
+                    type={showPin ? 'text' : 'password'}
+                    placeholder="Enter PIN"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
                     className={error ? 'border-destructive' : ''}
                     required
                   />
@@ -67,9 +77,9 @@ export default function LoginPage() {
                     variant="ghost"
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowCode(!showCode)}
+                    onClick={() => setShowPin(!showPin)}
                   >
-                    {showCode ? (
+                    {showPin ? (
                       <EyeOff className="h-4 w-4" />
                     ) : (
                       <Eye className="h-4 w-4" />

@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { restoreAuth, loginFailure } from '@/lib/features/auth/authSlice'
 
@@ -30,11 +30,18 @@ interface AuthProviderProps {
 export default function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
   const dispatch = useAppDispatch()
   const { isAuthenticated } = useAppSelector((state) => state.auth)
 
   useEffect(() => {
     const validateAuth = async () => {
+      // Skip auth validation for admin routes
+      if (pathname.startsWith('/admin')) {
+        setIsLoading(false)
+        return
+      }
+
       try {
         // Get token from cookie
         const getCookie = (name: string) => {
@@ -95,7 +102,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     } else {
       setIsLoading(false)
     }
-  }, [dispatch, router, isAuthenticated])
+  }, [dispatch, router, pathname, isAuthenticated])
 
   const authValue = {
     isLoading,
