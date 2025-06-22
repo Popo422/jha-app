@@ -60,7 +60,7 @@ export default function AdminPage() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome back!</h2>
-          <p className="text-gray-600">Here's what's happening with your contractors today.</p>
+          <p className="text-gray-600">{`Here's what's happening with your contractors today.`}</p>
         </div>
 
         {/* Quick Stats */}
@@ -146,7 +146,7 @@ export default function AdminPage() {
                 <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
                   <div>
                     <p className="text-sm font-medium text-blue-900">5 time forms to approve</p>
-                    <p className="text-xs text-blue-600">This week's submissions</p>
+                    <p className="text-xs text-blue-600">{`This week's submissions`}</p>
                   </div>
                   <button 
                     onClick={() => router.push('/admin/time-forms')}
