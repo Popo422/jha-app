@@ -46,6 +46,23 @@ export interface DeleteSubmissionResponse {
   error?: string
 }
 
+export interface UpdateSubmissionData {
+  id: string
+  completedBy?: string
+  date?: string
+  dateTimeClocked?: string
+  company?: string
+  jobSite?: string
+  formData?: Record<string, any>
+}
+
+export interface UpdateSubmissionResponse {
+  success: boolean
+  submission?: Submission
+  message?: string
+  error?: string
+}
+
 export const submissionsApi = createApi({
   reducerPath: 'submissionsApi',
   baseQuery: fetchBaseQuery({
@@ -122,6 +139,14 @@ export const submissionsApi = createApi({
       }),
       invalidatesTags: ['Submission'],
     }),
+    updateSubmission: builder.mutation<UpdateSubmissionResponse, UpdateSubmissionData>({
+      query: (data) => ({
+        url: '',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Submission'],
+    }),
   }),
 })
 
@@ -129,5 +154,6 @@ export const {
   useSubmitFormMutation, 
   useGetSubmissionsQuery,
   useLazyGetSubmissionsQuery,
-  useDeleteSubmissionMutation
+  useDeleteSubmissionMutation,
+  useUpdateSubmissionMutation
 } = submissionsApi

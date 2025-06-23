@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Toast, useToast } from "@/components/ui/toast";
+import { useUpdateSubmissionMutation } from "@/lib/features/submissions/submissionsApi";
 import HazardIdentificationSection from "@/components/forms/HazardIdentificationSection";
 import PPERequirementsSection from "@/components/forms/PPERequirementsSection";
 import FallProtectionSection from "@/components/forms/FallProtectionSection";
@@ -32,6 +34,8 @@ interface JobHazardAnalysisEditProps {
 
 export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardAnalysisEditProps) {
   const [formData, setFormData] = useState(submission.formData);
+  const [updateSubmission, { isLoading }] = useUpdateSubmissionMutation();
+  const { toast, showToast, hideToast } = useToast();
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target as HTMLInputElement;
@@ -75,6 +79,27 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
       };
     });
   }, []);
+
+  const handleSave = useCallback(async () => {
+    try {
+      const result = await updateSubmission({
+        id: submission.id,
+        completedBy: formData.completedBy,
+        date: formData.date,
+        company: formData.company,
+        jobSite: submission.jobSite,
+        formData: formData
+      }).unwrap();
+
+      if (result.success) {
+        showToast('Changes saved successfully!', 'success');
+      } else {
+        showToast(result.error || 'Failed to save changes', 'error');
+      }
+    } catch (error: any) {
+      showToast(error?.data?.error || 'Failed to save changes', 'error');
+    }
+  }, [formData, submission.id, submission.jobSite, updateSubmission, showToast]);
 
   return (
     <div className="space-y-6">
@@ -469,10 +494,18 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
 
           <div className="flex gap-3">
             <Button variant="outline" onClick={onBack}>Cancel</Button>
-            <Button>Save Changes</Button>
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save Changes'}
+            </Button>
           </div>
         </CardContent>
       </Card>
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={hideToast}
+      />
     </div>
   );
 }

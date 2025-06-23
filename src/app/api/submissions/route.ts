@@ -166,10 +166,10 @@ export async function POST(request: NextRequest) {
     // Create submission record
     const submission = await db.insert(submissions).values({
       userId: decoded.user.id,
-      completedBy: decoded.user.name,
+      completedBy: parsedFormData.completedBy || decoded.user.name,
       date: date,
       dateTimeClocked: dateTimeClocked ? new Date(dateTimeClocked) : null,
-      company: decoded.contractor.name,
+      company: parsedFormData.company || decoded.contractor.name,
       jobSite: jobSite,
       submissionType: submissionType,
       formData: parsedFormData,
@@ -353,6 +353,92 @@ export async function DELETE(request: NextRequest) {
 
   } catch (error) {
     console.error('Delete submission error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    // Authenticate request
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any }
+    try {
+      auth = authenticateRequest(request)
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Parse request body
+    const body = await request.json()
+    const { id, completedBy, date, dateTimeClocked, company, jobSite, formData } = body
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Submission ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Build conditions based on user type
+    const conditions = [eq(submissions.id, id)]
+    
+    // If not admin, also check that the submission belongs to the user
+    if (!auth.isAdmin && auth.userId) {
+      conditions.push(eq(submissions.userId, auth.userId))
+    }
+
+    // First check if the submission exists (and belongs to user if not admin)
+    const existingSubmission = await db.select().from(submissions)
+      .where(conditions.length > 1 ? and(...conditions) : conditions[0])
+      .limit(1)
+
+    if (existingSubmission.length === 0) {
+      return NextResponse.json(
+        { error: auth.isAdmin ? 'Submission not found' : 'Submission not found or you do not have permission to edit it' },
+        { status: 404 }
+      )
+    }
+
+    // Build update object with only provided fields
+    const updateData: any = {}
+    if (completedBy !== undefined) updateData.completedBy = completedBy
+    if (date !== undefined) updateData.date = date
+    if (dateTimeClocked !== undefined) {
+      updateData.dateTimeClocked = dateTimeClocked ? new Date(dateTimeClocked) : null
+    }
+    if (company !== undefined) updateData.company = company
+    if (jobSite !== undefined) updateData.jobSite = jobSite
+    if (formData !== undefined) updateData.formData = formData
+
+    // Update the submission
+    const updatedSubmission = await db.update(submissions)
+      .set(updateData)
+      .where(eq(submissions.id, id))
+      .returning()
+
+    // Send SSE event about the updated submission
+    const targetUserId = auth.isAdmin ? existingSubmission[0].userId : auth.userId!
+    sendEventToUser(targetUserId, 'submission_updated', {
+      submissionId: id,
+      submissionType: existingSubmission[0].submissionType,
+      date: updatedSubmission[0].date,
+      jobSite: updatedSubmission[0].jobSite,
+      updatedByAdmin: auth.isAdmin
+    })
+
+    return NextResponse.json({
+      success: true,
+      submission: updatedSubmission[0],
+      message: 'Submission updated successfully'
+    })
+
+  } catch (error) {
+    console.error('Update submission error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

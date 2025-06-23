@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Toast, useToast } from "@/components/ui/toast";
+import { useUpdateSubmissionMutation } from "@/lib/features/submissions/submissionsApi";
 import { ArrowLeft } from "lucide-react";
 
 interface Submission {
@@ -28,6 +30,8 @@ interface EndOfDayEditProps {
 
 export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) {
   const [formData, setFormData] = useState(submission.formData);
+  const [updateSubmission, { isLoading }] = useUpdateSubmissionMutation();
+  const { toast, showToast, hideToast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -45,6 +49,34 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
       }));
     }
   };
+
+  const handleSave = useCallback(async () => {
+    try {
+      // Prepare dateTimeClocked - combine date with time if time is provided
+      let dateTimeClocked = null;
+      if (formData.timeClocked && formData.date) {
+        dateTimeClocked = `${formData.date}T${formData.timeClocked}:00`;
+      }
+
+      const result = await updateSubmission({
+        id: submission.id,
+        completedBy: formData.completedBy,
+        date: formData.date,
+        company: formData.company,
+        jobSite: formData.jobSite,
+        dateTimeClocked: dateTimeClocked,
+        formData: formData
+      }).unwrap();
+
+      if (result.success) {
+        showToast('Changes saved successfully!', 'success');
+      } else {
+        showToast(result.error || 'Failed to save changes', 'error');
+      }
+    } catch (error: any) {
+      showToast(error?.data?.error || 'Failed to save changes', 'error');
+    }
+  }, [formData, submission.id, updateSubmission, showToast]);
 
   return (
     <div className="space-y-6">
@@ -396,10 +428,18 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
 
           <div className="flex gap-3">
             <Button variant="outline" onClick={onBack}>Cancel</Button>
-            <Button>Save Changes</Button>
+            <Button onClick={handleSave} disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save Changes'}
+            </Button>
           </div>
         </CardContent>
       </Card>
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={hideToast}
+      />
     </div>
   );
 }
