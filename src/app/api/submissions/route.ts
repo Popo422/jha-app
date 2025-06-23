@@ -8,6 +8,46 @@ import { sendEventToUser } from '@/lib/sse-service'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
+// Helper function to authenticate and get user info
+function authenticateRequest(request: NextRequest): { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any } {
+  // Try admin token first
+  const adminToken = request.cookies.get('adminAuthToken')?.value || 
+                    (request.headers.get('Authorization')?.startsWith('AdminBearer ') ? 
+                     request.headers.get('Authorization')?.replace('AdminBearer ', '') : null)
+  
+  if (adminToken) {
+    try {
+      const decoded = jwt.verify(adminToken, JWT_SECRET) as AdminTokenPayload
+      if (decoded.admin && decoded.isAdmin) {
+        return { isAdmin: true, admin: decoded.admin }
+      }
+    } catch (error) {
+      // Continue to try user token
+    }
+  }
+
+  // Try user token
+  const userToken = request.cookies.get('authToken')?.value || 
+                   (request.headers.get('Authorization')?.startsWith('Bearer ') ? 
+                    request.headers.get('Authorization')?.replace('Bearer ', '') : null)
+
+  if (userToken) {
+    try {
+      const decoded = jwt.verify(userToken, JWT_SECRET) as TokenPayload
+      return { 
+        isAdmin: false, 
+        userId: decoded.user.id, 
+        userName: decoded.user.name,
+        contractor: decoded.contractor 
+      }
+    } catch (error) {
+      throw new Error('Invalid token')
+    }
+  }
+
+  throw new Error('No valid authentication token found')
+}
+
 interface AuthUser {
   id: string
   email: string
@@ -23,6 +63,18 @@ interface AuthContractor {
 interface TokenPayload {
   user: AuthUser
   contractor: AuthContractor
+  iat: number
+  exp: number
+}
+
+interface AdminTokenPayload {
+  admin: {
+    id: string
+    employeeId: string
+    name: string
+    role: string
+  }
+  isAdmin: boolean
   iat: number
   exp: number
 }
@@ -154,24 +206,13 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get token from cookie or Authorization header
-    const token = request.cookies.get('authToken')?.value || 
-                  request.headers.get('Authorization')?.replace('Bearer ', '')
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
-    // Verify JWT token
-    let decoded: TokenPayload
+    // Authenticate request
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any }
     try {
-      decoded = jwt.verify(token, JWT_SECRET) as TokenPayload
+      auth = authenticateRequest(request)
     } catch (error) {
       return NextResponse.json(
-        { error: 'Invalid token' },
+        { error: 'Authentication required' },
         { status: 401 }
       )
     }
@@ -182,25 +223,50 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    // Build query conditions - filter by user ID for user's own submissions
-    const conditions = [eq(submissions.userId, decoded.user.id)]
+    // Build query conditions
+    const conditions = []
     
+    // If not admin, filter by user ID for user's own submissions only
+    if (!auth.isAdmin && auth.userId) {
+      conditions.push(eq(submissions.userId, auth.userId))
+    }
+    
+    // Add submission type filter if specified
     if (submissionType) {
       conditions.push(eq(submissions.submissionType, submissionType))
     }
 
-    const result = await db.select().from(submissions)
-      .where(conditions.length > 1 ? and(...conditions) : conditions[0])
-      .orderBy(desc(submissions.createdAt))
-      .limit(limit)
-      .offset(offset)
+    // Execute query - handle different condition scenarios
+    let result
+    if (conditions.length === 0) {
+      // No conditions - admin viewing all submissions
+      result = await db.select().from(submissions)
+        .orderBy(desc(submissions.createdAt))
+        .limit(limit)
+        .offset(offset)
+    } else if (conditions.length === 1) {
+      // Single condition
+      result = await db.select().from(submissions)
+        .where(conditions[0])
+        .orderBy(desc(submissions.createdAt))
+        .limit(limit)
+        .offset(offset)
+    } else {
+      // Multiple conditions
+      result = await db.select().from(submissions)
+        .where(and(...conditions))
+        .orderBy(desc(submissions.createdAt))
+        .limit(limit)
+        .offset(offset)
+    }
 
     return NextResponse.json({
       submissions: result,
       meta: {
         limit,
         offset,
-        userId: decoded.user.id
+        isAdmin: auth.isAdmin,
+        userId: auth.userId || null
       }
     })
 
@@ -215,24 +281,13 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    // Get token from cookie or Authorization header
-    const token = request.cookies.get('authToken')?.value || 
-                  request.headers.get('Authorization')?.replace('Bearer ', '')
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
-    // Verify JWT token
-    let decoded: TokenPayload
+    // Authenticate request
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any }
     try {
-      decoded = jwt.verify(token, JWT_SECRET) as TokenPayload
+      auth = authenticateRequest(request)
     } catch (error) {
       return NextResponse.json(
-        { error: 'Invalid token' },
+        { error: 'Authentication required' },
         { status: 401 }
       )
     }
@@ -248,35 +303,48 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // First check if the submission exists and belongs to the user
+    // Build conditions based on user type
+    const conditions = [eq(submissions.id, submissionId)]
+    
+    // If not admin, also check that the submission belongs to the user
+    if (!auth.isAdmin && auth.userId) {
+      conditions.push(eq(submissions.userId, auth.userId))
+    }
+
+    // First check if the submission exists (and belongs to user if not admin)
     const existingSubmission = await db.select().from(submissions)
-      .where(and(
-        eq(submissions.id, submissionId),
-        eq(submissions.userId, decoded.user.id)
-      ))
+      .where(conditions.length > 1 ? and(...conditions) : conditions[0])
       .limit(1)
 
     if (existingSubmission.length === 0) {
       return NextResponse.json(
-        { error: 'Submission not found or you do not have permission to delete it' },
+        { error: auth.isAdmin ? 'Submission not found' : 'Submission not found or you do not have permission to delete it' },
         { status: 404 }
       )
     }
 
     // Delete the submission
     await db.delete(submissions)
-      .where(and(
-        eq(submissions.id, submissionId),
-        eq(submissions.userId, decoded.user.id)
-      ))
+      .where(eq(submissions.id, submissionId))
 
-    // Send SSE event to user about the deleted submission
-    sendEventToUser(decoded.user.id, 'submission_deleted', {
-      submissionId: submissionId,
-      submissionType: existingSubmission[0].submissionType,
-      date: existingSubmission[0].date,
-      jobSite: existingSubmission[0].jobSite
-    })
+    // Send SSE event to the submission owner about the deleted submission (if not admin deleting)
+    if (!auth.isAdmin && auth.userId) {
+      sendEventToUser(auth.userId, 'submission_deleted', {
+        submissionId: submissionId,
+        submissionType: existingSubmission[0].submissionType,
+        date: existingSubmission[0].date,
+        jobSite: existingSubmission[0].jobSite
+      })
+    } else if (auth.isAdmin) {
+      // Send SSE event to the original submission owner if admin is deleting
+      sendEventToUser(existingSubmission[0].userId, 'submission_deleted', {
+        submissionId: submissionId,
+        submissionType: existingSubmission[0].submissionType,
+        date: existingSubmission[0].date,
+        jobSite: existingSubmission[0].jobSite,
+        deletedByAdmin: true
+      })
+    }
 
     return NextResponse.json({
       success: true,

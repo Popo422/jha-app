@@ -35,7 +35,8 @@ export interface GetSubmissionsResponse {
   meta: {
     limit: number
     offset: number
-    userId: string
+    isAdmin: boolean
+    userId: string | null
   }
 }
 
@@ -50,12 +51,15 @@ export const submissionsApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: '/api/submissions',
     prepareHeaders: (headers, { getState }) => {
-      // Get token from Redux state
-      const token = (getState() as RootState).auth.token
+      const state = getState() as RootState
       
-      // If we have a token, add it to headers
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`)
+      // Check for admin token first (admin has priority)
+      if (state.auth.adminToken && state.auth.isAdminAuthenticated) {
+        headers.set('Authorization', `AdminBearer ${state.auth.adminToken}`)
+      }
+      // Otherwise use regular user token
+      else if (state.auth.token && state.auth.isAuthenticated) {
+        headers.set('Authorization', `Bearer ${state.auth.token}`)
       }
       
       return headers
