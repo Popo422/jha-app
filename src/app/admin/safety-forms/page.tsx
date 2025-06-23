@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import JobHazardAnalysisEdit from "@/components/admin/JobHazardAnalysisEdit";
+import StartOfDayEdit from "@/components/admin/StartOfDayEdit";
+import EndOfDayEdit from "@/components/admin/EndOfDayEdit";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -19,7 +22,7 @@ import {
   Trash2, 
   Edit, 
   ChevronDown,
-  ArrowUpDown
+  ArrowUpDown,
 } from "lucide-react";
 import {
   useReactTable,
@@ -330,6 +333,7 @@ export default function SafetyFormsPage() {
     window.URL.revokeObjectURL(url);
   }, [table]);
 
+
   // Skeleton component for loading state
   const TableSkeleton = () => (
     <div className="rounded-md border">
@@ -393,6 +397,36 @@ export default function SafetyFormsPage() {
       </table>
     </div>
   );
+
+  // Render edit form or table based on editing state
+  if (editingSubmission) {
+    return (
+      <div className="p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="p-6">
+            {editingSubmission.submissionType === 'job-hazard-analysis' && (
+              <JobHazardAnalysisEdit 
+                submission={editingSubmission} 
+                onBack={() => setEditingSubmission(null)} 
+              />
+            )}
+            {editingSubmission.submissionType === 'start-of-day' && (
+              <StartOfDayEdit 
+                submission={editingSubmission} 
+                onBack={() => setEditingSubmission(null)} 
+              />
+            )}
+            {editingSubmission.submissionType === 'end-of-day' && (
+              <EndOfDayEdit 
+                submission={editingSubmission} 
+                onBack={() => setEditingSubmission(null)} 
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -629,32 +663,6 @@ export default function SafetyFormsPage() {
         </div>
         </div>
       </div>
-      
-      {/* Edit Modal Placeholder */}
-      {editingSubmission && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Edit Submission</h2>
-              <Button 
-                variant="ghost" 
-                onClick={() => setEditingSubmission(null)}
-                className="h-8 w-8 p-0"
-              >
-                ×
-              </Button>
-            </div>
-            <div className="space-y-4">
-              <p>Editing functionality will be implemented to reuse contractor forms.</p>
-              <p><strong>Type:</strong> {getSubmissionTypeLabel(editingSubmission.submissionType)}</p>
-              <p><strong>Contractor:</strong> {editingSubmission.completedBy}</p>
-              <p><strong>Company:</strong> {editingSubmission.company}</p>
-              <p><strong>Job Site:</strong> {editingSubmission.jobSite}</p>
-              <p><strong>Date:</strong> {new Date(editingSubmission.date).toLocaleDateString()}</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
