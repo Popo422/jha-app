@@ -124,7 +124,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
           {/* Instructions */}
           <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              <strong>Instructions:</strong> Any injuries or COVID-19 related symptoms must be reported to your supervisor immediately. Please Answer "Yes" or "No"
+              <strong>Instructions:</strong> {`Any injuries or COVID-19 related symptoms must be reported to your supervisor immediately. Please Answer "Yes" or "No"`}
             </p>
           </div>
 
@@ -265,7 +265,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
               {/* Travel question */}
               <div className="space-y-2">
                 <Label className="font-medium">
-                  Have you traveled out of the country, visited a "hotspot state" or went on a cruise in the last 14 days?
+                  {`Have you traveled out of the country, visited a "hotspot state" or went on a cruise in the last 14 days?`}
                 </Label>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
