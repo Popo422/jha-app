@@ -58,67 +58,6 @@ export default function ContractTrackerPage() {
         <h1 className="text-3xl font-bold text-gray-900">Contractor Tracker</h1>
         <p className="text-gray-600 mt-1">Manage and monitor all contractor agreements</p>
       </div>
-
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex space-x-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search contracts..." 
-              className="pl-10 w-64"
-            />
-          </div>
-          <Button variant="outline">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
-        </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New Contract
-        </Button>
-      </div>
-
-      <div className="grid gap-4">
-        {contracts.map((contract) => (
-          <Card key={contract.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{contract.contractorName}</CardTitle>
-                  <CardDescription className="mt-1">
-                    {contract.projectName} • {contract.id}
-                  </CardDescription>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(contract.status)}`}>
-                  {contract.status}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="font-medium text-muted-foreground">Start Date</p>
-                  <p>{new Date(contract.startDate).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="font-medium text-muted-foreground">End Date</p>
-                  <p>{new Date(contract.endDate).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="font-medium text-muted-foreground">Contract Value</p>
-                  <p className="font-semibold">{contract.value}</p>
-                </div>
-                <div className="flex justify-end">
-                  <Button variant="outline" size="sm">
-                    View Details
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
     </div>
   )
 }
