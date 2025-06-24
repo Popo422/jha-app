@@ -56,6 +56,8 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
       let dateTimeClocked = null;
       if (formData.timeClocked && formData.date) {
         dateTimeClocked = `${formData.date}T${formData.timeClocked}:00`;
+      }else{
+        dateTimeClocked = submission.dateTimeClocked
       }
 
       const result = await updateSubmission({
@@ -64,7 +66,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
         date: formData.date,
         company: formData.company,
         jobSite: formData.jobSite,
-        dateTimeClocked: dateTimeClocked,
+        dateTimeClocked: dateTimeClocked  ,
         formData: formData
       }).unwrap();
 

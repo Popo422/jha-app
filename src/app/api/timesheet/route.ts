@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { timesheets } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,6 +44,31 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Error submitting timesheet:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
+
+    const results = await db.select().from(timesheets).limit(limit).offset(offset);
+
+    return NextResponse.json({
+      timesheets: results,
+      meta: {
+        limit,
+        offset,
+        userId: 'user-placeholder' // TODO: Get from auth context
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching timesheets:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

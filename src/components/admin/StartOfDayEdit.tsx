@@ -57,6 +57,8 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
       let dateTimeClocked = null;
       if (formData.timeClocked && formData.date) {
         dateTimeClocked = `${formData.date}T${formData.timeClocked}:00`;
+      }else{
+        dateTimeClocked = submission.dateTimeClocked
       }
 
       const result = await updateSubmission({

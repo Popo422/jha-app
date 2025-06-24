@@ -9,7 +9,8 @@
       "Bash(rm:*)",
       "Bash(npm run dev:*)",
       "Bash(npx tsc:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run lint)"
     ],
     "deny": []
   }

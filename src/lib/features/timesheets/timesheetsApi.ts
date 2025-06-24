@@ -38,6 +38,12 @@ export interface GetTimesheetsResponse {
   }
 }
 
+export interface DeleteTimesheetResponse {
+  success: boolean
+  message?: string
+  error?: string
+}
+
 export const timesheetsApi = createApi({
   reducerPath: 'timesheetsApi',
   baseQuery: fetchBaseQuery({
@@ -78,11 +84,19 @@ export const timesheetsApi = createApi({
       },
       providesTags: ['Timesheet'],
     }),
+    deleteTimesheet: builder.mutation<DeleteTimesheetResponse, string>({
+      query: (id) => ({
+        url: `/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Timesheet'],
+    }),
   }),
 })
 
 export const { 
   useSubmitTimesheetMutation, 
   useGetTimesheetsQuery,
-  useLazyGetTimesheetsQuery 
+  useLazyGetTimesheetsQuery,
+  useDeleteTimesheetMutation
 } = timesheetsApi
