@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useSubmitFormMutation } from "@/lib/features/submissions/submissionsApi";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
@@ -14,6 +14,7 @@ import Link from "next/link";
 import HazardIdentificationSection from "@/components/forms/HazardIdentificationSection";
 import PPERequirementsSection from "@/components/forms/PPERequirementsSection";
 import FallProtectionSection from "@/components/forms/FallProtectionSection";
+import SignatureCanvas from "react-signature-canvas";
 
 interface JobHazardAnalysisFormData {
   completedBy: string;
@@ -123,10 +124,12 @@ interface JobHazardAnalysisFormData {
     additionalNotes: string;
   };
   photos: File[];
+  signature: string;
 }
 
 export default function JobHazardReportPage() {
   const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
+  const signatureRef = useRef<SignatureCanvas>(null);
   
   const [formData, setFormData] = useState<JobHazardAnalysisFormData>({
     completedBy: "",
@@ -236,6 +239,7 @@ export default function JobHazardReportPage() {
       additionalNotes: "",
     },
     photos: [],
+    signature: "",
   });
 
   const resetFormData = useCallback(() => {
@@ -347,7 +351,11 @@ export default function JobHazardReportPage() {
         additionalNotes: "",
       },
       photos: [],
+      signature: "",
     });
+    if (signatureRef.current) {
+      signatureRef.current.clear();
+    }
   }, []);
 
   // Reset form on successful submission
@@ -415,6 +423,26 @@ export default function JobHazardReportPage() {
     }));
   }, []);
 
+  const handleSignatureClear = useCallback(() => {
+    if (signatureRef.current) {
+      signatureRef.current.clear();
+      setFormData((prev) => ({
+        ...prev,
+        signature: "",
+      }));
+    }
+  }, []);
+
+  const handleSignatureEnd = useCallback(() => {
+    if (signatureRef.current) {
+      const signatureData = signatureRef.current.toDataURL();
+      setFormData((prev) => ({
+        ...prev,
+        signature: signatureData,
+      }));
+    }
+  }, []);
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     reset(); // Reset mutation state
@@ -437,6 +465,7 @@ export default function JobHazardReportPage() {
         stepLadder: formData.stepLadder,
         extensionLadder: formData.extensionLadder,
         additionalSafety: formData.additionalSafety,
+        signature: formData.signature,
       },
       files: formData.photos,
     });
@@ -1079,6 +1108,43 @@ export default function JobHazardReportPage() {
                   </CardContent>
                 </Card>
 
+                {/* Signature Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-md md:text-xl">Digital Signature</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Please sign below to confirm the accuracy of this analysis:</Label>
+                      <div className="border border-gray-300 rounded-lg p-2 bg-white">
+                        <SignatureCanvas
+                          ref={signatureRef}
+                          canvasProps={{
+                            width: 400,
+                            height: 200,
+                            className: "signature-canvas w-full max-w-md mx-auto border rounded"
+                          }}
+                          onEnd={handleSignatureEnd}
+                        />
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSignatureClear}
+                          className="text-sm"
+                        >
+                          Clear Signature
+                        </Button>
+                      </div>
+                      {!formData.signature && (
+                        <p className="text-sm text-red-600">Signature is required to submit the form.</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {isSuccess && (
                   <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800">
                     Job Hazard Analysis submitted successfully!
@@ -1093,7 +1159,7 @@ export default function JobHazardReportPage() {
                   </div>
                 )}
 
-                <Button type="submit" disabled={isLoading} className="w-full rounded-none">
+                <Button type="submit" disabled={isLoading || !formData.signature} className="w-full rounded-none">
                   {isLoading ? 'Submitting...' : 'Submit'}
                 </Button>
               </form>

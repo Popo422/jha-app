@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSubmitFormMutation } from "@/lib/features/submissions/submissionsApi";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, X } from "lucide-react";
 import Link from "next/link";
+import SignatureCanvas from "react-signature-canvas";
 
 interface EndOfDayReportFormData {
   completedBy: string;
@@ -27,6 +28,7 @@ interface EndOfDayReportFormData {
   traveledOutOfCountry: boolean | null;
   physicalDistancing: boolean | null;
   attachments: File[];
+  signature: string;
 }
 
 export default function EndOfDayReportPage() {
@@ -45,7 +47,10 @@ export default function EndOfDayReportPage() {
     traveledOutOfCountry: null,
     physicalDistancing: null,
     attachments: [],
+    signature: "",
   });
+
+  const signatureRef = useRef<SignatureCanvas>(null);
 
   const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
 
@@ -81,6 +86,26 @@ export default function EndOfDayReportPage() {
     }));
   };
 
+  const handleSignatureClear = () => {
+    if (signatureRef.current) {
+      signatureRef.current.clear();
+      setFormData((prev) => ({
+        ...prev,
+        signature: "",
+      }));
+    }
+  };
+
+  const handleSignatureEnd = () => {
+    if (signatureRef.current) {
+      const signatureData = signatureRef.current.toDataURL();
+      setFormData((prev) => ({
+        ...prev,
+        signature: signatureData,
+      }));
+    }
+  };
+
   // Reset form on successful submission
   useEffect(() => {
     if (isSuccess) {
@@ -99,7 +124,11 @@ export default function EndOfDayReportPage() {
         traveledOutOfCountry: null,
         physicalDistancing: null,
         attachments: [],
+        signature: "",
       });
+      if (signatureRef.current) {
+        signatureRef.current.clear();
+      }
     }
   }, [isSuccess]);
 
@@ -129,6 +158,7 @@ export default function EndOfDayReportPage() {
         freeFromDirectExposure: formData.freeFromDirectExposure,
         traveledOutOfCountry: formData.traveledOutOfCountry,
         physicalDistancing: formData.physicalDistancing,
+        signature: formData.signature,
       },
       files: formData.attachments,
     });
@@ -517,6 +547,43 @@ export default function EndOfDayReportPage() {
                   </CardContent>
                 </Card>
 
+                {/* Signature Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-md md:text-xl">Digital Signature</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Please sign below to confirm the accuracy of this report:</Label>
+                      <div className="border border-gray-300 rounded-lg p-2 bg-white">
+                        <SignatureCanvas
+                          ref={signatureRef}
+                          canvasProps={{
+                            width: 400,
+                            height: 200,
+                            className: "signature-canvas w-full max-w-md mx-auto border rounded"
+                          }}
+                          onEnd={handleSignatureEnd}
+                        />
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSignatureClear}
+                          className="text-sm"
+                        >
+                          Clear Signature
+                        </Button>
+                      </div>
+                      {!formData.signature && (
+                        <p className="text-sm text-red-600">Signature is required to submit the form.</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {isSuccess && (
                   <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800">
                     End of Day Report submitted successfully!
@@ -531,7 +598,7 @@ export default function EndOfDayReportPage() {
                   </div>
                 )}
 
-                <Button type="submit" disabled={isLoading} className="w-full rounded-none">
+                <Button type="submit" disabled={isLoading || !formData.signature} className="w-full rounded-none">
                   {isLoading ? 'Submitting...' : 'Submit'}
                 </Button>
               </form>

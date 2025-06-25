@@ -163,6 +163,35 @@ export async function POST(request: NextRequest) {
     // Add uploaded files to form data
     parsedFormData.uploadedFiles = uploadedFiles
 
+    // Handle signature upload if present
+    if (parsedFormData.signature && parsedFormData.signature.startsWith('data:image/')) {
+      try {
+        // Convert base64 signature to blob
+        const base64Data = parsedFormData.signature.split(',')[1]
+        const mimeType = parsedFormData.signature.split(';')[0].split(':')[1]
+        const buffer = Buffer.from(base64Data, 'base64')
+        
+        // Create a unique filename for the signature
+        const timestamp = Date.now()
+        const filename = `signature-${decoded.user.id}-${timestamp}.png`
+        
+        // Upload signature to blob storage
+        const signatureBlob = await put(filename, buffer, {
+          access: 'public',
+          contentType: mimeType,
+        })
+        
+        // Replace base64 data with blob URL
+        parsedFormData.signature = signatureBlob.url
+      } catch (error) {
+        console.error('Signature upload error:', error)
+        return NextResponse.json(
+          { error: 'Signature upload failed' },
+          { status: 500 }
+        )
+      }
+    }
+
     // Create submission record
     const submission = await db.insert(submissions).values({
       userId: decoded.user.id,
@@ -404,6 +433,37 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // Handle signature upload if present in formData
+    let processedFormData = formData
+    if (formData && formData.signature && formData.signature.startsWith('data:image/')) {
+      try {
+        // Convert base64 signature to blob
+        const base64Data = formData.signature.split(',')[1]
+        const mimeType = formData.signature.split(';')[0].split(':')[1]
+        const buffer = Buffer.from(base64Data, 'base64')
+        
+        // Create a unique filename for the signature
+        const timestamp = Date.now()
+        const userId = auth.userId || existingSubmission[0].userId
+        const filename = `signature-${userId}-${timestamp}.png`
+        
+        // Upload signature to blob storage
+        const signatureBlob = await put(filename, buffer, {
+          access: 'public',
+          contentType: mimeType,
+        })
+        
+        // Replace base64 data with blob URL
+        processedFormData = { ...formData, signature: signatureBlob.url }
+      } catch (error) {
+        console.error('Signature upload error:', error)
+        return NextResponse.json(
+          { error: 'Signature upload failed' },
+          { status: 500 }
+        )
+      }
+    }
+
     // Build update object with only provided fields
     const updateData: any = {}
     if (completedBy !== undefined) updateData.completedBy = completedBy
@@ -413,7 +473,7 @@ export async function PUT(request: NextRequest) {
     }
     if (company !== undefined) updateData.company = company
     if (jobSite !== undefined) updateData.jobSite = jobSite
-    if (formData !== undefined) updateData.formData = formData
+    if (processedFormData !== undefined) updateData.formData = processedFormData
 
     // Update the submission
     const updatedSubmission = await db.update(submissions)

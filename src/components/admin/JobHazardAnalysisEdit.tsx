@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import HazardIdentificationSection from "@/components/forms/HazardIdentification
 import PPERequirementsSection from "@/components/forms/PPERequirementsSection";
 import FallProtectionSection from "@/components/forms/FallProtectionSection";
 import { ArrowLeft } from "lucide-react";
+import SignatureCanvas from "react-signature-canvas";
 
 interface Submission {
   id: string;
@@ -36,6 +37,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
   const [formData, setFormData] = useState(submission.formData);
   const [updateSubmission, { isLoading }] = useUpdateSubmissionMutation();
   const { toast, showToast, hideToast } = useToast();
+  const signatureRef = useRef<SignatureCanvas>(null);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target as HTMLInputElement;
@@ -79,6 +81,36 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
       };
     });
   }, []);
+
+  const handleSignatureClear = () => {
+    if (signatureRef.current) {
+      signatureRef.current.clear();
+      setFormData((prev: any) => ({
+        ...prev,
+        signature: "",
+      }));
+    }
+  };
+
+  const handleSignatureEnd = () => {
+    if (signatureRef.current) {
+      const signatureData = signatureRef.current.toDataURL();
+      setFormData((prev: any) => ({
+        ...prev,
+        signature: signatureData,
+      }));
+    }
+  };
+
+  const handleSignatureStart = () => {
+    // If there's an existing signature URL (not base64), clear it when user starts drawing
+    if (formData.signature && !formData.signature.startsWith('data:image/')) {
+      setFormData((prev: any) => ({
+        ...prev,
+        signature: "",
+      }));
+    }
+  };
 
   const handleSave = useCallback(async () => {
     try {
@@ -488,6 +520,49 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                   rows={4}
                   placeholder="Any additional safety considerations or notes..."
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Signature Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Digital Signature</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Employee Signature:</Label>
+                <div className="border border-gray-300 rounded-lg p-2 bg-white">
+                  <SignatureCanvas
+                    ref={signatureRef}
+                    canvasProps={{
+                      width: 400,
+                      height: 200,
+                      className: "signature-canvas w-full max-w-md mx-auto border rounded"
+                    }}
+                    onBegin={handleSignatureStart}
+                    onEnd={handleSignatureEnd}
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSignatureClear}
+                    className="text-sm"
+                  >
+                    Clear Signature
+                  </Button>
+                </div>
+                {formData.signature && (
+                  <div className="mt-2">
+                    <Label>Current Signature:</Label>
+                    <div className="border border-gray-200 rounded p-2">
+                      <img src={formData.signature} alt="Current signature" className="max-w-md max-h-40" />
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
