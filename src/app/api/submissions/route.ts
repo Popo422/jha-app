@@ -145,6 +145,7 @@ export async function POST(request: NextRequest) {
         try {
           const blob = await put(file.name, file, {
             access: 'public',
+            addRandomSuffix: true,
           })
           uploadedFiles.push({
             filename: file.name,
@@ -179,6 +180,7 @@ export async function POST(request: NextRequest) {
         const signatureBlob = await put(filename, buffer, {
           access: 'public',
           contentType: mimeType,
+          addRandomSuffix: true,
         })
         
         // Replace base64 data with blob URL
@@ -451,6 +453,7 @@ export async function PUT(request: NextRequest) {
         const signatureBlob = await put(filename, buffer, {
           access: 'public',
           contentType: mimeType,
+          addRandomSuffix: true,
         })
         
         // Replace base64 data with blob URL

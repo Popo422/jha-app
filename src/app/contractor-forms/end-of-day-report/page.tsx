@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, X } from "lucide-react";
 import Link from "next/link";
 import SignatureCanvas from "react-signature-canvas";
+import AttachmentPreview from "@/components/AttachmentPreview";
 
 interface EndOfDayReportFormData {
   completedBy: string;
@@ -516,29 +517,21 @@ export default function EndOfDayReportPage() {
                         type="file"
                         id="attachments"
                         multiple
+                        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
                         onChange={handleFileUpload}
                         className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                       />
                       {formData.attachments.length > 0 && (
                         <div className="mt-2">
                           <p className="text-sm text-gray-600">Selected files:</p>
-                          <div className="space-y-2">
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
                             {formData.attachments.map((file, index) => (
-                              <div
+                              <AttachmentPreview
                                 key={index}
-                                className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 rounded"
-                              >
-                                <span className="text-xs text-gray-500 dark:text-gray-400">{file.name}</span>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteFile(index)}
-                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
+                                file={file}
+                                onDelete={() => handleDeleteFile(index)}
+                                showDeleteButton={true}
+                              />
                             ))}
                           </div>
                         </div>

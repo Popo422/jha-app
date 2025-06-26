@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Toast, useToast } from "@/components/ui/toast";
-import { useUpdateSubmissionMutation } from "@/lib/features/submissions/submissionsApi";
+import { useUpdateSubmissionMutation, useDeleteAttachmentMutation } from "@/lib/features/submissions/submissionsApi";
 import { ArrowLeft } from "lucide-react";
 import SignatureCanvas from "react-signature-canvas";
+import AttachmentPreview from "@/components/AttachmentPreview";
 
 interface Submission {
   id: string;
@@ -32,7 +33,9 @@ interface StartOfDayEditProps {
 
 export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditProps) {
   const [formData, setFormData] = useState(submission.formData);
+  const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
   const [updateSubmission, { isLoading }] = useUpdateSubmissionMutation();
+  const [deleteAttachment] = useDeleteAttachmentMutation();
   const { toast, showToast, hideToast } = useToast();
   const signatureRef = useRef<SignatureCanvas>(null);
 
@@ -82,6 +85,37 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
       }));
     }
   };
+
+  const handleDeleteAttachment = useCallback(async (fileUrl: string, fileName: string) => {
+    try {
+      setDeletingFiles(prev => new Set(prev).add(fileUrl));
+      
+      const result = await deleteAttachment({
+        submissionId: submission.id,
+        fileUrl,
+        fileName
+      }).unwrap();
+
+      if (result.success) {
+        // Remove the file from local state
+        setFormData((prev: any) => ({
+          ...prev,
+          uploadedFiles: (prev.uploadedFiles || []).filter((file: any) => file.url !== fileUrl)
+        }));
+        showToast('Attachment deleted successfully!', 'success');
+      } else {
+        showToast(result.error || 'Failed to delete attachment', 'error');
+      }
+    } catch (error: any) {
+      showToast(error?.data?.error || 'Failed to delete attachment', 'error');
+    } finally {
+      setDeletingFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fileUrl);
+        return newSet;
+      });
+    }
+  }, [submission.id, deleteAttachment, showToast]);
 
   const handleSave = useCallback(async () => {
     try {
@@ -416,6 +450,37 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                     <Label htmlFor="distancing-no">No</Label>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* File Attachments Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>File Attachments</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Attached Files:</Label>
+                {formData.uploadedFiles && formData.uploadedFiles.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {formData.uploadedFiles.map((file: any, index: number) => (
+                      <AttachmentPreview
+                        key={index}
+                        file={{
+                          name: file.filename,
+                          url: file.url,
+                          filename: file.filename
+                        }}
+                        showDeleteButton={true}
+                        onDelete={() => handleDeleteAttachment(file.url, file.filename)}
+                        isDeleting={deletingFiles.has(file.url)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No files attached</p>
+                )}
               </div>
             </CardContent>
           </Card>

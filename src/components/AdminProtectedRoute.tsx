@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { useAppDispatch } from '@/lib/hooks'
+import { restoreAdminAuth, adminLoginFailure } from '@/lib/features/auth/authSlice'
 
 interface AdminProtectedRouteProps {
   children: React.ReactNode
@@ -25,6 +27,7 @@ export default function AdminProtectedRoute({ children }: AdminProtectedRoutePro
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
+  const dispatch = useAppDispatch()
 
   useEffect(() => {
     const checkAdminAuth = async () => {
@@ -58,13 +61,24 @@ export default function AdminProtectedRoute({ children }: AdminProtectedRoutePro
         if (response.ok) {
           const data: AdminAuth = await response.json()
           setIsAuthenticated(data.isAdmin)
+          
+          // Store admin auth data in Redux store
+          if (data.isAdmin && data.admin && data.token) {
+            dispatch(restoreAdminAuth({
+              admin: data.admin,
+              token: data.token
+            }))
+            console.log('Admin auth restored in Redux store')
+          }
         } else {
           // Invalid token, redirect to login
+          dispatch(adminLoginFailure())
           document.cookie = 'adminAuthToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
           router.push('/admin/login')
         }
       } catch (error) {
         console.error('Admin auth check error:', error)
+        dispatch(adminLoginFailure())
         router.push('/admin/login')
       } finally {
         setIsLoading(false)

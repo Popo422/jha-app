@@ -63,6 +63,18 @@ export interface UpdateSubmissionResponse {
   error?: string
 }
 
+export interface DeleteAttachmentData {
+  submissionId: string
+  fileUrl: string
+  fileName?: string
+}
+
+export interface DeleteAttachmentResponse {
+  success: boolean
+  message?: string
+  error?: string
+}
+
 export const submissionsApi = createApi({
   reducerPath: 'submissionsApi',
   baseQuery: fetchBaseQuery({
@@ -77,6 +89,11 @@ export const submissionsApi = createApi({
       // Otherwise use regular user token
       else if (state.auth.token && state.auth.isAuthenticated) {
         headers.set('Authorization', `Bearer ${state.auth.token}`)
+      }
+      
+      // Ensure content-type is set for JSON requests
+      if (!headers.get('content-type')) {
+        headers.set('content-type', 'application/json')
       }
       
       return headers
@@ -147,6 +164,14 @@ export const submissionsApi = createApi({
       }),
       invalidatesTags: ['Submission'],
     }),
+    deleteAttachment: builder.mutation<DeleteAttachmentResponse, DeleteAttachmentData>({
+      query: (data) => ({
+        url: '/attachments',
+        method: 'DELETE',
+        body: data,
+      }),
+      invalidatesTags: ['Submission'],
+    }),
   }),
 })
 
@@ -155,5 +180,6 @@ export const {
   useGetSubmissionsQuery,
   useLazyGetSubmissionsQuery,
   useDeleteSubmissionMutation,
-  useUpdateSubmissionMutation
+  useUpdateSubmissionMutation,
+  useDeleteAttachmentMutation
 } = submissionsApi
