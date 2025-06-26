@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { useGetTimesheetsQuery, useDeleteTimesheetMutation, type Timesheet } from "@/lib/features/timesheets/timesheetsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
+import TimesheetEdit from "@/components/admin/TimesheetEdit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 const columnHelper = createColumnHelper<Timesheet>();
 
 export default function TimeFormsPage() {
+  const [selectedTimesheet, setSelectedTimesheet] = useState<Timesheet | null>(null);
   const { data: timesheetsData, refetch, isLoading, isFetching } = useGetTimesheetsQuery({
     limit: 1000,
     offset: 0
@@ -27,6 +29,15 @@ export default function TimeFormsPage() {
   const [deleteTimesheet] = useDeleteTimesheetMutation();
 
   const data = timesheetsData?.timesheets || [];
+
+  const handleEdit = useCallback((timesheet: Timesheet) => {
+    setSelectedTimesheet(timesheet);
+  }, []);
+
+  const handleBackToList = useCallback(() => {
+    setSelectedTimesheet(null);
+    refetch(); // Refresh data when returning to list
+  }, [refetch]);
 
   const handleSingleDelete = useCallback(async (id: string) => {
     await deleteTimesheet(id);
@@ -203,6 +214,13 @@ export default function TimeFormsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem 
+                onClick={() => handleEdit(timesheet)}
+                className="cursor-pointer"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </DropdownMenuItem>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem 
@@ -236,7 +254,16 @@ export default function TimeFormsPage() {
         </div>
       </CardContent>
     </Card>
-  ), [handleSingleDelete]);
+  ), [handleEdit, handleSingleDelete]);
+
+  if (selectedTimesheet) {
+    return (
+      <TimesheetEdit 
+        timesheet={selectedTimesheet}
+        onBack={handleBackToList}
+      />
+    );
+  }
 
   return (
     <div className="p-4 md:p-6">
@@ -252,6 +279,7 @@ export default function TimeFormsPage() {
         columns={columns}
         isLoading={isLoading}
         isFetching={isFetching}
+        onEdit={handleEdit}
         onDelete={handleSingleDelete}
         onBulkDelete={handleBulkDelete}
         getRowId={(timesheet) => timesheet.id}

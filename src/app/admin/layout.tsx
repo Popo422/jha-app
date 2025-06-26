@@ -21,7 +21,7 @@ export default function AdminLayout({
 
   return (
     <AdminProtectedRoute>
-      <div className="h-screen flex bg-gray-50">
+      <div className="h-screen flex bg-gray-50 dark:bg-gray-900">
         {/* Sidebar */}
         <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         

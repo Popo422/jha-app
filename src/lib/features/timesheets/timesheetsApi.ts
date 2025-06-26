@@ -44,17 +44,42 @@ export interface DeleteTimesheetResponse {
   error?: string
 }
 
+export interface UpdateTimesheetData {
+  id: string
+  date: string
+  employee: string
+  company: string
+  jobSite: string
+  jobDescription: string
+  timeSpent: string
+}
+
+export interface UpdateTimesheetResponse {
+  success: boolean
+  timesheet?: Timesheet
+  message?: string
+  error?: string
+}
+
 export const timesheetsApi = createApi({
   reducerPath: 'timesheetsApi',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api/timesheet',
     prepareHeaders: (headers, { getState }) => {
-      // Get token from Redux state
-      const token = (getState() as RootState).auth.token
+      const state = getState() as RootState
       
-      // If we have a token, add it to headers
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`)
+      // Check for admin token first (admin has priority)
+      if (state.auth.adminToken && state.auth.isAdminAuthenticated) {
+        headers.set('Authorization', `AdminBearer ${state.auth.adminToken}`)
+      }
+      // Otherwise use regular user token
+      else if (state.auth.token && state.auth.isAuthenticated) {
+        headers.set('Authorization', `Bearer ${state.auth.token}`)
+      }
+      
+      // Ensure content-type is set for JSON requests
+      if (!headers.get('content-type')) {
+        headers.set('content-type', 'application/json')
       }
       
       return headers
@@ -91,6 +116,14 @@ export const timesheetsApi = createApi({
       }),
       invalidatesTags: ['Timesheet'],
     }),
+    updateTimesheet: builder.mutation<UpdateTimesheetResponse, UpdateTimesheetData>({
+      query: (data) => ({
+        url: '',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Timesheet'],
+    }),
   }),
 })
 
@@ -98,5 +131,6 @@ export const {
   useSubmitTimesheetMutation, 
   useGetTimesheetsQuery,
   useLazyGetTimesheetsQuery,
-  useDeleteTimesheetMutation
+  useDeleteTimesheetMutation,
+  useUpdateTimesheetMutation
 } = timesheetsApi

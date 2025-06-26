@@ -493,7 +493,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Employee Signature:</Label>
-                <div className="border border-gray-300 rounded-lg p-2 bg-white">
+                <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800">
                   <SignatureCanvas
                     ref={signatureRef}
                     canvasProps={{
