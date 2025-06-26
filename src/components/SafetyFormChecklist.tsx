@@ -194,82 +194,84 @@ export default function SafetyFormChecklist() {
           : "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800"
       }`}
     >
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
           {allFormsComplete ? (
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
           ) : someFormsComplete ? (
-            <Clock className="h-5 w-5 text-yellow-600" />
+            <Clock className="h-4 w-4 md:h-5 md:w-5 text-yellow-600" />
           ) : (
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-red-500" />
           )}
-          Daily Safety Form Checklist - {new Date().toLocaleDateString()}
+          <span className="text-sm md:text-base leading-tight">
+            Daily Safety Forms - {new Date().toLocaleDateString()}
+          </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 md:space-y-4">
         {allFormsComplete ? (
           <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-            <p className="text-green-800 dark:text-green-200 font-medium">
+            <p className="text-green-800 dark:text-green-200 font-medium text-sm md:text-base">
               ✅ All safety forms completed for today. Great job staying compliant!
             </p>
           </div>
         ) : (
           <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-            <p className="text-yellow-800 dark:text-yellow-200 font-medium">
+            <p className="text-yellow-800 dark:text-yellow-200 font-medium text-sm md:text-base">
               ⚠️ Please complete the pending safety forms below to ensure workplace compliance.
             </p>
           </div>
         )}
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border">
+        <div className="space-y-2 md:space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border gap-3 sm:gap-2">
             <div className="flex items-center gap-3">
               {getStatusIcon(formStatus.startOfDay)}
-              <div>
-                <h4 className="font-medium">Start of Day Report</h4>
-                <p className="text-sm text-muted-foreground">Daily health and safety check-in</p>
+              <div className="flex-1">
+                <h4 className="font-medium text-sm md:text-base">Start of Day Report</h4>
+                <p className="text-xs md:text-sm text-muted-foreground">Daily health and safety check-in</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               {getStatusBadge(formStatus.startOfDay)}
               {!formStatus.startOfDay && (
-                <Button asChild size="sm">
+                <Button asChild size="sm" className="text-xs px-3">
                   <Link href="/contractor-forms/start-of-day-report">Complete</Link>
                 </Button>
               )}
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border gap-3 sm:gap-2">
             <div className="flex items-center gap-3">
               {getStatusIcon(formStatus.jha)}
-              <div>
-                <h4 className="font-medium">Job Hazard Analysis (JHA)</h4>
-                <p className="text-sm text-muted-foreground">Risk assessment for daily tasks</p>
+              <div className="flex-1">
+                <h4 className="font-medium text-sm md:text-base">Job Hazard Analysis (JHA)</h4>
+                <p className="text-xs md:text-sm text-muted-foreground">Risk assessment for daily tasks</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               {getStatusBadge(formStatus.jha)}
               {!formStatus.jha && (
-                <Button asChild size="sm">
+                <Button asChild size="sm" className="text-xs px-3">
                   <Link href="/contractor-forms/job-hazard-analysis">Complete</Link>
                 </Button>
               )}
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border gap-3 sm:gap-2">
             <div className="flex items-center gap-3">
               {getStatusIcon(formStatus.endOfDay)}
-              <div>
-                <h4 className="font-medium">End of Day Report</h4>
-                <p className="text-sm text-muted-foreground">Daily completion and health check-out</p>
+              <div className="flex-1">
+                <h4 className="font-medium text-sm md:text-base">End of Day Report</h4>
+                <p className="text-xs md:text-sm text-muted-foreground">Daily completion and health check-out</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               {getStatusBadge(formStatus.endOfDay)}
               {!formStatus.endOfDay && (
-                <Button asChild size="sm">
+                <Button asChild size="sm" className="text-xs px-3">
                   <Link href="/contractor-forms/end-of-day-report">Complete</Link>
                 </Button>
               )}
@@ -278,8 +280,8 @@ export default function SafetyFormChecklist() {
         </div>
 
         {!allFormsComplete && (
-          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-400">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
+          <div className="mt-3 md:mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-400">
+            <p className="text-xs md:text-sm text-blue-800 dark:text-blue-200">
               <strong>Reminder:</strong> All safety forms must be completed daily to ensure workplace safety compliance
               and regulatory requirements.
             </p>
