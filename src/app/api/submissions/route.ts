@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, desc, and } from 'drizzle-orm'
+import { eq, desc, and, gte, lte, or, ilike } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { submissions } from '@/lib/db/schema'
 import { put } from '@vercel/blob'
@@ -251,6 +251,10 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const { searchParams } = new URL(request.url)
     const submissionType = searchParams.get('type')
+    const dateFrom = searchParams.get('dateFrom')
+    const dateTo = searchParams.get('dateTo')
+    const company = searchParams.get('company')
+    const search = searchParams.get('search')
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
 
@@ -265,6 +269,31 @@ export async function GET(request: NextRequest) {
     // Add submission type filter if specified
     if (submissionType) {
       conditions.push(eq(submissions.submissionType, submissionType))
+    }
+
+    // Add date range filters if specified
+    if (dateFrom) {
+      conditions.push(gte(submissions.date, dateFrom))
+    }
+    if (dateTo) {
+      conditions.push(lte(submissions.date, dateTo))
+    }
+
+    // Add company filter if specified
+    if (company) {
+      conditions.push(eq(submissions.company, company))
+    }
+
+    // Add search filter if specified
+    if (search) {
+      conditions.push(
+        or(
+          ilike(submissions.completedBy, `%${search}%`),
+          ilike(submissions.company, `%${search}%`),
+          ilike(submissions.jobSite, `%${search}%`),
+          ilike(submissions.submissionType, `%${search}%`)
+        )
+      )
     }
 
     // Execute query - handle different condition scenarios

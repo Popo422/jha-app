@@ -96,14 +96,31 @@ export const timesheetsApi = createApi({
       invalidatesTags: ['Timesheet'],
     }),
     getTimesheets: builder.query<GetTimesheetsResponse, { 
+      dateFrom?: string
+      dateTo?: string
+      company?: string
+      search?: string
       limit?: number
       offset?: number
     }>({
-      query: ({ limit = 50, offset = 0 }) => {
+      query: ({ dateFrom, dateTo, company, search, limit = 50, offset = 0 }) => {
         const params = new URLSearchParams({
           limit: limit.toString(),
           offset: offset.toString(),
         })
+        
+        if (dateFrom) {
+          params.append('dateFrom', dateFrom)
+        }
+        if (dateTo) {
+          params.append('dateTo', dateTo)
+        }
+        if (company) {
+          params.append('company', company)
+        }
+        if (search) {
+          params.append('search', search)
+        }
         
         return `?${params}`
       },

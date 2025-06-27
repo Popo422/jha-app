@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetTimesheetsQuery, useDeleteTimesheetMutation, type Timesheet } from "@/lib/features/timesheets/timesheetsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import TimesheetEdit from "@/components/admin/TimesheetEdit";
@@ -14,21 +15,46 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowUpDown, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X } from "lucide-react";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 
 const columnHelper = createColumnHelper<Timesheet>();
 
 export default function TimeFormsPage() {
   const [selectedTimesheet, setSelectedTimesheet] = useState<Timesheet | null>(null);
+  const [filters, setFilters] = useState({
+    dateFrom: '',
+    dateTo: '',
+    company: ''
+  });
+  const [searchValue, setSearchValue] = useState('');
+  const debouncedSearch = useDebouncedValue(searchValue, 300);
+
   const { data: timesheetsData, refetch, isLoading, isFetching } = useGetTimesheetsQuery({
     limit: 1000,
-    offset: 0
+    offset: 0,
+    dateFrom: filters.dateFrom || undefined,
+    dateTo: filters.dateTo || undefined,
+    company: filters.company || undefined,
+    search: debouncedSearch || undefined
+  }, {
+    refetchOnMountOrArgChange: true
   });
 
   const [deleteTimesheet] = useDeleteTimesheetMutation();
 
   const data = timesheetsData?.timesheets || [];
+
+  const clearFilters = useCallback(() => {
+    setFilters({
+      dateFrom: '',
+      dateTo: '',
+      company: ''
+    });
+    setSearchValue('');
+  }, []);
+
+  const hasActiveFilters = filters.dateFrom || filters.dateTo || filters.company || searchValue;
 
   const handleEdit = useCallback((timesheet: Timesheet) => {
     setSelectedTimesheet(timesheet);
@@ -149,15 +175,15 @@ export default function TimeFormsPage() {
     },
   ], []);
 
-  const filters = useMemo(() => (
+  const filterComponents = useMemo(() => (
     <>
       <div className="space-y-1">
         <div className="text-sm font-medium">Date From</div>
         <Input
           type="date"
           className="w-full md:w-40"
-          // Date filtering will be handled through the global search for now
-          // Advanced filtering can be added later if needed
+          value={filters.dateFrom}
+          onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
         />
       </div>
       <div className="space-y-1">
@@ -165,12 +191,35 @@ export default function TimeFormsPage() {
         <Input
           type="date"
           className="w-full md:w-40"
-          // Date filtering will be handled through the global search for now
-          // Advanced filtering can be added later if needed
+          value={filters.dateTo}
+          onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
         />
       </div>
+      <div className="space-y-1">
+        <div className="text-sm font-medium">Company</div>
+        <Input
+          type="text"
+          placeholder="Filter by company..."
+          className="w-full md:w-48"
+          value={filters.company}
+          onChange={(e) => setFilters(prev => ({ ...prev, company: e.target.value }))}
+        />
+      </div>
+      {hasActiveFilters && (
+        <div className="space-y-1">
+          <div className="text-sm font-medium">&nbsp;</div>
+          <Button
+            variant="outline"
+            onClick={clearFilters}
+            className="w-full md:w-auto"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Clear Filters
+          </Button>
+        </div>
+      )}
     </>
-  ), []);
+  ), [filters.dateFrom, filters.dateTo, filters.company, hasActiveFilters, clearFilters]);
 
   const getExportData = useCallback((timesheet: Timesheet) => [
     timesheet.employee,
@@ -286,8 +335,10 @@ export default function TimeFormsPage() {
         exportFilename="timesheets"
         exportHeaders={['Employee', 'Company', 'Date', 'Job Site', 'Job Description', 'Time Spent']}
         getExportData={getExportData}
-        filters={filters}
+        filters={filterComponents}
         renderMobileCard={renderMobileCard}
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
       />
     </div>
   );

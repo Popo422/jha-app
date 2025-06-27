@@ -132,10 +132,14 @@ export const submissionsApi = createApi({
     }),
     getSubmissions: builder.query<GetSubmissionsResponse, { 
       type?: string
+      dateFrom?: string
+      dateTo?: string
+      company?: string
+      search?: string
       limit?: number
       offset?: number
     }>({
-      query: ({ type, limit = 50, offset = 0 }) => {
+      query: ({ type, dateFrom, dateTo, company, search, limit = 50, offset = 0 }) => {
         const params = new URLSearchParams({
           limit: limit.toString(),
           offset: offset.toString(),
@@ -143,6 +147,18 @@ export const submissionsApi = createApi({
         
         if (type) {
           params.append('type', type)
+        }
+        if (dateFrom) {
+          params.append('dateFrom', dateFrom)
+        }
+        if (dateTo) {
+          params.append('dateTo', dateTo)
+        }
+        if (company) {
+          params.append('company', company)
+        }
+        if (search) {
+          params.append('search', search)
         }
         
         return `?${params}`

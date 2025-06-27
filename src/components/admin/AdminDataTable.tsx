@@ -44,6 +44,8 @@ export interface AdminDataTableProps<T> {
   getExportData: (item: T) => string[];
   filters?: React.ReactNode;
   renderMobileCard?: (item: T, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => React.ReactNode;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 export function AdminDataTable<T>({
@@ -60,6 +62,8 @@ export function AdminDataTable<T>({
   getExportData,
   filters,
   renderMobileCard,
+  searchValue = "",
+  onSearchChange,
 }: AdminDataTableProps<T>) {
   const [rowSelection, setRowSelection] = useState({});
   const [showCheckboxes, setShowCheckboxes] = useState(false);
@@ -287,11 +291,6 @@ export function AdminDataTable<T>({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
       <div className="p-6 space-y-4">
-        {isFetching && !isLoading && (
-          <div className="flex justify-end">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100"></div>
-          </div>
-        )}
 
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
@@ -301,8 +300,8 @@ export function AdminDataTable<T>({
               <div className="text-sm font-medium">Search</div>
               <Input
                 placeholder="Search all columns..."
-                value={(table.getState().globalFilter as string) ?? ""}
-                onChange={(e) => table.setGlobalFilter(String(e.target.value))}
+                value={searchValue}
+                onChange={(e) => onSearchChange?.(e.target.value)}
                 className="w-full md:w-64"
               />
             </div>
@@ -375,7 +374,7 @@ export function AdminDataTable<T>({
           </div>
         </div>
 
-        {isLoading ? (
+        {isLoading || isFetching ? (
           isMobile ? <MobileCardSkeleton /> : <TableSkeleton />
         ) : isMobile ? (
           <div className="space-y-4">

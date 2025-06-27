@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { timesheets } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, gte, lte, desc, and, or, ilike } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here';
@@ -59,8 +59,62 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
+    const company = searchParams.get('company');
+    const search = searchParams.get('search');
 
-    const results = await db.select().from(timesheets).limit(limit).offset(offset);
+    // Build query conditions
+    const conditions = [];
+
+    // Add date range filters if specified
+    if (dateFrom) {
+      conditions.push(gte(timesheets.date, dateFrom));
+    }
+    if (dateTo) {
+      conditions.push(lte(timesheets.date, dateTo));
+    }
+
+    // Add company filter if specified
+    if (company) {
+      conditions.push(eq(timesheets.company, company));
+    }
+
+    // Add search filter if specified
+    if (search) {
+      conditions.push(
+        or(
+          ilike(timesheets.employee, `%${search}%`),
+          ilike(timesheets.company, `%${search}%`),
+          ilike(timesheets.jobSite, `%${search}%`),
+          ilike(timesheets.jobDescription, `%${search}%`)
+        )
+      );
+    }
+
+    // Execute query - handle different condition scenarios
+    let results;
+    if (conditions.length === 0) {
+      // No conditions
+      results = await db.select().from(timesheets)
+        .orderBy(desc(timesheets.createdAt))
+        .limit(limit)
+        .offset(offset);
+    } else if (conditions.length === 1) {
+      // Single condition
+      results = await db.select().from(timesheets)
+        .where(conditions[0])
+        .orderBy(desc(timesheets.createdAt))
+        .limit(limit)
+        .offset(offset);
+    } else {
+      // Multiple conditions
+      results = await db.select().from(timesheets)
+        .where(and(...conditions))
+        .orderBy(desc(timesheets.createdAt))
+        .limit(limit)
+        .offset(offset);
+    }
 
     return NextResponse.json({
       timesheets: results,

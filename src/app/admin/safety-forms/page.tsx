@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetSubmissionsQuery, useDeleteSubmissionMutation } from "@/lib/features/submissions/submissionsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
   MoreVertical,
   Edit,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   createColumnHelper,
@@ -47,15 +49,46 @@ const columnHelper = createColumnHelper<Submission>();
 
 export default function SafetyFormsPage() {
   const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
+  const [filters, setFilters] = useState({
+    type: '',
+    dateFrom: '',
+    dateTo: '',
+    company: ''
+  });
+  const [searchValue, setSearchValue] = useState('');
+  const debouncedSearch = useDebouncedValue(searchValue, 300);
 
-  const { data: submissionsData, refetch, isLoading, isFetching } = useGetSubmissionsQuery({
+  const queryParams = useMemo(() => ({
     limit: 1000,
-    offset: 0
+    offset: 0,
+    type: filters.type || undefined,
+    dateFrom: filters.dateFrom || undefined,
+    dateTo: filters.dateTo || undefined,
+    company: filters.company || undefined,
+    search: debouncedSearch || undefined
+  }), [filters.type, filters.dateFrom, filters.dateTo, filters.company, debouncedSearch]);
+
+  console.log('Safety forms query params:', queryParams);
+
+  const { data: submissionsData, refetch, isLoading, isFetching } = useGetSubmissionsQuery(queryParams, {
+    refetchOnMountOrArgChange: true
   });
 
   const [deleteSubmission] = useDeleteSubmissionMutation();
 
   const data = submissionsData?.submissions || [];
+
+  const clearFilters = useCallback(() => {
+    setFilters({
+      type: '',
+      dateFrom: '',
+      dateTo: '',
+      company: ''
+    });
+    setSearchValue('');
+  }, []);
+
+  const hasActiveFilters = filters.type || filters.dateFrom || filters.dateTo || filters.company || searchValue;
 
   const getSubmissionTypeLabel = useCallback((type: string) => {
     switch (type) {
@@ -185,36 +218,79 @@ export default function SafetyFormsPage() {
     },
   ], [getSubmissionTypeLabel, getSubmissionTypeBadgeColor]);
 
-  const filters = useMemo(() => (
+  const filterComponents = useMemo(() => (
     <>
       <div className="space-y-1">
         <div className="text-sm font-medium">Type</div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-full md:w-48 justify-between">
-              All Types
+              {filters.type ? getSubmissionTypeLabel(filters.type) : 'All Types'}
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem>All Types</DropdownMenuItem>
-            <DropdownMenuItem>Job Hazard Analysis (JHA)</DropdownMenuItem>
-            <DropdownMenuItem>Start of Day</DropdownMenuItem>
-            <DropdownMenuItem>End of Day</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              console.log('Setting type filter to: ""');
+              setFilters(prev => ({ ...prev, type: '' }));
+            }}>
+              All Types
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              console.log('Setting type filter to: job-hazard-analysis');
+              setFilters(prev => ({ ...prev, type: 'job-hazard-analysis' }));
+            }}>
+              Job Hazard Analysis (JHA)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              console.log('Setting type filter to: start-of-day');
+              setFilters(prev => ({ ...prev, type: 'start-of-day' }));
+            }}>
+              Start of Day
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              console.log('Setting type filter to: end-of-day');
+              setFilters(prev => ({ ...prev, type: 'end-of-day' }));
+            }}>
+              End of Day
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
       <div className="space-y-1">
         <div className="text-sm font-medium">Date From</div>
-        <Input type="date" className="w-full md:w-40" />
+        <Input 
+          type="date" 
+          className="w-full md:w-40" 
+          value={filters.dateFrom}
+          onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
+        />
       </div>
       <div className="space-y-1">
         <div className="text-sm font-medium">Date To</div>
-        <Input type="date" className="w-full md:w-40" />
+        <Input 
+          type="date" 
+          className="w-full md:w-40" 
+          value={filters.dateTo}
+          onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
+        />
       </div>
+      {hasActiveFilters && (
+        <div className="space-y-1">
+          <div className="text-sm font-medium">&nbsp;</div>
+          <Button
+            variant="outline"
+            onClick={clearFilters}
+            className="w-full md:w-auto"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Clear Filters
+          </Button>
+        </div>
+      )}
     </>
-  ), []);
+  ), [filters.type, filters.dateFrom, filters.dateTo, getSubmissionTypeLabel, hasActiveFilters, clearFilters]);
 
   const getExportData = useCallback((submission: Submission) => [
     submission.completedBy,
@@ -349,8 +425,10 @@ export default function SafetyFormsPage() {
         exportFilename="safety_forms"
         exportHeaders={['Contractor', 'Company', 'Date', 'Job Site', 'Submission Type']}
         getExportData={getExportData}
-        filters={filters}
+        filters={filterComponents}
         renderMobileCard={renderMobileCard}
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
       />
     </div>
   );
