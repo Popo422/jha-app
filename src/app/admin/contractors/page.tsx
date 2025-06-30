@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, type Contractor } from "@/lib/features/contractors/contractorsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ type ViewMode = 'list' | 'add' | 'edit';
 
 export default function ContractorsPage() {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [editingContractor, setEditingContractor] = useState<Contractor | null>(null);
   const [formData, setFormData] = useState({
@@ -26,7 +28,7 @@ export default function ContractorsPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
   const { data: contractorsData, isLoading, error, refetch } = useGetContractorsQuery({
-    search: search || undefined,
+    search: debouncedSearch || undefined,
   });
   
   const [deleteContractor, { isLoading: isDeleting }] = useDeleteContractorMutation();
@@ -328,10 +330,15 @@ export default function ContractorsPage() {
 
   // Render list view
   const renderListView = () => (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full mx-auto">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-3xl font-bold text-foreground">Contractors</h1>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Contractors</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">
+              Manage contractor accounts and access codes
+            </p>
+          </div>
           <Button onClick={handleAdd} className="flex items-center space-x-2">
             <Plus className="h-4 w-4" />
             <span>Add Contractor</span>
@@ -363,7 +370,7 @@ export default function ContractorsPage() {
   );
 
   return (
-    <div className="p-4">
+    <div className="p-4 md:p-6">
       {viewMode === 'list' ? renderListView() : renderFormView()}
     </div>
   );
