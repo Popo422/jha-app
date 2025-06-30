@@ -1,33 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
+import { eq } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import { contractors, companies } from '@/lib/db/schema'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
 export async function POST(request: NextRequest) {
   try {
-    const { companyCode } = await request.json()
+    const { contractorCode } = await request.json()
 
-    // Validate company code
-    const VALID_CODE = 'Zerni17'
-    
-    if (companyCode !== VALID_CODE) {
+    if (!contractorCode) {
       return NextResponse.json(
-        { error: 'Invalid company code' },
+        { error: 'Contractor code is required' },
+        { status: 400 }
+      )
+    }
+
+    // Find contractor by code
+    const contractorResult = await db.select({
+      contractor: contractors,
+      company: companies
+    })
+    .from(contractors)
+    .leftJoin(companies, eq(contractors.companyId, companies.id))
+    .where(eq(contractors.code, contractorCode.toUpperCase()))
+    .limit(1)
+
+    if (contractorResult.length === 0) {
+      return NextResponse.json(
+        { error: 'Invalid contractor code' },
         { status: 401 }
       )
     }
 
-    // Hardcoded user and contractor data (as requested)
+    const { contractor: contractorData, company } = contractorResult[0]
+
+    // Create user object from contractor data
     const user = {
-      id: '1',
-      email: 'contractor@zerni.com',
-      name: 'John Contractor'
+      id: contractorData.id,
+      email: contractorData.email,
+      name: `${contractorData.firstName} ${contractorData.lastName}`
     }
 
     const contractor = {
-      id: 'contractor_1',
-      name: 'Zerni Construction',
-      code: companyCode
+      id: contractorData.id,
+      name: company?.name || 'Unknown Company',
+      code: contractorData.code,
+      companyId: contractorData.companyId
     }
 
     // Generate JWT token with user and contractor info

@@ -57,10 +57,15 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       icon: Clock
     },
     {
-      label: 'Employee Editor',
-      href: '/admin/employees',
+      label: 'Contractors Editor',
+      href: '/admin/contractors',
       icon: Users
     },
+    // {
+    //   label: 'Employee Editor',
+    //   href: '/admin/employees',
+    //   icon: Users
+    // },
     {
       label: 'Toolbox Talks',
       href: '/admin/toolbox-talks',
@@ -106,7 +111,17 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         {/* Header with close button */}
         <div className="p-6 border-b border-slate-700">
           <div className="flex items-center justify-between">
-            <Image src="/logo.png" alt="JHA App" width={140} height={30} />
+            <Image 
+              src="/logo.png" 
+              alt="JHA App" 
+              width={140} 
+              height={30} 
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => {
+                router.push('/admin')
+                onClose()
+              }}
+            />
             <Button
               variant="ghost"
               size="sm"

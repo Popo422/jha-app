@@ -1,6 +1,7 @@
 'use client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useRouter } from 'next/navigation'
+import InjuryTimer from '@/components/InjuryTimer'
 import { 
   FileText, 
   ClipboardCheck, 
@@ -61,6 +62,11 @@ export default function AdminPage() {
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Welcome back!</h2>
           <p className="text-gray-600 dark:text-gray-400">{`Here's what's happening with your contractors today.`}</p>
+        </div>
+
+        {/* Injury Timer Section */}
+        <div className="mb-8">
+          <InjuryTimer showResetButton={true} />
         </div>
 
         {/* Quick Stats */}

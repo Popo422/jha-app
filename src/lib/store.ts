@@ -5,6 +5,7 @@ import authReducer from './features/auth/authSlice'
 import { submissionsApi } from './features/submissions/submissionsApi'
 import { timesheetsApi } from './features/timesheets/timesheetsApi'
 import { authApi } from './features/auth/authApi'
+import { contractorsApi } from './features/contractors/contractorsApi'
 
 export const store = configureStore({
   reducer: {
@@ -14,12 +15,14 @@ export const store = configureStore({
     [submissionsApi.reducerPath]: submissionsApi.reducer,
     [timesheetsApi.reducerPath]: timesheetsApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
+    [contractorsApi.reducerPath]: contractorsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       submissionsApi.middleware, 
       timesheetsApi.middleware,
-      authApi.middleware
+      authApi.middleware,
+      contractorsApi.middleware
     ),
 })
 

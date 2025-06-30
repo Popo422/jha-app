@@ -15,6 +15,7 @@ interface AdminAuth {
     employeeId: string
     name: string
     role: string
+    companyId: string
   }
   isAdmin: boolean
   token: string

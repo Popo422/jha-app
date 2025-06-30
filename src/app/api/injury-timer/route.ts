@@ -1,32 +1,90 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import jwt from 'jsonwebtoken'
 import { db } from '@/lib/db'
-import { injuryTimer } from '@/lib/db/schema'
-import { desc } from 'drizzle-orm'
+import { companies } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 
-export async function GET() {
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
+
+// Helper function to get company ID from auth
+function getCompanyIdFromAuth(request: NextRequest): string | null {
+  // Try admin token first
+  const adminToken = request.cookies.get('adminAuthToken')?.value || 
+                    (request.headers.get('Authorization')?.startsWith('AdminBearer ') ? 
+                     request.headers.get('Authorization')?.replace('AdminBearer ', '') : null)
+  
+  if (adminToken) {
+    try {
+      const decoded = jwt.verify(adminToken, JWT_SECRET) as any
+      if (decoded.admin?.companyId) {
+        return decoded.admin.companyId
+      }
+    } catch (error) {
+      // Continue to try user token
+    }
+  }
+
+  // Try user token
+  const userToken = request.cookies.get('authToken')?.value || 
+                   (request.headers.get('Authorization')?.startsWith('Bearer ') ? 
+                    request.headers.get('Authorization')?.replace('Bearer ', '') : null)
+
+  if (userToken) {
+    try {
+      const decoded = jwt.verify(userToken, JWT_SECRET) as any
+      if (decoded.contractor?.companyId) {
+        return decoded.contractor.companyId
+      }
+    } catch (error) {
+      // Token invalid
+    }
+  }
+
+  return null
+}
+
+export async function GET(request: NextRequest) {
   try {
-    const [latestTimer] = await db
+    const companyId = getCompanyIdFromAuth(request)
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    const [company] = await db
       .select()
-      .from(injuryTimer)
-      .orderBy(desc(injuryTimer.createdAt))
+      .from(companies)
+      .where(eq(companies.id, companyId))
       .limit(1)
 
-    if (!latestTimer) {
-      // If no timer exists, create one with current time
-      const [newTimer] = await db
-        .insert(injuryTimer)
-        .values({
-          lastResetTime: new Date(),
+    if (!company) {
+      return NextResponse.json(
+        { error: 'Company not found' },
+        { status: 404 }
+      )
+    }
+
+    // If no timer has been set, initialize it
+    if (!company.injuryTimerLastReset) {
+      const [updatedCompany] = await db
+        .update(companies)
+        .set({
+          injuryTimerLastReset: new Date(),
+          updatedAt: new Date()
         })
+        .where(eq(companies.id, companyId))
         .returning()
 
       return NextResponse.json({
-        lastResetTime: newTimer.lastResetTime.toISOString(),
+        lastResetTime: updatedCompany.injuryTimerLastReset!.toISOString(),
       })
     }
 
     return NextResponse.json({
-      lastResetTime: latestTimer.lastResetTime.toISOString(),
+      lastResetTime: company.injuryTimerLastReset.toISOString(),
     })
   } catch (error) {
     console.error('Error fetching injury timer:', error)

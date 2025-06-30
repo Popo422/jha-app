@@ -16,9 +16,9 @@ export default function Header() {
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center space-x-4">
           <div
-            className="cursor-pointer"
+            className="cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => {
-              router.push("/");
+              router.push("/announcements");
             }}
           >
             <Image src="/logo.png" alt="JHA App" width={140} height={30}/>

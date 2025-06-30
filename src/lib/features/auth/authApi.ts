@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
 export interface LoginRequest {
-  companyCode: string
+  contractorCode: string
 }
 
 export interface AdminLoginRequest {
@@ -26,6 +26,7 @@ export interface Admin {
   employeeId: string
   name: string
   role: string
+  companyId: string
 }
 
 export interface LoginResponse {

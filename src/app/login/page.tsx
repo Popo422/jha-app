@@ -12,7 +12,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const [companyCode, setCompanyCode] = useState('')
+  const [contractorCode, setContractorCode] = useState('')
   const [showCode, setShowCode] = useState(false)
   const [error, setError] = useState('')
   const dispatch = useAppDispatch()
@@ -24,7 +24,7 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const result = await login({ companyCode }).unwrap()
+      const result = await login({ contractorCode }).unwrap()
       
       // Update Redux state with login data
       dispatch(loginSuccess(result))
@@ -45,20 +45,20 @@ export default function LoginPage() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl text-center">Contractor Login</CardTitle>
             <CardDescription className="text-center">
-              Enter your company code to access the system
+              Enter your contractor code to access the system
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="companyCode">Company Code</Label>
+                <Label htmlFor="contractorCode">Contractor Code</Label>
                 <div className="relative">
                   <Input
-                    id="companyCode"
+                    id="contractorCode"
                     type={showCode ? 'text' : 'password'}
-                    placeholder="Enter company code"
-                    value={companyCode}
-                    onChange={(e) => setCompanyCode(e.target.value)}
+                    placeholder="Enter contractor code"
+                    value={contractorCode}
+                    onChange={(e) => setContractorCode(e.target.value)}
                     className={error ? 'border-destructive' : ''}
                     required
                   />

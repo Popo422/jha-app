@@ -58,6 +58,7 @@ interface AuthContractor {
   id: string
   name: string
   code: string
+  companyId: string
 }
 
 interface TokenPayload {
@@ -73,6 +74,7 @@ interface AdminTokenPayload {
     employeeId: string
     name: string
     role: string
+    companyId: string
   }
   isAdmin: boolean
   iat: number
@@ -139,13 +141,20 @@ export async function POST(request: NextRequest) {
     // Handle file uploads
     const files = formData.getAll('files') as File[]
     const uploadedFiles: { filename: string; url: string }[] = []
+    const companyId = decoded.contractor.companyId
 
     for (const file of files) {
       if (file.size > 0) {
         try {
-          const blob = await put(file.name, file, {
+          // Create company-specific path: companyId/submissionType/filename
+          const timestamp = Date.now()
+          const fileExtension = file.name.split('.').pop()
+          const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_') // sanitize filename
+          const blobPath = `${companyId}/${submissionType}/${timestamp}_${cleanFileName}`
+          
+          const blob = await put(blobPath, file, {
             access: 'public',
-            addRandomSuffix: true,
+            addRandomSuffix: false, // We're already adding timestamp for uniqueness
           })
           uploadedFiles.push({
             filename: file.name,
@@ -172,15 +181,15 @@ export async function POST(request: NextRequest) {
         const mimeType = parsedFormData.signature.split(';')[0].split(':')[1]
         const buffer = Buffer.from(base64Data, 'base64')
         
-        // Create a unique filename for the signature
+        // Create company-specific path for signature
         const timestamp = Date.now()
-        const filename = `signature-${decoded.user.id}-${timestamp}.png`
+        const signaturePath = `${companyId}/${submissionType}/signatures/signature-${decoded.user.id}-${timestamp}.png`
         
         // Upload signature to blob storage
-        const signatureBlob = await put(filename, buffer, {
+        const signatureBlob = await put(signaturePath, buffer, {
           access: 'public',
           contentType: mimeType,
-          addRandomSuffix: true,
+          addRandomSuffix: false,
         })
         
         // Replace base64 data with blob URL
@@ -197,6 +206,7 @@ export async function POST(request: NextRequest) {
     // Create submission record
     const submission = await db.insert(submissions).values({
       userId: decoded.user.id,
+      companyId: decoded.contractor.companyId,
       completedBy: parsedFormData.completedBy || decoded.user.name,
       date: date,
       dateTimeClocked: dateTimeClocked ? new Date(dateTimeClocked) : null,
@@ -261,8 +271,12 @@ export async function GET(request: NextRequest) {
     // Build query conditions
     const conditions = []
     
+    // If admin, filter by company ID
+    if (auth.isAdmin && auth.admin?.companyId) {
+      conditions.push(eq(submissions.companyId, auth.admin.companyId))
+    }
     // If not admin, filter by user ID for user's own submissions only
-    if (!auth.isAdmin && auth.userId) {
+    else if (!auth.isAdmin && auth.userId) {
       conditions.push(eq(submissions.userId, auth.userId))
     }
     
@@ -473,16 +487,18 @@ export async function PUT(request: NextRequest) {
         const mimeType = formData.signature.split(';')[0].split(':')[1]
         const buffer = Buffer.from(base64Data, 'base64')
         
-        // Create a unique filename for the signature
+        // Create company-specific path for signature
         const timestamp = Date.now()
         const userId = auth.userId || existingSubmission[0].userId
-        const filename = `signature-${userId}-${timestamp}.png`
+        const companyId = existingSubmission[0].companyId
+        const submissionType = existingSubmission[0].submissionType
+        const signaturePath = `${companyId}/${submissionType}/signatures/signature-${userId}-${timestamp}.png`
         
         // Upload signature to blob storage
-        const signatureBlob = await put(filename, buffer, {
+        const signatureBlob = await put(signaturePath, buffer, {
           access: 'public',
           contentType: mimeType,
-          addRandomSuffix: true,
+          addRandomSuffix: false,
         })
         
         // Replace base64 data with blob URL

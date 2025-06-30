@@ -17,6 +17,7 @@ interface Admin {
   employeeId: string
   name: string
   role: string
+  companyId: string
 }
 
 interface LoginResponse {

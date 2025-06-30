@@ -91,11 +91,6 @@ export const submissionsApi = createApi({
         headers.set('Authorization', `Bearer ${state.auth.token}`)
       }
       
-      // Ensure content-type is set for JSON requests
-      if (!headers.get('content-type')) {
-        headers.set('content-type', 'application/json')
-      }
-      
       return headers
     },
   }),

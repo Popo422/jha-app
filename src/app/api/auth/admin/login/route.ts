@@ -10,7 +10,8 @@ export async function POST(request: NextRequest) {
     // Validate employee ID and PIN (hardcoded for now)
     const VALID_ADMIN_CREDENTIALS = {
       employeeId: 'admin001',
-      pin: '1234'
+      pin: '1234',
+      companyId: 'ac5ad0f9-c160-4748-8c44-802e919e3a97' // Default company for admin
     }
     
     if (employeeId !== VALID_ADMIN_CREDENTIALS.employeeId || pin !== VALID_ADMIN_CREDENTIALS.pin) {
@@ -25,7 +26,8 @@ export async function POST(request: NextRequest) {
       id: 'admin_1',
       employeeId: employeeId,
       name: 'Admin User',
-      role: 'admin'
+      role: 'admin',
+      companyId: VALID_ADMIN_CREDENTIALS.companyId
     }
 
     // Generate JWT token with admin info

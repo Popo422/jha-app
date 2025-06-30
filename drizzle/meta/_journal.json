@@ -15,6 +15,20 @@
       "when": 1750436195900,
       "tag": "0001_square_bill_hollister",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1751281136005,
+      "tag": "0002_lame_the_stranger",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1751286389168,
+      "tag": "0003_tranquil_talisman",
+      "breakpoints": true
     }
   ]
 }

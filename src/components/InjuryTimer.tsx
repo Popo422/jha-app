@@ -12,7 +12,11 @@ interface TimeDisplay {
   seconds: number
 }
 
-export default function InjuryTimer() {
+interface InjuryTimerProps {
+  showResetButton?: boolean
+}
+
+export default function InjuryTimer({ showResetButton = false }: InjuryTimerProps) {
   const [timeDisplay, setTimeDisplay] = useState<TimeDisplay>({ days: 0, hours: 0, minutes: 0, seconds: 0 })
   const [lastResetTime, setLastResetTime] = useState<Date | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -113,27 +117,29 @@ export default function InjuryTimer() {
           </div>
         </div>
         
-        <div className="text-center">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                Reset Timer
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Reset Injury Timer</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to reset the injury timer? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={resetTimer}>Reset Timer</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+        {showResetButton && (
+          <div className="text-center">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  Reset Timer
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset Injury Timer</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to reset the injury timer? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetTimer}>Reset Timer</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

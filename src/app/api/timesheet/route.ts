@@ -6,8 +6,91 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here';
 
+// Helper function to authenticate and get user info
+function authenticateRequest(request: NextRequest): { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any } {
+  // Try admin token first
+  const adminToken = request.cookies.get('adminAuthToken')?.value || 
+                    (request.headers.get('Authorization')?.startsWith('AdminBearer ') ? 
+                     request.headers.get('Authorization')?.replace('AdminBearer ', '') : null)
+  
+  if (adminToken) {
+    try {
+      const decoded = jwt.verify(adminToken, JWT_SECRET) as AdminTokenPayload
+      if (decoded.admin && decoded.isAdmin) {
+        return { isAdmin: true, admin: decoded.admin }
+      }
+    } catch (error) {
+      // Continue to try user token
+    }
+  }
+
+  // Try user token
+  const userToken = request.cookies.get('authToken')?.value || 
+                   (request.headers.get('Authorization')?.startsWith('Bearer ') ? 
+                    request.headers.get('Authorization')?.replace('Bearer ', '') : null)
+
+  if (userToken) {
+    try {
+      const decoded = jwt.verify(userToken, JWT_SECRET) as TokenPayload
+      return { 
+        isAdmin: false, 
+        userId: decoded.user.id, 
+        userName: decoded.user.name,
+        contractor: decoded.contractor 
+      }
+    } catch (error) {
+      throw new Error('Invalid token')
+    }
+  }
+
+  throw new Error('No valid authentication token found')
+}
+
+interface AuthUser {
+  id: string
+  email: string
+  name: string
+}
+
+interface AuthContractor {
+  id: string
+  name: string
+  code: string
+}
+
+interface TokenPayload {
+  user: AuthUser
+  contractor: AuthContractor
+  iat: number
+  exp: number
+}
+
+interface AdminTokenPayload {
+  admin: {
+    id: string
+    employeeId: string
+    name: string
+    role: string
+    companyId: string
+  }
+  isAdmin: boolean
+  iat: number
+  exp: number
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate request
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any }
+    try {
+      auth = authenticateRequest(request)
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json();
     const { date, employee, company, jobSite, jobDescription, timeSpent } = body;
 
@@ -26,10 +109,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userId = 'user-placeholder'; // TODO: Get from auth context
+    const userId = auth.userId || auth.admin?.id;
+    const companyId = auth.isAdmin ? auth.admin?.companyId : auth.contractor?.id;
+
+    if (!userId || !companyId) {
+      return NextResponse.json(
+        { error: 'Invalid authentication context' },
+        { status: 400 }
+      );
+    }
 
     const result = await db.insert(timesheets).values({
       userId,
+      companyId,
       date,
       employee,
       company,
@@ -56,6 +148,17 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate request
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any }
+    try {
+      auth = authenticateRequest(request)
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
@@ -66,6 +169,15 @@ export async function GET(request: NextRequest) {
 
     // Build query conditions
     const conditions = [];
+
+    // If admin, filter by company ID
+    if (auth.isAdmin && auth.admin?.companyId) {
+      conditions.push(eq(timesheets.companyId, auth.admin.companyId))
+    }
+    // If not admin, filter by user ID for user's own timesheets only
+    else if (!auth.isAdmin && auth.userId) {
+      conditions.push(eq(timesheets.userId, auth.userId))
+    }
 
     // Add date range filters if specified
     if (dateFrom) {
@@ -121,7 +233,8 @@ export async function GET(request: NextRequest) {
       meta: {
         limit,
         offset,
-        userId: 'user-placeholder' // TODO: Get from auth context
+        isAdmin: auth.isAdmin,
+        userId: auth.userId || null
       }
     });
   } catch (error) {
