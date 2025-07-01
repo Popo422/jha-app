@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { closeSidebar } from '@/lib/features/sidebar/sidebarSlice'
 import { logout } from '@/lib/features/auth/authSlice'
 import { toggleTheme } from '@/lib/features/theme/themeSlice'
+import { useGetCompanyModulesQuery } from '@/lib/features/company/companyApi'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -26,19 +27,36 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import Link from 'next/link'
+import { useMemo } from 'react'
 
-const navigation = [
-  { name: 'Announcements', href: '/announcements', icon: Bell },
-  { name: 'Contractor Forms', href: '/contractor-forms', icon: ClipboardList },
-  { name: 'Time Sheet', href: '/timesheet', icon: Clock },
-  { name: 'Toolbox Talks', href: '/toolbox-talks', icon: HardHat },
-  { name: 'My Submissions', href: '/my-submissions', icon: FolderOpen },
+const allNavigation = [
+  { name: 'Announcements', href: '/announcements', icon: Bell, moduleId: null }, // Always shown
+  { name: 'Contractor Forms', href: '/contractor-forms', icon: ClipboardList, moduleId: 'forms' }, // Show if any form modules are enabled
+  { name: 'Time Sheet', href: '/timesheet', icon: Clock, moduleId: 'timesheet' },
+  { name: 'Toolbox Talks', href: '/toolbox-talks', icon: HardHat, moduleId: null }, // Always shown
+  { name: 'My Submissions', href: '/my-submissions', icon: FolderOpen, moduleId: null }, // Always shown
 ]
 
 export default function AppSidebar() {
   const dispatch = useAppDispatch()
   const isOpen = useAppSelector((state) => state.sidebar.isOpen)
   const theme = useAppSelector((state) => state.theme.mode)
+  const { data: modulesData } = useGetCompanyModulesQuery()
+
+  const navigation = useMemo(() => {
+    if (!modulesData?.enabledModules) return allNavigation;
+    
+    return allNavigation.filter(item => {
+      if (item.moduleId === null) return true; // Always show items without module requirements
+      if (item.moduleId === 'forms') {
+        // Show contractor forms if any form modules are enabled
+        return modulesData.enabledModules.some(module => 
+          ['start-of-day', 'end-of-day', 'job-hazard-analysis'].includes(module)
+        );
+      }
+      return modulesData.enabledModules.includes(item.moduleId);
+    });
+  }, [modulesData])
 
   const handleLinkClick = () => {
     dispatch(closeSidebar())

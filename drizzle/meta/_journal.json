@@ -29,6 +29,20 @@
       "when": 1751286389168,
       "tag": "0003_tranquil_talisman",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1751374883105,
+      "tag": "0004_conscious_bushwacker",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1751375736495,
+      "tag": "0005_tearful_sprite",
+      "breakpoints": true
     }
   ]
 }

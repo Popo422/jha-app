@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useSubmitTimesheetMutation } from "@/lib/features/timesheets/timesheetsApi";
+import { useModuleAccess } from "@/hooks/useModuleAccess";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -22,6 +24,7 @@ interface TimesheetFormData {
 }
 
 export default function TimesheetPage() {
+  const { hasAccess, isLoading: moduleLoading } = useModuleAccess('timesheet');
   const [submitTimesheet, { isLoading, isSuccess, isError, error, reset }] = useSubmitTimesheetMutation();
   
   const [formData, setFormData] = useState<TimesheetFormData>({
@@ -64,6 +67,40 @@ export default function TimesheetPage() {
 
     await submitTimesheet(formData);
   }, [formData, submitTimesheet, reset]);
+
+  // Show loading while checking module access
+  if (moduleLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Header />
+        <AppSidebar />
+        <main className="p-4">
+          <div className="max-w-4xl mx-auto">
+            <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+              </CardHeader>
+              <CardContent className="p-4 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Don't render if no access (will redirect)
+  if (!hasAccess) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

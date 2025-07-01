@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 
 interface TimeDisplay {
@@ -86,7 +87,29 @@ export default function InjuryTimer({ showResetButton = false }: InjuryTimerProp
           <CardTitle className="text-card-foreground text-center">Days Without Injury</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-muted-foreground">Loading...</div>
+          <div className="flex justify-center items-center space-x-6 mb-4">
+            <div className="text-center">
+              <Skeleton className="h-8 w-12 mb-2 mx-auto" />
+              <Skeleton className="h-4 w-8 mx-auto" />
+            </div>
+            <div className="text-center">
+              <Skeleton className="h-8 w-12 mb-2 mx-auto" />
+              <Skeleton className="h-4 w-10 mx-auto" />
+            </div>
+            <div className="text-center">
+              <Skeleton className="h-8 w-12 mb-2 mx-auto" />
+              <Skeleton className="h-4 w-14 mx-auto" />
+            </div>
+            <div className="text-center">
+              <Skeleton className="h-8 w-12 mb-2 mx-auto" />
+              <Skeleton className="h-4 w-14 mx-auto" />
+            </div>
+          </div>
+          {showResetButton && (
+            <div className="text-center">
+              <Skeleton className="h-9 w-24 mx-auto" />
+            </div>
+          )}
         </CardContent>
       </Card>
     )

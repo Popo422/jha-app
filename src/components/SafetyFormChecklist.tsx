@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useGetSubmissionsQuery } from "@/lib/features/submissions/submissionsApi";
+import { useGetCompanyModulesQuery } from "@/lib/features/company/companyApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,47 @@ export default function SafetyFormChecklist() {
 
   const today = new Date().toISOString().split("T")[0];
   const token = useSelector((state: RootState) => state.auth.token);
+
+  // Get company's enabled modules
+  const { data: modulesData, isLoading: modulesLoading } = useGetCompanyModulesQuery();
+
+  // Define available forms with their module mappings
+  const availableForms = useMemo(() => {
+    const enabledModules = modulesData?.enabledModules || [];
+    const forms = [];
+
+    if (enabledModules.includes('start-of-day')) {
+      forms.push({
+        key: 'startOfDay',
+        submissionType: 'start-of-day',
+        title: 'Start of Day Report',
+        description: 'Daily health and safety check-in',
+        href: '/contractor-forms/start-of-day-report'
+      });
+    }
+
+    if (enabledModules.includes('job-hazard-analysis')) {
+      forms.push({
+        key: 'jha',
+        submissionType: 'job-hazard-analysis',
+        title: 'Job Hazard Analysis (JHA)',
+        description: 'Risk assessment for daily tasks',
+        href: '/contractor-forms/job-hazard-analysis'
+      });
+    }
+
+    if (enabledModules.includes('end-of-day')) {
+      forms.push({
+        key: 'endOfDay',
+        submissionType: 'end-of-day',
+        title: 'End of Day Report',
+        description: 'Daily completion and health check-out',
+        href: '/contractor-forms/end-of-day-report'
+      });
+    }
+
+    return forms;
+  }, [modulesData]);
 
   const {
     data: submissions,
@@ -149,10 +191,17 @@ export default function SafetyFormChecklist() {
     );
   };
 
-  const allFormsComplete = formStatus.startOfDay && formStatus.endOfDay && formStatus.jha;
-  const someFormsComplete = formStatus.startOfDay || formStatus.endOfDay || formStatus.jha;
+  // Calculate completion status based on enabled forms only
+  const allFormsComplete = useMemo(() => {
+    if (availableForms.length === 0) return false;
+    return availableForms.every(form => formStatus[form.key as keyof FormStatus]);
+  }, [availableForms, formStatus]);
 
-  if (isLoading) {
+  const someFormsComplete = useMemo(() => {
+    return availableForms.some(form => formStatus[form.key as keyof FormStatus]);
+  }, [availableForms, formStatus]);
+
+  if (isLoading || modulesLoading) {
     return (
       <Card className="bg-card text-card-foreground rounded-lg border">
         <CardHeader>
@@ -224,59 +273,36 @@ export default function SafetyFormChecklist() {
         )}
 
         <div className="space-y-2 md:space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border gap-3 sm:gap-2">
-            <div className="flex items-center gap-3">
-              {getStatusIcon(formStatus.startOfDay)}
-              <div className="flex-1">
-                <h4 className="font-medium text-sm md:text-base">Start of Day Report</h4>
-                <p className="text-xs md:text-sm text-muted-foreground">Daily health and safety check-in</p>
-              </div>
+          {availableForms.length === 0 ? (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-blue-800 dark:text-blue-200 text-sm md:text-base">
+                No safety forms are currently enabled for your company. Please contact your administrator.
+              </p>
             </div>
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              {getStatusBadge(formStatus.startOfDay)}
-              {!formStatus.startOfDay && (
-                <Button asChild size="sm" className="text-xs px-3">
-                  <Link href="/contractor-forms/start-of-day-report">Complete</Link>
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border gap-3 sm:gap-2">
-            <div className="flex items-center gap-3">
-              {getStatusIcon(formStatus.jha)}
-              <div className="flex-1">
-                <h4 className="font-medium text-sm md:text-base">Job Hazard Analysis (JHA)</h4>
-                <p className="text-xs md:text-sm text-muted-foreground">Risk assessment for daily tasks</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              {getStatusBadge(formStatus.jha)}
-              {!formStatus.jha && (
-                <Button asChild size="sm" className="text-xs px-3">
-                  <Link href="/contractor-forms/job-hazard-analysis">Complete</Link>
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border gap-3 sm:gap-2">
-            <div className="flex items-center gap-3">
-              {getStatusIcon(formStatus.endOfDay)}
-              <div className="flex-1">
-                <h4 className="font-medium text-sm md:text-base">End of Day Report</h4>
-                <p className="text-xs md:text-sm text-muted-foreground">Daily completion and health check-out</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              {getStatusBadge(formStatus.endOfDay)}
-              {!formStatus.endOfDay && (
-                <Button asChild size="sm" className="text-xs px-3">
-                  <Link href="/contractor-forms/end-of-day-report">Complete</Link>
-                </Button>
-              )}
-            </div>
-          </div>
+          ) : (
+            availableForms.map((form) => {
+              const isCompleted = formStatus[form.key as keyof FormStatus];
+              return (
+                <div key={form.key} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border gap-3 sm:gap-2">
+                  <div className="flex items-center gap-3">
+                    {getStatusIcon(isCompleted)}
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm md:text-base">{form.title}</h4>
+                      <p className="text-xs md:text-sm text-muted-foreground">{form.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
+                    {getStatusBadge(isCompleted)}
+                    {!isCompleted && (
+                      <Button asChild size="sm" className="text-xs px-3">
+                        <Link href={form.href}>Complete</Link>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
         {!allFormsComplete && (

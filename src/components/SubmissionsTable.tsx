@@ -283,7 +283,6 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
         enableSorting: false,
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [isDeleting],
   );
 

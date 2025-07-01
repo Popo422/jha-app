@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
     const user = {
       id: contractorData.id,
       email: contractorData.email,
-      name: `${contractorData.firstName} ${contractorData.lastName}`
+      name: `${contractorData.firstName} ${contractorData.lastName}`,
+      companyId: contractorData.companyId
     }
 
     const contractor = {

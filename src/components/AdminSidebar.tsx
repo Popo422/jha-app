@@ -15,7 +15,8 @@ import {
   LogOut, 
   Settings, 
   HelpCircle,
-  X
+  X,
+  Puzzle
 } from 'lucide-react'
 
 interface SidebarItem {
@@ -60,6 +61,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       label: 'Contractors Editor',
       href: '/admin/contractors',
       icon: Users
+    },
+    {
+      label: 'Module Configuration',
+      href: '/admin/modules',
+      icon: Puzzle
     },
     // {
     //   label: 'Employee Editor',
