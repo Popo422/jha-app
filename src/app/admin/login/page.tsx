@@ -12,9 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Eye, EyeOff } from 'lucide-react'
 
 export default function AdminLoginPage() {
-  const [employeeId, setEmployeeId] = useState('')
-  const [pin, setPin] = useState('')
-  const [showPin, setShowPin] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const dispatch = useAppDispatch()
   const [adminLogin, { isLoading }] = useAdminLoginMutation()
@@ -25,7 +25,7 @@ export default function AdminLoginPage() {
     setError('')
 
     try {
-      const result = await adminLogin({ employeeId, pin }).unwrap()
+      const result = await adminLogin({ email, password }).unwrap()
       
       // Update Redux state with admin login data
       dispatch(adminLoginSuccess(result))
@@ -49,26 +49,26 @@ export default function AdminLoginPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="employeeId">Employee ID</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="employeeId"
-                  type="text"
-                  placeholder="Enter employee ID"
-                  value={employeeId}
-                  onChange={(e) => setEmployeeId(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className={error ? 'border-destructive' : ''}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pin">PIN</Label>
+                <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Input
-                    id="pin"
-                    type={showPin ? 'text' : 'password'}
-                    placeholder="Enter PIN"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className={error ? 'border-destructive' : ''}
                     required
                   />
@@ -77,9 +77,9 @@ export default function AdminLoginPage() {
                     variant="ghost"
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPin(!showPin)}
+                    onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPin ? (
+                    {showPassword ? (
                       <EyeOff className="h-4 w-4" />
                     ) : (
                       <Eye className="h-4 w-4" />

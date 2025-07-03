@@ -14,10 +14,11 @@ interface Contractor {
 
 interface Admin {
   id: string
-  employeeId: string
+  email: string
   name: string
   role: string
   companyId: string
+  companyName: string
 }
 
 interface LoginResponse {

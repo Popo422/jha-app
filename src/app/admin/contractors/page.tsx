@@ -198,7 +198,7 @@ export default function ContractorsPage() {
 
   // Render form view (add/edit)
   const renderFormView = () => (
-    <div className="max-w-2xl mx-auto">
+    <div className="w-full">
       <div className="mb-6">
         <div className="flex items-center space-x-4 mb-4">
           <Button variant="ghost" onClick={handleCancel} className="flex items-center space-x-2">
@@ -330,7 +330,7 @@ export default function ContractorsPage() {
 
   // Render list view
   const renderListView = () => (
-    <div className="w-full mx-auto">
+    <div className="w-full">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>

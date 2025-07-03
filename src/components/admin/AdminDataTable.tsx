@@ -46,6 +46,7 @@ export interface AdminDataTableProps<T> {
   renderMobileCard?: (item: T, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => React.ReactNode;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
+  canDelete?: (item: T) => boolean;
 }
 
 export function AdminDataTable<T>({
@@ -64,6 +65,7 @@ export function AdminDataTable<T>({
   renderMobileCard,
   searchValue = "",
   onSearchChange,
+  canDelete,
 }: AdminDataTableProps<T>) {
   const [rowSelection, setRowSelection] = useState({});
   const [showCheckboxes, setShowCheckboxes] = useState(false);
@@ -153,7 +155,7 @@ export function AdminDataTable<T>({
                     Edit
                   </DropdownMenuItem>
                 )}
-                {onDelete && (
+                {onDelete && (!canDelete || canDelete(item)) && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <DropdownMenuItem 
@@ -436,7 +438,7 @@ export function AdminDataTable<T>({
                                   Edit
                                 </DropdownMenuItem>
                               )}
-                              {onDelete && (
+                              {onDelete && (!canDelete || canDelete(item)) && (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <DropdownMenuItem 

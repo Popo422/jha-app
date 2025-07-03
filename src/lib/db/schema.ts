@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, jsonb, numeric } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, uuid, jsonb, numeric, unique } from 'drizzle-orm/pg-core'
 
 export const companies = pgTable('companies', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -12,6 +12,7 @@ export const companies = pgTable('companies', {
   modulesLastUpdatedAt: timestamp('modules_last_updated_at'),
   modulesLastUpdatedBy: text('modules_last_updated_by'), // Admin name who last updated modules
   modulesLastUpdatedByUserId: text('modules_last_updated_by_user_id'), // Admin user ID for reference
+  createdBy: uuid('created_by'), // Super-admin user ID who created this company
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -21,6 +22,7 @@ export const users = pgTable('users', {
   email: text('email').notNull().unique(),
   name: text('name'),
   password: text('password').notNull(),
+  role: text('role').notNull().default('contractor'), // 'contractor', 'admin', 'super-admin'
   companyId: uuid('company_id'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -59,10 +61,13 @@ export const contractors = pgTable('contractors', {
   id: uuid('id').primaryKey().defaultRandom(),
   firstName: text('first_name').notNull(),
   lastName: text('last_name').notNull(),
-  email: text('email').notNull().unique(),
+  email: text('email').notNull(),
   companyId: uuid('company_id').notNull(),
-  code: text('code').notNull().unique(), // Used for login
+  code: text('code').notNull().unique(), // Used for login - still globally unique
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
+}, (table) => ({
+  // Composite unique constraint: same email can exist across companies but not within same company
+  companyEmailUnique: unique().on(table.companyId, table.email),
+}))
 

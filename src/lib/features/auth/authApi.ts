@@ -5,8 +5,8 @@ export interface LoginRequest {
 }
 
 export interface AdminLoginRequest {
-  employeeId: string
-  pin: string
+  email: string
+  password: string
 }
 
 export interface User {
@@ -23,10 +23,11 @@ export interface Contractor {
 
 export interface Admin {
   id: string
-  employeeId: string
+  email: string
   name: string
   role: string
   companyId: string
+  companyName: string
 }
 
 export interface LoginResponse {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter, usePathname } from 'next/navigation'
+import { useAppSelector } from '@/lib/hooks'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
@@ -16,7 +17,8 @@ import {
   Settings, 
   HelpCircle,
   X,
-  Puzzle
+  Puzzle,
+  Shield,
 } from 'lucide-react'
 
 interface SidebarItem {
@@ -34,6 +36,7 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const { admin } = useAppSelector((state) => state.auth)
 
   const handleLogout = () => {
     // Clear admin auth cookie
@@ -67,11 +70,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       href: '/admin/modules',
       icon: Puzzle
     },
-    // {
-    //   label: 'Employee Editor',
-    //   href: '/admin/employees',
-    //   icon: Users
-    // },
+    ...(admin?.role === 'super-admin' ? [{
+      label: 'Admin Editor',
+      href: '/admin/admin-editor',
+      icon: Shield
+    }] : []),
     {
       label: 'Toolbox Talks',
       href: '/admin/toolbox-talks',

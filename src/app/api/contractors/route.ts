@@ -6,6 +6,9 @@ import { contractors } from '@/lib/db/schema'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
+// PostgreSQL error codes
+const PG_UNIQUE_VIOLATION = '23505'
+
 // Helper function to authenticate admin requests
 function authenticateAdmin(request: NextRequest): { admin: any } {
   const adminToken = request.cookies.get('adminAuthToken')?.value || 
@@ -133,6 +136,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if email already exists within the same company
+    const existingEmailContractor = await db
+      .select()
+      .from(contractors)
+      .where(
+        and(
+          eq(contractors.email, email.trim().toLowerCase()),
+          eq(contractors.companyId, auth.admin.companyId)
+        )
+      )
+      .limit(1)
+
+    if (existingEmailContractor.length > 0) {
+      return NextResponse.json(
+        { error: 'Email address already exists in your company' },
+        { status: 409 }
+      )
+    }
+
+    // Check if contractor code already exists
+    const existingCodeContractor = await db
+      .select()
+      .from(contractors)
+      .where(eq(contractors.code, code.trim().toUpperCase()))
+      .limit(1)
+
+    if (existingCodeContractor.length > 0) {
+      return NextResponse.json(
+        { error: 'Contractor code already exists' },
+        { status: 409 }
+      )
+    }
+
     // Create contractor record
     const contractor = await db.insert(contractors).values({
       firstName: firstName.trim(),
@@ -151,10 +187,10 @@ export async function POST(request: NextRequest) {
     console.error('Create contractor error:', error)
     
     // Handle unique constraint violations
-    if (error.code === '23505') {
-      if (error.constraint?.includes('email')) {
+    if (error.code === PG_UNIQUE_VIOLATION) {
+      if (error.constraint?.includes('company_email') || error.constraint?.includes('email')) {
         return NextResponse.json(
-          { error: 'Email address already exists' },
+          { error: 'Email address already exists in your company' },
           { status: 409 }
         )
       }
@@ -249,7 +285,7 @@ export async function PUT(request: NextRequest) {
     console.error('Update contractor error:', error)
     
     // Handle unique constraint violations
-    if (error.code === '23505') {
+    if (error.code === PG_UNIQUE_VIOLATION) {
       if (error.constraint?.includes('email')) {
         return NextResponse.json(
           { error: 'Email address already exists' },

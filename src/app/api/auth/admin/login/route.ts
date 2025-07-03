@@ -1,33 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
+import { eq, or } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import { users, companies } from '@/lib/db/schema'
+import bcrypt from 'bcrypt'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
 export async function POST(request: NextRequest) {
   try {
-    const { employeeId, pin } = await request.json()
+    const { email, password } = await request.json()
 
-    // Validate employee ID and PIN (hardcoded for now)
-    const VALID_ADMIN_CREDENTIALS = {
-      employeeId: 'admin001',
-      pin: '1234',
-      companyId: 'ac5ad0f9-c160-4748-8c44-802e919e3a97' // Default company for admin
-    }
-    
-    if (employeeId !== VALID_ADMIN_CREDENTIALS.employeeId || pin !== VALID_ADMIN_CREDENTIALS.pin) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: 'Invalid employee ID or PIN' },
+        { error: 'Email and password are required' },
+        { status: 400 }
+      )
+    }
+
+    // Find user by email with admin or super-admin role
+    const userResult = await db.select({
+      user: users,
+      company: companies
+    })
+    .from(users)
+    .leftJoin(companies, eq(users.companyId, companies.id))
+    .where(
+      eq(users.email, email)
+    )
+    .limit(1)
+
+    if (userResult.length === 0) {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      )
+    }
+
+    const { user: userData, company } = userResult[0]
+
+    // Check if user has admin or super-admin role
+    if (userData.role !== 'admin' && userData.role !== 'super-admin') {
+      return NextResponse.json(
+        { error: 'Access denied. Admin privileges required.' },
+        { status: 403 }
+      )
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, userData.password)
+
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
 
     // Admin user data
     const admin = {
-      id: 'admin_1',
-      employeeId: employeeId,
-      name: 'Admin User',
-      role: 'admin',
-      companyId: VALID_ADMIN_CREDENTIALS.companyId
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      companyId: userData.companyId,
+      companyName: company?.name || 'Unknown Company'
     }
 
     // Generate JWT token with admin info
