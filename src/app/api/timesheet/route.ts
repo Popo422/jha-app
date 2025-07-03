@@ -97,6 +97,7 @@ interface AuthContractor {
   id: string
   name: string
   code: string
+  companyId: string
 }
 
 interface TokenPayload {
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = auth.userId || auth.admin?.id;
-    const companyId = auth.isAdmin ? auth.admin?.companyId : auth.contractor?.id;
+    const companyId = auth.isAdmin ? auth.admin?.companyId : auth.contractor?.companyId;
 
     if (!userId || !companyId) {
       return NextResponse.json(

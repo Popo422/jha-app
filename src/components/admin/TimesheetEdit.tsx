@@ -183,7 +183,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
               onChange={handleInputChange}
               placeholder="Information about the job"
               className="min-h-[100px]"
-              required
+            
             />
           </div>
 
