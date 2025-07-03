@@ -4,21 +4,10 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAppDispatch } from '@/lib/hooks'
 import { restoreAdminAuth, adminLoginFailure } from '@/lib/features/auth/authSlice'
+import { AdminAuth } from '@/types/auth'
 
 interface AdminProtectedRouteProps {
   children: React.ReactNode
-}
-
-interface AdminAuth {
-  admin: {
-    id: string
-    employeeId: string
-    name: string
-    role: string
-    companyId: string
-  }
-  isAdmin: boolean
-  token: string
 }
 
 const adminPublicRoutes = ['/admin/login']

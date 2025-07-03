@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
+import * as jwt from 'jsonwebtoken'
+import { AdminJWTPayload } from '@/types/auth'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -15,12 +16,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify and decode the JWT token
-    const decoded = jwt.verify(token, JWT_SECRET) as any
+    const decoded = jwt.verify(token, JWT_SECRET) as AdminJWTPayload
 
-    // Check if token contains admin data
-    if (!decoded.admin || !decoded.isAdmin) {
+    // Check if token contains admin data with all required fields
+    if (!decoded.admin || !decoded.isAdmin || 
+        !decoded.admin.email || !decoded.admin.companyName) {
       return NextResponse.json(
-        { error: 'Invalid admin token' },
+        { error: 'Invalid or incomplete admin token' },
         { status: 401 }
       )
     }

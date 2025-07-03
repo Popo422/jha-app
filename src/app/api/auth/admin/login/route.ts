@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
+import * as jwt from 'jsonwebtoken'
 import { eq, or } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { users, companies } from '@/lib/db/schema'
-import bcrypt from 'bcrypt'
+import * as bcrypt from 'bcrypt'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
-import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
+import * as bcrypt from 'bcrypt'
+import * as jwt from 'jsonwebtoken'
+import { AdminJWTPayload } from '@/types/auth'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -18,7 +19,7 @@ async function getAdminFromToken(request: NextRequest) {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any
+    const decoded = jwt.verify(token, JWT_SECRET) as AdminJWTPayload
     return decoded.admin
   } catch {
     return null
@@ -27,7 +28,7 @@ async function getAdminFromToken(request: NextRequest) {
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await getAdminFromToken(request)
@@ -40,7 +41,8 @@ export async function PATCH(
     }
 
     const { name, email, password, role } = await request.json()
-    const userId = params.id
+    const resolvedParams = await params
+    const userId = resolvedParams.id
 
     // Check if user exists and belongs to same company
     const existingUser = await db
@@ -70,7 +72,12 @@ export async function PATCH(
     }
 
     // Build update object
-    const updateData: any = {}
+    const updateData: Partial<{
+      name: string
+      email: string
+      role: string
+      password: string
+    }> = {}
     if (name) updateData.name = name
     if (email) updateData.email = email
     if (role && (role === 'admin' || role === 'super-admin')) {
@@ -111,7 +118,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const admin = await getAdminFromToken(request)
@@ -123,7 +130,8 @@ export async function DELETE(
       )
     }
 
-    const userId = params.id
+    const resolvedParams = await params
+    const userId = resolvedParams.id
 
     // Check if user exists and belongs to same company
     const existingUser = await db
