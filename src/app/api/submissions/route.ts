@@ -252,6 +252,7 @@ export async function POST(request: NextRequest) {
       dateTimeClocked: dateTimeClocked ? new Date(dateTimeClocked) : null,
       company: parsedFormData.company || decoded.contractor.name,
       jobSite: jobSite,
+      jobName: parsedFormData.jobName,
       submissionType: submissionType,
       formData: parsedFormData,
     }).returning()
@@ -499,7 +500,7 @@ export async function PUT(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { id, completedBy, date, dateTimeClocked, company, jobSite, formData } = body
+    const { id, completedBy, date, dateTimeClocked, company, jobSite, jobName, formData } = body
 
     if (!id) {
       return NextResponse.json(
@@ -571,6 +572,7 @@ export async function PUT(request: NextRequest) {
     }
     if (company !== undefined) updateData.company = company
     if (jobSite !== undefined) updateData.jobSite = jobSite
+    if (jobName !== undefined) updateData.jobName = jobName || null
     if (processedFormData !== undefined) updateData.formData = processedFormData
 
     // Update the submission

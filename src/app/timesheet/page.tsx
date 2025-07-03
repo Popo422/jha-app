@@ -19,6 +19,7 @@ interface TimesheetFormData {
   employee: string;
   company: string;
   jobSite: string;
+  jobName: string;
   jobDescription: string;
   timeSpent: string;
 }
@@ -32,6 +33,7 @@ export default function TimesheetPage() {
     employee: "",
     company: "",
     jobSite: "",
+    jobName: "",
     jobDescription: "",
     timeSpent: ""
   });
@@ -42,6 +44,7 @@ export default function TimesheetPage() {
       employee: "",
       company: "",
       jobSite: "",
+      jobName: "",
       jobDescription: "",
       timeSpent: ""
     });
@@ -158,6 +161,17 @@ export default function TimesheetPage() {
                       name="jobSite"
                       placeholder="Company Location"
                       value={formData.jobSite}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="jobName">Job Name:</Label>
+                    <Input
+                      id="jobName"
+                      name="jobName"
+                      placeholder="Name or title of the job"
+                      value={formData.jobName}
                       onChange={handleInputChange}
                       required
                     />

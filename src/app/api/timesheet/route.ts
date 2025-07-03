@@ -137,9 +137,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { date, employee, company, jobSite, jobDescription, timeSpent } = body;
+    const { date, employee, company, jobSite, jobName, jobDescription, timeSpent } = body;
 
-    if (!date || !employee || !company || !jobSite || !jobDescription || !timeSpent) {
+    if (!date || !employee || !company || !jobSite || !jobName || !jobDescription || !timeSpent) {
       return NextResponse.json(
         { error: 'All fields are required' },
         { status: 400 }
@@ -171,6 +171,7 @@ export async function POST(request: NextRequest) {
       employee,
       company,
       jobSite,
+      jobName: jobName,
       jobDescription,
       timeSpent: timeSpentNumber.toString(),
     }).returning();
@@ -310,9 +311,9 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const { id, date, employee, company, jobSite, jobDescription, timeSpent } = await request.json();
+    const { id, date, employee, company, jobSite, jobName, jobDescription, timeSpent } = await request.json();
 
-    if (!id || !date || !employee || !company || !jobSite || !jobDescription || !timeSpent) {
+    if (!id || !date || !employee || !company || !jobSite || !jobName || !jobDescription || !timeSpent) {
       return NextResponse.json(
         { error: 'All fields are required' },
         { status: 400 }
@@ -346,6 +347,7 @@ export async function PUT(request: NextRequest) {
         employee,
         company,
         jobSite,
+        jobName: jobName,
         jobDescription,
         timeSpent: timeSpentNumber.toString(),
         updatedAt: new Date()

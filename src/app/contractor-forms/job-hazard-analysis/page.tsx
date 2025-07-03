@@ -22,6 +22,7 @@ interface JobHazardAnalysisFormData {
   date: string;
   supervisor: string;
   jobSite: string;
+  jobName: string;
   company: string;
   hazards: {
     slipFallTrips: boolean;
@@ -137,6 +138,7 @@ export default function JobHazardReportPage() {
     date: new Date().toISOString().split("T")[0],
     supervisor: "",
     jobSite: "",
+    jobName: "",
     company: "",
     hazards: {
       slipFallTrips: false,
@@ -249,6 +251,7 @@ export default function JobHazardReportPage() {
       date: new Date().toISOString().split("T")[0],
       supervisor: "",
       jobSite: "",
+      jobName: "",
       company: "",
       hazards: {
         slipFallTrips: false,
@@ -457,6 +460,7 @@ export default function JobHazardReportPage() {
         date: formData.date,
         supervisor: formData.supervisor,
         company: formData.company,
+        jobName: formData.jobName,
         hazards: formData.hazards,
         ppe: formData.ppe,
         fallProtection: formData.fallProtection,
@@ -534,6 +538,10 @@ export default function JobHazardReportPage() {
                   <div className="space-y-2">
                     <Label htmlFor="jobSite">Job Site:</Label>
                     <Input id="jobSite" name="jobSite" value={formData.jobSite} onChange={handleInputChange} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="jobName">Job Name:</Label>
+                    <Input id="jobName" name="jobName" value={formData.jobName} onChange={handleInputChange} placeholder="Name or title of the job" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="company">Company:</Label>

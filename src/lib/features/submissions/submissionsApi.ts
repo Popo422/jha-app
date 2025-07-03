@@ -19,6 +19,7 @@ export interface Submission {
   dateTimeClocked?: string
   company: string
   jobSite: string
+  jobName?: string
   submissionType: string
   formData: Record<string, any>
   createdAt: string
@@ -54,6 +55,7 @@ export interface UpdateSubmissionData {
   dateTimeClocked?: string
   company?: string
   jobSite?: string
+  jobName?: string
   formData?: Record<string, any>
 }
 

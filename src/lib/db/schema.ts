@@ -37,6 +37,7 @@ export const submissions = pgTable('submissions', {
   dateTimeClocked: timestamp('date_time_clocked'), // Combined date/time when clocked in/out
   company: text('company').notNull(),
   jobSite: text('job_site').notNull(),
+  jobName: text('job_name').notNull(), // Name/title of the specific job
   submissionType: text('submission_type').notNull(), // 'end-of-day', 'job-hazard-analysis', 'start-of-day'
   formData: jsonb('form_data').notNull(), // Store the entire form as JSON including file paths
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -51,6 +52,7 @@ export const timesheets = pgTable('timesheets', {
   employee: text('employee').notNull(), // Person's name
   company: text('company').notNull(), // Client company name
   jobSite: text('job_site').notNull(), // Company location
+  jobName: text('job_name').notNull(), // Name/title of the specific job
   jobDescription: text('job_description').notNull(), // Information about the job
   timeSpent: numeric('time_spent', { precision: 5, scale: 2 }).notNull(), // Time spent on site
   createdAt: timestamp('created_at').notNull().defaultNow(),

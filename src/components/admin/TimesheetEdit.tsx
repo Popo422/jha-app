@@ -17,6 +17,7 @@ interface Timesheet {
   employee: string;
   company: string;
   jobSite: string;
+  jobName?: string;
   jobDescription: string;
   timeSpent: string;
   createdAt: string;
@@ -34,6 +35,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
     employee: timesheet.employee,
     company: timesheet.company,
     jobSite: timesheet.jobSite,
+    jobName: timesheet.jobName || '',
     jobDescription: timesheet.jobDescription,
     timeSpent: timesheet.timeSpent,
   });
@@ -52,7 +54,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
   const handleSave = useCallback(async () => {
     try {
       // Validate required fields
-      if (!formData.date || !formData.employee || !formData.company || !formData.jobSite || !formData.jobDescription || !formData.timeSpent) {
+      if (!formData.date || !formData.employee || !formData.company || !formData.jobSite || !formData.jobName || !formData.jobDescription || !formData.timeSpent) {
         showToast('All fields are required', 'error');
         return;
       }
@@ -70,6 +72,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
         employee: formData.employee,
         company: formData.company,
         jobSite: formData.jobSite,
+        jobName: formData.jobName,
         jobDescription: formData.jobDescription,
         timeSpent: formData.timeSpent,
         authType: 'admin'
@@ -141,6 +144,17 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 value={formData.jobSite || ''}
                 onChange={handleInputChange}
                 placeholder="Company location"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="jobName">Job Name:</Label>
+              <Input
+                id="jobName"
+                name="jobName"
+                value={formData.jobName || ''}
+                onChange={handleInputChange}
+                placeholder="Name or title of the job"
                 required
               />
             </div>

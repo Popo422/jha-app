@@ -19,6 +19,7 @@ interface EndOfDayReportFormData {
   date: string;
   supervisor: string;
   jobSite: string;
+  jobName: string;
   company: string;
   timeClocked: string;
   freeFromInjury: boolean | null;
@@ -38,6 +39,7 @@ export default function EndOfDayReportPage() {
     date: new Date().toISOString().split("T")[0],
     supervisor: "",
     jobSite: "",
+    jobName: "",
     company: "",
     timeClocked: "",
     freeFromInjury: null,
@@ -115,6 +117,7 @@ export default function EndOfDayReportPage() {
         date: new Date().toISOString().split("T")[0],
         supervisor: "",
         jobSite: "",
+        jobName: "",
         company: "",
         timeClocked: "",
         freeFromInjury: null,
@@ -151,6 +154,7 @@ export default function EndOfDayReportPage() {
         date: formData.date,
         supervisor: formData.supervisor,
         company: formData.company,
+        jobName: formData.jobName,
         timeClocked: formData.timeClocked,
         freeFromInjury: formData.freeFromInjury,
         completedJHA: formData.completedJHA,
@@ -231,6 +235,17 @@ export default function EndOfDayReportPage() {
                       name="jobSite"
                       value={formData.jobSite}
                       onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="jobName">Job Name:</Label>
+                    <Input
+                      id="jobName"
+                      name="jobName"
+                      value={formData.jobName}
+                      onChange={handleInputChange}
+                      placeholder="Name or title of the job"
                       required
                     />
                   </div>

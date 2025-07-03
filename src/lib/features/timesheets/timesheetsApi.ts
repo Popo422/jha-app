@@ -6,6 +6,7 @@ export interface TimesheetData {
   employee: string
   company: string
   jobSite: string
+  jobName?: string
   jobDescription: string
   timeSpent: string
   authType?: 'contractor' | 'admin' | 'any'
@@ -18,6 +19,7 @@ export interface Timesheet {
   employee: string
   company: string
   jobSite: string
+  jobName?: string
   jobDescription: string
   timeSpent: string
   createdAt: string
@@ -51,6 +53,7 @@ export interface UpdateTimesheetData {
   employee: string
   company: string
   jobSite: string
+  jobName?: string
   jobDescription: string
   timeSpent: string
 }

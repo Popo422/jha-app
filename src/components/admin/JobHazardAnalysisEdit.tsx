@@ -23,6 +23,7 @@ interface Submission {
   dateTimeClocked?: string;
   company: string;
   jobSite: string;
+  jobName?: string;
   submissionType: string;
   formData: Record<string, any>;
   createdAt: string;
@@ -154,6 +155,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
         date: formData.date,
         company: formData.company,
         jobSite: submission.jobSite,
+        jobName: formData.jobName,
         formData: formData,
         authType: 'admin'
       }).unwrap();
@@ -219,6 +221,17 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                 name="company"
                 value={formData.company || ''}
                 onChange={handleInputChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="jobName">Job Name:</Label>
+              <Input
+                id="jobName"
+                name="jobName"
+                value={formData.jobName || ''}
+                onChange={handleInputChange}
+                placeholder="Name or title of the job"
+                required
               />
             </div>
           </div>
