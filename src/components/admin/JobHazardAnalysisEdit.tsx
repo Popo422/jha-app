@@ -154,7 +154,8 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
         date: formData.date,
         company: formData.company,
         jobSite: submission.jobSite,
-        formData: formData
+        formData: formData,
+        authType: 'admin'
       }).unwrap();
 
       if (result.success) {

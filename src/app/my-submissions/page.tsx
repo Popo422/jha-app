@@ -6,7 +6,7 @@ import { SubmissionsTable } from "@/components/SubmissionsTable";
 import { useGetSubmissionsQuery } from "@/lib/features/submissions/submissionsApi";
 
 export default function MySubmissionsPage() {
-  const { data, isLoading, error, refetch } = useGetSubmissionsQuery({});
+  const { data, isLoading, error, refetch } = useGetSubmissionsQuery({ authType: 'contractor' });
 
   const handleDelete = (id: string) => {
     refetch();

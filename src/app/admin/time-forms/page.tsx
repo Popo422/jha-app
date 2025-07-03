@@ -36,7 +36,8 @@ export default function TimeFormsPage() {
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
     company: filters.company || undefined,
-    search: debouncedSearch || undefined
+    search: debouncedSearch || undefined,
+    authType: 'admin'
   }, {
     refetchOnMountOrArgChange: true
   });
@@ -66,13 +67,13 @@ export default function TimeFormsPage() {
   }, [refetch]);
 
   const handleSingleDelete = useCallback(async (id: string) => {
-    await deleteTimesheet(id);
+    await deleteTimesheet({ id, authType: 'admin' });
     refetch();
   }, [deleteTimesheet, refetch]);
 
   const handleBulkDelete = useCallback(async (ids: string[]) => {
     for (const id of ids) {
-      await deleteTimesheet(id);
+      await deleteTimesheet({ id, authType: 'admin' });
     }
     refetch();
   }, [deleteTimesheet, refetch]);

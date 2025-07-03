@@ -136,8 +136,9 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
         date: formData.date,
         company: formData.company,
         jobSite: formData.jobSite,
-        dateTimeClocked: dateTimeClocked  ,
-        formData: formData
+        dateTimeClocked: dateTimeClocked,
+        formData: formData,
+        authType: 'admin'
       }).unwrap();
 
       if (result.success) {

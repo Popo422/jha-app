@@ -162,6 +162,7 @@ export default function EndOfDayReportPage() {
         signature: formData.signature,
       },
       files: formData.attachments,
+      authType: 'contractor',
     });
   };
 

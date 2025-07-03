@@ -7,8 +7,49 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here';
 
 // Helper function to authenticate and get user info
-function authenticateRequest(request: NextRequest): { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any } {
-  // Try admin token first
+function authenticateRequest(request: NextRequest, authType: 'contractor' | 'admin' | 'any' = 'any'): { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any } {
+  if (authType === 'contractor') {
+    // Only try contractor token
+    const userToken = request.cookies.get('authToken')?.value || 
+                     (request.headers.get('Authorization')?.startsWith('Bearer ') ? 
+                      request.headers.get('Authorization')?.replace('Bearer ', '') : null)
+
+    if (userToken) {
+      try {
+        const decoded = jwt.verify(userToken, JWT_SECRET) as TokenPayload
+        return { 
+          isAdmin: false, 
+          userId: decoded.user.id, 
+          userName: decoded.user.name,
+          contractor: decoded.contractor 
+        }
+      } catch (error) {
+        throw new Error('Invalid contractor token')
+      }
+    }
+    throw new Error('No contractor authentication token found')
+  }
+
+  if (authType === 'admin') {
+    // Only try admin token
+    const adminToken = request.cookies.get('adminAuthToken')?.value || 
+                      (request.headers.get('Authorization')?.startsWith('AdminBearer ') ? 
+                       request.headers.get('Authorization')?.replace('AdminBearer ', '') : null)
+    
+    if (adminToken) {
+      try {
+        const decoded = jwt.verify(adminToken, JWT_SECRET) as AdminTokenPayload
+        if (decoded.admin && decoded.isAdmin) {
+          return { isAdmin: true, admin: decoded.admin }
+        }
+      } catch (error) {
+        throw new Error('Invalid admin token')
+      }
+    }
+    throw new Error('No admin authentication token found')
+  }
+
+  // Default behavior - try admin token first, then user token
   const adminToken = request.cookies.get('adminAuthToken')?.value || 
                     (request.headers.get('Authorization')?.startsWith('AdminBearer ') ? 
                      request.headers.get('Authorization')?.replace('AdminBearer ', '') : null)
@@ -80,10 +121,14 @@ interface AdminTokenPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authType from query parameters or default to 'any'
+    const { searchParams } = new URL(request.url)
+    const authType = (searchParams.get('authType') as 'contractor' | 'admin' | 'any') || 'any'
+    
     // Authenticate request
     let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any }
     try {
-      auth = authenticateRequest(request)
+      auth = authenticateRequest(request, authType)
     } catch (error) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -148,18 +193,20 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    // Get authType from query parameters or default to 'any'
+    const { searchParams } = new URL(request.url)
+    const authType = (searchParams.get('authType') as 'contractor' | 'admin' | 'any') || 'any'
+    
     // Authenticate request
     let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any }
     try {
-      auth = authenticateRequest(request)
+      auth = authenticateRequest(request, authType)
     } catch (error) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       )
     }
-
-    const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
     const dateFrom = searchParams.get('dateFrom');
@@ -248,36 +295,19 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    // Get authType from query parameters or default to 'any'
+    const { searchParams } = new URL(request.url)
+    const authType = (searchParams.get('authType') as 'contractor' | 'admin' | 'any') || 'any'
     
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Authorization header required' }, { status: 401 });
-    }
-
-    // Check for admin token first
-    let decoded: any;
-    let isAdmin = false;
-    
-    if (authHeader.startsWith('AdminBearer ')) {
-      const adminToken = authHeader.substring(12);
-      try {
-        decoded = jwt.verify(adminToken, JWT_SECRET) as any;
-        if (!decoded.isAdmin || !decoded.admin || decoded.admin.role !== 'admin') {
-          return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-        }
-        isAdmin = true;
-      } catch (error) {
-        return NextResponse.json({ error: 'Invalid admin token' }, { status: 401 });
-      }
-    } else if (authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      try {
-        decoded = jwt.verify(token, JWT_SECRET) as any;
-      } catch (error) {
-        return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-      }
-    } else {
-      return NextResponse.json({ error: 'Invalid authorization format' }, { status: 401 });
+    // Authenticate request
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any }
+    try {
+      auth = authenticateRequest(request, authType)
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
     }
 
     const { id, date, employee, company, jobSite, jobDescription, timeSpent } = await request.json();
@@ -304,8 +334,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check permissions - admin can edit any timesheet, user can only edit their own
-    const userId = isAdmin ? decoded.admin?.id : decoded.user?.id;
-    if (!isAdmin && existingTimesheet[0].userId !== userId) {
+    const userId = auth.isAdmin ? auth.admin?.id : auth.userId;
+    if (!auth.isAdmin && existingTimesheet[0].userId !== userId) {
       return NextResponse.json({ error: 'Unauthorized - can only edit your own timesheets' }, { status: 403 });
     }
 

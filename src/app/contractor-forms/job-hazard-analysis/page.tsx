@@ -469,6 +469,7 @@ export default function JobHazardReportPage() {
         signature: formData.signature,
       },
       files: formData.photos,
+      authType: 'contractor',
     });
   }, [formData, submitForm, reset]);
 

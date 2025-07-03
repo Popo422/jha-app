@@ -117,7 +117,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteSubmission(id).unwrap();
+      await deleteSubmission({ id, authType: 'contractor' }).unwrap();
       onDelete?.(id);
     } catch (error) {
       console.error('Failed to delete submission:', error);

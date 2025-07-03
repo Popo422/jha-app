@@ -72,6 +72,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
         jobSite: formData.jobSite,
         jobDescription: formData.jobDescription,
         timeSpent: formData.timeSpent,
+        authType: 'admin'
       }).unwrap();
 
       if (result.success) {

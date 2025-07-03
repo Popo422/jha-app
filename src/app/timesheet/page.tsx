@@ -65,7 +65,7 @@ export default function TimesheetPage() {
     e.preventDefault();
     reset(); // Reset mutation state
 
-    await submitTimesheet(formData);
+    await submitTimesheet({ ...formData, authType: 'contractor' });
   }, [formData, submitTimesheet, reset]);
 
   // Show loading while checking module access

@@ -55,13 +55,15 @@ export default function ContractTrackerPage() {
   const { data: submissionsData, isLoading: submissionsLoading } = useGetSubmissionsQuery({
     dateFrom: filters.date,
     dateTo: filters.date,
-    limit: 1000
+    limit: 1000,
+    authType: 'admin'
   });
 
   const { data: timesheetsData, isLoading: timesheetsLoading } = useGetTimesheetsQuery({
     dateFrom: filters.date,
     dateTo: filters.date,
-    limit: 1000
+    limit: 1000,
+    authType: 'admin'
   });
 
   useEffect(() => {

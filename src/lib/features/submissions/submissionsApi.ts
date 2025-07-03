@@ -8,6 +8,7 @@ export interface SubmissionData {
   dateTimeClocked?: string
   formData: Record<string, any>
   files?: File[]
+  authType?: 'contractor' | 'admin' | 'any'
 }
 
 export interface Submission {
@@ -117,8 +118,14 @@ export const submissionsApi = createApi({
           })
         }
 
+        // Add authType to URL if specified
+        let url = ''
+        if (data.authType) {
+          url = `?authType=${data.authType}`
+        }
+
         return {
-          url: '',
+          url,
           method: 'POST',
           body: formData,
         }
@@ -133,8 +140,9 @@ export const submissionsApi = createApi({
       search?: string
       limit?: number
       offset?: number
+      authType?: 'contractor' | 'admin' | 'any'
     }>({
-      query: ({ type, dateFrom, dateTo, company, search, limit = 50, offset = 0 }) => {
+      query: ({ type, dateFrom, dateTo, company, search, limit = 50, offset = 0, authType }) => {
         const params = new URLSearchParams({
           limit: limit.toString(),
           offset: offset.toString(),
@@ -155,24 +163,39 @@ export const submissionsApi = createApi({
         if (search) {
           params.append('search', search)
         }
+        if (authType) {
+          params.append('authType', authType)
+        }
         
         return `?${params}`
       },
       providesTags: ['Submission'],
     }),
-    deleteSubmission: builder.mutation<DeleteSubmissionResponse, string>({
-      query: (id) => ({
-        url: `?id=${id}`,
-        method: 'DELETE',
-      }),
+    deleteSubmission: builder.mutation<DeleteSubmissionResponse, { id: string, authType?: 'contractor' | 'admin' | 'any' }>({
+      query: ({ id, authType }) => {
+        const params = new URLSearchParams({ id })
+        if (authType) {
+          params.append('authType', authType)
+        }
+        return {
+          url: `?${params}`,
+          method: 'DELETE',
+        }
+      },
       invalidatesTags: ['Submission'],
     }),
-    updateSubmission: builder.mutation<UpdateSubmissionResponse, UpdateSubmissionData>({
-      query: (data) => ({
-        url: '',
-        method: 'PUT',
-        body: data,
-      }),
+    updateSubmission: builder.mutation<UpdateSubmissionResponse, UpdateSubmissionData & { authType?: 'contractor' | 'admin' | 'any' }>({
+      query: ({ authType, ...data }) => {
+        let url = ''
+        if (authType) {
+          url = `?authType=${authType}`
+        }
+        return {
+          url,
+          method: 'PUT',
+          body: data,
+        }
+      },
       invalidatesTags: ['Submission'],
     }),
     deleteAttachment: builder.mutation<DeleteAttachmentResponse, DeleteAttachmentData>({

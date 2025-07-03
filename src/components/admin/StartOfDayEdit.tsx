@@ -134,7 +134,8 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
         company: formData.company,
         jobSite: formData.jobSite,
         dateTimeClocked: dateTimeClocked,
-        formData: formData
+        formData: formData,
+        authType: 'admin'
       }).unwrap();
 
       if (result.success) {

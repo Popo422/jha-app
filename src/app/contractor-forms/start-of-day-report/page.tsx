@@ -142,6 +142,7 @@ export default function StartOfDayReportPage() {
         physicalDistancing: formData.physicalDistancing,
         signature: formData.signature,
       },
+      authType: 'contractor',
     });
   };
 

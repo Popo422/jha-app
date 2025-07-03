@@ -8,6 +8,7 @@ export interface TimesheetData {
   jobSite: string
   jobDescription: string
   timeSpent: string
+  authType?: 'contractor' | 'admin' | 'any'
 }
 
 export interface Timesheet {
@@ -88,11 +89,17 @@ export const timesheetsApi = createApi({
   tagTypes: ['Timesheet'],
   endpoints: (builder) => ({
     submitTimesheet: builder.mutation<TimesheetResponse, TimesheetData>({
-      query: (data) => ({
-        url: '',
-        method: 'POST',
-        body: data,
-      }),
+      query: ({ authType, ...data }) => {
+        let url = ''
+        if (authType) {
+          url = `?authType=${authType}`
+        }
+        return {
+          url,
+          method: 'POST',
+          body: data,
+        }
+      },
       invalidatesTags: ['Timesheet'],
     }),
     getTimesheets: builder.query<GetTimesheetsResponse, { 
@@ -102,8 +109,9 @@ export const timesheetsApi = createApi({
       search?: string
       limit?: number
       offset?: number
+      authType?: 'contractor' | 'admin' | 'any'
     }>({
-      query: ({ dateFrom, dateTo, company, search, limit = 50, offset = 0 }) => {
+      query: ({ dateFrom, dateTo, company, search, limit = 50, offset = 0, authType }) => {
         const params = new URLSearchParams({
           limit: limit.toString(),
           offset: offset.toString(),
@@ -121,24 +129,39 @@ export const timesheetsApi = createApi({
         if (search) {
           params.append('search', search)
         }
+        if (authType) {
+          params.append('authType', authType)
+        }
         
         return `?${params}`
       },
       providesTags: ['Timesheet'],
     }),
-    deleteTimesheet: builder.mutation<DeleteTimesheetResponse, string>({
-      query: (id) => ({
-        url: `/${id}`,
-        method: 'DELETE',
-      }),
+    deleteTimesheet: builder.mutation<DeleteTimesheetResponse, { id: string, authType?: 'contractor' | 'admin' | 'any' }>({
+      query: ({ id, authType }) => {
+        let url = `/${id}`
+        if (authType) {
+          url += `?authType=${authType}`
+        }
+        return {
+          url,
+          method: 'DELETE',
+        }
+      },
       invalidatesTags: ['Timesheet'],
     }),
-    updateTimesheet: builder.mutation<UpdateTimesheetResponse, UpdateTimesheetData>({
-      query: (data) => ({
-        url: '',
-        method: 'PUT',
-        body: data,
-      }),
+    updateTimesheet: builder.mutation<UpdateTimesheetResponse, UpdateTimesheetData & { authType?: 'contractor' | 'admin' | 'any' }>({
+      query: ({ authType, ...data }) => {
+        let url = ''
+        if (authType) {
+          url = `?authType=${authType}`
+        }
+        return {
+          url,
+          method: 'PUT',
+          body: data,
+        }
+      },
       invalidatesTags: ['Timesheet'],
     }),
   }),

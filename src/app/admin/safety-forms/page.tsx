@@ -65,7 +65,8 @@ export default function SafetyFormsPage() {
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
     company: filters.company || undefined,
-    search: debouncedSearch || undefined
+    search: debouncedSearch || undefined,
+    authType: 'admin' as const
   }), [filters.type, filters.dateFrom, filters.dateTo, filters.company, debouncedSearch]);
 
   console.log('Safety forms query params:', queryParams);
@@ -117,13 +118,13 @@ export default function SafetyFormsPage() {
   }, []);
 
   const handleSingleDelete = useCallback(async (id: string) => {
-    await deleteSubmission(id);
+    await deleteSubmission({ id, authType: 'admin' });
     refetch();
   }, [deleteSubmission, refetch]);
 
   const handleBulkDelete = useCallback(async (ids: string[]) => {
     for (const id of ids) {
-      await deleteSubmission(id);
+      await deleteSubmission({ id, authType: 'admin' });
     }
     refetch();
   }, [deleteSubmission, refetch]);
