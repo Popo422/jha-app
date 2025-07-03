@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
-const publicRoutes = ['/login']
+const publicRoutes = ['/login', '/onboarding']
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isLoading, isAuthenticated } = useAuth()

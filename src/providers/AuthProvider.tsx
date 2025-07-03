@@ -37,7 +37,8 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     const validateAuth = async () => {
       // Skip auth validation for admin routes
-      if (pathname.startsWith('/admin')) {
+      console.log("pathname:", pathname.startsWith('/onboarding'))
+      if (pathname.startsWith('/admin') || pathname.startsWith('/onboarding')) {
         setIsLoading(false)
         return
       }
