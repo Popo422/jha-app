@@ -189,23 +189,23 @@ export default function ReportingPage() {
       accessorKey: "employee",
       header: "Name",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue("employee")}</div>
+        <div>{row.getValue("employee")}</div>
       ),
     },
     {
       accessorKey: "jobName",
       header: "Project Name",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue("jobName") || "N/A"}</div>
+        <div>{row.getValue("jobName") || "N/A"}</div>
       ),
     },
     {
       accessorKey: "timeSpent",
       header: "Time Spent",
       cell: ({ row }) => (
-        <Badge variant="secondary">
+        <div>
           {formatTimeSpent(row.getValue("timeSpent"))}
-        </Badge>
+        </div>
       ),
     },
     {
@@ -219,7 +219,7 @@ export default function ReportingPage() {
       accessorKey: "date",
       header: "Date",
       cell: ({ row }) => (
-        <div className="text-sm text-gray-600">
+        <div>
           {new Date(row.getValue("date")).toLocaleDateString()}
         </div>
       ),
@@ -228,7 +228,7 @@ export default function ReportingPage() {
       accessorKey: "jobSite",
       header: "Job Site",
       cell: ({ row }) => (
-        <div className="text-sm">{row.getValue("jobSite")}</div>
+        <div>{row.getValue("jobSite")}</div>
       ),
     },
   ], []);

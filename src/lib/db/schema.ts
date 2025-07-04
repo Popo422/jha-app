@@ -73,3 +73,16 @@ export const contractors = pgTable('contractors', {
   companyEmailUnique: unique().on(table.companyId, table.email),
 }))
 
+export const toolboxTalks = pgTable('toolbox_talks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: text('title').notNull(),
+  content: text('content').notNull(), // HTML content from WYSIWYG editor
+  status: text('status').notNull().default('draft'), // 'draft', 'published'
+  companyId: uuid('company_id').notNull(),
+  authorId: uuid('author_id').notNull(), // Admin user who created it
+  authorName: text('author_name').notNull(), // Admin name for display
+  publishedAt: timestamp('published_at'), // When it was published
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
