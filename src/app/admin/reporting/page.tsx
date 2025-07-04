@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -17,12 +18,22 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import { useGetReportingDataQuery } from '@/lib/features/reporting/reportingApi';
+import { useGetTimesheetsQuery } from '@/lib/features/timesheets/timesheetsApi';
+import { useGetContractorsQuery } from '@/lib/features/contractors/contractorsApi';
+import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import type { Employee, ChartDataPoint, ReportingData } from '@/lib/features/reporting/reportingApi';
+import type { Timesheet } from '@/lib/features/timesheets/timesheetsApi';
+import type { ColumnDef } from '@tanstack/react-table';
 
 export default function ReportingPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
+  const [selectedContractors, setSelectedContractors] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
+  const [companyFilter, setCompanyFilter] = useState('');
+  const [employeeSearch, setEmployeeSearch] = useState('');
+  const [contractorSearch, setContractorSearch] = useState('');
 
   const { admin } = useSelector((state: RootState) => state.auth);
 
@@ -54,11 +65,54 @@ export default function ReportingPage() {
     }
   );
 
+  // Get contractors data for filtering
+  const { 
+    data: contractorsData, 
+    isLoading: contractorsLoading 
+  } = useGetContractorsQuery({
+    limit: 1000 // Get all contractors
+  });
+
+  // Create search string for contractor filtering
+  const contractorSearchString = useMemo(() => {
+    if (selectedContractors.length === 0) return search;
+    
+    const contractorNames = contractorsData?.contractors
+      .filter(contractor => selectedContractors.includes(contractor.id))
+      .map(contractor => `${contractor.firstName} ${contractor.lastName}`)
+      .join('|') || '';
+    
+    // Combine search with contractor names
+    const searchTerms = [search, contractorNames].filter(Boolean);
+    return searchTerms.join(' ');
+  }, [search, selectedContractors, contractorsData?.contractors]);
+
+  // Get timesheets data
+  const { 
+    data: timesheetData, 
+    isLoading: timesheetLoading, 
+    isFetching: timesheetFetching 
+  } = useGetTimesheetsQuery({
+    dateFrom: startDate || undefined,
+    dateTo: endDate || undefined,
+    company: companyFilter || undefined,
+    search: contractorSearchString || undefined,
+    authType: 'admin'
+  });
+
   const handleEmployeeToggle = (employeeId: string) => {
     setSelectedEmployees(prev => 
       prev.includes(employeeId) 
         ? prev.filter(id => id !== employeeId)
         : [...prev, employeeId]
+    );
+  };
+
+  const handleContractorToggle = (contractorId: string) => {
+    setSelectedContractors(prev => 
+      prev.includes(contractorId) 
+        ? prev.filter(id => id !== contractorId)
+        : [...prev, contractorId]
     );
   };
 
@@ -98,6 +152,216 @@ export default function ReportingPage() {
       .filter(emp => selectedEmployees.includes(emp.id))
       .map(emp => emp.name);
   }, [data?.employees, selectedEmployees]);
+
+  const selectedContractorNames = useMemo(() => {
+    if (!contractorsData) return [];
+    return contractorsData.contractors
+      .filter(contractor => selectedContractors.includes(contractor.id))
+      .map(contractor => `${contractor.firstName} ${contractor.lastName}`);
+  }, [contractorsData?.contractors, selectedContractors]);
+
+  // Filtered employees for search
+  const filteredEmployees = useMemo(() => {
+    if (!data?.employees) return [];
+    if (!employeeSearch) return data.employees;
+    return data.employees.filter(employee => 
+      employee.name.toLowerCase().includes(employeeSearch.toLowerCase())
+    );
+  }, [data?.employees, employeeSearch]);
+
+  // Filtered contractors for search
+  const filteredContractors = useMemo(() => {
+    if (!contractorsData?.contractors) return [];
+    if (!contractorSearch) return contractorsData.contractors;
+    return contractorsData.contractors.filter(contractor => 
+      `${contractor.firstName} ${contractor.lastName}`.toLowerCase().includes(contractorSearch.toLowerCase())
+    );
+  }, [contractorsData?.contractors, contractorSearch]);
+
+  const formatTimeSpent = (timeSpent: string) => {
+    const hours = parseFloat(timeSpent);
+    if (hours === 1) return "1 hr";
+    return `${hours} hrs`;
+  };
+
+  const timesheetColumns: ColumnDef<Timesheet>[] = useMemo(() => [
+    {
+      accessorKey: "employee",
+      header: "Name",
+      cell: ({ row }) => (
+        <div className="font-medium">{row.getValue("employee")}</div>
+      ),
+    },
+    {
+      accessorKey: "jobName",
+      header: "Project Name",
+      cell: ({ row }) => (
+        <div className="font-medium">{row.getValue("jobName") || "N/A"}</div>
+      ),
+    },
+    {
+      accessorKey: "timeSpent",
+      header: "Time Spent",
+      cell: ({ row }) => (
+        <Badge variant="secondary">
+          {formatTimeSpent(row.getValue("timeSpent"))}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "company",
+      header: "Company Name",
+      cell: ({ row }) => (
+        <div>{row.getValue("company")}</div>
+      ),
+    },
+    {
+      accessorKey: "date",
+      header: "Date",
+      cell: ({ row }) => (
+        <div className="text-sm text-gray-600">
+          {new Date(row.getValue("date")).toLocaleDateString()}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "jobSite",
+      header: "Job Site",
+      cell: ({ row }) => (
+        <div className="text-sm">{row.getValue("jobSite")}</div>
+      ),
+    },
+  ], []);
+
+  const timesheetFilters = useMemo(() => (
+    <div className="flex flex-col gap-4 md:flex-row md:items-center">
+      <div className="space-y-1">
+        <div className="text-sm font-medium">From Date</div>
+        <Input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="w-full md:w-40"
+        />
+      </div>
+      <div className="space-y-1">
+        <div className="text-sm font-medium">To Date</div>
+        <Input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="w-full md:w-40"
+        />
+      </div>
+      <div className="space-y-1">
+        <div className="text-sm font-medium">Company</div>
+        <Input
+          type="text"
+          placeholder="Filter by company"
+          value={companyFilter}
+          onChange={(e) => setCompanyFilter(e.target.value)}
+          className="w-full md:w-48"
+        />
+      </div>
+      <div className="space-y-1">
+        <div className="text-sm font-medium">Contractors</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full md:w-64 justify-between">
+              {selectedContractors.length === 0 
+                ? "All Contractors" 
+                : selectedContractors.length === 1
+                  ? selectedContractorNames[0]
+                  : `${selectedContractors.length} contractors selected`
+              }
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-64">
+            <div className="p-2">
+              <Input
+                placeholder="Search contractors..."
+                className="w-full"
+                value={contractorSearch}
+                onChange={(e) => {
+                  setContractorSearch(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                onFocus={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+            </div>
+            <DropdownMenuItem
+              onClick={() => setSelectedContractors([])}
+              className="cursor-pointer"
+            >
+              All Contractors
+            </DropdownMenuItem>
+            <div className="max-h-48 overflow-y-auto">
+              {filteredContractors.map((contractor) => (
+                <DropdownMenuCheckboxItem
+                  key={contractor.id}
+                  checked={selectedContractors.includes(contractor.id)}
+                  onCheckedChange={() => handleContractorToggle(contractor.id)}
+                >
+                  {contractor.firstName} {contractor.lastName}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  ), [startDate, endDate, companyFilter, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch]);
+
+  const renderMobileCard = useCallback((timesheet: Timesheet, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
+    <Card className="mb-4">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          {showCheckboxes && (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={onToggleSelect}
+              className="w-4 h-4 mt-1 mr-3"
+            />
+          )}
+          <div className="flex-1">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <div className="font-semibold text-lg">{timesheet.employee}</div>
+                <div className="text-sm text-gray-600">{timesheet.company}</div>
+              </div>
+              <Badge variant="secondary">
+                {formatTimeSpent(timesheet.timeSpent)}
+              </Badge>
+            </div>
+            
+            <div className="space-y-1 mb-3">
+              <div className="flex justify-between">
+                <span className="text-sm font-medium text-gray-500">Project:</span>
+                <span className="text-sm">{timesheet.jobName || "N/A"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium text-gray-500">Date:</span>
+                <span className="text-sm">{new Date(timesheet.date).toLocaleDateString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium text-gray-500">Job Site:</span>
+                <span className="text-sm">{timesheet.jobSite}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  ), []);
 
   return (
     <div className="p-6 space-y-6">
@@ -145,21 +409,42 @@ export default function ReportingPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-64">
+                  <div className="p-2">
+                    <Input
+                      placeholder="Search employees..."
+                      className="w-full"
+                      value={employeeSearch}
+                      onChange={(e) => {
+                        setEmployeeSearch(e.target.value);
+                      }}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onFocus={(e) => {
+                        e.stopPropagation();
+                      }}
+                    />
+                  </div>
                   <DropdownMenuItem
                     onClick={() => setSelectedEmployees([])}
                     className="cursor-pointer"
                   >
                     All Employees
                   </DropdownMenuItem>
-                  {data?.employees.map((employee) => (
-                    <DropdownMenuCheckboxItem
-                      key={employee.id}
-                      checked={selectedEmployees.includes(employee.id)}
-                      onCheckedChange={() => handleEmployeeToggle(employee.id)}
-                    >
-                      {employee.name}
-                    </DropdownMenuCheckboxItem>
-                  ))}
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredEmployees.map((employee) => (
+                      <DropdownMenuCheckboxItem
+                        key={employee.id}
+                        checked={selectedEmployees.includes(employee.id)}
+                        onCheckedChange={() => handleEmployeeToggle(employee.id)}
+                      >
+                        {employee.name}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -277,6 +562,33 @@ export default function ReportingPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Timesheet Table */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Timesheet Details</h2>
+        <AdminDataTable
+          data={timesheetData?.timesheets || []}
+          columns={timesheetColumns}
+          isLoading={timesheetLoading}
+          isFetching={timesheetFetching}
+          getRowId={(timesheet) => timesheet.id}
+          exportFilename="timesheets"
+          exportHeaders={["Name", "Project Name", "Time Spent", "Company Name", "Date", "Job Site", "Job Description"]}
+          getExportData={(timesheet) => [
+            timesheet.employee,
+            timesheet.jobName || "N/A",
+            formatTimeSpent(timesheet.timeSpent),
+            timesheet.company,
+            new Date(timesheet.date).toLocaleDateString(),
+            timesheet.jobSite,
+            timesheet.jobDescription
+          ]}
+          searchValue={search}
+          onSearchChange={setSearch}
+          renderMobileCard={renderMobileCard}
+          filters={timesheetFilters}
+        />
       </div>
     </div>
   );
