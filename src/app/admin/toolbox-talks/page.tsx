@@ -360,6 +360,9 @@ export default function ToolboxTalksPage() {
       editor?.chain().focus().insertContent(`<img src="${tempUrl}" alt="${file.name}" style="display: inline-block; margin: 0 5px;" />`).run();
     } else {
       // There's a selection, move cursor to end of selection before inserting
+      if (!editor){
+        return
+      }
       const { to } = editor.state.selection;
       editor?.chain().focus().setTextSelection(to).insertContent(`<img src="${tempUrl}" alt="${file.name}" style="display: inline-block; margin: 0 5px;" />`).run();
     }
