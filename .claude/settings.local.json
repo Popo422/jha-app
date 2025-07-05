@@ -14,7 +14,10 @@
       "Bash(npx:*)",
       "Bash(npm run typecheck:*)",
       "Bash(npm run lint:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "WebFetch(domain:tiptap.dev)",
+      "Bash(node:*)",
+      "Bash(npm:*)"
     ],
     "deny": []
   }

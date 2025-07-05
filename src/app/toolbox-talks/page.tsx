@@ -87,12 +87,12 @@ export default function ToolboxTalksPage() {
                 </Button>
               </div>
               
-              <article className="max-w-4xl">
-                <header className="mb-8">
+              <article className="max-w-4xl mx-auto">
+                <header className="mb-8 text-center">
                   <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-gray-100">
                     {selectedTalk.title}
                   </h1>
-                  <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center justify-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center gap-1">
                       <User className="h-4 w-4" />
                       <span>{selectedTalk.authorName}</span>
@@ -106,7 +106,7 @@ export default function ToolboxTalksPage() {
                 </header>
 
                 <div 
-                  className="prose prose-lg max-w-none"
+                  className="tiptap-content prose prose-lg max-w-none mx-auto"
                   dangerouslySetInnerHTML={{ __html: selectedTalk.content }}
                 />
               </article>

@@ -5,6 +5,84 @@
   min-height: 300px;
 }
 
+/* TipTap Content Display Styles for Contractor View */
+.tiptap-content {
+  text-align: left; /* Reset any center alignment, let content flow naturally */
+}
+
+.tiptap-content h1,
+.tiptap-content h2,
+.tiptap-content h3 {
+  text-align: center; /* Center headings only */
+}
+
+.tiptap-content p {
+  margin: 1em 0;
+  text-align: left; /* Ensure paragraphs are left-aligned */
+}
+
+.tiptap-content ul {
+  list-style-type: disc !important;
+  padding-left: 1.5em !important;
+  margin: 1em 0 !important;
+}
+
+.tiptap-content ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5em !important;
+  margin: 1em 0 !important;
+}
+
+.tiptap-content li {
+  margin: 0.25em 0 !important;
+  display: list-item !important;
+}
+
+.tiptap-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1em auto;
+  display: block;
+}
+
+.tiptap-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1em auto;
+  overflow: hidden;
+}
+
+.tiptap-content td,
+.tiptap-content th {
+  min-width: 1em;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.tiptap-content th {
+  font-weight: bold;
+  text-align: left;
+  background-color: #f1f3f4;
+}
+
+/* Override prose styles that interfere with lists */
+.tiptap-content.prose ul {
+  list-style-type: disc !important;
+}
+
+.tiptap-content.prose ol {
+  list-style-type: decimal !important;
+}
+
+.tiptap-content.prose li {
+  margin: 0.25em 0 !important;
+}
+
 .ProseMirror p {
   margin: 1em 0;
 }
@@ -55,7 +133,9 @@
   max-width: 100%;
   height: auto;
   border-radius: 0.5rem;
-  margin: 1em 0;
+  margin: 0.5em 0.25em;
+  display: inline-block !important;
+  vertical-align: top;
 }
 
 .ProseMirror blockquote {
@@ -99,6 +179,160 @@
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+/* Text Alignment Styles */
+.ProseMirror .has-text-align-left {
+  text-align: left;
+}
+
+.ProseMirror .has-text-align-center {
+  text-align: center;
+}
+
+.ProseMirror .has-text-align-right {
+  text-align: right;
+}
+
+.ProseMirror .has-text-align-justify {
+  text-align: justify;
+}
+
+/* Ensure images display properly regardless of alignment */
+.ProseMirror .has-text-align-left img,
+.ProseMirror .has-text-align-center img,
+.ProseMirror .has-text-align-right img,
+.ProseMirror .has-text-align-justify img {
+  display: inline-block !important;
+  vertical-align: top;
+}
+
+/* Preserve image structure within aligned paragraphs */
+.ProseMirror p[style*="text-align"] img {
+  display: inline-block !important;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Table Styles */
+.ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1em 0;
+  overflow: hidden;
+}
+
+.ProseMirror td, .ProseMirror th {
+  min-width: 1em;
+  border: 1px solid #ddd;
+  padding: 3px 5px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.ProseMirror th {
+  font-weight: bold;
+  text-align: left;
+  background-color: #f1f3f4;
+}
+
+.ProseMirror .selectedCell:after {
+  z-index: 2;
+  position: absolute;
+  content: "";
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(200, 200, 255, 0.4);
+  pointer-events: none;
+}
+
+.ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background-color: #adf;
+  pointer-events: none;
+}
+
+.ProseMirror table .selectedCell:after {
+  z-index: 2;
+  position: absolute;
+  content: "";
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(200, 200, 255, 0.4);
+  pointer-events: none;
+}
+
+.ProseMirror.resize-cursor {
+  cursor: ew-resize;
+  cursor: col-resize;
+}
+
+/* Superscript and Subscript */
+.ProseMirror sup {
+  vertical-align: super;
+  font-size: smaller;
+}
+
+.ProseMirror sub {
+  vertical-align: sub;
+  font-size: smaller;
+}
+
+/* Highlight styles */
+.ProseMirror mark {
+  background-color: #ffff00;
+  padding: 0.1em 0.2em;
+  border-radius: 0.2em;
+}
+
+/* Underline styles */
+.ProseMirror u {
+  text-decoration: underline;
+}
+
+/* Image with Delete Button Styles */
+.ProseMirror .image-with-delete {
+  display: inline-block;
+  position: relative;
+  max-width: 100%;
+}
+
+.ProseMirror .image-with-delete img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 0.5em 0;
+}
+
+.ProseMirror .image-with-delete .group:hover button {
+  opacity: 1;
+}
+
+.ProseMirror .image-with-delete button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out, background-color 0.2s ease-in-out;
+  z-index: 10;
+}
+
+.ProseMirror .image-with-delete button:hover {
+  background: rgba(220, 38, 38, 0.95);
 }
 
 /* Image Resize Styles */
