@@ -22,10 +22,14 @@ export const companyApi = createApi({
     },
   }),
   tagTypes: ['CompanyModules'],
+  // Keep data cached for 10 minutes since company modules rarely change
+  keepUnusedDataFor: 600,
   endpoints: (builder) => ({
     getCompanyModules: builder.query<CompanyModulesResponse, void>({
       query: () => '/modules',
       providesTags: ['CompanyModules'],
+      // Cache for 10 minutes - company modules are relatively static
+      keepUnusedDataFor: 600,
     }),
   }),
 })

@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useAppDispatch } from '@/lib/hooks'
+import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { restoreAdminAuth, adminLoginFailure } from '@/lib/features/auth/authSlice'
 import { AdminAuth } from '@/types/auth'
 
@@ -18,11 +18,26 @@ export default function AdminProtectedRoute({ children }: AdminProtectedRoutePro
   const router = useRouter()
   const pathname = usePathname()
   const dispatch = useAppDispatch()
+  const { admin, isAdminAuthenticated } = useAppSelector((state) => state.auth)
+  const lastAuthCheck = useRef<number>(0)
+  const hasInitialized = useRef<boolean>(false)
 
   useEffect(() => {
     const checkAdminAuth = async () => {
       // Allow admin public routes
       if (adminPublicRoutes.includes(pathname)) {
+        setIsLoading(false)
+        setIsAuthenticated(false)
+        return
+      }
+
+      // If we already have valid auth in Redux and it's recent, use it
+      const now = Date.now()
+      const timeSinceLastCheck = now - lastAuthCheck.current
+      const fiveMinutes = 5 * 60 * 1000 // 5 minutes in milliseconds
+
+      if (hasInitialized.current && isAdminAuthenticated && admin && timeSinceLastCheck < fiveMinutes) {
+        setIsAuthenticated(true)
         setIsLoading(false)
         return
       }
@@ -39,7 +54,7 @@ export default function AdminProtectedRoute({ children }: AdminProtectedRoutePro
 
         const token = adminTokenMatch[1]
         
-        // Validate token with server
+        // Validate token with server (only if necessary)
         const response = await fetch('/api/auth/admin/validate', {
           method: 'POST',
           headers: {
@@ -51,6 +66,8 @@ export default function AdminProtectedRoute({ children }: AdminProtectedRoutePro
         if (response.ok) {
           const data: AdminAuth = await response.json()
           setIsAuthenticated(data.isAdmin)
+          lastAuthCheck.current = now
+          hasInitialized.current = true
           
           // Store admin auth data in Redux store
           if (data.isAdmin && data.admin && data.token) {
@@ -76,7 +93,7 @@ export default function AdminProtectedRoute({ children }: AdminProtectedRoutePro
     }
 
     checkAdminAuth()
-  }, [pathname, router])
+  }, [pathname, router, dispatch, admin, isAdminAuthenticated])
 
   // Allow admin public routes
   if (adminPublicRoutes.includes(pathname)) {

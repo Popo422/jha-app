@@ -41,7 +41,14 @@ export default function AppSidebar() {
   const dispatch = useAppDispatch()
   const isOpen = useAppSelector((state) => state.sidebar.isOpen)
   const theme = useAppSelector((state) => state.theme.mode)
-  const { data: modulesData } = useGetCompanyModulesQuery()
+  const { data: modulesData, isLoading: modulesLoading } = useGetCompanyModulesQuery(undefined, {
+    // Only refetch when user navigates away and back after 5 minutes
+    refetchOnMountOrArgChange: 300,
+    // Don't refetch on window focus
+    refetchOnFocus: false,
+    // Don't refetch on reconnect
+    refetchOnReconnect: false,
+  })
 
   const navigation = useMemo(() => {
     if (!modulesData?.enabledModules) return allNavigation;

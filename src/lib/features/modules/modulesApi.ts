@@ -49,10 +49,14 @@ export const modulesApi = createApi({
     },
   }),
   tagTypes: ['Modules'],
+  // Keep data cached for 5 minutes since modules don't change frequently
+  keepUnusedDataFor: 300,
   endpoints: (builder) => ({
     getModules: builder.query<ModulesResponse, void>({
       query: () => '',
       providesTags: ['Modules'],
+      // Cache for 5 minutes
+      keepUnusedDataFor: 300,
     }),
     updateModules: builder.mutation<UpdateModulesResponse, UpdateModulesRequest>({
       query: (data) => ({
