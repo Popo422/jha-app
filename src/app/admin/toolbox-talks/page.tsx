@@ -180,6 +180,12 @@ export default function ToolboxTalksPage() {
     return Object.keys(errors).length === 0;
   };
 
+  // Debug function to log HTML content
+  const logContent = () => {
+    console.log('Current editor HTML:', editor?.getHTML());
+    console.log('Form data content:', formData.content);
+  };
+
   const uploadPendingImages = async (content: string): Promise<string> => {
     let updatedContent = content;
     
@@ -254,10 +260,14 @@ export default function ToolboxTalksPage() {
       // Get old image URLs if editing
       const oldImageUrls = editingTalk ? extractImageUrls(editingTalk.content) : [];
 
+      // Get the latest HTML from the editor (this ensures we have the most current state)
+      const editorContent = editor?.getHTML() || formData.content;
+      console.log('Saving content:', editorContent);
+
       // Upload any pending images and get updated content with real URLs
-      let finalContent = formData.content;
+      let finalContent = editorContent;
       if (pendingImages.size > 0) {
-        finalContent = await uploadPendingImages(formData.content);
+        finalContent = await uploadPendingImages(editorContent);
       }
 
       // Get new image URLs after processing
@@ -268,6 +278,8 @@ export default function ToolboxTalksPage() {
       const body = editingTalk 
         ? { id: editingTalk.id, ...formData, content: finalContent }
         : { ...formData, content: finalContent };
+
+      console.log('Final content being saved:', finalContent);
 
       const response = await fetch(url, {
         method,
@@ -636,6 +648,16 @@ export default function ToolboxTalksPage() {
                   className={editor?.isActive('orderedList') ? 'bg-gray-200' : ''}
                 >
                   1. List
+                </Button>
+                
+                {/* Debug button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={logContent}
+                  className="text-xs"
+                >
+                  Debug
                 </Button>
                 
                 {/* Superscript/Subscript */}

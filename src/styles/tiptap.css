@@ -5,37 +5,221 @@
   min-height: 300px;
 }
 
-/* TipTap Content Display Styles for Contractor View */
-.tiptap-content {
-  text-align: left; /* Reset any center alignment, let content flow naturally */
+/* Read-only editor styles for contractor view */
+.readonly-editor .ProseMirror {
+  outline: none;
+  border: none;
+  padding: 0;
+  min-height: auto;
+  background: transparent;
+  cursor: default;
 }
 
-.tiptap-content h1,
-.tiptap-content h2,
+.readonly-editor .ProseMirror:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
+/* TipTap Content Display Styles for Contractor View */
+.tiptap-content {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  line-height: 1.8;
+  color: #374151;
+  max-width: none;
+  font-size: 1.1rem;
+}
+
+.tiptap-content h1 {
+  font-size: 1.875rem;
+  font-weight: bold;
+  margin: 1.5em 0 0.75em;
+  text-align: center;
+  color: #111827;
+}
+
+.tiptap-content h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 1.25em 0 0.75em;
+  text-align: center;
+  color: #111827;
+}
+
 .tiptap-content h3 {
-  text-align: center; /* Center headings only */
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin: 1em 0 0.5em;
+  text-align: center;
+  color: #111827;
 }
 
 .tiptap-content p {
-  margin: 1em 0;
-  text-align: left; /* Ensure paragraphs are left-aligned */
+  margin: 1.5em 0;
+  text-align: left;
+  display: block;
 }
 
-.tiptap-content ul {
+.tiptap-content br {
+  display: block;
+  margin: 0.5em 0;
+  content: "";
+}
+
+.tiptap-content > * {
+  display: block;
+  margin-bottom: 1em;
+}
+
+.tiptap-content > *:last-child {
+  margin-bottom: 0;
+}
+
+.tiptap-content ul,
+.tiptap-content ul[data-type="bulletList"],
+.tiptap-content .bullet-list {
   list-style-type: disc !important;
-  padding-left: 1.5em !important;
-  margin: 1em 0 !important;
+  list-style: disc !important;
+  padding-left: 2em !important;
+  margin: 1.5em 0 !important;
+  display: block !important;
+  list-style-position: outside !important;
 }
 
-.tiptap-content ol {
+.tiptap-content ol,
+.tiptap-content ol[data-type="orderedList"],
+.tiptap-content .ordered-list {
   list-style-type: decimal !important;
-  padding-left: 1.5em !important;
-  margin: 1em 0 !important;
+  list-style: decimal !important;
+  padding-left: 2em !important;
+  margin: 1.5em 0 !important;
+  display: block !important;
+  list-style-position: outside !important;
 }
 
-.tiptap-content li {
-  margin: 0.25em 0 !important;
+.tiptap-content li,
+.tiptap-content ul li,
+.tiptap-content ol li {
+  margin: 0.5em 0 !important;
   display: list-item !important;
+  list-style-position: outside !important;
+  list-style-type: inherit !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* Force bullet points with pseudo-elements as backup */
+.tiptap-content ul li:not([data-type]):before {
+  content: "• " !important;
+  color: currentColor !important;
+  margin-right: 0.5em !important;
+  display: none; /* Only show if list-style fails */
+}
+
+.tiptap-content ol li:not([data-type]):before {
+  counter-increment: list-counter !important;
+  content: counter(list-counter) ". " !important;
+  color: currentColor !important;
+  margin-right: 0.5em !important;
+  display: none; /* Only show if list-style fails */
+}
+
+/* Counter for ordered lists */
+.tiptap-content ol {
+  counter-reset: list-counter !important;
+}
+
+/* Handle paragraphs inside list items */
+.tiptap-content li p {
+  margin: 0 !important;
+  display: inline !important;
+  text-align: inherit !important;
+}
+
+.tiptap-content li > p:first-child {
+  display: inline !important;
+  margin: 0 !important;
+}
+
+.tiptap-content li > p:last-child {
+  display: inline !important;
+  margin: 0 !important;
+}
+
+/* Ensure nested lists work */
+.tiptap-content ul ul,
+.tiptap-content ol ol,
+.tiptap-content ul ol,
+.tiptap-content ol ul {
+  margin: 0.5em 0 !important;
+  padding-left: 1.5em !important;
+}
+
+/* Nuclear option - force list styles no matter what */
+.tiptap-content ul,
+.tiptap-content ul *,
+ul.tiptap-content,
+ul .tiptap-content {
+  list-style: disc outside !important;
+  list-style-type: disc !important;
+}
+
+.tiptap-content ol,
+.tiptap-content ol *,
+ol.tiptap-content,
+ol .tiptap-content {
+  list-style: decimal outside !important;
+  list-style-type: decimal !important;
+}
+
+/* Override any reset or normalize CSS */
+.tiptap-content ul li {
+  list-style: disc outside !important;
+  list-style-type: disc !important;
+  display: list-item !important;
+}
+
+.tiptap-content ol li {
+  list-style: decimal outside !important;
+  list-style-type: decimal !important;
+  display: list-item !important;
+}
+
+/* Fallback with manual bullets */
+.tiptap-content ul li::marker {
+  content: "• " !important;
+}
+
+.tiptap-content ol li::marker {
+  content: counter(list-item) ". " !important;
+}
+
+.tiptap-content strong {
+  font-weight: bold;
+}
+
+.tiptap-content em {
+  font-style: italic;
+}
+
+.tiptap-content u {
+  text-decoration: underline;
+}
+
+.tiptap-content sup {
+  vertical-align: super;
+  font-size: smaller;
+}
+
+.tiptap-content sub {
+  vertical-align: sub;
+  font-size: smaller;
+}
+
+.tiptap-content mark {
+  background-color: #fef08a;
+  padding: 0.1em 0.2em;
+  border-radius: 0.2em;
 }
 
 .tiptap-content img {
@@ -50,37 +234,62 @@
   border-collapse: collapse;
   table-layout: fixed;
   width: 100%;
-  margin: 1em auto;
+  margin: 1em 0;
   overflow: hidden;
 }
 
 .tiptap-content td,
 .tiptap-content th {
   min-width: 1em;
-  border: 1px solid #ddd;
+  border: 1px solid #d1d5db;
   padding: 8px 12px;
   vertical-align: top;
   box-sizing: border-box;
-  position: relative;
 }
 
 .tiptap-content th {
   font-weight: bold;
   text-align: left;
-  background-color: #f1f3f4;
+  background-color: #f3f4f6;
 }
 
-/* Override prose styles that interfere with lists */
-.tiptap-content.prose ul {
-  list-style-type: disc !important;
+/* Text alignment classes */
+.tiptap-content .has-text-align-left {
+  text-align: left;
 }
 
-.tiptap-content.prose ol {
-  list-style-type: decimal !important;
+.tiptap-content .has-text-align-center {
+  text-align: center;
 }
 
-.tiptap-content.prose li {
-  margin: 0.25em 0 !important;
+.tiptap-content .has-text-align-right {
+  text-align: right;
+}
+
+.tiptap-content .has-text-align-justify {
+  text-align: justify;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .tiptap-content {
+    color: #d1d5db;
+  }
+  
+  .tiptap-content h1,
+  .tiptap-content h2,
+  .tiptap-content h3 {
+    color: #f9fafb;
+  }
+  
+  .tiptap-content td,
+  .tiptap-content th {
+    border-color: #4b5563;
+  }
+  
+  .tiptap-content th {
+    background-color: #374151;
+  }
 }
 
 .ProseMirror p {

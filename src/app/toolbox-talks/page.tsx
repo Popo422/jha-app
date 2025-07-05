@@ -7,6 +7,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CalendarDays, Clock, User, Eye, RefreshCw } from 'lucide-react'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import { ImageResize } from 'tiptap-extension-resize-image'
+import TextStyle from '@tiptap/extension-text-style'
+import Color from '@tiptap/extension-color'
+import Highlight from '@tiptap/extension-highlight'
+import TextAlign from '@tiptap/extension-text-align'
+import Underline from '@tiptap/extension-underline'
+import Superscript from '@tiptap/extension-superscript'
+import Subscript from '@tiptap/extension-subscript'
+import Table from '@tiptap/extension-table'
+import TableRow from '@tiptap/extension-table-row'
+import TableHeader from '@tiptap/extension-table-header'
+import TableCell from '@tiptap/extension-table-cell'
+import FontFamily from '@tiptap/extension-font-family'
+import FontSize from 'tiptap-extension-font-size'
+import '@/styles/tiptap.css'
 
 type ToolboxTalk = {
   id: string;
@@ -24,6 +41,51 @@ export default function ToolboxTalksPage() {
   const [selectedTalk, setSelectedTalk] = useState<ToolboxTalk | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Read-only TipTap editor for displaying content
+  const contentEditor = useEditor({
+    extensions: [
+      StarterKit,
+      TextStyle,
+      Color,
+      Highlight.configure({
+        multicolor: true,
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+        alignments: ['left', 'center', 'right', 'justify'],
+        defaultAlignment: 'left',
+      }),
+      Underline,
+      Superscript,
+      Subscript,
+      FontFamily.configure({
+        types: ['textStyle'],
+      }),
+      FontSize.configure({
+        types: ['textStyle'],
+      }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      ImageResize.configure({
+        inline: true,
+        allowBase64: false,
+      })
+    ],
+    content: selectedTalk?.content || '',
+    editable: false, // Read-only
+  });
+
+  // Update editor content when selectedTalk changes
+  useEffect(() => {
+    if (contentEditor && selectedTalk) {
+      contentEditor.commands.setContent(selectedTalk.content);
+    }
+  }, [selectedTalk, contentEditor]);
 
   // Load published toolbox talks
   const loadToolboxTalks = async () => {
@@ -105,10 +167,9 @@ export default function ToolboxTalksPage() {
                   </div>
                 </header>
 
-                <div 
-                  className="tiptap-content prose prose-lg max-w-none mx-auto"
-                  dangerouslySetInnerHTML={{ __html: selectedTalk.content }}
-                />
+                <div className="readonly-editor">
+                  <EditorContent editor={contentEditor} />
+                </div>
               </article>
             </div>
           ) : (
