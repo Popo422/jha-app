@@ -64,7 +64,8 @@ export async function POST(request: NextRequest) {
       name: userData.name,
       role: userData.role,
       companyId: userData.companyId,
-      companyName: company?.name || 'Unknown Company'
+      companyName: company?.name || 'Unknown Company',
+      companyLogoUrl: company?.logoUrl || null
     }
 
     // Generate JWT token with admin info

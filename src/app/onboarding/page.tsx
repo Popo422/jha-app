@@ -20,7 +20,9 @@ import {
   Shield,
   Sparkles,
   Eye,
-  EyeOff
+  EyeOff,
+  Upload,
+  X
 } from 'lucide-react'
 
 type Step = 'welcome' | 'company' | 'admin' | 'review' | 'complete'
@@ -30,6 +32,7 @@ interface FormData {
   contactEmail: string
   contactPhone: string
   address: string
+  logoFile: File | null
   adminName: string
   adminEmail: string
   adminPassword: string
@@ -55,6 +58,7 @@ export default function OnboardingPage() {
     contactEmail: '',
     contactPhone: '',
     address: '',
+    logoFile: null,
     adminName: '',
     adminEmail: '',
     adminPassword: '',
@@ -126,6 +130,21 @@ export default function OnboardingPage() {
     }
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null
+    setFormData(prev => ({
+      ...prev,
+      logoFile: file
+    }))
+  }
+
+  const handleRemoveLogo = () => {
+    setFormData(prev => ({
+      ...prev,
+      logoFile: null
+    }))
+  }
+
   const handleNext = () => {
     if (validateStep(currentStep)) {
       const nextIndex = currentStepIndex + 1
@@ -147,12 +166,22 @@ export default function OnboardingPage() {
     
     setIsLoading(true)
     try {
+      const submitData = new FormData()
+      submitData.append('companyName', formData.companyName)
+      submitData.append('contactEmail', formData.contactEmail)
+      submitData.append('contactPhone', formData.contactPhone)
+      submitData.append('address', formData.address)
+      submitData.append('adminName', formData.adminName)
+      submitData.append('adminEmail', formData.adminEmail)
+      submitData.append('adminPassword', formData.adminPassword)
+      
+      if (formData.logoFile) {
+        submitData.append('logoFile', formData.logoFile)
+      }
+
       const response = await fetch('/api/onboarding', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+        body: submitData
       })
 
       if (response.ok) {
@@ -283,6 +312,54 @@ export default function OnboardingPage() {
             onChange={handleInputChange}
             placeholder="Company address"
           />
+        </div>
+        
+        <div>
+          <Label htmlFor="logoFile">Company Logo (Optional)</Label>
+          <div className="space-y-2">
+            {formData.logoFile ? (
+              <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
+                <img 
+                  src={URL.createObjectURL(formData.logoFile)} 
+                  alt="Logo preview" 
+                  className="w-12 h-12 object-contain bg-white rounded border"
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{formData.logoFile.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(formData.logoFile.size / 1024).toFixed(1)} KB
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemoveLogo}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="relative">
+                <Input
+                  id="logoFile"
+                  name="logoFile"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className="flex items-center gap-3 p-6 border-2 border-dashed rounded-lg text-center hover:bg-muted/50 transition-colors">
+                  <Upload className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Upload company logo</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG, or GIF (Max 5MB)</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

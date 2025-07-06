@@ -120,9 +120,9 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         {/* Header with close button */}
         <div className="p-6 border-b border-slate-700">
           <div className="flex items-center justify-between">
-            <Image 
-              src="/logo.png" 
-              alt="JHA App" 
+            <img 
+              src={admin?.companyLogoUrl || "/logo.png"} 
+              alt={admin?.companyName || "JHA App"} 
               width={140} 
               height={30} 
               className="cursor-pointer hover:opacity-80 transition-opacity"

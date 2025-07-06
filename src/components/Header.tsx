@@ -1,7 +1,7 @@
 "use client";
 
 import { Menu } from "lucide-react";
-import { useAppDispatch } from "@/lib/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { toggleSidebar } from "@/lib/features/sidebar/sidebarSlice";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import Image from "next/image";
 export default function Header() {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const { contractor } = useAppSelector((state) => state.auth);
 
   return (
     <header className="bg-[#242736] dark:bg-background shadow-sm border-b border-border">
@@ -21,7 +22,12 @@ export default function Header() {
               router.push("/announcements");
             }}
           >
-            <Image src="/logo.png" alt="JHA App" width={140} height={30}/>
+            <img 
+              src={contractor?.companyLogoUrl || "/logo.png"} 
+              alt={contractor?.name || "JHA App"} 
+              width={140} 
+              height={30}
+            />
           </div>
         </div>
         <div className="flex items-center space-x-4">

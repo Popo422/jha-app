@@ -8,6 +8,8 @@ export interface Contractor {
   id: string
   name: string
   code: string
+  companyId: string
+  companyLogoUrl: string | null
 }
 
 export interface Admin {
@@ -17,6 +19,7 @@ export interface Admin {
   role: string
   companyId: string
   companyName: string
+  companyLogoUrl: string | null
 }
 
 export interface LoginResponse {

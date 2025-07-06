@@ -3,18 +3,20 @@ import { db } from '@/lib/db'
 import { companies, users } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcrypt'
+import { put } from '@vercel/blob'
 
 export async function POST(request: NextRequest) {
   try {
-    const { 
-      companyName, 
-      contactEmail, 
-      contactPhone, 
-      address,
-      adminName,
-      adminEmail,
-      adminPassword
-    } = await request.json()
+    const formData = await request.formData()
+    
+    const companyName = formData.get('companyName') as string
+    const contactEmail = formData.get('contactEmail') as string
+    const contactPhone = formData.get('contactPhone') as string
+    const address = formData.get('address') as string
+    const adminName = formData.get('adminName') as string
+    const adminEmail = formData.get('adminEmail') as string
+    const adminPassword = formData.get('adminPassword') as string
+    const logoFile = formData.get('logoFile') as File | null
 
     // Validate required fields
     if (!companyName || !adminName || !adminEmail || !adminPassword) {
@@ -64,6 +66,7 @@ export async function POST(request: NextRequest) {
         contactEmail: contactEmail || null,
         contactPhone: contactPhone || null,
         address: address || null,
+        logoUrl: null, // Will be updated after logo upload
       })
       .returning()
 
@@ -85,11 +88,59 @@ export async function POST(request: NextRequest) {
       .set({ createdBy: newSuperAdmin.id })
       .where(eq(companies.id, newCompany.id))
 
+    // Handle logo upload if provided
+    let logoUrl: string | null = null
+    if (logoFile && logoFile.size > 0) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+      if (!allowedTypes.includes(logoFile.type)) {
+        return NextResponse.json(
+          { message: 'Logo must be a valid image file (PNG, JPG, GIF, or WebP)' },
+          { status: 400 }
+        )
+      }
+
+      // Validate file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      if (logoFile.size > maxSize) {
+        return NextResponse.json(
+          { message: 'Logo file size must be less than 5MB' },
+          { status: 400 }
+        )
+      }
+
+      try {
+        // Create company-specific path for logo: companyId/logo/filename
+        const timestamp = Date.now()
+        const sanitizedCompanyName = companyName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
+        const fileExtension = logoFile.name.split('.').pop()
+        const blobPath = `${newCompany.id}/logo/${sanitizedCompanyName}_${timestamp}.${fileExtension}`
+        
+        const blob = await put(blobPath, logoFile, {
+          access: 'public',
+          addRandomSuffix: false, // We're already adding timestamp for uniqueness
+        })
+        
+        logoUrl = blob.url
+
+        // Update company with logo URL
+        await db
+          .update(companies)
+          .set({ logoUrl: logoUrl })
+          .where(eq(companies.id, newCompany.id))
+      } catch (error) {
+        console.error('Logo upload error:', error)
+        // Don't fail the entire onboarding process for logo upload failure
+        console.warn('Logo upload failed, but continuing with company creation')
+      }
+    }
+
     return NextResponse.json({
       message: 'Company and super-admin created successfully',
       company: {
         id: newCompany.id,
         name: newCompany.name,
+        logoUrl: logoUrl, // Use the uploaded logo URL
       },
       superAdmin: {
         id: newSuperAdmin.id,
