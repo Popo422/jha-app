@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import { eq, desc, and, or, ilike } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { contractors } from '@/lib/db/schema'
+import { emailService } from '@/lib/email-service'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -177,6 +178,20 @@ export async function POST(request: NextRequest) {
       code: code.trim().toUpperCase(),
       companyId: auth.admin.companyId,
     }).returning()
+
+    // Send welcome email (non-blocking)
+    try {
+      await emailService.sendContractorWelcomeEmail({
+        contractorEmail: contractor[0].email,
+        contractorName: `${contractor[0].firstName} ${contractor[0].lastName}`,
+        contractorCode: contractor[0].code,
+        companyName: auth.admin.companyName || 'Your Company',
+        adminEmail: 'zerniereyes@gmail.com',
+      });
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError);
+      // Don't fail the contractor creation if email fails
+    }
 
     return NextResponse.json({
       success: true,

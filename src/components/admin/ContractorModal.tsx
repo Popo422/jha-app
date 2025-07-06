@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
-import { X } from "lucide-react";
+import { X, Mail } from "lucide-react";
 
 interface ContractorModalProps {
   isOpen: boolean;
@@ -22,6 +22,8 @@ export default function ContractorModal({ isOpen, onClose, contractor }: Contrac
     code: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailMessage, setEmailMessage] = useState<string>("");
 
   const [createContractor, { isLoading: isCreating, error: createError }] = useCreateContractorMutation();
   const [updateContractor, { isLoading: isUpdating, error: updateError }] = useUpdateContractorMutation();
@@ -49,6 +51,7 @@ export default function ContractorModal({ isOpen, onClose, contractor }: Contrac
         });
       }
       setErrors({});
+      setEmailMessage("");
     }
   }, [isOpen, contractor]);
 
@@ -123,6 +126,38 @@ export default function ContractorModal({ isOpen, onClose, contractor }: Contrac
       return (error.data as any).error;
     }
     return 'An error occurred while saving the contractor';
+  };
+
+  const handleSendCodeEmail = async () => {
+    if (!contractor?.id) return;
+
+    setIsSendingEmail(true);
+    setEmailMessage("");
+
+    try {
+      const response = await fetch('/api/email/send-code-update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contractorId: contractor.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setEmailMessage("✅ Code update email sent successfully!");
+      } else {
+        setEmailMessage(`❌ Failed to send email: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error sending code update email:', error);
+      setEmailMessage("❌ Failed to send email. Please try again.");
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   return (
@@ -208,11 +243,34 @@ export default function ContractorModal({ isOpen, onClose, contractor }: Contrac
             <p className="text-xs text-muted-foreground">
               This code will be used for contractor login
             </p>
+            {isEditing && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSendCodeEmail}
+                disabled={isSendingEmail || isLoading}
+                className="mt-2"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                {isSendingEmail ? 'Sending...' : 'Send Updated Code Email'}
+              </Button>
+            )}
           </div>
 
           {error && (
             <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
               {getErrorMessage()}
+            </div>
+          )}
+
+          {emailMessage && (
+            <div className={`p-3 rounded-lg text-sm ${
+              emailMessage.includes('✅') 
+                ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+            }`}>
+              {emailMessage}
             </div>
           )}
 

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Save, X, ArrowLeft, RefreshCw } from "lucide-react";
+import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 type ViewMode = 'list' | 'add' | 'edit';
@@ -26,6 +26,8 @@ export default function ContractorsPage() {
     code: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailMessage, setEmailMessage] = useState<string>("");
   
   const { data: contractorsData, isLoading, error, refetch } = useGetContractorsQuery({
     search: debouncedSearch || undefined,
@@ -47,6 +49,7 @@ export default function ContractorsPage() {
       code: contractor.code,
     });
     setFormErrors({});
+    setEmailMessage("");
     setViewMode('edit');
   };
 
@@ -59,6 +62,7 @@ export default function ContractorsPage() {
       code: "",
     });
     setFormErrors({});
+    setEmailMessage("");
     setViewMode('add');
   };
 
@@ -67,6 +71,7 @@ export default function ContractorsPage() {
     setEditingContractor(null);
     setFormData({ firstName: "", lastName: "", email: "", code: "" });
     setFormErrors({});
+    setEmailMessage("");
   };
 
   const validateForm = () => {
@@ -153,6 +158,38 @@ export default function ContractorsPage() {
     // Clear any existing error for the code field
     if (formErrors.code) {
       setFormErrors(prev => ({ ...prev, code: "" }));
+    }
+  };
+
+  const handleSendCodeEmail = async () => {
+    if (!editingContractor?.id) return;
+
+    setIsSendingEmail(true);
+    setEmailMessage("");
+
+    try {
+      const response = await fetch('/api/email/send-code-update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contractorId: editingContractor.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setEmailMessage("✅ Code update email sent successfully!");
+      } else {
+        setEmailMessage(`❌ Failed to send email: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error sending code update email:', error);
+      setEmailMessage("❌ Failed to send email. Please try again.");
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -294,11 +331,34 @@ export default function ContractorsPage() {
               <p className="text-xs text-muted-foreground">
                 This code will be used for contractor login. Click Generate to auto-create a unique code.
               </p>
+              {viewMode === 'edit' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSendCodeEmail}
+                  disabled={isSendingEmail || isFormLoading}
+                  className="mt-2 flex items-center space-x-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  <span>{isSendingEmail ? 'Sending...' : 'Send Updated Code Email'}</span>
+                </Button>
+              )}
             </div>
 
             {formError && (
               <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
                 {getErrorMessage()}
+              </div>
+            )}
+
+            {emailMessage && (
+              <div className={`p-3 rounded-lg text-sm ${
+                emailMessage.includes('✅') 
+                  ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                  : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+              }`}>
+                {emailMessage}
               </div>
             )}
 
