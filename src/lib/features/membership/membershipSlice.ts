@@ -12,7 +12,7 @@ interface MembershipState {
 }
 
 const initialState: MembershipState = {
-  isLoading: false,
+  isLoading: true,
   isVerified: false,
   hasLevel3Access: false,
   user: null,
@@ -32,7 +32,7 @@ const membershipSlice = createSlice({
       }
     },
     setMembershipData: (state, action: PayloadAction<{
-      user: UserData
+      user: UserData | null
       memberships: MembershipData[]
       hasLevel3Access: boolean
     }>) => {

@@ -82,26 +82,39 @@ export default function OnboardingPage() {
     
     // Verify membership access via API
     const checkMembership = async () => {
+      console.log('Starting membership check...')
       dispatch(setLoading(true))
       
       try {
         const response = await fetch('/api/membership/verify')
-        if (response.ok) {
-          const result = await response.json()
-          if (result.hasLevel3Access) {
-            dispatch(setMembershipData({
-              user: result.user,
-              memberships: result.memberships,
-              hasLevel3Access: result.hasLevel3Access
-            }))
-          } else {
-            dispatch(setError('Insufficient membership access required.'))
-          }
+        const result = await response.json()
+        console.log('API response:', response.status, result)
+        
+        if (response.ok && result.hasLevel3Access) {
+          // Has access
+          console.log('User has access')
+          dispatch(setMembershipData({
+            user: result.user,
+            memberships: result.memberships,
+            hasLevel3Access: true
+          }))
         } else {
-          dispatch(setError('Unable to verify membership access'))
+          // No access (either 401, 200 with no access, or API error)
+          console.log('User has no access')
+          dispatch(setMembershipData({
+            user: result.user || null,
+            memberships: result.memberships || [],
+            hasLevel3Access: false,
+          }))
         }
       } catch (error) {
-        dispatch(setError('Failed to verify membership access'))
+        // Network error - treat as no access
+        console.log('Network error:', error)
+        dispatch(setMembershipData({
+          user: null,
+          memberships: [],
+          hasLevel3Access: false
+        }))
       }
     }
     
@@ -680,9 +693,7 @@ export default function OnboardingPage() {
                   <div className="w-12 h-12 mx-auto border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
                   <p className="text-muted-foreground">Verifying membership access...</p>
                 </div>
-              ) : membership.isVerified && !membership.hasLevel3Access ? (
-                renderAccessDenied()
-              ) : membership.isVerified && membership.hasLevel3Access ? (
+              ) : membership.hasLevel3Access ? (
                 <>
                   {currentStep === 'welcome' && renderWelcomeStep()}
                   {currentStep === 'company' && renderCompanyStep()}
@@ -691,10 +702,7 @@ export default function OnboardingPage() {
                   {currentStep === 'complete' && renderCompleteStep()}
                 </>
               ) : (
-                <div className="text-center space-y-4">
-                  <div className="w-12 h-12 mx-auto border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-muted-foreground">Loading...</p>
-                </div>
+                renderAccessDenied()
               )}
             </CardContent>
           </Card>
