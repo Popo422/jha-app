@@ -102,6 +102,9 @@ const authSlice = createSlice({
       state.adminToken = action.payload.token
       state.isAdminAuthenticated = true
     },
+    updateAdmin: (state, action: PayloadAction<Admin>) => {
+      state.admin = action.payload
+    },
   },
 })
 
@@ -114,6 +117,7 @@ export const {
   adminLoginSuccess,
   adminLoginFailure,
   adminLogout,
-  restoreAdminAuth
+  restoreAdminAuth,
+  updateAdmin
 } = authSlice.actions
 export default authSlice.reducer

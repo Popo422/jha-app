@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:seed": "npx tsx scripts/seed.ts"
+    "db:seed": "npx tsx scripts/seed.ts",
+    "zip:wp-plugin": "powershell \"Compress-Archive -Path wp-plugin\\* -DestinationPath wp-plugin.zip -Force\""
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.14",

@@ -19,6 +19,7 @@ import {
   X,
   Puzzle,
   Shield,
+  Home,
 } from 'lucide-react'
 
 interface SidebarItem {
@@ -45,6 +46,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   }
 
   const mainItems: SidebarItem[] = [
+    {
+      label: 'Dashboard',
+      href: '/admin',
+      icon: Home
+    },
     {
       label: 'Contractor Tracker',
       href: '/admin/contractor-tracker',

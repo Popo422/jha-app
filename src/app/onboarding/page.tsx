@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { setTheme, toggleTheme } from '@/lib/features/theme/themeSlice'
+import { setLoading, setMembershipData, setError } from '@/lib/features/membership/membershipSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,7 +23,9 @@ import {
   Eye,
   EyeOff,
   Upload,
-  X
+  X,
+  Lock,
+  AlertTriangle
 } from 'lucide-react'
 
 type Step = 'welcome' | 'company' | 'admin' | 'review' | 'complete'
@@ -47,6 +50,7 @@ export default function OnboardingPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.theme.mode)
+  const membership = useAppSelector((state) => state.membership)
   
   const [currentStep, setCurrentStep] = useState<Step>('welcome')
   const [isLoading, setIsLoading] = useState(false)
@@ -75,6 +79,33 @@ export default function OnboardingPage() {
     if (savedTheme) {
       dispatch(setTheme(savedTheme))
     }
+    
+    // Verify membership access via API
+    const checkMembership = async () => {
+      dispatch(setLoading(true))
+      
+      try {
+        const response = await fetch('/api/membership/verify')
+        if (response.ok) {
+          const result = await response.json()
+          if (result.hasLevel3Access) {
+            dispatch(setMembershipData({
+              user: result.user,
+              memberships: result.memberships,
+              hasLevel3Access: result.hasLevel3Access
+            }))
+          } else {
+            dispatch(setError('Insufficient membership access required.'))
+          }
+        } else {
+          dispatch(setError('Unable to verify membership access'))
+        }
+      } catch (error) {
+        dispatch(setError('Failed to verify membership access'))
+      }
+    }
+    
+    checkMembership()
   }, [])
 
   const validateStep = (step: Step): boolean => {
@@ -518,6 +549,54 @@ export default function OnboardingPage() {
     </div>
   )
 
+  const renderAccessDenied = () => (
+    <div className="text-center space-y-8">
+      <div className="space-y-4">
+        <div className="w-20 h-20 mx-auto bg-gradient-to-br from-red-500 to-orange-600 rounded-full flex items-center justify-center">
+          <Lock className="w-10 h-10 text-white" />
+        </div>
+        <h1 className="text-4xl font-bold text-red-600">
+          Access Restricted
+        </h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          You need proper membership access to use the onboarding system.
+        </p>
+      </div>
+      
+      {membership.error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 max-w-md mx-auto">
+          <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
+            <AlertTriangle className="w-5 h-5" />
+            <p className="text-sm">{membership.error}</p>
+          </div>
+        </div>
+      )}
+      
+      <div className="bg-muted/50 rounded-lg p-6 max-w-md mx-auto">
+        <h3 className="font-semibold mb-4">Need Access?</h3>
+        <div className="space-y-3 text-sm text-left">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-blue-600" />
+            <span>Contact your account manager</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-blue-600" />
+            <span>Upgrade your membership</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-blue-600" />
+            <span>Verify your subscription status</span>
+          </div>
+        </div>
+      </div>
+      
+      <Button onClick={() => router.push('/')} size="lg" className="px-8">
+        Return to Dashboard
+        <ArrowRight className="ml-2 w-4 h-4" />
+      </Button>
+    </div>
+  )
+
   const renderCompleteStep = () => (
     <div className="text-center space-y-8">
       <div className="space-y-4">
@@ -596,16 +675,32 @@ export default function OnboardingPage() {
           {/* Main Content */}
           <Card className="border-0 shadow-xl">
             <CardContent className="p-8 md:p-12">
-              {currentStep === 'welcome' && renderWelcomeStep()}
-              {currentStep === 'company' && renderCompanyStep()}
-              {currentStep === 'admin' && renderAdminStep()}
-              {currentStep === 'review' && renderReviewStep()}
-              {currentStep === 'complete' && renderCompleteStep()}
+              {membership.isLoading ? (
+                <div className="text-center space-y-4">
+                  <div className="w-12 h-12 mx-auto border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-muted-foreground">Verifying membership access...</p>
+                </div>
+              ) : membership.isVerified && !membership.hasLevel3Access ? (
+                renderAccessDenied()
+              ) : membership.isVerified && membership.hasLevel3Access ? (
+                <>
+                  {currentStep === 'welcome' && renderWelcomeStep()}
+                  {currentStep === 'company' && renderCompanyStep()}
+                  {currentStep === 'admin' && renderAdminStep()}
+                  {currentStep === 'review' && renderReviewStep()}
+                  {currentStep === 'complete' && renderCompleteStep()}
+                </>
+              ) : (
+                <div className="text-center space-y-4">
+                  <div className="w-12 h-12 mx-auto border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-muted-foreground">Loading...</p>
+                </div>
+              )}
             </CardContent>
           </Card>
           
           {/* Navigation */}
-          {currentStep !== 'welcome' && currentStep !== 'complete' && (
+          {membership.hasLevel3Access && currentStep !== 'welcome' && currentStep !== 'complete' && (
             <div className="flex justify-between mt-8">
               <Button
                 variant="outline"
