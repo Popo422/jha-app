@@ -30,6 +30,14 @@ import {
 } from "@tanstack/react-table";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+export interface CustomAction<T> {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  onClick: (item: T) => void;
+  className?: string;
+  show?: (item: T) => boolean;
+}
+
 export interface AdminDataTableProps<T> {
   data: T[];
   columns: ColumnDef<T>[];
@@ -47,6 +55,7 @@ export interface AdminDataTableProps<T> {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   canDelete?: (item: T) => boolean;
+  customActions?: CustomAction<T>[];
 }
 
 export function AdminDataTable<T>({
@@ -66,6 +75,7 @@ export function AdminDataTable<T>({
   searchValue = "",
   onSearchChange,
   canDelete,
+  customActions = [],
 }: AdminDataTableProps<T>) {
   const [rowSelection, setRowSelection] = useState({});
   const [showCheckboxes, setShowCheckboxes] = useState(false);
@@ -132,7 +142,7 @@ export function AdminDataTable<T>({
 
     tableColumns.push(...baseColumns);
 
-    if (onEdit || onDelete) {
+    if (onEdit || onDelete || customActions.length > 0) {
       tableColumns.push({
         id: 'actions',
         header: '',
@@ -146,6 +156,20 @@ export function AdminDataTable<T>({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {customActions.map((action, index) => {
+                  if (action.show && !action.show(item)) return null;
+                  const Icon = action.icon;
+                  return (
+                    <DropdownMenuItem 
+                      key={index}
+                      onClick={() => action.onClick(item)}
+                      className={`cursor-pointer ${action.className || ''}`}
+                    >
+                      <Icon className="h-4 w-4 mr-2" />
+                      {action.label}
+                    </DropdownMenuItem>
+                  );
+                })}
                 {onEdit && (
                   <DropdownMenuItem 
                     onClick={() => onEdit(item)}
@@ -240,7 +264,7 @@ export function AdminDataTable<T>({
                 <Skeleton className="h-4 w-20" />
               </th>
             ))}
-            {(onEdit || onDelete) && (
+            {(onEdit || onDelete || customActions.length > 0) && (
               <th className="text-left px-3 py-2 font-medium text-sm">
                 <Skeleton className="h-4 w-8" />
               </th>
@@ -260,7 +284,7 @@ export function AdminDataTable<T>({
                   <Skeleton className="h-4 w-24" />
                 </td>
               ))}
-              {(onEdit || onDelete) && (
+              {(onEdit || onDelete || customActions.length > 0) && (
                 <td className="px-3 py-2">
                   <Skeleton className="h-6 w-6 rounded" />
                 </td>
@@ -421,7 +445,7 @@ export function AdminDataTable<T>({
                             </div>
                           ))}
                         </div>
-                        {(onEdit || onDelete) && (
+                        {(onEdit || onDelete || customActions.length > 0) && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -429,6 +453,20 @@ export function AdminDataTable<T>({
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              {customActions.map((action, index) => {
+                                if (action.show && !action.show(item)) return null;
+                                const Icon = action.icon;
+                                return (
+                                  <DropdownMenuItem 
+                                    key={index}
+                                    onClick={() => action.onClick(item)}
+                                    className={`cursor-pointer ${action.className || ''}`}
+                                  >
+                                    <Icon className="h-4 w-4 mr-2" />
+                                    {action.label}
+                                  </DropdownMenuItem>
+                                );
+                              })}
                               {onEdit && (
                                 <DropdownMenuItem 
                                   onClick={() => onEdit(item)}

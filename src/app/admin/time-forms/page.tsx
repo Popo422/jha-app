@@ -15,7 +15,9 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X } from "lucide-react";
+import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X, Check, XCircle, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 
 const columnHelper = createColumnHelper<Timesheet>();
@@ -25,7 +27,8 @@ export default function TimeFormsPage() {
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
-    company: ''
+    company: '',
+    status: 'all'
   });
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebouncedValue(searchValue, 300);
@@ -37,12 +40,15 @@ export default function TimeFormsPage() {
     dateTo: filters.dateTo || undefined,
     company: filters.company || undefined,
     search: debouncedSearch || undefined,
+    status: filters.status !== 'all' ? filters.status : undefined,
     authType: 'admin'
   }, {
     refetchOnMountOrArgChange: true
   });
 
   const [deleteTimesheet] = useDeleteTimesheetMutation();
+  const [approvalDialog, setApprovalDialog] = useState<{ timesheet: Timesheet; action: 'approve' | 'reject' } | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   const data = timesheetsData?.timesheets || [];
 
@@ -50,12 +56,13 @@ export default function TimeFormsPage() {
     setFilters({
       dateFrom: '',
       dateTo: '',
-      company: ''
+      company: '',
+      status: 'all'
     });
     setSearchValue('');
   }, []);
 
-  const hasActiveFilters = filters.dateFrom || filters.dateTo || filters.company || searchValue;
+  const hasActiveFilters = filters.dateFrom || filters.dateTo || filters.company || filters.status !== 'all' || searchValue;
 
   const handleEdit = useCallback((timesheet: Timesheet) => {
     setSelectedTimesheet(timesheet);
@@ -77,6 +84,50 @@ export default function TimeFormsPage() {
     }
     refetch();
   }, [deleteTimesheet, refetch]);
+
+  const handleApprovalAction = useCallback(async (timesheet: Timesheet, action: 'approve' | 'reject') => {
+    setApprovalDialog({ timesheet, action });
+    setRejectionReason('');
+  }, []);
+
+  const executeApprovalAction = useCallback(async () => {
+    if (!approvalDialog) return;
+    
+    try {
+      const response = await fetch('/api/timesheet', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: approvalDialog.timesheet.id,
+          action: approvalDialog.action,
+          rejectionReason: approvalDialog.action === 'reject' ? rejectionReason : undefined
+        })
+      });
+      
+      if (response.ok) {
+        refetch();
+        setApprovalDialog(null);
+        setRejectionReason('');
+      } else {
+        console.error('Failed to update timesheet approval status');
+      }
+    } catch (error) {
+      console.error('Error updating timesheet:', error);
+    }
+  }, [approvalDialog, rejectionReason, refetch]);
+
+  const getStatusBadge = useCallback((status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><Check className="w-3 h-3 mr-1" />Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
+      default:
+        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+    }
+  }, []);
 
   const columns = useMemo<ColumnDef<Timesheet>[]>(() => [
     {
@@ -161,6 +212,20 @@ export default function TimeFormsPage() {
       cell: ({ row }) => <div className="text-sm max-w-xs truncate" title={row.getValue('jobDescription')}>{row.getValue('jobDescription')}</div>,
     },
     {
+      accessorKey: 'status',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Status
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => getStatusBadge(row.getValue('status')),
+    },
+    {
       accessorKey: 'timeSpent',
       header: ({ column }) => (
         <Button
@@ -206,6 +271,49 @@ export default function TimeFormsPage() {
           onChange={(e) => setFilters(prev => ({ ...prev, company: e.target.value }))}
         />
       </div>
+      <div className="space-y-1">
+        <div className="text-sm font-medium">Status</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full md:w-48 justify-between">
+              {filters.status === 'all' ? 'All Statuses' : 
+               filters.status === 'approved' ? 'Approved Only' :
+               filters.status === 'pending' ? 'Pending Only' :
+               filters.status === 'rejected' ? 'Rejected Only' : 'All Statuses'}
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem 
+              onSelect={() => setFilters(prev => ({ ...prev, status: 'all' }))}
+              className="cursor-pointer"
+            >
+              All Statuses
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onSelect={() => setFilters(prev => ({ ...prev, status: 'approved' }))}
+              className="cursor-pointer"
+            >
+              <Check className="w-4 h-4 mr-2 text-green-600" />
+              Approved Only
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onSelect={() => setFilters(prev => ({ ...prev, status: 'pending' }))}
+              className="cursor-pointer"
+            >
+              <Clock className="w-4 h-4 mr-2 text-gray-600" />
+              Pending Only
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onSelect={() => setFilters(prev => ({ ...prev, status: 'rejected' }))}
+              className="cursor-pointer"
+            >
+              <XCircle className="w-4 h-4 mr-2 text-red-600" />
+              Rejected Only
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       {hasActiveFilters && (
         <div className="space-y-1">
           <div className="text-sm font-medium">&nbsp;</div>
@@ -220,7 +328,7 @@ export default function TimeFormsPage() {
         </div>
       )}
     </>
-  ), [filters.dateFrom, filters.dateTo, filters.company, hasActiveFilters, clearFilters]);
+  ), [filters.dateFrom, filters.dateTo, filters.company, filters.status, hasActiveFilters, clearFilters]);
 
   const getExportData = useCallback((timesheet: Timesheet) => [
     timesheet.employee,
@@ -255,6 +363,21 @@ export default function TimeFormsPage() {
               <div><span className="font-medium">Description:</span> 
                 <span className="block mt-1 text-gray-800 dark:text-gray-200">{timesheet.jobDescription}</span>
               </div>
+              <div className="mt-2">
+                <span className="font-medium">Status:</span> {getStatusBadge(timesheet.status)}
+              </div>
+              {timesheet.status === 'rejected' && timesheet.rejectionReason && (
+                <div className="mt-1">
+                  <span className="font-medium text-red-600">Rejection Reason:</span>
+                  <span className="block mt-1 text-red-700 dark:text-red-400 text-xs">{timesheet.rejectionReason}</span>
+                </div>
+              )}
+              {timesheet.status !== 'pending' && timesheet.approvedByName && (
+                <div className="mt-1 text-xs text-gray-500">
+                  {timesheet.status === 'approved' ? 'Approved' : 'Rejected'} by {timesheet.approvedByName}
+                  {timesheet.approvedAt && ` on ${new Date(timesheet.approvedAt).toLocaleDateString()}`}
+                </div>
+              )}
             </div>
           </div>
           <DropdownMenu>
@@ -264,6 +387,24 @@ export default function TimeFormsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {timesheet.status === 'pending' && (
+                <>
+                  <DropdownMenuItem 
+                    onClick={() => handleApprovalAction(timesheet, 'approve')}
+                    className="cursor-pointer text-green-600"
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Approve
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleApprovalAction(timesheet, 'reject')}
+                    className="cursor-pointer text-red-600"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Reject
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuItem 
                 onClick={() => handleEdit(timesheet)}
                 className="cursor-pointer"
@@ -334,13 +475,77 @@ export default function TimeFormsPage() {
         onBulkDelete={handleBulkDelete}
         getRowId={(timesheet) => timesheet.id}
         exportFilename="timesheets"
-        exportHeaders={['Employee', 'Company', 'Date', 'Job Site', 'Job Description', 'Time Spent']}
+        exportHeaders={['Employee', 'Company', 'Date', 'Job Site', 'Job Description', 'Status', 'Time Spent']}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}
         searchValue={searchValue}
         onSearchChange={setSearchValue}
+        customActions={[
+          {
+            label: 'Approve',
+            icon: Check,
+            onClick: (timesheet) => handleApprovalAction(timesheet, 'approve'),
+            className: 'text-green-600',
+            show: (timesheet) => timesheet.status === 'pending'
+          },
+          {
+            label: 'Reject',
+            icon: XCircle,
+            onClick: (timesheet) => handleApprovalAction(timesheet, 'reject'),
+            className: 'text-red-600',
+            show: (timesheet) => timesheet.status === 'pending'
+          }
+        ]}
       />
+
+      {/* Approval Dialog */}
+      <AlertDialog open={!!approvalDialog} onOpenChange={() => setApprovalDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {approvalDialog?.action === 'approve' ? 'Approve' : 'Reject'} Timesheet
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {approvalDialog?.action === 'approve' 
+                ? `Are you sure you want to approve the timesheet for ${approvalDialog?.timesheet?.employee}?`
+                : `Are you sure you want to reject the timesheet for ${approvalDialog?.timesheet?.employee}?`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          {approvalDialog?.action === 'reject' && (
+            <div className="space-y-2">
+              <label htmlFor="rejectionReason" className="text-sm font-medium">
+                Rejection Reason *
+              </label>
+              <Textarea
+                id="rejectionReason"
+                placeholder="Please provide a reason for rejection..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+          )}
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setApprovalDialog(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={executeApprovalAction}
+              disabled={approvalDialog?.action === 'reject' && !rejectionReason.trim()}
+              className={approvalDialog?.action === 'approve' 
+                ? 'bg-green-600 hover:bg-green-700' 
+                : 'bg-red-600 hover:bg-red-700'
+              }
+            >
+              {approvalDialog?.action === 'approve' ? 'Approve' : 'Reject'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

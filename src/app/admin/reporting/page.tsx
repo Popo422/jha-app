@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Download, Calendar } from "lucide-react";
+import { ChevronDown, Download, Calendar, Check, XCircle, Clock } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
@@ -31,9 +31,9 @@ export default function ReportingPage() {
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [selectedContractors, setSelectedContractors] = useState<string[]>([]);
   const [search, setSearch] = useState('');
-  const [companyFilter, setCompanyFilter] = useState('');
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [contractorSearch, setContractorSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all'); // Default to all statuses
 
   const { admin } = useSelector((state: RootState) => state.auth);
 
@@ -95,10 +95,49 @@ export default function ReportingPage() {
   } = useGetTimesheetsQuery({
     dateFrom: startDate || undefined,
     dateTo: endDate || undefined,
-    company: companyFilter || undefined,
     search: contractorSearchString || undefined,
+    status: statusFilter || undefined,
     authType: 'admin'
   });
+
+  // Get filtered timesheets from API (no frontend filtering needed)
+  const filteredTimesheets = timesheetData?.timesheets || [];
+
+  // Calculate totals only from approved timesheets for summary cards
+  const approvedTimesheets = useMemo(() => {
+    if (!timesheetData?.timesheets) return [];
+    return timesheetData.timesheets.filter(timesheet => timesheet.status === 'approved');
+  }, [timesheetData?.timesheets]);
+
+  // Create chart data from approved timesheets only
+  const chartData = useMemo(() => {
+    if (!approvedTimesheets.length) return [];
+    
+    const dateMap = new Map<string, number>();
+    
+    approvedTimesheets.forEach(timesheet => {
+      const date = timesheet.date;
+      const hours = parseFloat(timesheet.timeSpent) || 0;
+      dateMap.set(date, (dateMap.get(date) || 0) + hours);
+    });
+    
+    return Array.from(dateMap.entries())
+      .map(([date, totalHours]) => ({
+        date,
+        totalHours
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [approvedTimesheets]);
+
+  const statusFilterText = useMemo(() => {
+    switch (statusFilter) {
+      case 'all': return 'All Statuses';
+      case 'approved': return 'Approved Only';
+      case 'pending': return 'Pending Only';
+      case 'rejected': return 'Rejected Only';
+      default: return 'All Statuses';
+    }
+  }, [statusFilter]);
 
   const handleEmployeeToggle = (employeeId: string) => {
     setSelectedEmployees(prev => 
@@ -117,16 +156,15 @@ export default function ReportingPage() {
   };
 
   const exportToCSV = () => {
-    if (!data) return;
+    if (!chartData.length) return;
     
-    const csvData = data.chartData.map(item => [
+    const csvData = chartData.map(item => [
       item.date,
-      item.totalHours.toString(),
-      item.employees.join('; ')
+      item.totalHours.toString()
     ]);
 
     const csvContent = [
-      ['Date', 'Total Hours', 'Employees'],
+      ['Date', 'Total Approved Hours'],
       ...csvData
     ]
       .map(row => row.map(field => `"${field}"`).join(','))
@@ -136,15 +174,25 @@ export default function ReportingPage() {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `hours_report_${startDate}_to_${endDate}.csv`;
+    link.download = `approved_hours_report_${startDate}_to_${endDate}.csv`;
     link.click();
     window.URL.revokeObjectURL(url);
   };
 
   const totalHours = useMemo(() => {
-    if (!data) return 0;
-    return data.chartData.reduce((sum, item) => sum + item.totalHours, 0);
-  }, [data?.chartData]);
+    return approvedTimesheets.reduce((sum, timesheet) => sum + parseFloat(timesheet.timeSpent), 0);
+  }, [approvedTimesheets]);
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><Check className="w-3 h-3 mr-1" />Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
+      default:
+        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+    }
+  };
 
   const selectedEmployeeNames = useMemo(() => {
     if (!data) return [];
@@ -231,6 +279,11 @@ export default function ReportingPage() {
         <div>{row.getValue("jobSite")}</div>
       ),
     },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => getStatusBadge(row.getValue("status")),
+    },
   ], []);
 
   const timesheetFilters = useMemo(() => (
@@ -254,14 +307,44 @@ export default function ReportingPage() {
         />
       </div>
       <div className="space-y-1">
-        <div className="text-sm font-medium">Company</div>
-        <Input
-          type="text"
-          placeholder="Filter by company"
-          value={companyFilter}
-          onChange={(e) => setCompanyFilter(e.target.value)}
-          className="w-full md:w-48"
-        />
+        <div className="text-sm font-medium">Status</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full md:w-48 justify-between">
+              {statusFilterText}
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem 
+              onSelect={() => setStatusFilter('all')}
+              className="cursor-pointer"
+            >
+              All Statuses
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onSelect={() => setStatusFilter('approved')}
+              className="cursor-pointer"
+            >
+              <Check className="w-4 h-4 mr-2 text-green-600" />
+              Approved Only
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onSelect={() => setStatusFilter('pending')}
+              className="cursor-pointer"
+            >
+              <Clock className="w-4 h-4 mr-2 text-gray-600" />
+              Pending Only
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onSelect={() => setStatusFilter('rejected')}
+              className="cursor-pointer"
+            >
+              <XCircle className="w-4 h-4 mr-2 text-red-600" />
+              Rejected Only
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <div className="space-y-1">
         <div className="text-sm font-medium">Contractors</div>
@@ -318,7 +401,7 @@ export default function ReportingPage() {
         </DropdownMenu>
       </div>
     </div>
-  ), [startDate, endDate, companyFilter, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch]);
+  ), [startDate, endDate, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch, statusFilterText]);
 
   const renderMobileCard = useCallback((timesheet: Timesheet, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
     <Card className="mb-4">
@@ -355,6 +438,10 @@ export default function ReportingPage() {
               <div className="flex justify-between">
                 <span className="text-sm font-medium text-gray-500">Job Site:</span>
                 <span className="text-sm">{timesheet.jobSite}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium text-gray-500">Status:</span>
+                {getStatusBadge(timesheet.status)}
               </div>
             </div>
           </div>
@@ -452,7 +539,7 @@ export default function ReportingPage() {
             <Button 
               variant="outline" 
               onClick={exportToCSV}
-              disabled={!data || data.chartData.length === 0 || isFetching}
+              disabled={chartData.length === 0 || timesheetFetching}
               className="md:ml-auto"
             >
               <Download className="h-4 w-4 mr-2" />
@@ -465,11 +552,11 @@ export default function ReportingPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Total Hours
+                  Total Approved Hours
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                {isLoading ? (
+                {timesheetLoading ? (
                   <Skeleton className="h-8 w-20" />
                 ) : (
                   <div className="text-2xl font-bold">{totalHours.toFixed(1)}</div>
@@ -480,14 +567,14 @@ export default function ReportingPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Active Days
+                  Approved Entries
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                {isLoading ? (
+                {timesheetLoading ? (
                   <Skeleton className="h-8 w-20" />
                 ) : (
-                  <div className="text-2xl font-bold">{data?.chartData.length || 0}</div>
+                  <div className="text-2xl font-bold">{approvedTimesheets.length || 0}</div>
                 )}
               </CardContent>
             </Card>
@@ -495,15 +582,15 @@ export default function ReportingPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Average Hours/Day
+                  Avg Hours/Entry
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                {isLoading ? (
+                {timesheetLoading ? (
                   <Skeleton className="h-8 w-20" />
                 ) : (
                   <div className="text-2xl font-bold">
-                    {data && data.chartData.length > 0 ? (totalHours / data.chartData.length).toFixed(1) : '0.0'}
+                    {approvedTimesheets.length > 0 ? (totalHours / approvedTimesheets.length).toFixed(1) : '0.0'}
                   </div>
                 )}
               </CardContent>
@@ -516,18 +603,18 @@ export default function ReportingPage() {
               <CardTitle>Hours Worked Over Time</CardTitle>
             </CardHeader>
             <CardContent>
-              {isLoading || isFetching ? (
+              {timesheetLoading || timesheetFetching ? (
                 <div className="h-80 flex items-center justify-center">
                   <Skeleton className="h-80 w-full" />
                 </div>
-              ) : !data || data.chartData.length === 0 ? (
+              ) : chartData.length === 0 ? (
                 <div className="h-80 flex items-center justify-center text-gray-500">
-                  No data available for the selected date range
+                  No approved timesheets available for the selected date range
                 </div>
               ) : (
                 <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={data.chartData}>
+                    <LineChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                       <XAxis 
                         dataKey="date" 
@@ -568,13 +655,13 @@ export default function ReportingPage() {
       <div className="space-y-4">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Timesheet Details</h2>
         <AdminDataTable
-          data={timesheetData?.timesheets || []}
+          data={filteredTimesheets}
           columns={timesheetColumns}
           isLoading={timesheetLoading}
           isFetching={timesheetFetching}
           getRowId={(timesheet) => timesheet.id}
           exportFilename="timesheets"
-          exportHeaders={["Name", "Project Name", "Time Spent", "Company Name", "Date", "Job Site", "Job Description"]}
+          exportHeaders={["Name", "Project Name", "Time Spent", "Company Name", "Date", "Job Site", "Status"]}
           getExportData={(timesheet) => [
             timesheet.employee,
             timesheet.jobName || "N/A",
@@ -582,7 +669,7 @@ export default function ReportingPage() {
             timesheet.company,
             new Date(timesheet.date).toLocaleDateString(),
             timesheet.jobSite,
-            timesheet.jobDescription
+            timesheet.status
           ]}
           searchValue={search}
           onSearchChange={setSearch}

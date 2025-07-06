@@ -24,6 +24,11 @@ export interface Timesheet {
   timeSpent: string
   createdAt: string
   updatedAt: string
+  status: 'pending' | 'approved' | 'rejected'
+  approvedBy?: string
+  approvedByName?: string
+  approvedAt?: string
+  rejectionReason?: string
 }
 
 export interface TimesheetResponse {
@@ -110,11 +115,12 @@ export const timesheetsApi = createApi({
       dateTo?: string
       company?: string
       search?: string
+      status?: string
       limit?: number
       offset?: number
       authType?: 'contractor' | 'admin' | 'any'
     }>({
-      query: ({ dateFrom, dateTo, company, search, limit = 50, offset = 0, authType }) => {
+      query: ({ dateFrom, dateTo, company, search, status, limit = 50, offset = 0, authType }) => {
         const params = new URLSearchParams({
           limit: limit.toString(),
           offset: offset.toString(),
@@ -131,6 +137,9 @@ export const timesheetsApi = createApi({
         }
         if (search) {
           params.append('search', search)
+        }
+        if (status) {
+          params.append('status', status)
         }
         if (authType) {
           params.append('authType', authType)

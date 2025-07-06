@@ -215,6 +215,7 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('dateTo');
     const company = searchParams.get('company');
     const search = searchParams.get('search');
+    const status = searchParams.get('status');
 
     // Build query conditions
     const conditions = [];
@@ -251,6 +252,11 @@ export async function GET(request: NextRequest) {
           ilike(timesheets.jobDescription, `%${search}%`)
         )
       );
+    }
+
+    // Add status filter if specified
+    if (status && status !== 'all') {
+      conditions.push(eq(timesheets.status, status));
     }
 
     // Execute query - handle different condition scenarios
@@ -351,6 +357,7 @@ export async function PUT(request: NextRequest) {
         jobName: jobName,
         jobDescription,
         timeSpent: timeSpentNumber.toString(),
+        status: 'pending', // Reset to pending when timesheet is updated
         updatedAt: new Date()
       })
       .where(eq(timesheets.id, id))
@@ -364,6 +371,83 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     console.error('Error updating timesheet:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    // Only admins can approve/reject timesheets
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: AuthContractor; admin?: any }
+    try {
+      auth = authenticateRequest(request, 'admin')
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Admin authentication required' },
+        { status: 401 }
+      )
+    }
+
+    const { id, action, rejectionReason } = await request.json();
+
+    if (!id || !action) {
+      return NextResponse.json(
+        { error: 'Timesheet ID and action are required' },
+        { status: 400 }
+      );
+    }
+
+    if (!['approve', 'reject'].includes(action)) {
+      return NextResponse.json(
+        { error: 'Action must be either "approve" or "reject"' },
+        { status: 400 }
+      );
+    }
+
+    if (action === 'reject' && !rejectionReason) {
+      return NextResponse.json(
+        { error: 'Rejection reason is required when rejecting a timesheet' },
+        { status: 400 }
+      );
+    }
+
+    // Get the existing timesheet to verify it exists and belongs to the admin's company
+    const existingTimesheet = await db.select().from(timesheets)
+      .where(and(
+        eq(timesheets.id, id),
+        eq(timesheets.companyId, auth.admin.companyId)
+      ));
+
+    if (!existingTimesheet.length) {
+      return NextResponse.json({ error: 'Timesheet not found' }, { status: 404 });
+    }
+
+    const status = action === 'approve' ? 'approved' : 'rejected';
+    
+    // Update the timesheet with approval/rejection
+    const result = await db.update(timesheets)
+      .set({
+        status,
+        approvedBy: auth.admin.id,
+        approvedByName: auth.admin.name,
+        approvedAt: new Date(),
+        rejectionReason: action === 'reject' ? rejectionReason : null,
+        updatedAt: new Date()
+      })
+      .where(eq(timesheets.id, id))
+      .returning();
+
+    return NextResponse.json({
+      success: true,
+      timesheet: result[0],
+      message: `Timesheet ${action}d successfully`
+    });
+
+  } catch (error) {
+    console.error('Error approving/rejecting timesheet:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

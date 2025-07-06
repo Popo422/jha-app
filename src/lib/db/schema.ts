@@ -56,6 +56,11 @@ export const timesheets = pgTable('timesheets', {
   jobName: text('job_name').notNull(), // Name/title of the specific job
   jobDescription: text('job_description').notNull(), // Information about the job
   timeSpent: numeric('time_spent', { precision: 5, scale: 2 }).notNull(), // Time spent on site
+  status: text('status').notNull().default('pending'), // 'pending', 'approved', 'rejected'
+  approvedBy: uuid('approved_by'), // Admin user ID who approved/rejected
+  approvedByName: text('approved_by_name'), // Admin name for display
+  approvedAt: timestamp('approved_at'), // When it was approved/rejected
+  rejectionReason: text('rejection_reason'), // Optional reason for rejection
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
