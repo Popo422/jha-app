@@ -87,7 +87,7 @@ export function hasLevel3Membership(memberships: MembershipData[]): boolean {
     const isActive = membership.status === '1'
     const isNotExpired = !membership.is_expired && new Date(membership.expire_time) > new Date()
     
-    return levelId >= 3 && isActive && isNotExpired
+    return levelId >= 1 && isActive && isNotExpired
   })
 }
 
