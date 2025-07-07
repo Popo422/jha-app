@@ -337,7 +337,7 @@ export default function ContractorsPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleSendCodeEmail}
-                  disabled={isSendingEmail || isFormLoading}
+                  disabled={isSendingEmail || isFormLoading || true}
                   className="mt-2 flex items-center space-x-2"
                 >
                   <Mail className="h-4 w-4" />

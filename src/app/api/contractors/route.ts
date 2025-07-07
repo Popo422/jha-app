@@ -179,19 +179,19 @@ export async function POST(request: NextRequest) {
       companyId: auth.admin.companyId,
     }).returning()
 
-    // Send welcome email (non-blocking)
-    try {
-      await emailService.sendContractorWelcomeEmail({
-        contractorEmail: contractor[0].email,
-        contractorName: `${contractor[0].firstName} ${contractor[0].lastName}`,
-        contractorCode: contractor[0].code,
-        companyName: auth.admin.companyName || 'Your Company',
-        adminEmail: 'zerniereyes@gmail.com',
-      });
-    } catch (emailError) {
-      console.error('Failed to send welcome email:', emailError);
-      // Don't fail the contractor creation if email fails
-    }
+    // // Send welcome email (non-blocking)
+    // try {
+    //   await emailService.sendContractorWelcomeEmail({
+    //     contractorEmail: contractor[0].email,
+    //     contractorName: `${contractor[0].firstName} ${contractor[0].lastName}`,
+    //     contractorCode: contractor[0].code,
+    //     companyName: auth.admin.companyName || 'Your Company',
+    //     adminEmail: 'zerniereyes@gmail.com',
+    //   });
+    // } catch (emailError) {
+    //   console.error('Failed to send welcome email:', emailError);
+    //   // Don't fail the contractor creation if email fails
+    // }
 
     return NextResponse.json({
       success: true,
