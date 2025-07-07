@@ -129,8 +129,7 @@ export function verifyMembershipAccess(secretKey: string, token?: string): Membe
     }
     
     // Check membership level
-    // const hasAccess = hasLevel3Membership(payload.data.membership)
-    const hasAccess = Boolean(payload?.data?.user)
+    const hasAccess = hasLevel3Membership(payload.data.membership)
     
     return {
       isValid: true,
