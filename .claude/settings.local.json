@@ -17,7 +17,11 @@
       "Bash(cat:*)",
       "WebFetch(domain:tiptap.dev)",
       "Bash(node:*)",
-      "Bash(npm:*)"
+      "Bash(npm:*)",
+      "Bash(chmod:*)",
+      "Bash(bash:*)",
+      "Bash(tar:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }

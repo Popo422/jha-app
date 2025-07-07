@@ -23,6 +23,7 @@ define('JWT_ACCESS_TOKEN_EXP', 3600); // Access token expires in 1 hour.
 define('JWT_REFRESH_TOKEN_EXP', 604800); // Refresh token expires in 1 week.
 define('JWT_COOKIE_PATH', '/');
 define('JWT_COOKIE_DOMAIN', '.' . $site_domain);
+define('JWT_SECRET_KEY', 'MdavWXTygMo9wbTCVkS2jB*Hpw#X@#GhLLpLQUyeD%Rhuvu2TPLD7g6%nAC2^RfZ');
 
 function get_membership_data( $user_id ) {
     $membership_data = array();
