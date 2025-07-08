@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
           
           if (superAdmin.length > 0) {
             // Generate JWT token for auto-login
-            const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
+            const AUTH_JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
             
             const admin = {
               id: superAdmin[0].id,
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
               exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
             }
 
-            const token = jwt.sign(tokenPayload, JWT_SECRET)
+            const token = jwt.sign(tokenPayload, AUTH_JWT_SECRET)
 
             const authData = {
               admin,
@@ -237,6 +237,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Generate JWT token for auto-login after successful creation
+    const AUTH_JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
     
     const admin = {
       id: newSuperAdmin.id,
@@ -255,7 +257,7 @@ export async function POST(request: NextRequest) {
       exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
     }
 
-    const token = jwt.sign(tokenPayload, JWT_SECRET)
+    const token = jwt.sign(tokenPayload, AUTH_JWT_SECRET)
 
     const authData = {
       admin,
