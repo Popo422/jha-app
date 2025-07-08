@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { setTheme, toggleTheme } from '@/lib/features/theme/themeSlice'
 import { setLoading, setMembershipData, setError } from '@/lib/features/membership/membershipSlice'
+import { adminLoginSuccess } from '@/lib/features/auth/authSlice'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -91,7 +92,17 @@ export default function OnboardingPage() {
         console.log('API response:', response.status, result)
         
         if (response.ok && result.hasLevel3Access) {
-          // Check if user already has a company
+          // Check if user already has a company with auto-login
+          if (result.hasExistingCompany && result.autoLogin && result.authData) {
+            // Update Redux state with admin login data
+            dispatch(adminLoginSuccess(result.authData))
+            
+            // Redirect to admin dashboard
+            router.push('/admin')
+            return
+          }
+          
+          // Check if user already has a company but no auto-login (fallback)
           if (result.hasExistingCompany && result.redirectTo) {
             router.push(result.redirectTo)
             return
@@ -234,21 +245,32 @@ export default function OnboardingPage() {
         body: submitData
       })
 
+      const result = await response.json()
+      
       if (response.ok) {
+        // Check if this is an auto-login response (existing or new company)
+        if (result.autoLogin && result.authData) {
+          // Update Redux state with admin login data
+          dispatch(adminLoginSuccess(result.authData))
+          
+          // Redirect to admin dashboard
+          router.push('/admin')
+          return
+        }
+        
+        // Normal successful onboarding (fallback - shouldn't happen now)
         setCurrentStep('complete')
         setTimeout(() => {
           router.push('/admin/login')
         }, 3000)
       } else {
-        const error = await response.json()
-        
         // Check if user already has a company and should be redirected
-        if (response.status === 409 && error.redirectTo) {
-          router.push(error.redirectTo)
+        if (response.status === 409 && result.redirectTo) {
+          router.push(result.redirectTo)
           return
         }
         
-        setErrors({ submit: error.message || 'Failed to create company and super-admin' })
+        setErrors({ submit: result.message || 'Failed to create company and super-admin' })
       }
     } catch (error) {
       console.error('Onboarding error:', error)

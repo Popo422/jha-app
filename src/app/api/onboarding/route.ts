@@ -5,6 +5,7 @@ import { eq, or } from 'drizzle-orm'
 import bcrypt from 'bcrypt'
 import { put } from '@vercel/blob'
 import { verifyMembershipAccess } from '@/lib/membership-helper'
+import * as jwt from 'jsonwebtoken'
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +55,76 @@ export async function POST(request: NextRequest) {
     if (existingCompany.length > 0) {
       // Check if it's a WordPress user conflict
       if (wordpressUserId && existingCompany[0].wordpressUserId === wordpressUserId) {
+        // User already has a company - get the super admin info for auto-login
+        if (existingCompany[0].createdBy) {
+          // Get the super admin user details
+          const superAdmin = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, existingCompany[0].createdBy))
+            .limit(1)
+          
+          if (superAdmin.length > 0) {
+            // Generate JWT token for auto-login
+            const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
+            
+            const admin = {
+              id: superAdmin[0].id,
+              email: superAdmin[0].email,
+              name: superAdmin[0].name,
+              role: superAdmin[0].role,
+              companyId: superAdmin[0].companyId,
+              companyName: existingCompany[0].name,
+              companyLogoUrl: existingCompany[0].logoUrl || null
+            }
+
+            const tokenPayload = {
+              admin,
+              isAdmin: true,
+              iat: Math.floor(Date.now() / 1000),
+              exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+            }
+
+            const token = jwt.sign(tokenPayload, JWT_SECRET)
+
+            const authData = {
+              admin,
+              token,
+              isAdmin: true
+            }
+
+            const response = NextResponse.json(
+              { 
+                message: 'Company already exists for this user',
+                autoLogin: true,
+                superAdmin: {
+                  id: superAdmin[0].id,
+                  email: superAdmin[0].email,
+                  name: superAdmin[0].name
+                },
+                company: {
+                  id: existingCompany[0].id,
+                  name: existingCompany[0].name
+                },
+                authData
+              },
+              { status: 200 }
+            )
+            
+            // Set the admin auth cookie
+            response.cookies.set('adminAuthToken', token, {
+              path: '/',
+              maxAge: 24 * 60 * 60, // 24 hours
+              httpOnly: false, // Allow client-side access
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax'
+            })
+
+            return response
+          }
+        }
+        
+        // Fallback to redirect if no createdBy found
         return NextResponse.json(
           { 
             message: 'Company already exists for this user',
@@ -166,8 +237,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    
+    const admin = {
+      id: newSuperAdmin.id,
+      email: newSuperAdmin.email,
+      name: newSuperAdmin.name,
+      role: newSuperAdmin.role,
+      companyId: newSuperAdmin.companyId,
+      companyName: newCompany.name,
+      companyLogoUrl: logoUrl
+    }
+
+    const tokenPayload = {
+      admin,
+      isAdmin: true,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+    }
+
+    const token = jwt.sign(tokenPayload, JWT_SECRET)
+
+    const authData = {
+      admin,
+      token,
+      isAdmin: true
+    }
+
+    const response = NextResponse.json({
       message: 'Company and super-admin created successfully',
+      autoLogin: true,
       company: {
         id: newCompany.id,
         name: newCompany.name,
@@ -177,8 +275,20 @@ export async function POST(request: NextRequest) {
         id: newSuperAdmin.id,
         email: newSuperAdmin.email,
         name: newSuperAdmin.name,
-      }
+      },
+      authData
     })
+
+    // Set the admin auth cookie
+    response.cookies.set('adminAuthToken', token, {
+      path: '/',
+      maxAge: 24 * 60 * 60, // 24 hours
+      httpOnly: false, // Allow client-side access
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    })
+
+    return response
   } catch (error) {
     console.error('Onboarding error:', error)
     return NextResponse.json(
