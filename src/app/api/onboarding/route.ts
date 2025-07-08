@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { companies, users } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, or } from 'drizzle-orm'
 import bcrypt from 'bcrypt'
 import { put } from '@vercel/blob'
 import { verifyMembershipAccess } from '@/lib/membership-helper'
@@ -39,14 +39,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if company already exists
+    // Check if company already exists by name or WordPress user ID
+    const whereConditions = [eq(companies.name, companyName)]
+    if (wordpressUserId) {
+      whereConditions.push(eq(companies.wordpressUserId, wordpressUserId))
+    }
+
     const existingCompany = await db
       .select()
       .from(companies)
-      .where(eq(companies.name, companyName))
+      .where(or(...whereConditions))
       .limit(1)
 
     if (existingCompany.length > 0) {
+      // Check if it's a WordPress user conflict
+      if (wordpressUserId && existingCompany[0].wordpressUserId === wordpressUserId) {
+        return NextResponse.json(
+          { 
+            message: 'Company already exists for this user',
+            redirectTo: '/admin/login'
+          },
+          { status: 409 }
+        )
+      }
+      
+      // Otherwise it's a company name conflict
       return NextResponse.json(
         { message: 'Company with this name already exists' },
         { status: 409 }

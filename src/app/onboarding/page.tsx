@@ -241,6 +241,13 @@ export default function OnboardingPage() {
         }, 3000)
       } else {
         const error = await response.json()
+        
+        // Check if user already has a company and should be redirected
+        if (response.status === 409 && error.redirectTo) {
+          router.push(error.redirectTo)
+          return
+        }
+        
         setErrors({ submit: error.message || 'Failed to create company and super-admin' })
       }
     } catch (error) {
