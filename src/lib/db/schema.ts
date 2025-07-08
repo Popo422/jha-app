@@ -14,6 +14,7 @@ export const companies = pgTable('companies', {
   modulesLastUpdatedBy: text('modules_last_updated_by'), // Admin name who last updated modules
   modulesLastUpdatedByUserId: text('modules_last_updated_by_user_id'), // Admin user ID for reference
   createdBy: uuid('created_by'), // Super-admin user ID who created this company
+  wordpressUserId: text('wordpress_user_id'), // WordPress user ID for company owner
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })

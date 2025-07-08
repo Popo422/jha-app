@@ -4,6 +4,7 @@ import { companies, users } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcrypt'
 import { put } from '@vercel/blob'
+import { verifyMembershipAccess } from '@/lib/membership-helper'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +25,18 @@ export async function POST(request: NextRequest) {
         { message: 'Company name, admin name, email, and password are required' },
         { status: 400 }
       )
+    }
+
+    // Get WordPress user ID from token
+    const JWT_SECRET = process.env.WORDPRESS_JWT_SECRET || 'your-wordpress-jwt-secret-here'
+    const accessToken = request.cookies.get('access_token')?.value
+    let wordpressUserId = null
+    
+    if (accessToken) {
+      const membershipResult = verifyMembershipAccess(JWT_SECRET, accessToken)
+      if (membershipResult.isValid && membershipResult.user?.id) {
+        wordpressUserId = membershipResult.user.id.toString()
+      }
     }
 
     // Check if company already exists
@@ -67,6 +80,7 @@ export async function POST(request: NextRequest) {
         contactPhone: contactPhone || null,
         address: address || null,
         logoUrl: null, // Will be updated after logo upload
+        wordpressUserId: wordpressUserId,
       })
       .returning()
 

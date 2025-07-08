@@ -91,6 +91,12 @@ export default function OnboardingPage() {
         console.log('API response:', response.status, result)
         
         if (response.ok && result.hasLevel3Access) {
+          // Check if user already has a company
+          if (result.hasExistingCompany && result.redirectTo) {
+            router.push(result.redirectTo)
+            return
+          }
+          
           // Has access
           console.log('User has access')
           dispatch(setMembershipData({
