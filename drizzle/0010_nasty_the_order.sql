@@ -1,1 +1,0 @@
-ALTER TABLE "toolbox_talks" ALTER COLUMN "content" SET DATA TYPE text;

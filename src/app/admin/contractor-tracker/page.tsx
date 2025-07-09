@@ -72,11 +72,11 @@ export default function ContractTrackerPage() {
         const contractorName = `${contractor.firstName} ${contractor.lastName}`;
         
         const userSubmissions = submissionsData?.submissions?.filter(
-          sub => sub.completedBy.toLowerCase() === contractorName.toLowerCase()
+          sub => sub.userId === contractor.id
         ) || [];
 
         const userTimesheets = timesheetsData?.timesheets?.filter(
-          timesheet => timesheet.employee.toLowerCase() === contractorName.toLowerCase()
+          timesheet => timesheet.userId === contractor.id
         ) || [];
 
         const jhaSubmission = userSubmissions.find(sub => sub.submissionType === 'job-hazard-analysis');
@@ -285,7 +285,7 @@ export default function ContractTrackerPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Contractor Tracker</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Submission Tracker</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">
           Monitor contractor form submission status for {format(new Date(filters.date), 'MMMM d, yyyy')}
         </p>

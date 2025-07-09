@@ -39,9 +39,9 @@ export default function AdminEditorPage() {
   })
 
   useEffect(() => {
-    // Check if current user is super-admin
-    if (admin?.role !== 'super-admin') {
-      alert('Access denied. Super-admin privileges required.')
+    // Check if current user is at least admin
+    if (!admin || !['admin', 'super-admin'].includes(admin.role)) {
+      alert('Access denied. Admin privileges required.')
       window.location.href = '/admin'
       return
     }
@@ -242,12 +242,12 @@ export default function AdminEditorPage() {
     }
   }
 
-  if (admin?.role !== 'super-admin') {
+  if (!admin || !['admin', 'super-admin'].includes(admin.role)) {
     return (
       <div className="p-6">
         <Card>
           <CardContent className="flex items-center justify-center h-32">
-            <p className="text-destructive">Access denied. Super-admin privileges required.</p>
+            <p className="text-destructive">Access denied. Admin privileges required.</p>
           </CardContent>
         </Card>
       </div>
@@ -376,7 +376,9 @@ export default function AdminEditorPage() {
                 className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.role ? 'border-red-500' : ''}`}
               >
                 <option value="admin">Admin</option>
-                <option value="super-admin">Super Admin</option>
+                {admin?.role === 'super-admin' && (
+                  <option value="super-admin">Super Admin</option>
+                )}
               </select>
               {errors.role && (
                 <p className="text-sm text-red-500">{errors.role}</p>
@@ -510,7 +512,12 @@ export default function AdminEditorPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Admin Editor</h1>
-          <p className="text-muted-foreground">Manage admin users (Super-Admin only)</p>
+          <p className="text-muted-foreground">
+            {admin?.role === 'super-admin' 
+              ? 'Manage admin users' 
+              : 'Add new admin users to your company'
+            }
+          </p>
         </div>
         <Button 
           onClick={() => setCurrentView('add')} 
@@ -532,7 +539,7 @@ export default function AdminEditorPage() {
             data={admins}
             isLoading={isLoading}
             isFetching={false}
-            onEdit={(adminUser) => {
+            onEdit={admin?.role === 'super-admin' ? (adminUser) => {
               setEditingAdmin(adminUser)
               setFormData({
                 name: adminUser.name,
@@ -542,10 +549,10 @@ export default function AdminEditorPage() {
                 role: adminUser.role
               })
               setCurrentView('edit')
-            }}
-            onDelete={(id) => handleDelete(id)}
+            } : undefined}
+            onDelete={admin?.role === 'super-admin' ? (id) => handleDelete(id) : undefined}
             getRowId={(admin) => admin.id}
-            canDelete={(adminUser) => adminUser.role !== 'super-admin' && adminUser.id !== admin?.id}
+            canDelete={(adminUser) => admin?.role === 'super-admin' && adminUser.role !== 'super-admin' && adminUser.id !== admin?.id}
             exportFilename="admin_users"
             exportHeaders={['Name', 'Email', 'Role', 'Company', 'Created At']}
             getExportData={(admin) => [

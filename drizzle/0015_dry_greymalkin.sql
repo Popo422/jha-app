@@ -1,1 +1,0 @@
-ALTER TABLE "companies" ADD COLUMN "wordpress_user_id" text;
