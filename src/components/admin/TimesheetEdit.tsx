@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Toast, useToast } from "@/components/ui/toast";
 import { useUpdateTimesheetMutation } from "@/lib/features/timesheets/timesheetsApi";
 import { ArrowLeft } from "lucide-react";
+import ContractorSelect from "@/components/ContractorSelect";
 
 interface Timesheet {
   id: string;
@@ -115,12 +116,12 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="employee">Employee:</Label>
-              <Input
+              <ContractorSelect
                 id="employee"
                 name="employee"
+                label="Employee:"
                 value={formData.employee || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, employee: value }))}
                 placeholder="Employee name"
                 required
               />

@@ -14,6 +14,7 @@ import FallProtectionSection from "@/components/forms/FallProtectionSection";
 import { ArrowLeft } from "lucide-react";
 import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
+import ContractorSelect from "@/components/ContractorSelect";
 
 interface Submission {
   id: string;
@@ -187,12 +188,11 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="completedBy">Completed by:</Label>
-              <Input
+              <ContractorSelect
                 id="completedBy"
                 name="completedBy"
                 value={formData.completedBy || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
               />
             </div>
             <div className="space-y-2">

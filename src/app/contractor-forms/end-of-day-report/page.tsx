@@ -13,6 +13,7 @@ import { ArrowLeft, X } from "lucide-react";
 import Link from "next/link";
 import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
+import ContractorSelect from "@/components/ContractorSelect";
 
 interface EndOfDayReportFormData {
   completedBy: string;
@@ -196,12 +197,11 @@ export default function EndOfDayReportPage() {
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="completedBy">Completed by:</Label>
-                    <Input
+                    <ContractorSelect
                       id="completedBy"
                       name="completedBy"
                       value={formData.completedBy}
-                      onChange={handleInputChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
                       required
                     />
                   </div>

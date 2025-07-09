@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import ContractorSelect from "@/components/ContractorSelect";
 
 interface TimesheetFormData {
   date: string;
@@ -133,13 +134,13 @@ export default function TimesheetPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="employee">Employee:</Label>
-                    <Input
+                    <ContractorSelect
                       id="employee"
                       name="employee"
+                      label="Employee:"
                       placeholder="Person's Name"
                       value={formData.employee}
-                      onChange={handleInputChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, employee: value }))}
                       required
                     />
                   </div>

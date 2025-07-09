@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import SignatureCanvas from "react-signature-canvas";
+import ContractorSelect from "@/components/ContractorSelect";
 
 interface StartOfDayReportFormData {
   completedBy: string;
@@ -176,12 +177,11 @@ export default function StartOfDayReportPage() {
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="completedBy">Completed by:</Label>
-                    <Input
+                    <ContractorSelect
                       id="completedBy"
                       name="completedBy"
                       value={formData.completedBy}
-                      onChange={handleInputChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
                       required
                     />
                   </div>
