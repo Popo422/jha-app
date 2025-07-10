@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSubmitTimesheetMutation } from "@/lib/features/timesheets/timesheetsApi";
 import { useModuleAccess } from "@/hooks/useModuleAccess";
+import { useAppSelector } from "@/lib/hooks";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -26,13 +27,14 @@ interface TimesheetFormData {
 }
 
 export default function TimesheetPage() {
+  const { contractor } = useAppSelector((state) => state.auth);
   const { hasAccess, isLoading: moduleLoading } = useModuleAccess('timesheet');
   const [submitTimesheet, { isLoading, isSuccess, isError, error, reset }] = useSubmitTimesheetMutation();
   
   const [formData, setFormData] = useState<TimesheetFormData>({
     date: new Date().toISOString().split("T")[0],
-    employee: "",
-    company: "",
+    employee: contractor?.name || "",
+    company: contractor?.companyName || "",
     jobSite: "",
     jobName: "",
     jobDescription: "",
@@ -42,14 +44,14 @@ export default function TimesheetPage() {
   const resetFormData = useCallback(() => {
     setFormData({
       date: new Date().toISOString().split("T")[0],
-      employee: "",
-      company: "",
+      employee: contractor?.name || "",
+      company: contractor?.companyName || "",
       jobSite: "",
       jobName: "",
       jobDescription: "",
       timeSpent: ""
     });
-  }, []);
+  }, [contractor]);
 
   useEffect(() => {
     if (isSuccess) {

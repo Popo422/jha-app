@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSubmitFormMutation } from "@/lib/features/submissions/submissionsApi";
+import { useAppSelector } from "@/lib/hooks";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -35,13 +36,15 @@ interface EndOfDayReportFormData {
 }
 
 export default function EndOfDayReportPage() {
+  const { contractor } = useAppSelector((state) => state.auth);
+  
   const [formData, setFormData] = useState<EndOfDayReportFormData>({
-    completedBy: "",
+    completedBy: contractor?.name || "",
     date: new Date().toISOString().split("T")[0],
     supervisor: "",
     jobSite: "",
     jobName: "",
-    company: "",
+    company: contractor?.companyName || "",
     timeClocked: "",
     freeFromInjury: null,
     completedJHA: null,
@@ -114,12 +117,12 @@ export default function EndOfDayReportPage() {
   useEffect(() => {
     if (isSuccess) {
       setFormData({
-        completedBy: "",
+        completedBy: contractor?.name || "",
         date: new Date().toISOString().split("T")[0],
         supervisor: "",
         jobSite: "",
         jobName: "",
-        company: "",
+        company: contractor?.companyName || "",
         timeClocked: "",
         freeFromInjury: null,
         completedJHA: null,
@@ -135,7 +138,7 @@ export default function EndOfDayReportPage() {
         signatureRef.current.clear();
       }
     }
-  }, [isSuccess]);
+  }, [isSuccess, contractor]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

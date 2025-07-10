@@ -24,7 +24,7 @@ export default function Header() {
           >
             <img 
               src={contractor?.companyLogoUrl || "/logo.png"} 
-              alt={contractor?.name || "JHA App"} 
+              alt={contractor?.companyName || "JHA App"} 
               width={140} 
               height={30}
             />

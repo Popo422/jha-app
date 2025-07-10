@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSubmitFormMutation } from "@/lib/features/submissions/submissionsApi";
+import { useAppSelector } from "@/lib/hooks";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -33,13 +34,15 @@ interface StartOfDayReportFormData {
 }
 
 export default function StartOfDayReportPage() {
+  const { contractor } = useAppSelector((state) => state.auth);
+  
   const [formData, setFormData] = useState<StartOfDayReportFormData>({
-    completedBy: "",
+    completedBy: contractor?.name || "",
     date: new Date().toISOString().split("T")[0],
     supervisor: "",
     jobSite: "",
     jobName: "",
-    company: "",
+    company: contractor?.companyName || "",
     timeClocked: "",
     freeFromInjury: null,
     freeFromFever: null,
@@ -96,12 +99,12 @@ export default function StartOfDayReportPage() {
   useEffect(() => {
     if (isSuccess) {
       setFormData({
-        completedBy: "",
+        completedBy: contractor?.name || "",
         date: new Date().toISOString().split("T")[0],
         supervisor: "",
         jobSite: "",
         jobName: "",
-        company: "",
+        company: contractor?.companyName || "",
         timeClocked: "",
         freeFromInjury: null,
         freeFromFever: null,
@@ -116,7 +119,7 @@ export default function StartOfDayReportPage() {
         signatureRef.current.clear();
       }
     }
-  }, [isSuccess]);
+  }, [isSuccess, contractor]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
