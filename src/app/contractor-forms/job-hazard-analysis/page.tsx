@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useSubmitFormMutation } from "@/lib/features/submissions/submissionsApi";
+import { useAppSelector } from "@/lib/hooks";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import PPERequirementsSection from "@/components/forms/PPERequirementsSection";
 import FallProtectionSection from "@/components/forms/FallProtectionSection";
 import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
+import ContractorSelect from "@/components/ContractorSelect";
 
 interface JobHazardAnalysisFormData {
   completedBy: string;
@@ -130,16 +132,17 @@ interface JobHazardAnalysisFormData {
 }
 
 export default function JobHazardReportPage() {
+  const { contractor } = useAppSelector((state) => state.auth);
   const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
   const signatureRef = useRef<SignatureCanvas>(null);
   
   const [formData, setFormData] = useState<JobHazardAnalysisFormData>({
-    completedBy: "",
+    completedBy: contractor?.name || "",
     date: new Date().toISOString().split("T")[0],
     supervisor: "",
     jobSite: "",
     jobName: "",
-    company: "",
+    company: contractor?.companyName || "",
     hazards: {
       slipFallTrips: false,
       slipFallTripsAction: false,
@@ -247,12 +250,12 @@ export default function JobHazardReportPage() {
 
   const resetFormData = useCallback(() => {
     setFormData({
-      completedBy: "",
+      completedBy: contractor?.name || "",
       date: new Date().toISOString().split("T")[0],
       supervisor: "",
       jobSite: "",
       jobName: "",
-      company: "",
+      company: contractor?.companyName || "",
       hazards: {
         slipFallTrips: false,
         slipFallTripsAction: false,
@@ -360,7 +363,7 @@ export default function JobHazardReportPage() {
     if (signatureRef.current) {
       signatureRef.current.clear();
     }
-  }, []);
+  }, [contractor]);
 
   // Reset form on successful submission
   useEffect(() => {
@@ -503,12 +506,11 @@ export default function JobHazardReportPage() {
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="completedBy">Completed by:</Label>
-                    <Input
+                    <ContractorSelect
                       id="completedBy"
                       name="completedBy"
                       value={formData.completedBy}
-                      onChange={handleInputChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
                       required
                     />
                   </div>

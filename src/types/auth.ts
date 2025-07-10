@@ -7,6 +7,7 @@ export interface User {
 export interface Contractor {
   id: string
   name: string
+  companyName: string
   code: string
   companyId: string
   companyLogoUrl: string | null

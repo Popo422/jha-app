@@ -1,7 +1,7 @@
 'use client'
 
 import { useAppSelector } from '@/lib/hooks'
-import { Bell, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 function getInitials(name: string): string {
@@ -38,19 +38,8 @@ export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
           <h1 className="text-xl lg:text-2xl font-semibold text-gray-900 dark:text-gray-100">Admin Portal</h1>
         </div>
 
-        {/* Right side - Notification and User Panel */}
+        {/* Right side - User Panel */}
         <div className="flex items-center space-x-2 lg:space-x-4">
-          {/* Notification Icon */}
-          <Button variant="ghost" size="sm" className="relative p-2">
-            <Bell className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-            {/* Notification badge */}
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-              3
-            </span>
-          </Button>
-
-          {/* Divider */}
-          <div className="h-8 w-px bg-gray-300 dark:bg-gray-600 hidden sm:block"></div>
           
           {/* Avatar with initials */}
           <div className="h-8 w-8 lg:h-10 lg:w-10 bg-blue-600 rounded-full flex items-center justify-center">

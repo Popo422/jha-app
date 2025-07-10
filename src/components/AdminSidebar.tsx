@@ -52,7 +52,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       icon: Home
     },
     {
-      label: 'Contractor Tracker',
+      label: 'Submission Tracker',
       href: '/admin/contractor-tracker',
       icon: FileText
     },
@@ -76,11 +76,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       href: '/admin/modules',
       icon: Puzzle
     },
-    ...(admin?.role === 'super-admin' ? [{
+    {
       label: 'Admin Editor',
       href: '/admin/admin-editor',
       icon: Shield
-    }] : []),
+    },
     {
       label: 'Toolbox Talks',
       href: '/admin/toolbox-talks',

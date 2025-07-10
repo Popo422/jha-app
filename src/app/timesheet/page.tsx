@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSubmitTimesheetMutation } from "@/lib/features/timesheets/timesheetsApi";
 import { useModuleAccess } from "@/hooks/useModuleAccess";
+import { useAppSelector } from "@/lib/hooks";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import ContractorSelect from "@/components/ContractorSelect";
 
 interface TimesheetFormData {
   date: string;
@@ -25,13 +27,14 @@ interface TimesheetFormData {
 }
 
 export default function TimesheetPage() {
+  const { contractor } = useAppSelector((state) => state.auth);
   const { hasAccess, isLoading: moduleLoading } = useModuleAccess('timesheet');
   const [submitTimesheet, { isLoading, isSuccess, isError, error, reset }] = useSubmitTimesheetMutation();
   
   const [formData, setFormData] = useState<TimesheetFormData>({
     date: new Date().toISOString().split("T")[0],
-    employee: "",
-    company: "",
+    employee: contractor?.name || "",
+    company: contractor?.companyName || "",
     jobSite: "",
     jobName: "",
     jobDescription: "",
@@ -41,14 +44,14 @@ export default function TimesheetPage() {
   const resetFormData = useCallback(() => {
     setFormData({
       date: new Date().toISOString().split("T")[0],
-      employee: "",
-      company: "",
+      employee: contractor?.name || "",
+      company: contractor?.companyName || "",
       jobSite: "",
       jobName: "",
       jobDescription: "",
       timeSpent: ""
     });
-  }, []);
+  }, [contractor]);
 
   useEffect(() => {
     if (isSuccess) {
@@ -133,13 +136,13 @@ export default function TimesheetPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="employee">Employee:</Label>
-                    <Input
+                    <ContractorSelect
                       id="employee"
                       name="employee"
+                      label="Employee:"
                       placeholder="Person's Name"
                       value={formData.employee}
-                      onChange={handleInputChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, employee: value }))}
                       required
                     />
                   </div>

@@ -100,6 +100,7 @@ interface AuthContractor {
   name: string
   code: string
   companyId: string
+  companyName: string
 }
 
 interface TokenPayload {
@@ -250,7 +251,7 @@ export async function POST(request: NextRequest) {
       completedBy: parsedFormData.completedBy || decoded.user.name,
       date: date,
       dateTimeClocked: dateTimeClocked ? new Date(dateTimeClocked) : null,
-      company: parsedFormData.company || decoded.contractor.name,
+      company: parsedFormData.company || decoded.contractor.companyName,
       jobSite: jobSite,
       jobName: parsedFormData.jobName,
       submissionType: submissionType,

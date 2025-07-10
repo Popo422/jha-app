@@ -1,1 +1,0 @@
-ALTER TABLE "companies" ADD COLUMN "enabled_modules" jsonb DEFAULT '["start-of-day","end-of-day","job-hazard-analysis","timesheet"]'::jsonb;
