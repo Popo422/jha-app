@@ -35,6 +35,7 @@ export default function ReportingPage() {
   const [contractorSearch, setContractorSearch] = useState('');
   const [jobNameSearch, setJobNameSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // Default to all statuses
+  const [activeTab, setActiveTab] = useState('hours'); // 'hours' or 'cost'
   const [contractorCostSearch, setContractorCostSearch] = useState('');
   const [companyCostSearch, setCompanyCostSearch] = useState('');
   const [jobSiteCostSearch, setJobSiteCostSearch] = useState('');
@@ -744,7 +745,9 @@ export default function ReportingPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Hours & Cost Reporting</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          {activeTab === 'hours' ? 'Time Reports' : 'Cost Reports'}
+        </h1>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
@@ -838,414 +841,460 @@ export default function ReportingPage() {
             </Button>
           </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Total Approved Hours
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {timesheetLoading ? (
-                  <Skeleton className="h-8 w-20" />
-                ) : (
-                  <div className="text-2xl font-bold">{totalHours.toFixed(1)}</div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Total Project Cost
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {timesheetLoading ? (
-                  <Skeleton className="h-8 w-20" />
-                ) : (
-                  <div className="text-2xl font-bold text-green-600">${totalCost.toFixed(2)}</div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Approved Entries
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {timesheetLoading ? (
-                  <Skeleton className="h-8 w-20" />
-                ) : (
-                  <div className="text-2xl font-bold">{approvedTimesheets.length || 0}</div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Avg Cost/Hour
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                {timesheetLoading ? (
-                  <Skeleton className="h-8 w-20" />
-                ) : (
-                  <div className="text-2xl font-bold">
-                    ${totalHours > 0 ? (totalCost / totalHours).toFixed(2) : '0.00'}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+          {/* Tab Navigation */}
+          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-fit">
+            <button
+              onClick={() => setActiveTab('hours')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'hours'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              Time Reports
+            </button>
+            <button
+              onClick={() => setActiveTab('cost')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'cost'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
+            >
+              Cost Reports
+            </button>
           </div>
 
-          {/* Chart Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Hours Worked Over Time</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {timesheetLoading || timesheetFetching ? (
-                <div className="h-80 flex items-center justify-center">
-                  <Skeleton className="h-80 w-full" />
-                </div>
-              ) : chartData.length === 0 ? (
-                <div className="h-80 flex items-center justify-center text-gray-500">
-                  No approved timesheets available for the selected date range
-                </div>
-              ) : (
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                      <XAxis 
-                        dataKey="date" 
-                        tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => {
-                          const date = new Date(value);
-                          return `${date.getMonth() + 1}/${date.getDate()}`;
-                        }}
-                      />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip
-                        formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Total Hours']}
-                        labelFormatter={(label) => {
-                          const date = new Date(label);
-                          return date.toLocaleDateString();
-                        }}
-                      />
-                      <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="totalHours" 
-                        stroke="#3b82f6" 
-                        strokeWidth={2}
-                        dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6 }}
-                        name="Total Hours"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Tab Content */}
+          {activeTab === 'hours' && (
+            <>
+              {/* Hours Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Total Approved Hours
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {timesheetLoading ? (
+                      <Skeleton className="h-8 w-20" />
+                    ) : (
+                      <div className="text-2xl font-bold">{totalHours.toFixed(1)}</div>
+                    )}
+                  </CardContent>
+                </Card>
 
-          {/* Cost Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Accumulated Spend Over Time */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Accumulated Spend Over Time</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {timesheetLoading || timesheetFetching ? (
-                  <div className="h-80 flex items-center justify-center">
-                    <Skeleton className="h-80 w-full" />
-                  </div>
-                ) : accumulatedSpendData.length === 0 ? (
-                  <div className="h-80 flex items-center justify-center text-gray-500">
-                    No cost data available for the selected date range
-                  </div>
-                ) : (
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={accumulatedSpendData}>
-                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                        <XAxis 
-                          dataKey="date" 
-                          tick={{ fontSize: 12 }}
-                          tickFormatter={(value) => {
-                            const date = new Date(value);
-                            return `${date.getMonth() + 1}/${date.getDate()}`;
-                          }}
-                        />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip
-                          formatter={(value: number) => [`$${value.toFixed(2)}`, 'Accumulated Cost']}
-                          labelFormatter={(label) => {
-                            const date = new Date(label);
-                            return date.toLocaleDateString();
-                          }}
-                        />
-                        <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey="accumulatedCost" 
-                          stroke="#10b981" 
-                          strokeWidth={2}
-                          dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-                          activeDot={{ r: 6 }}
-                          name="Accumulated Cost"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Approved Entries
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {timesheetLoading ? (
+                      <Skeleton className="h-8 w-20" />
+                    ) : (
+                      <div className="text-2xl font-bold">{approvedTimesheets.length || 0}</div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
-            {/* Daily Project Spend */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Daily Project Spend</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {timesheetLoading || timesheetFetching ? (
-                  <div className="h-80 flex items-center justify-center">
-                    <Skeleton className="h-80 w-full" />
-                  </div>
-                ) : dailySpendData.length === 0 ? (
-                  <div className="h-80 flex items-center justify-center text-gray-500">
-                    No cost data available for the selected date range
-                  </div>
-                ) : (
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dailySpendData}>
-                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                        <XAxis 
-                          dataKey="date" 
-                          tick={{ fontSize: 12 }}
-                          tickFormatter={(value) => {
-                            const date = new Date(value);
-                            return `${date.getMonth() + 1}/${date.getDate()}`;
-                          }}
-                        />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip
-                          formatter={(value: number) => [`$${value.toFixed(2)}`, 'Daily Cost']}
-                          labelFormatter={(label) => {
-                            const date = new Date(label);
-                            return date.toLocaleDateString();
-                          }}
-                        />
-                        <Legend />
-                        <Bar 
-                          dataKey="cost" 
-                          fill="#3b82f6"
-                          name="Daily Cost"
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+              {/* Hours Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Hours Worked Over Time</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {timesheetLoading || timesheetFetching ? (
+                    <div className="h-80 flex items-center justify-center">
+                      <Skeleton className="h-80 w-full" />
+                    </div>
+                  ) : chartData.length === 0 ? (
+                    <div className="h-80 flex items-center justify-center text-gray-500">
+                      No approved timesheets available for the selected date range
+                    </div>
+                  ) : (
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                          <XAxis 
+                            dataKey="date" 
+                            tick={{ fontSize: 12 }}
+                            tickFormatter={(value) => {
+                              const date = new Date(value);
+                              return `${date.getMonth() + 1}/${date.getDate()}`;
+                            }}
+                          />
+                          <YAxis tick={{ fontSize: 12 }} />
+                          <Tooltip
+                            formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Total Hours']}
+                            labelFormatter={(label) => {
+                              const date = new Date(label);
+                              return date.toLocaleDateString();
+                            }}
+                          />
+                          <Legend />
+                          <Line 
+                            type="monotone" 
+                            dataKey="totalHours" 
+                            stroke="#3b82f6" 
+                            strokeWidth={2}
+                            dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                            activeDot={{ r: 6 }}
+                            name="Total Hours"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Hours-focused Analytics */}
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Hours Analytics</h2>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Hours by Contractor Chart */}
+                  <Card className="w-full mx-auto h-fit p-2 gap-4 flex flex-col justify-center items-center">
+                    <CardHeader>
+                      <CardTitle>Hours Worked by Contractor</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {timesheetLoading || timesheetFetching ? (
+                        <div className="h-80 flex items-center justify-center">
+                          <Skeleton className="h-80 w-full" />
+                        </div>
+                      ) : contractorHours.length === 0 ? (
+                        <div className="h-80 flex items-center justify-center text-gray-500">
+                          No contractor data available
+                        </div>
+                      ) : (
+                        <div className="h-80 flex justify-center items-center">
+                          <div style={{ width: Math.min(contractorHours.length * 120 + 100, 600), height: '100%' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart 
+                                data={contractorHours.slice(0, 10)} 
+                                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                              >
+                              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                              <XAxis 
+                                dataKey="name" 
+                                tick={{ fontSize: 10 }}
+                                angle={-45}
+                                textAnchor="end"
+                                height={80}
+                                interval={0}
+                              />
+                              <YAxis 
+                                tick={{ fontSize: 12 }} 
+                                domain={[0, 'dataMax']}
+                                tickFormatter={(value) => `${value}h`}
+                              />
+                              <Tooltip 
+                                formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Hours Worked']}
+                                labelFormatter={(label) => `Contractor: ${label}`}
+                              />
+                              <Bar 
+                                dataKey="hours" 
+                                fill="#3b82f6" 
+                                radius={[4, 4, 0, 0]}
+                                maxBarSize={80}
+                              />
+                            </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Company Hours Chart */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Hours per Company</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {timesheetLoading || timesheetFetching ? (
+                        <div className="h-80 flex items-center justify-center">
+                          <Skeleton className="h-80 w-full" />
+                        </div>
+                      ) : companyAnalytics.length === 0 ? (
+                        <div className="h-80 flex items-center justify-center text-gray-500">
+                          No company data available
+                        </div>
+                      ) : (
+                        <div className="h-80">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={companyAnalytics}
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={120}
+                                fill="#8884d8"
+                                dataKey="hours"
+                                label={({ name, hours }) => `${name}: ${hours.toFixed(1)}h`}
+                              >
+                                {companyAnalytics.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Total Hours']} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'cost' && (
+            <>
+              {/* Cost Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Total Project Cost
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {timesheetLoading ? (
+                      <Skeleton className="h-8 w-20" />
+                    ) : (
+                      <div className="text-2xl font-bold text-green-600">${totalCost.toFixed(2)}</div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Avg Cost/Hour
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {timesheetLoading ? (
+                      <Skeleton className="h-8 w-20" />
+                    ) : (
+                      <div className="text-2xl font-bold">
+                        ${totalHours > 0 ? (totalCost / totalHours).toFixed(2) : '0.00'}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Cost Charts Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Accumulated Spend Over Time */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Accumulated Spend Over Time</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {timesheetLoading || timesheetFetching ? (
+                      <div className="h-80 flex items-center justify-center">
+                        <Skeleton className="h-80 w-full" />
+                      </div>
+                    ) : accumulatedSpendData.length === 0 ? (
+                      <div className="h-80 flex items-center justify-center text-gray-500">
+                        No cost data available for the selected date range
+                      </div>
+                    ) : (
+                      <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={accumulatedSpendData}>
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                            <XAxis 
+                              dataKey="date" 
+                              tick={{ fontSize: 12 }}
+                              tickFormatter={(value) => {
+                                const date = new Date(value);
+                                return `${date.getMonth() + 1}/${date.getDate()}`;
+                              }}
+                            />
+                            <YAxis tick={{ fontSize: 12 }} />
+                            <Tooltip
+                              formatter={(value: number) => [`$${value.toFixed(2)}`, 'Accumulated Cost']}
+                              labelFormatter={(label) => {
+                                const date = new Date(label);
+                                return date.toLocaleDateString();
+                              }}
+                            />
+                            <Legend />
+                            <Line 
+                              type="monotone" 
+                              dataKey="accumulatedCost" 
+                              stroke="#10b981" 
+                              strokeWidth={2}
+                              dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                              activeDot={{ r: 6 }}
+                              name="Accumulated Cost"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Daily Project Spend */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Daily Project Spend</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {timesheetLoading || timesheetFetching ? (
+                      <div className="h-80 flex items-center justify-center">
+                        <Skeleton className="h-80 w-full" />
+                      </div>
+                    ) : dailySpendData.length === 0 ? (
+                      <div className="h-80 flex items-center justify-center text-gray-500">
+                        No cost data available for the selected date range
+                      </div>
+                    ) : (
+                      <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={dailySpendData}>
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                            <XAxis 
+                              dataKey="date" 
+                              tick={{ fontSize: 12 }}
+                              tickFormatter={(value) => {
+                                const date = new Date(value);
+                                return `${date.getMonth() + 1}/${date.getDate()}`;
+                              }}
+                            />
+                            <YAxis tick={{ fontSize: 12 }} />
+                            <Tooltip
+                              formatter={(value: number) => [`$${value.toFixed(2)}`, 'Daily Cost']}
+                              labelFormatter={(label) => {
+                                const date = new Date(label);
+                                return date.toLocaleDateString();
+                              }}
+                            />
+                            <Legend />
+                            <Bar 
+                              dataKey="cost" 
+                              fill="#3b82f6"
+                              name="Daily Cost"
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Cost-focused Analytics */}
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Cost Analytics</h2>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Contractor Cost Table */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Cost per Contractor</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <AdminDataTable
+                        data={filteredContractorHours}
+                        columns={contractorCostColumns}
+                        isLoading={timesheetLoading}
+                        isFetching={timesheetFetching}
+                        getRowId={(item) => item.name}
+                        exportFilename="contractor_costs"
+                        exportHeaders={["Contractor Name", "Total Hours", "Total Cost"]}
+                        getExportData={(item) => [
+                          item.name,
+                          `${item.hours.toFixed(1)} hrs`,
+                          `$${item.cost.toFixed(2)}`
+                        ]}
+                        searchValue={contractorCostSearch}
+                        onSearchChange={setContractorCostSearch}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  {/* Company Cost Chart */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Cost per Company</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {timesheetLoading || timesheetFetching ? (
+                        <div className="h-80 flex items-center justify-center">
+                          <Skeleton className="h-80 w-full" />
+                        </div>
+                      ) : companyAnalytics.length === 0 ? (
+                        <div className="h-80 flex items-center justify-center text-gray-500">
+                          No company data available
+                        </div>
+                      ) : (
+                        <div className="h-80">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={companyAnalytics}
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={120}
+                                fill="#8884d8"
+                                dataKey="cost"
+                                label={({ name, cost }) => `${name}: $${cost.toFixed(0)}`}
+                              >
+                                {companyAnalytics.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip formatter={(value: number) => [`$${value.toFixed(2)}`, 'Total Cost']} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Job Site Cost Analytics */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Cost per Job Site</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <AdminDataTable
+                      data={filteredJobSiteAnalytics}
+                      columns={jobSiteCostColumns}
+                      isLoading={timesheetLoading}
+                      isFetching={timesheetFetching}
+                      getRowId={(item) => item.name}
+                      exportFilename="jobsite_costs"
+                      exportHeaders={["Job Site", "Total Hours", "Total Cost"]}
+                      getExportData={(item) => [
+                        item.name,
+                        `${item.hours.toFixed(1)} hrs`,
+                        `$${item.cost.toFixed(2)}`
+                      ]}
+                      searchValue={jobSiteCostSearch}
+                      onSearchChange={setJobSiteCostSearch}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Contractor Analytics */}
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Contractor Performance</h2>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Hours by Contractor Chart */}
-          <Card className="w-full mx-auto h-fit p-2 gap-4 flex flex-col justify-center items-center">
-            <CardHeader>
-              <CardTitle>Hours Worked by Contractor</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {timesheetLoading || timesheetFetching ? (
-                <div className="h-80 flex items-center justify-center">
-                  <Skeleton className="h-80 w-full" />
-                </div>
-              ) : contractorHours.length === 0 ? (
-                <div className="h-80 flex items-center justify-center text-gray-500">
-                  No contractor data available
-                </div>
-              ) : (
-                <div className="h-80 flex justify-center items-center">
-                  <div style={{ width: Math.min(contractorHours.length * 120 + 100, 600), height: '100%' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart 
-                        data={contractorHours.slice(0, 10)} 
-                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                      >
-                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                      <XAxis 
-                        dataKey="name" 
-                        tick={{ fontSize: 10 }}
-                        angle={-45}
-                        textAnchor="end"
-                        height={80}
-                        interval={0}
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 12 }} 
-                        domain={[0, 'dataMax']}
-                        tickFormatter={(value) => `${value}h`}
-                      />
-                      <Tooltip 
-                        formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Hours Worked']}
-                        labelFormatter={(label) => `Contractor: ${label}`}
-                      />
-                      <Bar 
-                        dataKey="hours" 
-                        fill="#3b82f6" 
-                        radius={[4, 4, 0, 0]}
-                        maxBarSize={80}
-                      />
-                    </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Contractor Cost Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Cost per Contractor</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AdminDataTable
-                data={filteredContractorHours}
-                columns={contractorCostColumns}
-                isLoading={timesheetLoading}
-                isFetching={timesheetFetching}
-                getRowId={(item) => item.name}
-                exportFilename="contractor_costs"
-                exportHeaders={["Contractor Name", "Total Hours", "Total Cost"]}
-                getExportData={(item) => [
-                  item.name,
-                  `${item.hours.toFixed(1)} hrs`,
-                  `$${item.cost.toFixed(2)}`
-                ]}
-                searchValue={contractorCostSearch}
-                onSearchChange={setContractorCostSearch}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Company Analytics */}
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Company Analysis</h2>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Company Cost Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Cost per Company</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {timesheetLoading || timesheetFetching ? (
-                <div className="h-80 flex items-center justify-center">
-                  <Skeleton className="h-80 w-full" />
-                </div>
-              ) : companyAnalytics.length === 0 ? (
-                <div className="h-80 flex items-center justify-center text-gray-500">
-                  No company data available
-                </div>
-              ) : (
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={companyAnalytics}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={120}
-                        fill="#8884d8"
-                        dataKey="cost"
-                        label={({ name, cost }) => `${name}: $${cost.toFixed(0)}`}
-                      >
-                        {companyAnalytics.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => [`$${value.toFixed(2)}`, 'Total Cost']} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Company Data Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Company Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AdminDataTable
-                data={filteredCompanyAnalytics}
-                columns={companyCostColumns}
-                isLoading={timesheetLoading}
-                isFetching={timesheetFetching}
-                getRowId={(item) => item.name}
-                exportFilename="company_costs"
-                exportHeaders={["Company Name", "Total Hours", "Total Cost", "Contractors"]}
-                getExportData={(item) => [
-                  item.name,
-                  `${item.hours.toFixed(1)} hrs`,
-                  `$${item.cost.toFixed(2)}`,
-                  `${item.contractors.size} contractor${item.contractors.size !== 1 ? 's' : ''}`
-                ]}
-                searchValue={companyCostSearch}
-                onSearchChange={setCompanyCostSearch}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Job Site Analytics */}
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Job Site Analysis</h2>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Cost per Job Site</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AdminDataTable
-              data={filteredJobSiteAnalytics}
-              columns={jobSiteCostColumns}
-              isLoading={timesheetLoading}
-              isFetching={timesheetFetching}
-              getRowId={(item) => item.name}
-              exportFilename="jobsite_costs"
-              exportHeaders={["Job Site", "Total Hours", "Total Cost"]}
-              getExportData={(item) => [
-                item.name,
-                `${item.hours.toFixed(1)} hrs`,
-                `$${item.cost.toFixed(2)}`
-              ]}
-              searchValue={jobSiteCostSearch}
-              onSearchChange={setJobSiteCostSearch}
-            />
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Timesheet Table */}
       <div className="space-y-4">
