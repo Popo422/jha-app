@@ -51,6 +51,7 @@ export default function TimeFormsPage() {
   const [rejectionReason, setRejectionReason] = useState('');
 
   const data = timesheetsData?.timesheets || [];
+  const contractorRates = timesheetsData?.contractorRates || {};
 
   const clearFilters = useCallback(() => {
     setFilters({
@@ -233,13 +234,33 @@ export default function TimeFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Time Spent (hrs)
+          Hours Worked
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <div className="text-sm font-medium">{row.getValue('timeSpent')}</div>,
     },
-  ], []);
+    {
+      accessorKey: 'cost',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Cost
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const timesheet = row.original;
+        const timeSpent = parseFloat(timesheet.timeSpent || '0');
+        const rate = parseFloat(contractorRates[timesheet.userId] || '0');
+        const cost = timeSpent * rate;
+        return <div className="text-sm font-medium text-green-600">${cost.toFixed(2)}</div>;
+      },
+    },
+  ], [contractorRates]);
 
   const filterComponents = useMemo(() => (
     <>
@@ -330,14 +351,20 @@ export default function TimeFormsPage() {
     </>
   ), [filters.dateFrom, filters.dateTo, filters.company, filters.status, hasActiveFilters, clearFilters]);
 
-  const getExportData = useCallback((timesheet: Timesheet) => [
-    timesheet.employee,
-    timesheet.company,
-    timesheet.date,
-    timesheet.jobSite,
-    timesheet.jobDescription,
-    timesheet.timeSpent
-  ], []);
+  const getExportData = useCallback((timesheet: Timesheet) => {
+    const timeSpent = parseFloat(timesheet.timeSpent || '0');
+    const rate = parseFloat(contractorRates[timesheet.userId] || '0');
+    const cost = timeSpent * rate;
+    return [
+      timesheet.employee,
+      timesheet.company,
+      timesheet.date,
+      timesheet.jobSite,
+      timesheet.jobDescription,
+      timesheet.timeSpent,
+      `$${cost.toFixed(2)}`
+    ];
+  }, [contractorRates]);
 
   const renderMobileCard = useCallback((timesheet: Timesheet, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
     <Card className="p-4">
@@ -354,7 +381,12 @@ export default function TimeFormsPage() {
           <div className="flex-1">
             <div className="flex justify-between items-start mb-2">
               <h3 className="font-medium text-sm">{timesheet.employee}</h3>
-              <span className="text-sm font-bold text-green-600">{timesheet.timeSpent} hrs</span>
+              <div className="text-right">
+                <span className="text-sm font-bold text-green-600">{timesheet.timeSpent} hrs</span>
+                <div className="text-sm font-bold text-green-600">
+                  ${((parseFloat(timesheet.timeSpent || '0')) * (parseFloat(contractorRates[timesheet.userId] || '0'))).toFixed(2)}
+                </div>
+              </div>
             </div>
             <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
               <div><span className="font-medium">Company:</span> {timesheet.company}</div>
@@ -475,7 +507,7 @@ export default function TimeFormsPage() {
         onBulkDelete={handleBulkDelete}
         getRowId={(timesheet) => timesheet.id}
         exportFilename="timesheets"
-        exportHeaders={['Employee', 'Company', 'Date', 'Job Site', 'Job Description', 'Status', 'Time Spent']}
+        exportHeaders={['Employee', 'Company', 'Date', 'Job Site', 'Job Description', 'Hours Worked', 'Cost']}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}

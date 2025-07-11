@@ -7,6 +7,7 @@ export interface Contractor {
   email: string
   companyId: string
   code: string
+  rate?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -16,6 +17,7 @@ export interface CreateContractorRequest {
   lastName: string
   email: string
   code: string
+  rate?: string
 }
 
 export interface UpdateContractorRequest {
@@ -24,6 +26,7 @@ export interface UpdateContractorRequest {
   lastName: string
   email: string
   code: string
+  rate?: string
 }
 
 export interface ContractorsResponse {

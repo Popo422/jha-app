@@ -1,0 +1,1 @@
+ALTER TABLE "contractors" ADD COLUMN "rate" numeric(10, 2) DEFAULT '0.00';

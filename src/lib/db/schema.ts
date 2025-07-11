@@ -73,6 +73,7 @@ export const contractors = pgTable('contractors', {
   email: text('email').notNull(),
   companyId: uuid('company_id').notNull(),
   code: text('code').notNull().unique(), // Used for login - still globally unique
+  rate: numeric('rate', { precision: 10, scale: 2 }).default('0.00'), // Hourly rate for contractor
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({

@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { firstName, lastName, email, code } = body
+    const { firstName, lastName, email, code, rate } = body
 
     // Validate required fields
     if (!firstName || !lastName || !email || !code) {
@@ -170,14 +170,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create contractor record
-    const contractor = await db.insert(contractors).values({
+    // Prepare contractor data
+    const contractorData: any = {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim().toLowerCase(),
       code: code.trim().toUpperCase(),
       companyId: auth.admin.companyId,
-    }).returning()
+    }
+
+    // Add rate if provided and valid
+    if (rate !== undefined && rate !== null && rate !== '') {
+      const rateValue = parseFloat(rate)
+      if (!isNaN(rateValue) && rateValue >= 0 && rateValue <= 9999.99) {
+        contractorData.rate = rateValue.toFixed(2)
+      }
+    }
+
+    // Create contractor record
+    const contractor = await db.insert(contractors).values(contractorData).returning()
 
     // // Send welcome email (non-blocking)
     // try {
@@ -238,7 +249,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, firstName, lastName, email, code } = body
+    const { id, firstName, lastName, email, code, rate } = body
 
     if (!id) {
       return NextResponse.json(
@@ -279,15 +290,29 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // Prepare update data
+    const updateData: any = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim().toLowerCase(),
+      code: code.trim().toUpperCase(),
+      updatedAt: new Date()
+    }
+
+    // Add rate if provided and valid
+    if (rate !== undefined && rate !== null && rate !== '') {
+      const rateValue = parseFloat(rate)
+      if (!isNaN(rateValue) && rateValue >= 0 && rateValue <= 9999.99) {
+        updateData.rate = rateValue.toFixed(2)
+      }
+    } else {
+      // Set rate to null if empty string is provided
+      updateData.rate = null
+    }
+
     // Update contractor
     const updatedContractor = await db.update(contractors)
-      .set({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.trim().toLowerCase(),
-        code: code.trim().toUpperCase(),
-        updatedAt: new Date()
-      })
+      .set(updateData)
       .where(eq(contractors.id, id))
       .returning()
 

@@ -39,6 +39,7 @@ export interface TimesheetResponse {
 
 export interface GetTimesheetsResponse {
   timesheets: Timesheet[]
+  contractorRates?: Record<string, string>
   meta: {
     limit: number
     offset: number
