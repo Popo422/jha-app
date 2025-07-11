@@ -19,6 +19,11 @@ interface AdminStats {
     contractor: string
     time: string
   }>
+  actionRequired: {
+    urgentSafetyForms: number
+    pendingTimesheets: number
+    recentSafetyForms: number
+  }
 }
 
 export function useAdminStats() {

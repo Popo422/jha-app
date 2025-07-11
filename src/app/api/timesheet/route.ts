@@ -216,6 +216,7 @@ export async function GET(request: NextRequest) {
     const company = searchParams.get('company');
     const search = searchParams.get('search');
     const status = searchParams.get('status');
+    const jobName = searchParams.get('jobName');
 
     // Build query conditions
     const conditions = [];
@@ -252,6 +253,11 @@ export async function GET(request: NextRequest) {
           ilike(timesheets.jobDescription, `%${search}%`)
         )
       );
+    }
+
+    // Add job name filter if specified
+    if (jobName) {
+      conditions.push(ilike(timesheets.jobName, `%${jobName}%`));
     }
 
     // Add status filter if specified

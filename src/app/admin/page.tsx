@@ -170,42 +170,81 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-red-900">3 urgent safety forms</p>
-                    <p className="text-xs text-red-600">Requires immediate attention</p>
+                {isLoading ? (
+                  // Loading skeletons for action items
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                      <Skeleton className="h-6 w-16" />
+                    </div>
+                  ))
+                ) : stats?.actionRequired ? (
+                  <>
+                    {stats.actionRequired.urgentSafetyForms > 0 && (
+                      <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                        <div>
+                          <p className="text-sm font-medium text-red-900">
+                            {stats.actionRequired.urgentSafetyForms} urgent safety form{stats.actionRequired.urgentSafetyForms !== 1 ? 's' : ''}
+                          </p>
+                          <p className="text-xs text-red-600">Requires immediate attention</p>
+                        </div>
+                        <button 
+                          onClick={() => router.push('/admin/safety-forms')}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                        >
+                          Review →
+                        </button>
+                      </div>
+                    )}
+                    {stats.actionRequired.recentSafetyForms > 0 && (
+                      <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+                        <div>
+                          <p className="text-sm font-medium text-yellow-900">
+                            {stats.actionRequired.recentSafetyForms} recent safety form{stats.actionRequired.recentSafetyForms !== 1 ? 's' : ''}
+                          </p>
+                          <p className="text-xs text-yellow-600">From last 3 days</p>
+                        </div>
+                        <button 
+                          onClick={() => router.push('/admin/safety-forms')}
+                          className="text-yellow-600 hover:text-yellow-800 text-sm font-medium"
+                        >
+                          Review →
+                        </button>
+                      </div>
+                    )}
+                    {stats.actionRequired.pendingTimesheets > 0 && (
+                      <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                        <div>
+                          <p className="text-sm font-medium text-blue-900">
+                            {stats.actionRequired.pendingTimesheets} pending timesheet{stats.actionRequired.pendingTimesheets !== 1 ? 's' : ''}
+                          </p>
+                          <p className="text-xs text-blue-600">Awaiting approval</p>
+                        </div>
+                        <button 
+                          onClick={() => router.push('/admin/time-forms')}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          Review →
+                        </button>
+                      </div>
+                    )}
+                    {stats.actionRequired.urgentSafetyForms === 0 && 
+                     stats.actionRequired.recentSafetyForms === 0 && 
+                     stats.actionRequired.pendingTimesheets === 0 && (
+                      <div className="text-center py-4">
+                        <CheckCircle className="mx-auto h-8 w-8 text-green-500 mb-2" />
+                        <p className="text-sm text-gray-500 dark:text-gray-400">All caught up! No actions required.</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Unable to load action items</p>
                   </div>
-                  <button 
-                    onClick={() => router.push('/admin/safety-forms')}
-                    className="text-red-600 hover:text-red-800 text-sm font-medium"
-                  >
-                    Review →
-                  </button>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-yellow-900">2 pending contracts</p>
-                    <p className="text-xs text-yellow-600">Awaiting approval</p>
-                  </div>
-                  <button 
-                    onClick={() => router.push('/admin/contractor-tracker')}
-                    className="text-yellow-600 hover:text-yellow-800 text-sm font-medium"
-                  >
-                    Review →
-                  </button>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                  <div>
-                    <p className="text-sm font-medium text-blue-900">5 time forms to approve</p>
-                    <p className="text-xs text-blue-600">{`This week's submissions`}</p>
-                  </div>
-                  <button 
-                    onClick={() => router.push('/admin/time-forms')}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    Review →
-                  </button>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>

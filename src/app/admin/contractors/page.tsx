@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail } from "lucide-react";
+import { Toast, useToast } from "@/components/ui/toast";
+import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 type ViewMode = 'list' | 'add' | 'edit';
@@ -30,6 +31,8 @@ export default function ContractorsPage() {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailMessage, setEmailMessage] = useState<string>("");
   
+  const { toast, showToast, hideToast } = useToast();
+  
   const { data: contractorsData, isLoading, error, refetch } = useGetContractorsQuery({
     search: debouncedSearch || undefined,
   });
@@ -40,6 +43,16 @@ export default function ContractorsPage() {
 
   const isFormLoading = isCreating || isUpdating;
   const formError = createError || updateError;
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(`Code "${text}" copied to clipboard!`, 'success');
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      showToast('Failed to copy code', 'error');
+    }
+  };
 
   const handleEdit = (contractor: Contractor) => {
     setEditingContractor(contractor);
@@ -218,26 +231,82 @@ export default function ContractorsPage() {
   const columns: ColumnDef<Contractor>[] = [
     {
       accessorKey: "firstName",
-      header: "First Name",
-    },
-    {
-      accessorKey: "lastName", 
-      header: "Last Name",
-    },
-    {
-      accessorKey: "email",
-      header: "Email",
-    },
-    {
-      accessorKey: "code",
-      header: "Code",
-      cell: ({ getValue }) => (
-        <Badge variant="secondary">{getValue() as string}</Badge>
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          First Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
       ),
     },
     {
+      accessorKey: "lastName", 
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Last Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+    },
+    {
+      accessorKey: "email",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Email
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+    },
+    {
+      accessorKey: "code",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Code
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const code = getValue() as string;
+        return (
+          <Badge 
+            variant="secondary" 
+            className="cursor-pointer hover:bg-secondary/80 transition-colors inline-flex items-center gap-1 w-fit"
+            onClick={() => copyToClipboard(code)}
+            title="Click to copy code"
+          >
+            {code}
+            <Copy className="h-3 w-3" />
+          </Badge>
+        );
+      },
+    },
+    {
       accessorKey: "rate",
-      header: "Rate",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Rate
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ getValue }) => {
         const rate = getValue() as string | null;
         const rateValue = rate ? parseFloat(rate) : 0;
@@ -246,7 +315,16 @@ export default function ContractorsPage() {
     },
     {
       accessorKey: "createdAt",
-      header: "Created",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Created
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ getValue }) => {
         const date = new Date(getValue() as string);
         return date.toLocaleDateString();
@@ -474,6 +552,12 @@ export default function ContractorsPage() {
   return (
     <div className="p-4 md:p-6">
       {viewMode === 'list' ? renderListView() : renderFormView()}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={hideToast}
+      />
     </div>
   );
 }

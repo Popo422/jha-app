@@ -145,6 +145,42 @@ export async function GET(request: NextRequest) {
         time: formatTimeAgo(item.createdAt)
       }))
 
+    // Get action required items
+    // Urgent safety forms (submissions from last 24 hours that might need immediate attention)
+    const urgentSafetyForms = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(submissions)
+      .where(
+        and(
+          eq(submissions.companyId, admin.companyId),
+          gte(submissions.createdAt, todayStart),
+          sql`${submissions.submissionType} IN ('job-hazard-analysis', 'incident-report')`
+        )
+      )
+
+    // Pending timesheets (status = 'pending')
+    const pendingTimesheets = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(timesheets)
+      .where(
+        and(
+          eq(timesheets.companyId, admin.companyId),
+          eq(timesheets.status, 'pending')
+        )
+      )
+
+    // Recent safety forms (submissions from last 3 days that might need review)
+    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+    const recentSafetyForms = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(submissions)
+      .where(
+        and(
+          eq(submissions.companyId, admin.companyId),
+          gte(submissions.createdAt, threeDaysAgo)
+        )
+      )
+
     return NextResponse.json({
       activeContractors: {
         total: totalContractors.count,
@@ -159,7 +195,12 @@ export async function GET(request: NextRequest) {
         today: timesheetsToday.count
       },
       complianceRate,
-      recentActivity
+      recentActivity,
+      actionRequired: {
+        urgentSafetyForms: urgentSafetyForms[0].count,
+        pendingTimesheets: pendingTimesheets[0].count,
+        recentSafetyForms: recentSafetyForms[0].count
+      }
     })
   } catch (error) {
     console.error('Error fetching admin stats:', error)
