@@ -15,6 +15,13 @@
       "when": 1752214366916,
       "tag": "0001_normal_vargas",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1752247562316,
+      "tag": "0002_cold_green_goblin",
+      "breakpoints": true
     }
   ]
 }

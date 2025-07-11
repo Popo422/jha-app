@@ -29,11 +29,9 @@ import type { ColumnDef } from '@tanstack/react-table';
 export default function ReportingPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [selectedContractors, setSelectedContractors] = useState<string[]>([]);
   const [selectedJobNames, setSelectedJobNames] = useState<string[]>([]);
   const [search, setSearch] = useState('');
-  const [employeeSearch, setEmployeeSearch] = useState('');
   const [contractorSearch, setContractorSearch] = useState('');
   const [jobNameSearch, setJobNameSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // Default to all statuses
@@ -69,7 +67,6 @@ export default function ReportingPage() {
       companyId: admin?.companyId || '',
       startDate,
       endDate,
-      employeeIds: selectedEmployees.length > 0 ? selectedEmployees : undefined,
     },
     {
       skip: !admin?.companyId || !startDate || !endDate,
@@ -84,21 +81,17 @@ export default function ReportingPage() {
     limit: 1000 // Get all contractors
   });
 
-  // Create search string for contractor filtering only
-  const contractorSearchString = useMemo(() => {
-    const searchTerms = [search];
+  // Create employees filter string for contractor filtering
+  const employeesFilterString = useMemo(() => {
+    if (selectedContractors.length === 0) return undefined;
     
-    // Add contractor names if any selected
-    if (selectedContractors.length > 0) {
-      const contractorNames = contractorsData?.contractors
-        .filter(contractor => selectedContractors.includes(contractor.id))
-        .map(contractor => `${contractor.firstName} ${contractor.lastName}`)
-        .join('|') || '';
-      if (contractorNames) searchTerms.push(contractorNames);
-    }
+    const contractorNames = contractorsData?.contractors
+      .filter(contractor => selectedContractors.includes(contractor.id))
+      .map(contractor => `${contractor.firstName} ${contractor.lastName}`)
+      .join('|') || '';
     
-    return searchTerms.filter(Boolean).join(' ');
-  }, [search, selectedContractors, contractorsData?.contractors]);
+    return contractorNames || undefined;
+  }, [selectedContractors, contractorsData?.contractors]);
 
   // Create job name filter string
   const jobNameFilterString = useMemo(() => {
@@ -114,7 +107,8 @@ export default function ReportingPage() {
   } = useGetTimesheetsQuery({
     dateFrom: startDate || undefined,
     dateTo: endDate || undefined,
-    search: contractorSearchString || undefined,
+    search: search || undefined,
+    employees: employeesFilterString,
     jobName: jobNameFilterString,
     status: statusFilter || undefined,
     authType: 'admin'
@@ -308,13 +302,6 @@ export default function ReportingPage() {
     }
   }, [statusFilter]);
 
-  const handleEmployeeToggle = (employeeId: string) => {
-    setSelectedEmployees(prev => 
-      prev.includes(employeeId) 
-        ? prev.filter(id => id !== employeeId)
-        : [...prev, employeeId]
-    );
-  };
 
   const handleContractorToggle = (contractorId: string) => {
     setSelectedContractors(prev => 
@@ -371,12 +358,6 @@ export default function ReportingPage() {
     }
   };
 
-  const selectedEmployeeNames = useMemo(() => {
-    if (!data) return [];
-    return data.employees
-      .filter(emp => selectedEmployees.includes(emp.id))
-      .map(emp => emp.name);
-  }, [data?.employees, selectedEmployees]);
 
   const selectedContractorNames = useMemo(() => {
     if (!contractorsData) return [];
@@ -397,14 +378,6 @@ export default function ReportingPage() {
     return Array.from(jobNames).sort();
   }, [timesheetData?.timesheets]);
 
-  // Filtered employees for search
-  const filteredEmployees = useMemo(() => {
-    if (!data?.employees) return [];
-    if (!employeeSearch) return data.employees;
-    return data.employees.filter(employee => 
-      employee.name.toLowerCase().includes(employeeSearch.toLowerCase())
-    );
-  }, [data?.employees, employeeSearch]);
 
   // Filtered contractors for search
   const filteredContractors = useMemo(() => {
@@ -800,15 +773,15 @@ export default function ReportingPage() {
             </div>
 
             <div className="space-y-1">
-              <div className="text-sm font-medium">Employees</div>
+              <div className="text-sm font-medium">Contractors</div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="w-full md:w-64 justify-between">
-                    {selectedEmployees.length === 0 
-                      ? "All Employees" 
-                      : selectedEmployees.length === 1
-                        ? selectedEmployeeNames[0]
-                        : `${selectedEmployees.length} employees selected`
+                    {selectedContractors.length === 0 
+                      ? "All Contractors" 
+                      : selectedContractors.length === 1
+                        ? selectedContractorNames[0]
+                        : `${selectedContractors.length} contractors selected`
                     }
                     <ChevronDown className="h-4 w-4" />
                   </Button>
@@ -816,11 +789,11 @@ export default function ReportingPage() {
                 <DropdownMenuContent className="w-64">
                   <div className="p-2">
                     <Input
-                      placeholder="Search employees..."
+                      placeholder="Search contractors..."
                       className="w-full"
-                      value={employeeSearch}
+                      value={contractorSearch}
                       onChange={(e) => {
-                        setEmployeeSearch(e.target.value);
+                        setContractorSearch(e.target.value);
                       }}
                       onKeyDown={(e) => {
                         e.stopPropagation();
@@ -834,19 +807,19 @@ export default function ReportingPage() {
                     />
                   </div>
                   <DropdownMenuItem
-                    onClick={() => setSelectedEmployees([])}
+                    onClick={() => setSelectedContractors([])}
                     className="cursor-pointer"
                   >
-                    All Employees
+                    All Contractors
                   </DropdownMenuItem>
                   <div className="max-h-48 overflow-y-auto">
-                    {filteredEmployees.map((employee) => (
+                    {filteredContractors.map((contractor) => (
                       <DropdownMenuCheckboxItem
-                        key={employee.id}
-                        checked={selectedEmployees.includes(employee.id)}
-                        onCheckedChange={() => handleEmployeeToggle(employee.id)}
+                        key={contractor.id}
+                        checked={selectedContractors.includes(contractor.id)}
+                        onCheckedChange={() => handleContractorToggle(contractor.id)}
                       >
-                        {employee.name}
+                        {contractor.firstName} {contractor.lastName}
                       </DropdownMenuCheckboxItem>
                     ))}
                   </div>

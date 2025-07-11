@@ -217,6 +217,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const status = searchParams.get('status');
     const jobName = searchParams.get('jobName');
+    const employees = searchParams.get('employees');
 
     // Build query conditions
     const conditions = [];
@@ -258,6 +259,17 @@ export async function GET(request: NextRequest) {
     // Add job name filter if specified
     if (jobName) {
       conditions.push(ilike(timesheets.jobName, `%${jobName}%`));
+    }
+
+    // Add employees filter if specified (for contractor filtering)
+    if (employees) {
+      const employeeNames = employees.split('|').filter(Boolean);
+      if (employeeNames.length > 0) {
+        const employeeConditions = employeeNames.map(name => 
+          ilike(timesheets.employee, `%${name.trim()}%`)
+        );
+        conditions.push(or(...employeeConditions));
+      }
     }
 
     // Add status filter if specified

@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { firstName, lastName, email, code, rate } = body
+    const { firstName, lastName, email, code, rate, companyName } = body
 
     // Validate required fields
     if (!firstName || !lastName || !email || !code) {
@@ -187,6 +187,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Add company name if provided
+    if (companyName && companyName.trim()) {
+      contractorData.companyName = companyName.trim()
+    }
+
     // Create contractor record
     const contractor = await db.insert(contractors).values(contractorData).returning()
 
@@ -249,7 +254,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, firstName, lastName, email, code, rate } = body
+    const { id, firstName, lastName, email, code, rate, companyName } = body
 
     if (!id) {
       return NextResponse.json(
@@ -308,6 +313,13 @@ export async function PUT(request: NextRequest) {
     } else {
       // Set rate to null if empty string is provided
       updateData.rate = null
+    }
+
+    // Add company name if provided, otherwise set to null
+    if (companyName && companyName.trim()) {
+      updateData.companyName = companyName.trim()
+    } else {
+      updateData.companyName = null
     }
 
     // Update contractor

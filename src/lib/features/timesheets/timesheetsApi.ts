@@ -118,11 +118,12 @@ export const timesheetsApi = createApi({
       search?: string
       status?: string
       jobName?: string
+      employees?: string
       limit?: number
       offset?: number
       authType?: 'contractor' | 'admin' | 'any'
     }>({
-      query: ({ dateFrom, dateTo, company, search, status, jobName, limit = 50, offset = 0, authType }) => {
+      query: ({ dateFrom, dateTo, company, search, status, jobName, employees, limit = 50, offset = 0, authType }) => {
         const params = new URLSearchParams({
           limit: limit.toString(),
           offset: offset.toString(),
@@ -145,6 +146,9 @@ export const timesheetsApi = createApi({
         }
         if (jobName) {
           params.append('jobName', jobName)
+        }
+        if (employees) {
+          params.append('employees', employees)
         }
         if (authType) {
           params.append('authType', authType)
