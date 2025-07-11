@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { timesheets } from '@/lib/db/schema';
-import { eq, gte, lte, desc, and, or, ilike } from 'drizzle-orm';
+import { timesheets, contractors } from '@/lib/db/schema';
+import { eq, gte, lte, desc, and, or, ilike, sql } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here';
@@ -216,6 +216,7 @@ export async function GET(request: NextRequest) {
     const company = searchParams.get('company');
     const search = searchParams.get('search');
     const status = searchParams.get('status');
+    const jobName = searchParams.get('jobName');
 
     // Build query conditions
     const conditions = [];
@@ -254,37 +255,61 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Add job name filter if specified
+    if (jobName) {
+      conditions.push(ilike(timesheets.jobName, `%${jobName}%`));
+    }
+
     // Add status filter if specified
     if (status && status !== 'all') {
       conditions.push(eq(timesheets.status, status));
     }
 
-    // Execute query - handle different condition scenarios
+    // Execute query with JOIN to get contractor rates - handle different condition scenarios
     let results;
     if (conditions.length === 0) {
       // No conditions
-      results = await db.select().from(timesheets)
-        .orderBy(desc(timesheets.createdAt))
-        .limit(limit)
-        .offset(offset);
+      results = await db.select({
+        timesheet: timesheets,
+        contractorRate: contractors.rate
+      })
+      .from(timesheets)
+      .leftJoin(contractors, eq(sql`${timesheets.userId}::uuid`, contractors.id))
+      .orderBy(desc(timesheets.createdAt))
+      .limit(limit)
+      .offset(offset);
     } else if (conditions.length === 1) {
       // Single condition
-      results = await db.select().from(timesheets)
-        .where(conditions[0])
-        .orderBy(desc(timesheets.createdAt))
-        .limit(limit)
-        .offset(offset);
+      results = await db.select({
+        timesheet: timesheets,
+        contractorRate: contractors.rate
+      })
+      .from(timesheets)
+      .leftJoin(contractors, eq(sql`${timesheets.userId}::uuid`, contractors.id))
+      .where(conditions[0])
+      .orderBy(desc(timesheets.createdAt))
+      .limit(limit)
+      .offset(offset);
     } else {
       // Multiple conditions
-      results = await db.select().from(timesheets)
-        .where(and(...conditions))
-        .orderBy(desc(timesheets.createdAt))
-        .limit(limit)
-        .offset(offset);
+      results = await db.select({
+        timesheet: timesheets,
+        contractorRate: contractors.rate
+      })
+      .from(timesheets)
+      .leftJoin(contractors, eq(sql`${timesheets.userId}::uuid`, contractors.id))
+      .where(and(...conditions))
+      .orderBy(desc(timesheets.createdAt))
+      .limit(limit)
+      .offset(offset);
     }
 
     return NextResponse.json({
-      timesheets: results,
+      timesheets: results.map(row => row.timesheet),
+      contractorRates: results.reduce((acc, row) => {
+        acc[row.timesheet.userId] = row.contractorRate || '0.00';
+        return acc;
+      }, {} as Record<string, string>),
       meta: {
         limit,
         offset,

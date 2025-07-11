@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail } from "lucide-react";
+import { Toast, useToast } from "@/components/ui/toast";
+import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 type ViewMode = 'list' | 'add' | 'edit';
@@ -24,10 +25,13 @@ export default function ContractorsPage() {
     lastName: "",
     email: "",
     code: "",
+    rate: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailMessage, setEmailMessage] = useState<string>("");
+  
+  const { toast, showToast, hideToast } = useToast();
   
   const { data: contractorsData, isLoading, error, refetch } = useGetContractorsQuery({
     search: debouncedSearch || undefined,
@@ -40,6 +44,16 @@ export default function ContractorsPage() {
   const isFormLoading = isCreating || isUpdating;
   const formError = createError || updateError;
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(`Code "${text}" copied to clipboard!`, 'success');
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      showToast('Failed to copy code', 'error');
+    }
+  };
+
   const handleEdit = (contractor: Contractor) => {
     setEditingContractor(contractor);
     setFormData({
@@ -47,6 +61,7 @@ export default function ContractorsPage() {
       lastName: contractor.lastName,
       email: contractor.email,
       code: contractor.code,
+      rate: contractor.rate || "0.00",
     });
     setFormErrors({});
     setEmailMessage("");
@@ -60,6 +75,7 @@ export default function ContractorsPage() {
       lastName: "",
       email: "",
       code: "",
+      rate: "0.00",
     });
     setFormErrors({});
     setEmailMessage("");
@@ -69,7 +85,7 @@ export default function ContractorsPage() {
   const handleCancel = () => {
     setViewMode('list');
     setEditingContractor(null);
-    setFormData({ firstName: "", lastName: "", email: "", code: "" });
+    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "" });
     setFormErrors({});
     setEmailMessage("");
   };
@@ -94,6 +110,15 @@ export default function ContractorsPage() {
       errors.code = "Contractor code must be at least 2 characters";
     }
 
+    if (formData.rate && formData.rate.trim()) {
+      const rateValue = parseFloat(formData.rate);
+      if (isNaN(rateValue) || rateValue < 0) {
+        errors.rate = "Rate must be a valid positive number";
+      } else if (rateValue > 9999.99) {
+        errors.rate = "Rate cannot exceed $9,999.99";
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -116,7 +141,7 @@ export default function ContractorsPage() {
       }
       setViewMode('list');
       setEditingContractor(null);
-      setFormData({ firstName: "", lastName: "", email: "", code: "" });
+      setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "" });
     } catch (error) {
       console.error('Failed to save contractor:', error);
     }
@@ -206,26 +231,100 @@ export default function ContractorsPage() {
   const columns: ColumnDef<Contractor>[] = [
     {
       accessorKey: "firstName",
-      header: "First Name",
-    },
-    {
-      accessorKey: "lastName", 
-      header: "Last Name",
-    },
-    {
-      accessorKey: "email",
-      header: "Email",
-    },
-    {
-      accessorKey: "code",
-      header: "Code",
-      cell: ({ getValue }) => (
-        <Badge variant="secondary">{getValue() as string}</Badge>
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          First Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
       ),
     },
     {
+      accessorKey: "lastName", 
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Last Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+    },
+    {
+      accessorKey: "email",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Email
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+    },
+    {
+      accessorKey: "code",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Code
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const code = getValue() as string;
+        return (
+          <Badge 
+            variant="secondary" 
+            className="cursor-pointer hover:bg-secondary/80 transition-colors inline-flex items-center gap-1 w-fit"
+            onClick={() => copyToClipboard(code)}
+            title="Click to copy code"
+          >
+            {code}
+            <Copy className="h-3 w-3" />
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "rate",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Rate
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const rate = getValue() as string | null;
+        const rateValue = rate ? parseFloat(rate) : 0;
+        return `$${rateValue.toFixed(2)}/hr`;
+      },
+    },
+    {
       accessorKey: "createdAt",
-      header: "Created",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Created
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ getValue }) => {
         const date = new Date(getValue() as string);
         return date.toLocaleDateString();
@@ -346,6 +445,26 @@ export default function ContractorsPage() {
               )}
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="rate">Hourly Rate ($)</Label>
+              <Input
+                id="rate"
+                name="rate"
+                type="number"
+                step="0.01"
+                min="0"
+                max="9999.99"
+                value={formData.rate}
+                onChange={handleInputChange}
+                placeholder="e.g., 25.00"
+                className={formErrors.rate ? "border-red-500" : ""}
+                disabled={isFormLoading}
+              />
+              {formErrors.rate && (
+                <p className="text-sm text-red-500">{formErrors.rate}</p>
+              )}
+            </div>
+
             {formError && (
               <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
                 {getErrorMessage()}
@@ -415,12 +534,13 @@ export default function ContractorsPage() {
         onDelete={handleDelete}
         getRowId={(contractor) => contractor.id}
         exportFilename="contractors"
-        exportHeaders={["First Name", "Last Name", "Email", "Code", "Created"]}
+        exportHeaders={["First Name", "Last Name", "Email", "Code", "Rate", "Created"]}
         getExportData={(contractor) => [
           contractor.firstName,
           contractor.lastName,
           contractor.email,
           contractor.code,
+          `$${(contractor.rate ? parseFloat(contractor.rate) : 0).toFixed(2)}/hr`,
           new Date(contractor.createdAt).toLocaleDateString()
         ]}
         searchValue={search}
@@ -432,6 +552,12 @@ export default function ContractorsPage() {
   return (
     <div className="p-4 md:p-6">
       {viewMode === 'list' ? renderListView() : renderFormView()}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={hideToast}
+      />
     </div>
   );
 }

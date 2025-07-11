@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +15,7 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Download, Calendar, Check, XCircle, Clock } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import { useGetReportingDataQuery } from '@/lib/features/reporting/reportingApi';
@@ -30,10 +31,20 @@ export default function ReportingPage() {
   const [endDate, setEndDate] = useState('');
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [selectedContractors, setSelectedContractors] = useState<string[]>([]);
+  const [selectedJobNames, setSelectedJobNames] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [contractorSearch, setContractorSearch] = useState('');
+  const [jobNameSearch, setJobNameSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // Default to all statuses
+  const [contractorCostSearch, setContractorCostSearch] = useState('');
+  const [companyCostSearch, setCompanyCostSearch] = useState('');
+  const [jobSiteCostSearch, setJobSiteCostSearch] = useState('');
+  
+  // Debounced search values to prevent excessive filtering
+  const debouncedContractorCostSearch = useDebouncedValue(contractorCostSearch, 300);
+  const debouncedCompanyCostSearch = useDebouncedValue(companyCostSearch, 300);
+  const debouncedJobSiteCostSearch = useDebouncedValue(jobSiteCostSearch, 300);
 
   const { admin } = useSelector((state: RootState) => state.auth);
 
@@ -73,19 +84,27 @@ export default function ReportingPage() {
     limit: 1000 // Get all contractors
   });
 
-  // Create search string for contractor filtering
+  // Create search string for contractor filtering only
   const contractorSearchString = useMemo(() => {
-    if (selectedContractors.length === 0) return search;
+    const searchTerms = [search];
     
-    const contractorNames = contractorsData?.contractors
-      .filter(contractor => selectedContractors.includes(contractor.id))
-      .map(contractor => `${contractor.firstName} ${contractor.lastName}`)
-      .join('|') || '';
+    // Add contractor names if any selected
+    if (selectedContractors.length > 0) {
+      const contractorNames = contractorsData?.contractors
+        .filter(contractor => selectedContractors.includes(contractor.id))
+        .map(contractor => `${contractor.firstName} ${contractor.lastName}`)
+        .join('|') || '';
+      if (contractorNames) searchTerms.push(contractorNames);
+    }
     
-    // Combine search with contractor names
-    const searchTerms = [search, contractorNames].filter(Boolean);
-    return searchTerms.join(' ');
+    return searchTerms.filter(Boolean).join(' ');
   }, [search, selectedContractors, contractorsData?.contractors]);
+
+  // Create job name filter string
+  const jobNameFilterString = useMemo(() => {
+    if (selectedJobNames.length === 0) return undefined;
+    return selectedJobNames.join('|');
+  }, [selectedJobNames]);
 
   // Get timesheets data
   const { 
@@ -96,12 +115,14 @@ export default function ReportingPage() {
     dateFrom: startDate || undefined,
     dateTo: endDate || undefined,
     search: contractorSearchString || undefined,
+    jobName: jobNameFilterString,
     status: statusFilter || undefined,
     authType: 'admin'
   });
 
   // Get filtered timesheets from API (no frontend filtering needed)
   const filteredTimesheets = timesheetData?.timesheets || [];
+  const contractorRates = timesheetData?.contractorRates || {};
 
   // Calculate totals only from approved timesheets for summary cards
   const approvedTimesheets = useMemo(() => {
@@ -129,6 +150,154 @@ export default function ReportingPage() {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [approvedTimesheets]);
 
+  // Cost calculations
+  const getCost = useCallback((timesheet: any) => {
+    const timeSpent = parseFloat(timesheet.timeSpent || '0');
+    const rate = parseFloat(contractorRates[timesheet.userId] || '0');
+    return timeSpent * rate;
+  }, [contractorRates]);
+
+  // Hours worked by contractor
+  const contractorHours = useMemo(() => {
+    const hoursMap = new Map<string, { name: string; hours: number; cost: number }>();
+    
+    approvedTimesheets.forEach(timesheet => {
+      const hours = parseFloat(timesheet.timeSpent || '0');
+      const cost = getCost(timesheet);
+      const existing = hoursMap.get(timesheet.employee) || { name: timesheet.employee, hours: 0, cost: 0 };
+      hoursMap.set(timesheet.employee, {
+        name: timesheet.employee,
+        hours: existing.hours + hours,
+        cost: existing.cost + cost
+      });
+    });
+    
+    return Array.from(hoursMap.values()).sort((a, b) => b.hours - a.hours);
+  }, [approvedTimesheets, getCost]);
+
+  // Company analytics
+  const companyAnalytics = useMemo(() => {
+    const companyMap = new Map<string, { name: string; hours: number; cost: number; contractors: Set<string> }>();
+    
+    approvedTimesheets.forEach(timesheet => {
+      const hours = parseFloat(timesheet.timeSpent || '0');
+      const cost = getCost(timesheet);
+      const existing = companyMap.get(timesheet.company) || { 
+        name: timesheet.company, 
+        hours: 0, 
+        cost: 0, 
+        contractors: new Set() 
+      };
+      existing.contractors.add(timesheet.employee);
+      companyMap.set(timesheet.company, {
+        name: timesheet.company,
+        hours: existing.hours + hours,
+        cost: existing.cost + cost,
+        contractors: existing.contractors
+      });
+    });
+    
+    return Array.from(companyMap.values()).sort((a, b) => b.cost - a.cost);
+  }, [approvedTimesheets, getCost]);
+
+  // Job site analytics
+  const jobSiteAnalytics = useMemo(() => {
+    const jobSiteMap = new Map<string, { name: string; hours: number; cost: number }>();
+    
+    approvedTimesheets.forEach(timesheet => {
+      const hours = parseFloat(timesheet.timeSpent || '0');
+      const cost = getCost(timesheet);
+      const existing = jobSiteMap.get(timesheet.jobSite) || { name: timesheet.jobSite, hours: 0, cost: 0 };
+      jobSiteMap.set(timesheet.jobSite, {
+        name: timesheet.jobSite,
+        hours: existing.hours + hours,
+        cost: existing.cost + cost
+      });
+    });
+    
+    return Array.from(jobSiteMap.values()).sort((a, b) => b.cost - a.cost);
+  }, [approvedTimesheets, getCost]);
+
+  // Accumulated spend over time
+  const accumulatedSpendData = useMemo(() => {
+    if (!approvedTimesheets.length) return [];
+    
+    const dateMap = new Map<string, number>();
+    
+    approvedTimesheets.forEach(timesheet => {
+      const cost = getCost(timesheet);
+      const date = timesheet.date;
+      dateMap.set(date, (dateMap.get(date) || 0) + cost);
+    });
+    
+    const sortedData = Array.from(dateMap.entries())
+      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime());
+    
+    let accumulated = 0;
+    return sortedData.map(([date, dailyCost]) => {
+      accumulated += dailyCost;
+      return {
+        date,
+        dailyCost,
+        accumulatedCost: accumulated
+      };
+    });
+  }, [approvedTimesheets, getCost]);
+
+  // Daily spend data for bar chart
+  const dailySpendData = useMemo(() => {
+    if (!approvedTimesheets.length) return [];
+    
+    const dateMap = new Map<string, number>();
+    
+    approvedTimesheets.forEach(timesheet => {
+      const cost = getCost(timesheet);
+      const date = timesheet.date;
+      dateMap.set(date, (dateMap.get(date) || 0) + cost);
+    });
+    
+    return Array.from(dateMap.entries())
+      .map(([date, cost]) => ({ date, cost }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [approvedTimesheets, getCost]);
+
+  // Total calculations
+  const totalCost = useMemo(() => {
+    return approvedTimesheets.reduce((sum, timesheet) => sum + getCost(timesheet), 0);
+  }, [approvedTimesheets, getCost]);
+
+  // Filtered analytics data for search - using debounced values for better performance
+  const filteredContractorHours = useMemo(() => {
+    if (!debouncedContractorCostSearch) return contractorHours;
+    const searchTerm = debouncedContractorCostSearch.toLowerCase();
+    return contractorHours.filter(contractor =>
+      contractor.name.toLowerCase().includes(searchTerm) ||
+      contractor.hours.toFixed(1).includes(searchTerm) ||
+      contractor.cost.toFixed(2).includes(searchTerm)
+    );
+  }, [contractorHours, debouncedContractorCostSearch]);
+
+  const filteredCompanyAnalytics = useMemo(() => {
+    if (!debouncedCompanyCostSearch) return companyAnalytics;
+    const searchTerm = debouncedCompanyCostSearch.toLowerCase();
+    return companyAnalytics.filter(company =>
+      company.name.toLowerCase().includes(searchTerm) ||
+      company.hours.toFixed(1).includes(searchTerm) ||
+      company.cost.toFixed(2).includes(searchTerm) ||
+      company.contractors.size.toString().includes(searchTerm)
+    );
+  }, [companyAnalytics, debouncedCompanyCostSearch]);
+
+  const filteredJobSiteAnalytics = useMemo(() => {
+    if (!debouncedJobSiteCostSearch) return jobSiteAnalytics;
+    const searchTerm = debouncedJobSiteCostSearch.toLowerCase();
+    return jobSiteAnalytics.filter(jobSite =>
+      jobSite.name.toLowerCase().includes(searchTerm) ||
+      jobSite.hours.toFixed(1).includes(searchTerm) ||
+      jobSite.cost.toFixed(2).includes(searchTerm)
+    );
+  }, [jobSiteAnalytics, debouncedJobSiteCostSearch]);
+
   const statusFilterText = useMemo(() => {
     switch (statusFilter) {
       case 'all': return 'All Statuses';
@@ -152,6 +321,14 @@ export default function ReportingPage() {
       prev.includes(contractorId) 
         ? prev.filter(id => id !== contractorId)
         : [...prev, contractorId]
+    );
+  };
+
+  const handleJobNameToggle = (jobName: string) => {
+    setSelectedJobNames(prev => 
+      prev.includes(jobName) 
+        ? prev.filter(name => name !== jobName)
+        : [...prev, jobName]
     );
   };
 
@@ -208,6 +385,18 @@ export default function ReportingPage() {
       .map(contractor => `${contractor.firstName} ${contractor.lastName}`);
   }, [contractorsData?.contractors, selectedContractors]);
 
+  // Get unique job names from timesheet data
+  const uniqueJobNames = useMemo(() => {
+    if (!timesheetData?.timesheets) return [];
+    const jobNames = new Set<string>();
+    timesheetData.timesheets.forEach(timesheet => {
+      if (timesheet.jobName && timesheet.jobName.trim()) {
+        jobNames.add(timesheet.jobName.trim());
+      }
+    });
+    return Array.from(jobNames).sort();
+  }, [timesheetData?.timesheets]);
+
   // Filtered employees for search
   const filteredEmployees = useMemo(() => {
     if (!data?.employees) return [];
@@ -226,11 +415,23 @@ export default function ReportingPage() {
     );
   }, [contractorsData?.contractors, contractorSearch]);
 
+  // Filtered job names for search
+  const filteredJobNames = useMemo(() => {
+    if (!uniqueJobNames.length) return [];
+    if (!jobNameSearch) return uniqueJobNames;
+    return uniqueJobNames.filter(jobName => 
+      jobName.toLowerCase().includes(jobNameSearch.toLowerCase())
+    );
+  }, [uniqueJobNames, jobNameSearch]);
+
   const formatTimeSpent = (timeSpent: string) => {
     const hours = parseFloat(timeSpent);
     if (hours === 1) return "1 hr";
     return `${hours} hrs`;
   };
+
+  // Color palette for charts
+  const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
   const timesheetColumns: ColumnDef<Timesheet>[] = useMemo(() => [
     {
@@ -283,6 +484,69 @@ export default function ReportingPage() {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => getStatusBadge(row.getValue("status")),
+    },
+  ], []);
+
+  // Memoized column definitions to prevent re-renders
+  const contractorCostColumns = useMemo<ColumnDef<{name: string; hours: number; cost: number}>[]>(() => [
+    {
+      accessorKey: "name",
+      header: "Contractor Name",
+      cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+    },
+    {
+      accessorKey: "hours",
+      header: "Total Hours",
+      cell: ({ row }) => <div>{(row.getValue("hours") as number).toFixed(1)} hrs</div>,
+    },
+    {
+      accessorKey: "cost",
+      header: "Total Cost",
+      cell: ({ row }) => <div className="font-semibold text-green-600">${(row.getValue("cost") as number).toFixed(2)}</div>,
+    },
+  ], []);
+
+  const companyCostColumns = useMemo<ColumnDef<{name: string; hours: number; cost: number; contractors: Set<string>}>[]>(() => [
+    {
+      accessorKey: "name",
+      header: "Company Name",
+      cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+    },
+    {
+      accessorKey: "hours",
+      header: "Total Hours",
+      cell: ({ row }) => <div>{(row.getValue("hours") as number).toFixed(1)} hrs</div>,
+    },
+    {
+      accessorKey: "cost",
+      header: "Total Cost",
+      cell: ({ row }) => <div className="font-semibold text-green-600">${(row.getValue("cost") as number).toFixed(2)}</div>,
+    },
+    {
+      id: "contractors",
+      header: "Contractors",
+      cell: ({ row }) => {
+        const contractors = row.original.contractors;
+        return <div>{contractors.size} contractor{contractors.size !== 1 ? 's' : ''}</div>;
+      },
+    },
+  ], []);
+
+  const jobSiteCostColumns = useMemo<ColumnDef<{name: string; hours: number; cost: number}>[]>(() => [
+    {
+      accessorKey: "name",
+      header: "Job Site",
+      cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+    },
+    {
+      accessorKey: "hours",
+      header: "Total Hours",
+      cell: ({ row }) => <div>{(row.getValue("hours") as number).toFixed(1)} hrs</div>,
+    },
+    {
+      accessorKey: "cost",
+      header: "Total Cost",
+      cell: ({ row }) => <div className="font-semibold text-green-600">${(row.getValue("cost") as number).toFixed(2)}</div>,
     },
   ], []);
 
@@ -400,8 +664,62 @@ export default function ReportingPage() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <div className="space-y-1">
+        <div className="text-sm font-medium">Projects</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full md:w-64 justify-between">
+              {selectedJobNames.length === 0 
+                ? "All Projects" 
+                : selectedJobNames.length === 1
+                  ? selectedJobNames[0]
+                  : `${selectedJobNames.length} projects selected`
+              }
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-64">
+            <div className="p-2">
+              <Input
+                placeholder="Search projects..."
+                className="w-full"
+                value={jobNameSearch}
+                onChange={(e) => {
+                  setJobNameSearch(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                onFocus={(e) => {
+                  e.stopPropagation();
+                }}
+              />
+            </div>
+            <DropdownMenuItem
+              onClick={() => setSelectedJobNames([])}
+              className="cursor-pointer"
+            >
+              All Projects
+            </DropdownMenuItem>
+            <div className="max-h-48 overflow-y-auto">
+              {filteredJobNames.map((jobName) => (
+                <DropdownMenuCheckboxItem
+                  key={jobName}
+                  checked={selectedJobNames.includes(jobName)}
+                  onCheckedChange={() => handleJobNameToggle(jobName)}
+                >
+                  {jobName}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
-  ), [startDate, endDate, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch, statusFilterText]);
+  ), [startDate, endDate, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch, selectedJobNames, filteredJobNames, jobNameSearch, statusFilterText]);
 
   const renderMobileCard = useCallback((timesheet: Timesheet, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
     <Card className="mb-4">
@@ -453,7 +771,7 @@ export default function ReportingPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Hours Reporting</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Hours & Cost Reporting</h1>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
@@ -548,7 +866,7 @@ export default function ReportingPage() {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -560,6 +878,21 @@ export default function ReportingPage() {
                   <Skeleton className="h-8 w-20" />
                 ) : (
                   <div className="text-2xl font-bold">{totalHours.toFixed(1)}</div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Total Project Cost
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {timesheetLoading ? (
+                  <Skeleton className="h-8 w-20" />
+                ) : (
+                  <div className="text-2xl font-bold text-green-600">${totalCost.toFixed(2)}</div>
                 )}
               </CardContent>
             </Card>
@@ -582,7 +915,7 @@ export default function ReportingPage() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Avg Hours/Entry
+                  Avg Cost/Hour
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
@@ -590,7 +923,7 @@ export default function ReportingPage() {
                   <Skeleton className="h-8 w-20" />
                 ) : (
                   <div className="text-2xl font-bold">
-                    {approvedTimesheets.length > 0 ? (totalHours / approvedTimesheets.length).toFixed(1) : '0.0'}
+                    ${totalHours > 0 ? (totalCost / totalHours).toFixed(2) : '0.00'}
                   </div>
                 )}
               </CardContent>
@@ -648,7 +981,297 @@ export default function ReportingPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Cost Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Accumulated Spend Over Time */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Accumulated Spend Over Time</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {timesheetLoading || timesheetFetching ? (
+                  <div className="h-80 flex items-center justify-center">
+                    <Skeleton className="h-80 w-full" />
+                  </div>
+                ) : accumulatedSpendData.length === 0 ? (
+                  <div className="h-80 flex items-center justify-center text-gray-500">
+                    No cost data available for the selected date range
+                  </div>
+                ) : (
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={accumulatedSpendData}>
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 12 }}
+                          tickFormatter={(value) => {
+                            const date = new Date(value);
+                            return `${date.getMonth() + 1}/${date.getDate()}`;
+                          }}
+                        />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip
+                          formatter={(value: number) => [`$${value.toFixed(2)}`, 'Accumulated Cost']}
+                          labelFormatter={(label) => {
+                            const date = new Date(label);
+                            return date.toLocaleDateString();
+                          }}
+                        />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="accumulatedCost" 
+                          stroke="#10b981" 
+                          strokeWidth={2}
+                          dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6 }}
+                          name="Accumulated Cost"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Daily Project Spend */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Daily Project Spend</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {timesheetLoading || timesheetFetching ? (
+                  <div className="h-80 flex items-center justify-center">
+                    <Skeleton className="h-80 w-full" />
+                  </div>
+                ) : dailySpendData.length === 0 ? (
+                  <div className="h-80 flex items-center justify-center text-gray-500">
+                    No cost data available for the selected date range
+                  </div>
+                ) : (
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={dailySpendData}>
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 12 }}
+                          tickFormatter={(value) => {
+                            const date = new Date(value);
+                            return `${date.getMonth() + 1}/${date.getDate()}`;
+                          }}
+                        />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip
+                          formatter={(value: number) => [`$${value.toFixed(2)}`, 'Daily Cost']}
+                          labelFormatter={(label) => {
+                            const date = new Date(label);
+                            return date.toLocaleDateString();
+                          }}
+                        />
+                        <Legend />
+                        <Bar 
+                          dataKey="cost" 
+                          fill="#3b82f6"
+                          name="Daily Cost"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
+      </div>
+
+      {/* Contractor Analytics */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Contractor Performance</h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Hours by Contractor Chart */}
+          <Card className="w-full mx-auto h-fit p-2 gap-4 flex flex-col justify-center items-center">
+            <CardHeader>
+              <CardTitle>Hours Worked by Contractor</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {timesheetLoading || timesheetFetching ? (
+                <div className="h-80 flex items-center justify-center">
+                  <Skeleton className="h-80 w-full" />
+                </div>
+              ) : contractorHours.length === 0 ? (
+                <div className="h-80 flex items-center justify-center text-gray-500">
+                  No contractor data available
+                </div>
+              ) : (
+                <div className="h-80 flex justify-center items-center">
+                  <div style={{ width: Math.min(contractorHours.length * 120 + 100, 600), height: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart 
+                        data={contractorHours.slice(0, 10)} 
+                        margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                      >
+                      <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 10 }}
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        interval={0}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }} 
+                        domain={[0, 'dataMax']}
+                        tickFormatter={(value) => `${value}h`}
+                      />
+                      <Tooltip 
+                        formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Hours Worked']}
+                        labelFormatter={(label) => `Contractor: ${label}`}
+                      />
+                      <Bar 
+                        dataKey="hours" 
+                        fill="#3b82f6" 
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={80}
+                      />
+                    </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Contractor Cost Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Cost per Contractor</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AdminDataTable
+                data={filteredContractorHours}
+                columns={contractorCostColumns}
+                isLoading={timesheetLoading}
+                isFetching={timesheetFetching}
+                getRowId={(item) => item.name}
+                exportFilename="contractor_costs"
+                exportHeaders={["Contractor Name", "Total Hours", "Total Cost"]}
+                getExportData={(item) => [
+                  item.name,
+                  `${item.hours.toFixed(1)} hrs`,
+                  `$${item.cost.toFixed(2)}`
+                ]}
+                searchValue={contractorCostSearch}
+                onSearchChange={setContractorCostSearch}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Company Analytics */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Company Analysis</h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Company Cost Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Cost per Company</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {timesheetLoading || timesheetFetching ? (
+                <div className="h-80 flex items-center justify-center">
+                  <Skeleton className="h-80 w-full" />
+                </div>
+              ) : companyAnalytics.length === 0 ? (
+                <div className="h-80 flex items-center justify-center text-gray-500">
+                  No company data available
+                </div>
+              ) : (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={companyAnalytics}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={120}
+                        fill="#8884d8"
+                        dataKey="cost"
+                        label={({ name, cost }) => `${name}: $${cost.toFixed(0)}`}
+                      >
+                        {companyAnalytics.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => [`$${value.toFixed(2)}`, 'Total Cost']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Company Data Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Company Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AdminDataTable
+                data={filteredCompanyAnalytics}
+                columns={companyCostColumns}
+                isLoading={timesheetLoading}
+                isFetching={timesheetFetching}
+                getRowId={(item) => item.name}
+                exportFilename="company_costs"
+                exportHeaders={["Company Name", "Total Hours", "Total Cost", "Contractors"]}
+                getExportData={(item) => [
+                  item.name,
+                  `${item.hours.toFixed(1)} hrs`,
+                  `$${item.cost.toFixed(2)}`,
+                  `${item.contractors.size} contractor${item.contractors.size !== 1 ? 's' : ''}`
+                ]}
+                searchValue={companyCostSearch}
+                onSearchChange={setCompanyCostSearch}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Job Site Analytics */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Job Site Analysis</h2>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Cost per Job Site</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AdminDataTable
+              data={filteredJobSiteAnalytics}
+              columns={jobSiteCostColumns}
+              isLoading={timesheetLoading}
+              isFetching={timesheetFetching}
+              getRowId={(item) => item.name}
+              exportFilename="jobsite_costs"
+              exportHeaders={["Job Site", "Total Hours", "Total Cost"]}
+              getExportData={(item) => [
+                item.name,
+                `${item.hours.toFixed(1)} hrs`,
+                `$${item.cost.toFixed(2)}`
+              ]}
+              searchValue={jobSiteCostSearch}
+              onSearchChange={setJobSiteCostSearch}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Timesheet Table */}

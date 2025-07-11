@@ -8,6 +8,13 @@
       "when": 1752048116290,
       "tag": "0000_lonely_captain_midlands",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1752214366916,
+      "tag": "0001_normal_vargas",
+      "breakpoints": true
     }
   ]
 }
