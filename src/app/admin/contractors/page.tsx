@@ -26,6 +26,7 @@ export default function ContractorsPage() {
     email: "",
     code: "",
     rate: "",
+    companyName: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -62,6 +63,7 @@ export default function ContractorsPage() {
       email: contractor.email,
       code: contractor.code,
       rate: contractor.rate || "0.00",
+      companyName: contractor.companyName || "",
     });
     setFormErrors({});
     setEmailMessage("");
@@ -76,6 +78,7 @@ export default function ContractorsPage() {
       email: "",
       code: "",
       rate: "0.00",
+      companyName: "",
     });
     setFormErrors({});
     setEmailMessage("");
@@ -85,7 +88,7 @@ export default function ContractorsPage() {
   const handleCancel = () => {
     setViewMode('list');
     setEditingContractor(null);
-    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "" });
+    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "" });
     setFormErrors({});
     setEmailMessage("");
   };
@@ -141,7 +144,7 @@ export default function ContractorsPage() {
       }
       setViewMode('list');
       setEditingContractor(null);
-      setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "" });
+      setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "" });
     } catch (error) {
       console.error('Failed to save contractor:', error);
     }
@@ -314,6 +317,27 @@ export default function ContractorsPage() {
       },
     },
     {
+      accessorKey: "companyName",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Company Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const companyName = getValue() as string | null;
+        return (
+          <div className="text-sm text-gray-600">
+            {companyName || ""}
+          </div>
+        );
+      },
+    },
+    {
       accessorKey: "createdAt",
       header: ({ column }) => (
         <Button
@@ -465,6 +489,25 @@ export default function ContractorsPage() {
               )}
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Company Name (Optional)</Label>
+              <Input
+                id="companyName"
+                name="companyName"
+                value={formData.companyName}
+                onChange={handleInputChange}
+                placeholder="e.g., ABC Construction"
+                className={formErrors.companyName ? "border-red-500" : ""}
+                disabled={isFormLoading}
+              />
+              {formErrors.companyName && (
+                <p className="text-sm text-red-500">{formErrors.companyName}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Optional company name for this contractor. If not provided, will use the parent company name.
+              </p>
+            </div>
+
             {formError && (
               <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
                 {getErrorMessage()}
@@ -534,13 +577,14 @@ export default function ContractorsPage() {
         onDelete={handleDelete}
         getRowId={(contractor) => contractor.id}
         exportFilename="contractors"
-        exportHeaders={["First Name", "Last Name", "Email", "Code", "Rate", "Created"]}
+        exportHeaders={["First Name", "Last Name", "Email", "Code", "Rate", "Company Name", "Created"]}
         getExportData={(contractor) => [
           contractor.firstName,
           contractor.lastName,
           contractor.email,
           contractor.code,
           `$${(contractor.rate ? parseFloat(contractor.rate) : 0).toFixed(2)}/hr`,
+          contractor.companyName || "",
           new Date(contractor.createdAt).toLocaleDateString()
         ]}
         searchValue={search}

@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const contractor = {
       id: contractorData.id,
       name: `${contractorData.firstName} ${contractorData.lastName}`,
-      companyName: company?.name || 'Unknown Company',
+      companyName: contractorData.companyName || company?.name || 'Unknown Company',
       code: contractorData.code,
       companyId: contractorData.companyId,
       companyLogoUrl: company?.logoUrl || null

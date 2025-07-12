@@ -1,0 +1,1 @@
+ALTER TABLE "contractors" ADD COLUMN "company_name" text;
