@@ -1,6 +1,7 @@
 'use client'
 
-import { Bell, ClipboardList, Clock, HardHat, FolderOpen, LogOut, Moon, Sun } from 'lucide-react'
+import { Bell, ClipboardList, Clock, HardHat, FolderOpen, LogOut, Moon, Sun, Settings } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { closeSidebar } from '@/lib/features/sidebar/sidebarSlice'
 import { logout } from '@/lib/features/auth/authSlice'
@@ -29,18 +30,21 @@ import {
 import Link from 'next/link'
 import { useMemo } from 'react'
 
-const allNavigation = [
-  { name: 'Announcements', href: '/announcements', icon: Bell, moduleId: null }, // Always shown
-  { name: 'Contractor Forms', href: '/contractor-forms', icon: ClipboardList, moduleId: 'forms' }, // Show if any form modules are enabled
-  { name: 'Time Sheet', href: '/timesheet', icon: Clock, moduleId: 'timesheet' },
-  { name: 'Toolbox Talks', href: '/toolbox-talks', icon: HardHat, moduleId: null }, // Always shown
-  { name: 'My Submissions', href: '/my-submissions', icon: FolderOpen, moduleId: null }, // Always shown
-]
 
 export default function AppSidebar() {
+  const { t } = useTranslation('common')
   const dispatch = useAppDispatch()
   const isOpen = useAppSelector((state) => state.sidebar.isOpen)
   const theme = useAppSelector((state) => state.theme.mode)
+  
+  const allNavigation = [
+    { name: t('nav.announcements'), href: '/announcements', icon: Bell, moduleId: null },
+    { name: t('nav.contractorForms'), href: '/contractor-forms', icon: ClipboardList, moduleId: 'forms' },
+    { name: t('nav.timesheet'), href: '/timesheet', icon: Clock, moduleId: 'timesheet' },
+    { name: t('nav.toolboxTalks'), href: '/toolbox-talks', icon: HardHat, moduleId: null },
+    { name: t('nav.submissions'), href: '/my-submissions', icon: FolderOpen, moduleId: null },
+    { name: t('settings.title'), href: '/settings', icon: Settings, moduleId: null },
+  ]
   const { data: modulesData, isLoading: modulesLoading } = useGetCompanyModulesQuery(undefined, {
     // Only refetch when user navigates away and back after 5 minutes
     refetchOnMountOrArgChange: 300,
@@ -92,7 +96,7 @@ export default function AppSidebar() {
                 <Button
                   key={item.name}
                   variant="ghost"
-                  className="w-full justify-start text-white hover:text-white dark:text-foreground hover:bg-white/10 dark:hover:bg-muted"
+                  className="w-full justify-start text-white hover:text-white dark:text-foreground hover:bg-white/10 dark:hover:bg-muted text-wrap"
                   asChild
                 >
                   <Link href={item.href} onClick={handleLinkClick}>
@@ -112,7 +116,7 @@ export default function AppSidebar() {
             onClick={() => dispatch(toggleTheme())}
           >
             {theme === 'light' ? <Moon className="h-4 w-4 mr-3" /> : <Sun className="h-4 w-4 mr-3" />}
-            Toggle Theme
+            {t('nav.toggleTheme')}
           </Button>
           
           <AlertDialog>
@@ -122,19 +126,19 @@ export default function AppSidebar() {
                 className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10 dark:text-destructive dark:hover:text-destructive dark:hover:bg-destructive/10"
               >
                 <LogOut className="h-4 w-4 mr-3" />
-                Logout
+                {t('auth.logout')}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+                <AlertDialogTitle>{t('auth.logoutConfirm')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  You will need to login again to access the application.
+                  {t('auth.logoutDescription')}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+                <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleLogout}>{t('auth.logout')}</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -143,7 +147,7 @@ export default function AppSidebar() {
         <Separator className="my-6 bg-slate-600 dark:bg-border" />
 
         <div className="text-sm text-gray-400 dark:text-muted-foreground">
-          JHA App v1.0
+          {t('nav.version')}
         </div>
       </SheetContent>
     </Sheet>

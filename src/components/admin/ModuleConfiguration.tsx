@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import QRCode from 'qrcode';
 import { useUpdateModulesMutation } from "@/lib/features/modules/modulesApi";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ interface ModuleConfigurationProps {
 }
 
 export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: ModuleConfigurationProps) {
+  const { t } = useTranslation('common');
   const [updateModules, { isLoading: isUpdating }] = useUpdateModulesMutation();
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
@@ -61,12 +63,12 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
   const handleSave = useCallback(async () => {
     try {
       const result = await updateModules({ enabledModules: selectedModules }).unwrap();
-      setSuccessMessage(result.message || 'Module configuration updated successfully');
+      setSuccessMessage(result.message || t('admin.moduleConfigurationUpdated'));
       setErrorMessage('');
       setHasChanges(false);
       onSuccess(); // Trigger refetch in parent
     } catch (error: any) {
-      setErrorMessage(error?.data?.error || 'Failed to update module configuration');
+      setErrorMessage(error?.data?.error || t('admin.failedToUpdateModuleConfiguration'));
       setSuccessMessage('');
     }
   }, [selectedModules, updateModules, onSuccess]);
@@ -198,10 +200,10 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
       <CardHeader>
         <CardTitle className="flex items-center">
           <Settings className="mr-2 h-5 w-5" />
-          Module Configuration
+{t('admin.moduleConfiguration')}
         </CardTitle>
         <CardDescription>
-          Select which modules contractors can access. Changes apply immediately to all contractor interfaces.
+{t('admin.selectModulesDescription')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -257,14 +259,14 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
                           onClick={() => handleOpenModal(module.id)}
                         >
                           <Link className="h-3 w-3 mr-1" />
-                          Generate Link
+{t('admin.generateLink')}
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-md">
                         <DialogHeader>
-                          <DialogTitle>Share {getModuleName(module.id)} Link</DialogTitle>
+                          <DialogTitle>{t('admin.shareModuleLink').replace('{{module}}', getModuleName(module.id))}</DialogTitle>
                           <DialogDescription>
-                            Generate a direct link and QR code for contractors to access this form.
+  {t('admin.generateLinkDescription')}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-6">
@@ -275,7 +277,7 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
                                 <div className="w-48 h-48 flex items-center justify-center">
                                   <div className="text-center">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                                    <p className="text-sm text-gray-600">Generating QR Code...</p>
+                                    <p className="text-sm text-gray-600">{t('admin.generatingQRCode')}</p>
                                   </div>
                                 </div>
                               ) : qrCodeDataURL ? (
@@ -297,13 +299,13 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
                               disabled={!qrCodeDataURL || isGeneratingQR}
                             >
                               <Download className="h-4 w-4 mr-2" />
-                              Download QR Code
+{t('admin.downloadQRCode')}
                             </Button>
                           </div>
 
                           {/* Direct Link */}
                           <div className="space-y-3">
-                            <h4 className="text-sm font-medium">Direct Link:</h4>
+                            <h4 className="text-sm font-medium">{t('admin.directLink')}:</h4>
                             <div className="space-y-2">
                               <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded border text-sm font-mono break-all">
                                 {selectedModuleForLink ? getModuleLink(selectedModuleForLink) : ''}
@@ -318,12 +320,12 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
                                 {copiedModule === selectedModuleForLink ? (
                                   <>
                                     <Check className="h-4 w-4 mr-2" />
-                                    Copied!
+{t('admin.copied')}
                                   </>
                                 ) : (
                                   <>
                                     <Copy className="h-4 w-4 mr-2" />
-                                    Copy Link
+{t('admin.copyLink')}
                                   </>
                                 )}
                               </Button>
@@ -346,7 +348,7 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
             disabled={!hasChanges || isUpdating || selectedModules.length === 0}
             className="flex-1 sm:flex-none"
           >
-            {isUpdating ? 'Saving...' : 'Save Changes'}
+{isUpdating ? t('common.saving') : t('common.saveChanges')}
           </Button>
           <Button 
             variant="outline" 
@@ -354,7 +356,7 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
             disabled={!hasChanges || isUpdating}
             className="flex-1 sm:flex-none"
           >
-            Reset
+{t('common.reset')}
           </Button>
         </div>
 
@@ -363,7 +365,7 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
           <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800 flex items-start">
             <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
             <div>
-              <strong>Warning:</strong> You must select at least one module. Contractors need access to at least one form type.
+{t('admin.moduleSelectionWarning')}
             </div>
           </div>
         )}

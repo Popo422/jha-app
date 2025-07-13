@@ -1,4 +1,5 @@
 'use client'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRouter } from 'next/navigation'
@@ -18,38 +19,73 @@ import {
 } from 'lucide-react'
 
 export default function AdminPage() {
+  const { t } = useTranslation('common')
   const router = useRouter()
   const { stats, isLoading, error } = useAdminStats()
+
+  const translateActivityAction = (action: string) => {
+    if (action === 'Timesheet submitted') {
+      return t('status.timesheetSubmitted')
+    }
+    // Handle form submissions like "end-of-day form submitted"
+    if (action.includes('form submitted')) {
+      const formType = action.replace(' form submitted', '')
+      return `${formType} ${t('status.formSubmitted')}`
+    }
+    return action
+  }
+
+  const translateTimeAgo = (timeStr: string) => {
+    if (timeStr === 'Just now') {
+      return t('status.justNow')
+    }
+    
+    // Handle "X hour(s) ago"
+    const hourMatch = timeStr.match(/^(\d+) hours? ago$/)
+    if (hourMatch) {
+      const hours = parseInt(hourMatch[1])
+      return `${hours} ${hours === 1 ? t('status.hourAgo') : t('status.hoursAgo')}`
+    }
+    
+    // Handle "X day(s) ago"  
+    const dayMatch = timeStr.match(/^(\d+) days? ago$/)
+    if (dayMatch) {
+      const days = parseInt(dayMatch[1])
+      return `${days} ${days === 1 ? t('status.dayAgo') : t('status.daysAgo')}`
+    }
+    
+    return timeStr
+  }
 
   const getQuickStats = () => {
     if (!stats) return []
     
     return [
       {
-        title: 'Active Contractors',
+        title: t('status.activeContractors'),
         value: stats.activeContractors.total.toString(),
-        change: `+${stats.activeContractors.thisWeek} this week`,
+        change: `+${stats.activeContractors.thisWeek} ${t('status.thisWeek')}`,
         icon: Users,
         color: 'bg-blue-500'
       },
       {
-        title: 'Safety Forms This Week',
+        title: t('status.safetyFormsThisWeek'),
         value: stats.submissions.thisWeek.toString(),
-        change: `${stats.submissions.today} today`,
+        change: `${stats.submissions.today} ${t('status.today')}`,
         icon: AlertTriangle,
         color: 'bg-orange-500'
       },
       {
-        title: 'Timesheets This Week',
+        title: t('status.timesheetsThisWeek'),
         value: stats.timesheets.thisWeek.toString(),
-        change: `${stats.timesheets.today} today`,
+        change: `${stats.timesheets.today} ${t('status.today')}`,
         icon: Clock,
         color: 'bg-green-500'
       },
       {
-        title: 'Compliance Rate',
+        title: t('status.complianceRate'),
         value: `${stats.complianceRate}%`,
-        change: 'Based on submissions',
+        change: t('status.basedOnSubmissions'),
         icon: CheckCircle,
         color: 'bg-purple-500'
       }
@@ -72,8 +108,8 @@ export default function AdminPage() {
     <div className="p-6">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Welcome back!</h2>
-          <p className="text-gray-600 dark:text-gray-400">{`Here's what's happening with your contractors today.`}</p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t('pages.welcomeBack')}</h2>
+          <p className="text-gray-600 dark:text-gray-400">{t('pages.dashboardDescription')}</p>
         </div>
 
         {/* Injury Timer Section */}
@@ -126,7 +162,7 @@ export default function AdminPage() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <TrendingUp className="mr-2 h-5 w-5" />
-                Recent Activity
+                {t('status.recentActivity')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -146,15 +182,15 @@ export default function AdminPage() {
                   stats.recentActivity.map((activity, index) => (
                     <div key={index} className="flex justify-between items-start">
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{activity.action}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{translateActivityAction(activity.action)}</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">{activity.contractor}</p>
                       </div>
-                      <p className="text-xs text-gray-400">{activity.time}</p>
+                      <p className="text-xs text-gray-400">{translateTimeAgo(activity.time)}</p>
                     </div>
                   ))
                 ) : (
                   <div className="text-center py-4">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No recent activity</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('status.noRecentActivity')}</p>
                   </div>
                 )}
               </div>
@@ -165,7 +201,7 @@ export default function AdminPage() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <AlertTriangle className="mr-2 h-5 w-5" />
-                Action Required
+                {t('status.actionRequired')}
               </CardTitle>
             </CardHeader>
             <CardContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import '../../../styles/tiptap.css';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,7 @@ type ToolboxTalk = {
 };
 
 export default function ToolboxTalksPage() {
+  const { t } = useTranslation('common');
   const { toast, showToast, hideToast } = useToast();
   const { admin } = useSelector((state: RootState) => state.auth);
   const [toolboxTalks, setToolboxTalks] = useState<ToolboxTalk[]>([]);
@@ -288,7 +290,7 @@ export default function ToolboxTalksPage() {
       });
 
       if (response.ok) {
-        showToast(`Toolbox talk ${editingTalk ? 'updated' : 'created'} successfully`, "success");
+        showToast(`${t('nav.toolboxTalks')} ${editingTalk ? t('admin.updating') : t('admin.creating')} successfully`, "success");
         
         // Delete unused images from blob storage if editing
         if (editingTalk && oldImageUrls.length > 0) {
@@ -390,11 +392,11 @@ export default function ToolboxTalksPage() {
   const columns = [
     {
       accessorKey: 'title',
-      header: 'Title'
+      header: t('toolbox.title')
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: t('tableHeaders.status'),
       cell: ({ row }: any) => (
         <Badge variant={row.original.status === 'published' ? 'default' : 'secondary'}>
           {row.original.status}
@@ -403,19 +405,19 @@ export default function ToolboxTalksPage() {
     },
     {
       accessorKey: 'authorName',
-      header: 'Author'
+      header: t('toolbox.author')
     },
     {
       accessorKey: 'publishedAt',
-      header: 'Published',
+      header: t('toolbox.published'),
       cell: ({ row }: any) => 
         row.original.publishedAt 
           ? new Date(row.original.publishedAt).toLocaleDateString()
-          : '-'
+          : t('status.unknown')
     },
     {
       accessorKey: 'createdAt',
-      header: 'Created',
+      header: t('admin.created'),
       cell: ({ row }: any) => new Date(row.original.createdAt).toLocaleDateString()
     }
   ];
@@ -436,16 +438,16 @@ export default function ToolboxTalksPage() {
             setFormErrors({});
           }} className="flex items-center space-x-2">
             <ArrowLeft className="h-4 w-4" />
-            <span>Back</span>
+            <span>{t('common.back')}</span>
           </Button>
         </div>
         <h1 className="text-3xl font-bold text-foreground">
-          {viewMode === 'add' ? 'Add New Toolbox Talk' : 'Edit Toolbox Talk'}
+          {viewMode === 'add' ? t('toolbox.addNewToolboxTalk') : t('toolbox.editToolboxTalk')}
         </h1>
         <p className="text-muted-foreground mt-2">
           {viewMode === 'add' 
-            ? 'Create a new safety toolbox talk for your team' 
-            : 'Update toolbox talk content and settings'
+            ? t('toolbox.createNewToolboxTalk') 
+            : t('toolbox.updateToolboxTalk')
           }
         </p>
       </div>
@@ -453,40 +455,40 @@ export default function ToolboxTalksPage() {
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
+            <CardTitle>{t('toolbox.basicInformation')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">{t('toolbox.title')}</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Enter toolbox talk title"
+                placeholder={t('toolbox.enterTitle')}
               />
               {formErrors.title && <p className="text-sm text-red-500 mt-1">{formErrors.title}</p>}
             </div>
 
             <div>
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status">{t('tableHeaders.status')}</Label>
               <select
                 id="status"
                 value={formData.status}
                 onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'draft' | 'published' }))}
                 className="w-full p-2 border rounded-md"
               >
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
+                <option value="draft">{t('toolbox.draft')}</option>
+                <option value="published">{t('toolbox.published')}</option>
               </select>
             </div>
 
             <div>
-              <Label htmlFor="authorName">Author</Label>
+              <Label htmlFor="authorName">{t('toolbox.author')}</Label>
               <Input
                 id="authorName"
                 value={formData.authorName}
                 onChange={(e) => setFormData(prev => ({ ...prev, authorName: e.target.value }))}
-                placeholder="Enter author name"
+                placeholder={t('toolbox.enterAuthor')}
               />
               {formErrors.authorName && <p className="text-sm text-red-500 mt-1">{formErrors.authorName}</p>}
             </div>
@@ -496,7 +498,7 @@ export default function ToolboxTalksPage() {
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Content</CardTitle>
+              <CardTitle>{t('toolbox.content')}</CardTitle>
               <div className="flex flex-wrap gap-2">
                 {/* Text Formatting */}
                 <Button
@@ -657,7 +659,7 @@ export default function ToolboxTalksPage() {
                   onClick={logContent}
                   className="text-xs"
                 >
-                  Debug
+                  {t('toolbox.debug')}
                 </Button>
                 
                 {/* Superscript/Subscript */}
@@ -706,8 +708,8 @@ export default function ToolboxTalksPage() {
               <EditorContent editor={editor} />
             </div>
             <div className="mt-2 text-sm text-gray-500">
-              <p><strong>Image tips:</strong> Hover over an image to see the delete button. Click and drag to move images. Use resize handles to adjust size.</p>
-              <p><strong>Table tips:</strong> Click inside a table cell to edit. Right-click for table options.</p>
+              <p><strong>{t('toolbox.imageTips')}:</strong> {t('toolbox.imageTipsDesc')}</p>
+              <p><strong>{t('toolbox.tableTips')}:</strong> {t('toolbox.tableTipsDesc')}</p>
             </div>
             {formErrors.content && <p className="text-sm text-red-500 mt-2">{formErrors.content}</p>}
           </CardContent>
@@ -721,11 +723,11 @@ export default function ToolboxTalksPage() {
             setViewMode('list');
             setFormData({ title: '', content: '', status: 'draft', authorName: '' });
           }}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={isLoading}>
             <Save className="h-4 w-4 mr-2" />
-            {isLoading ? 'Saving...' : 'Save'}
+            {isLoading ? t('common.saving') : t('common.save')}
           </Button>
         </div>
       </div>
@@ -744,18 +746,18 @@ export default function ToolboxTalksPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Toolbox Talks</h1>
-          <p className="text-muted-foreground">Manage safety toolbox talks and training materials</p>
+          <h1 className="text-3xl font-bold">{t('nav.toolboxTalks')}</h1>
+          <p className="text-muted-foreground">{t('toolbox.manageToolboxTalks')}</p>
         </div>
         <Button onClick={handleAdd} className="flex items-center gap-2">
           <Plus className="w-4 h-4" />
-          Add Toolbox Talk
+          {t('toolbox.addToolboxTalk')}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Toolbox Talks</CardTitle>
+          <CardTitle>{t('nav.toolboxTalks')}</CardTitle>
         </CardHeader>
         <CardContent>
           <AdminDataTable
@@ -768,7 +770,7 @@ export default function ToolboxTalksPage() {
             getRowId={(talk) => talk.id}
             canDelete={() => true}
             exportFilename="toolbox_talks"
-            exportHeaders={['Title', 'Status', 'Author', 'Published', 'Created']}
+            exportHeaders={[t('toolbox.title'), t('tableHeaders.status'), t('toolbox.author'), t('toolbox.published'), t('admin.created')]}
             getExportData={(talk) => [
               talk.title || '',
               talk.status || '',

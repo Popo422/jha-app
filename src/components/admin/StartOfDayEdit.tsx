@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +35,7 @@ interface StartOfDayEditProps {
 }
 
 export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditProps) {
+  const { t } = useTranslation('common');
   const [formData, setFormData] = useState(submission.formData);
   const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
   const [updateSubmission, { isLoading }] = useUpdateSubmissionMutation();
@@ -104,12 +106,12 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
           ...prev,
           uploadedFiles: (prev.uploadedFiles || []).filter((file: any) => file.url !== fileUrl)
         }));
-        showToast('Attachment deleted successfully!', 'success');
+        showToast(t('common.attachmentDeletedSuccessfully'), 'success');
       } else {
-        showToast(result.error || 'Failed to delete attachment', 'error');
+        showToast(result.error || t('common.failedToDeleteAttachment'), 'error');
       }
     } catch (error: any) {
-      showToast(error?.data?.error || 'Failed to delete attachment', 'error');
+      showToast(error?.data?.error || t('common.failedToDeleteAttachment'), 'error');
     } finally {
       setDeletingFiles(prev => {
         const newSet = new Set(prev);
@@ -142,12 +144,12 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
       }).unwrap();
 
       if (result.success) {
-        showToast('Changes saved successfully!', 'success');
+        showToast(t('common.changesSavedSuccessfully'), 'success');
       } else {
-        showToast(result.error || 'Failed to save changes', 'error');
+        showToast(result.error || t('common.failedToSaveChanges'), 'error');
       }
     } catch (error: any) {
-      showToast(error?.data?.error || 'Failed to save changes', 'error');
+      showToast(error?.data?.error || t('common.failedToSaveChanges'), 'error');
     }
   }, [formData, submission.id, updateSubmission, showToast]);
 
@@ -157,12 +159,12 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
         <Button variant="ghost" onClick={onBack} className="p-2">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-2xl font-bold">Edit Start of Day Report</h2>
+        <h2 className="text-2xl font-bold">{t('admin.editStartOfDayReport')}</h2>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Report Details</CardTitle>
+          <CardTitle>{t('adminEdit.reportDetails')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Basic Information */}
@@ -176,7 +178,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="date">Date:</Label>
+              <Label htmlFor="date">{t('formFields.date')}</Label>
               <Input
                 id="date"
                 name="date"
@@ -186,7 +188,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="supervisor">Supervisor:</Label>
+              <Label htmlFor="supervisor">{t('formFields.supervisor')}:</Label>
               <Input
                 id="supervisor"
                 name="supervisor"
@@ -195,7 +197,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="jobSite">Job Site:</Label>
+              <Label htmlFor="jobSite">{t('formFields.jobSite')}:</Label>
               <Input
                 id="jobSite"
                 name="jobSite"
@@ -204,7 +206,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="company">Company:</Label>
+              <Label htmlFor="company">{t('formFields.company')}:</Label>
               <Input
                 id="company"
                 name="company"
@@ -213,18 +215,18 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="jobName">Job Name:</Label>
+              <Label htmlFor="jobName">{t('formFields.jobName')}:</Label>
               <Input
                 id="jobName"
                 name="jobName"
                 value={formData.jobName || ''}
                 onChange={handleInputChange}
-                placeholder="Name or title of the job"
+                placeholder={t('formFields.jobNamePlaceholder')}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="timeClocked">Time Clocked In:</Label>
+              <Label htmlFor="timeClocked">{t('formFields.timeClockedIn')}</Label>
               <Input
                 id="timeClocked"
                 name="timeClocked"
@@ -245,12 +247,12 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
           {/* Health Questions */}
           <Card>
             <CardHeader>
-              <CardTitle>Health and Safety Check</CardTitle>
+              <CardTitle>{t('adminEdit.healthAndSafetyCheck')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Free from injury */}
               <div className="space-y-2">
-                <Label className="font-medium">Are you free from injury when reporting to work?</Label>
+                <Label className="font-medium">{t('adminEdit.freeFromInjuryReporting')}</Label>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
                     <input
@@ -262,7 +264,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="injury-yes">Yes</Label>
+                    <Label htmlFor="injury-yes">{t('adminEdit.yes')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
@@ -274,14 +276,14 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="injury-no">No</Label>
+                    <Label htmlFor="injury-no">{t('adminEdit.no')}</Label>
                   </div>
                 </div>
               </div>
 
               {/* Free from fever */}
               <div className="space-y-2">
-                <Label className="font-medium">Are you free from fever when reporting to work?</Label>
+                <Label className="font-medium">{t('adminEdit.freeFromFeverReporting')}</Label>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
                     <input
@@ -293,7 +295,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="fever-yes">Yes</Label>
+                    <Label htmlFor="fever-yes">{t('adminEdit.yes')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
@@ -305,7 +307,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="fever-no">No</Label>
+                    <Label htmlFor="fever-no">{t('adminEdit.no')}</Label>
                   </div>
                 </div>
               </div>
@@ -313,7 +315,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
               {/* Free from COVID symptoms */}
               <div className="space-y-2">
                 <Label className="font-medium">
-                  Are you free of COVID-19 symptoms when reporting to work? (Symptoms include fever, sore throat, headache, body aches, fatigue, runny nose or coughing.)
+                  {t('adminEdit.freeFromCovidSymptomsReporting')}
                 </Label>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
@@ -326,7 +328,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="covid-symptoms-yes">Yes</Label>
+                    <Label htmlFor="covid-symptoms-yes">{t('adminEdit.yes')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
@@ -338,7 +340,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="covid-symptoms-no">No</Label>
+                    <Label htmlFor="covid-symptoms-no">{t('adminEdit.no')}</Label>
                   </div>
                 </div>
               </div>
@@ -346,7 +348,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
               {/* Free from direct exposure */}
               <div className="space-y-2">
                 <Label className="font-medium">
-                  Are you free from direct exposure to a positive COVID-19 or suspected positive case?
+                  {t('adminEdit.freeFromDirectCovidExposure')}
                 </Label>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
@@ -359,7 +361,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="exposure-yes">Yes</Label>
+                    <Label htmlFor="exposure-yes">{t('adminEdit.yes')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
@@ -371,7 +373,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="exposure-no">No</Label>
+                    <Label htmlFor="exposure-no">{t('adminEdit.no')}</Label>
                   </div>
                 </div>
               </div>
@@ -379,7 +381,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
               {/* Travel question */}
               <div className="space-y-2">
                 <Label className="font-medium">
-                  {`Have you traveled out of the country, visited a "hotspot state" or went on a cruise in the last 14 days?`}
+                  {t('adminEdit.traveledOutOfCountryHotspot')}
                 </Label>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
@@ -392,7 +394,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="travel-yes">Yes</Label>
+                    <Label htmlFor="travel-yes">{t('adminEdit.yes')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
@@ -404,7 +406,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="travel-no">No</Label>
+                    <Label htmlFor="travel-no">{t('adminEdit.no')}</Label>
                   </div>
                 </div>
                 
@@ -414,18 +416,18 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                     <div className="flex items-center space-x-2 mb-2">
                       <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
                       <span className="text-xs text-orange-700 dark:text-orange-300 font-medium">
-                        Follow-up Question
+                        {t('formFields.followUpQuestion')}
                       </span>
                     </div>
                     <Label htmlFor="travelExplanation" className="text-sm font-medium">
-                      Explanation:
+                      {t('adminEdit.explanation')}:
                     </Label>
                     <Textarea
                       id="travelExplanation"
                       name="travelExplanation"
                       value={formData.travelExplanation || ''}
                       onChange={handleInputChange}
-                      placeholder="Please provide details about your travel"
+                      placeholder={t('adminEdit.travelDetailsPlaceholder')}
                       rows={3}
                       className="w-full"
                     />
@@ -436,7 +438,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
               {/* Physical distancing */}
               <div className="space-y-2">
                 <Label className="font-medium">
-                  Is everyone on site practicing physical distancing and have access to proper facial secretion suppressor and sanitary agents?
+                  {t('adminEdit.physicalDistancingAndSanitaryAgents')}
                 </Label>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
@@ -449,7 +451,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="distancing-yes">Yes</Label>
+                    <Label htmlFor="distancing-yes">{t('adminEdit.yes')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
@@ -461,7 +463,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="distancing-no">No</Label>
+                    <Label htmlFor="distancing-no">{t('adminEdit.no')}</Label>
                   </div>
                 </div>
               </div>
@@ -471,11 +473,11 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
           {/* File Attachments Section */}
           <Card>
             <CardHeader>
-              <CardTitle>File Attachments</CardTitle>
+              <CardTitle>{t('adminEdit.fileAttachments')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Attached Files:</Label>
+                <Label>{t('adminEdit.attachedFiles')}:</Label>
                 {formData.uploadedFiles && formData.uploadedFiles.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {formData.uploadedFiles.map((file: any, index: number) => (
@@ -493,7 +495,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No files attached</p>
+                  <p className="text-sm text-gray-500">{t('adminEdit.noFilesAttached')}</p>
                 )}
               </div>
             </CardContent>
@@ -502,11 +504,11 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
           {/* Signature Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Digital Signature</CardTitle>
+              <CardTitle>{t('forms.digitalSignature')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Employee Signature:</Label>
+                <Label>{t('adminEdit.employeeSignature')}:</Label>
                 <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800">
                   <SignatureCanvas
                     ref={signatureRef}
@@ -527,12 +529,12 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                     onClick={handleSignatureClear}
                     className="text-sm"
                   >
-                    Clear Signature
+                    {t('forms.clearSignature')}
                   </Button>
                 </div>
                 {formData.signature && (
                   <div className="mt-2">
-                    <Label>Current Signature:</Label>
+                    <Label>{t('adminEdit.currentSignature')}:</Label>
                     <div className="border border-gray-200 rounded p-2">
                       <img src={formData.signature} alt="Current signature" className="max-w-md max-h-40" />
                     </div>
@@ -543,9 +545,9 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
           </Card>
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onBack}>Cancel</Button>
+            <Button variant="outline" onClick={onBack}>{t('adminEdit.cancel')}</Button>
             <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? 'Saving...' : 'Save Changes'}
+              {isLoading ? t('adminEdit.saving') : t('adminEdit.saveChanges')}
             </Button>
           </div>
         </CardContent>

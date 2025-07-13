@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
+import { useTranslation } from 'react-i18next';
 import { useGetSubmissionsQuery } from "@/lib/features/submissions/submissionsApi";
 import { useGetCompanyModulesQuery } from "@/lib/features/company/companyApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,7 @@ interface FormStatus {
 }
 
 export default function SafetyFormChecklist() {
+  const { t } = useTranslation('common');
   const [formStatus, setFormStatus] = useState<FormStatus>({
     startOfDay: false,
     endOfDay: false,
@@ -41,8 +43,8 @@ export default function SafetyFormChecklist() {
       forms.push({
         key: 'startOfDay',
         submissionType: 'start-of-day',
-        title: 'Start of Day Report',
-        description: 'Daily health and safety check-in',
+        title: t('forms.startOfDayReport'),
+        description: t('forms.startOfDayReportDescription'),
         href: '/contractor-forms/start-of-day-report'
       });
     }
@@ -51,8 +53,8 @@ export default function SafetyFormChecklist() {
       forms.push({
         key: 'jha',
         submissionType: 'job-hazard-analysis',
-        title: 'Job Hazard Analysis (JHA)',
-        description: 'Risk assessment for daily tasks',
+        title: t('forms.jobHazardAnalysis'),
+        description: t('forms.jobHazardAnalysisDescription'),
         href: '/contractor-forms/job-hazard-analysis'
       });
     }
@@ -61,8 +63,8 @@ export default function SafetyFormChecklist() {
       forms.push({
         key: 'endOfDay',
         submissionType: 'end-of-day',
-        title: 'End of Day Report',
-        description: 'Daily completion and health check-out',
+        title: t('forms.endOfDayReport'),
+        description: t('forms.endOfDayReportDescription'),
         href: '/contractor-forms/end-of-day-report'
       });
     }
@@ -184,10 +186,10 @@ export default function SafetyFormChecklist() {
   const getStatusBadge = (completed: boolean) => {
     return completed ? (
       <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-200">
-        Complete
+        {t('common.complete')}
       </Badge>
     ) : (
-      <Badge variant="destructive">Pending</Badge>
+      <Badge variant="destructive">{t('admin.pending')}</Badge>
     );
   };
 
@@ -207,11 +209,11 @@ export default function SafetyFormChecklist() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            Daily Safety Form Checklist
+            {t('safety.dailySafetyFormChecklist')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">Loading form status...</p>
+          <p className="text-muted-foreground">{t('status.loadingFormStatus')}</p>
         </CardContent>
       </Card>
     );
@@ -223,11 +225,11 @@ export default function SafetyFormChecklist() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-yellow-600" />
-            Daily Safety Form Checklist
+            {t('safety.dailySafetyFormChecklist')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">Unable to load form status. Please try again.</p>
+          <p className="text-muted-foreground">{t('status.unableToLoadFormStatus')}</p>
         </CardContent>
       </Card>
     );
@@ -253,7 +255,7 @@ export default function SafetyFormChecklist() {
             <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-red-500" />
           )}
           <span className="text-sm md:text-base leading-tight">
-            Daily Safety Forms - {new Date().toLocaleDateString()}
+            {t('safety.dailySafetyForms')} - {new Date().toLocaleDateString()}
           </span>
         </CardTitle>
       </CardHeader>
@@ -261,13 +263,13 @@ export default function SafetyFormChecklist() {
         {allFormsComplete ? (
           <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
             <p className="text-green-800 dark:text-green-200 font-medium text-sm md:text-base">
-              ✅ All safety forms completed for today. Great job staying compliant!
+              ✅ {t('safety.allFormsCompleted')}
             </p>
           </div>
         ) : (
           <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
             <p className="text-yellow-800 dark:text-yellow-200 font-medium text-sm md:text-base">
-              ⚠️ Please complete the pending safety forms below to ensure workplace compliance.
+              ⚠️ {t('safety.pendingFormsReminder')}
             </p>
           </div>
         )}
@@ -276,7 +278,7 @@ export default function SafetyFormChecklist() {
           {availableForms.length === 0 ? (
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <p className="text-blue-800 dark:text-blue-200 text-sm md:text-base">
-                No safety forms are currently enabled for your company. Please contact your administrator.
+                {t('safety.noFormsEnabled')}
               </p>
             </div>
           ) : (
@@ -295,7 +297,7 @@ export default function SafetyFormChecklist() {
                     {getStatusBadge(isCompleted)}
                     {!isCompleted && (
                       <Button asChild size="sm" className="text-xs px-3">
-                        <Link href={form.href}>Complete</Link>
+                        <Link href={form.href}>{t('common.complete')}</Link>
                       </Button>
                     )}
                   </div>
@@ -308,8 +310,7 @@ export default function SafetyFormChecklist() {
         {!allFormsComplete && (
           <div className="mt-3 md:mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-400">
             <p className="text-xs md:text-sm text-blue-800 dark:text-blue-200">
-              <strong>Reminder:</strong> All safety forms must be completed daily to ensure workplace safety compliance
-              and regulatory requirements.
+              <strong>{t('safety.reminder')}:</strong> {t('safety.dailyComplianceReminder')}
             </p>
           </div>
         )}

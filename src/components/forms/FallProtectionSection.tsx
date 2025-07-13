@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
@@ -28,6 +29,7 @@ interface FallProtectionSectionProps {
 }
 
 const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChange }: FallProtectionSectionProps) => {
+  const { t } = useTranslation('common');
   const equipmentItems = [
     { key: "harness", label: 'Harness "Check stitching and buckles, etc"' },
     { key: "decelerator", label: 'Decelerator "Shock Pack"' },
@@ -47,11 +49,11 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-md md:text-xl">Fall Protection Pre-use Inspection</CardTitle>
+        <CardTitle className="text-md md:text-xl">{t('safety.fallProtectionPreuse')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label className="font-medium">Are you using any Fall Protection equipment today?</Label>
+          <Label className="font-medium">{t('safety.fallProtectionQuestion')}</Label>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <input
@@ -73,7 +75,7 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
                 }
                 className="w-4 h-4"
               />
-              <Label htmlFor="fallProtection-yes">Yes</Label>
+              <Label htmlFor="fallProtection-yes">{t('common.yes')}</Label>
             </div>
             <div className="flex items-center space-x-2">
               <input
@@ -95,7 +97,7 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
                 }
                 className="w-4 h-4"
               />
-              <Label htmlFor="fallProtection-no">No</Label>
+              <Label htmlFor="fallProtection-no">{t('common.no')}</Label>
             </div>
           </div>
         </div>
@@ -126,7 +128,7 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
                       onChange={onChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor={`${equipment.key}-yes`}>Yes</Label>
+                    <Label htmlFor={`${equipment.key}-yes`}>{t('common.yes')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
@@ -138,7 +140,7 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
                       onChange={onChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor={`${equipment.key}-no`}>No</Label>
+                    <Label htmlFor={`${equipment.key}-no`}>{t('common.no')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
@@ -150,7 +152,7 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
                       onChange={onChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor={`${equipment.key}-notusing`}>Not using</Label>
+                    <Label htmlFor={`${equipment.key}-notusing`}>{t('safetyItems.notUsing')}</Label>
                   </div>
                 </div>
               </div>

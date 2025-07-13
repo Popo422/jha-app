@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useTranslation } from 'react-i18next';
 import { useSubmitFormMutation } from "@/lib/features/submissions/submissionsApi";
 import { useAppSelector } from "@/lib/hooks";
 import Header from "@/components/Header";
@@ -132,6 +133,7 @@ interface JobHazardAnalysisFormData {
 }
 
 export default function JobHazardReportPage() {
+  const { t } = useTranslation('common');
   const { contractor } = useAppSelector((state) => state.auth);
   const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
   const signatureRef = useRef<SignatureCanvas>(null);
@@ -491,15 +493,15 @@ export default function JobHazardReportPage() {
             <Button variant="ghost" asChild className="mb-4">
               <Link href="/contractor-forms">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Forms
+                {t('forms.backToForms')}
               </Link>
             </Button>
-            <h1 className="text-3xl font-bold text-foreground">Job Hazard Analysis</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t('forms.jobHazardAnalysis')}</h1>
           </div>
 
           <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="text-foreground">Report Details</CardTitle>
+              <CardTitle className="text-foreground">{t('forms.reportDetails')}</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -515,7 +517,7 @@ export default function JobHazardReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="date">Date:</Label>
+                    <Label htmlFor="date">{t('formFields.date')}</Label>
                     <Input
                       id="date"
                       name="date"
@@ -527,7 +529,7 @@ export default function JobHazardReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="supervisor">Supervisor:</Label>
+                    <Label htmlFor="supervisor">{t('formFields.supervisor')}</Label>
                     <Input
                       id="supervisor"
                       name="supervisor"
@@ -538,15 +540,15 @@ export default function JobHazardReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="jobSite">Job Site:</Label>
+                    <Label htmlFor="jobSite">{t('formFields.jobSite')}</Label>
                     <Input id="jobSite" name="jobSite" value={formData.jobSite} onChange={handleInputChange} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="jobName">Job Name:</Label>
-                    <Input id="jobName" name="jobName" value={formData.jobName} onChange={handleInputChange} placeholder="Name or title of the job" required />
+                    <Label htmlFor="jobName">{t('formFields.jobName')}</Label>
+                    <Input id="jobName" name="jobName" value={formData.jobName} onChange={handleInputChange} placeholder={t('placeholders.jobNamePlaceholder')} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="company">Company:</Label>
+                    <Label htmlFor="company">{t('formFields.company')}</Label>
                     <Input id="company" name="company" value={formData.company} onChange={handleInputChange} required />
                   </div>
                 </div>
@@ -554,7 +556,7 @@ export default function JobHazardReportPage() {
                 {/* Instructions */}
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    <strong>Instructions:</strong> Please complete the safety checklist below.
+                    <strong>{t('forms.instructions')}</strong>
                   </p>
                 </div>
 
@@ -574,12 +576,12 @@ export default function JobHazardReportPage() {
                 {/* Tool Inspection */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-md md:text-xl">Tool Inspection</CardTitle>
+                    <CardTitle className="text-md md:text-xl">{t('safety.toolInspection')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        Powers Tools, GFCI and extension cords in good working condition:
+                        {t('safetyQuestions.powerToolsGFCI')}:
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -602,7 +604,7 @@ export default function JobHazardReportPage() {
                             }
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="powerTools-yes">Yes</Label>
+                          <Label htmlFor="powerTools-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -624,13 +626,13 @@ export default function JobHazardReportPage() {
                             }
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="powerTools-no">No</Label>
+                          <Label htmlFor="powerTools-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="font-medium">Will you be using a ladder today?</Label>
+                      <Label className="font-medium">{t('safetyQuestions.usingLadderToday')}?</Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
                           <input
@@ -652,7 +654,7 @@ export default function JobHazardReportPage() {
                             }
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="ladder-yes">Yes</Label>
+                          <Label htmlFor="ladder-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -674,7 +676,7 @@ export default function JobHazardReportPage() {
                             }
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="ladder-no">No</Label>
+                          <Label htmlFor="ladder-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -684,10 +686,10 @@ export default function JobHazardReportPage() {
                         <div className="flex items-center space-x-2 mb-2">
                           <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
                           <span className="text-xs text-orange-700 dark:text-orange-300 font-medium">
-                            Ladder Type Selection
+                            {t('safetyQuestions.ladderTypeSelection')}
                           </span>
                         </div>
-                        <Label className="font-medium">What type of ladder are you using?</Label>
+                        <Label className="font-medium">{t('safetyQuestions.ladderTypeQuestion')}?</Label>
                         <div className="space-y-4">
                           {["Step", "Extension", "Both"].map((type) => (
                             <div key={type} className="flex items-center space-x-2">
@@ -716,38 +718,38 @@ export default function JobHazardReportPage() {
                       <div className="flex items-center space-x-2 mb-2">
                         <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
                         <span className="text-sm text-orange-700 dark:text-orange-300 font-medium">
-                          Ladder Safety Checks Required
+                          {t('safetyQuestions.ladderSafetyChecksRequired')}
                         </span>
                       </div>
-                      <CardTitle className="text-md md:text-xl">General Ladder Safety</CardTitle>
+                      <CardTitle className="text-md md:text-xl">{t('safety.generalLadderSafety')}</CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        Have you completed the following safety precaution checks?
+                        {t('safetyQuestions.completedSafetyChecks')}?
                       </p>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {[
-                        { key: "ladderAltered", label: "Has the ladder been altered?" },
+                        { key: "ladderAltered", label: t('safetyQuestions.ladderAltered') },
                         {
                           key: "weatherCompromised",
-                          label: "Is the integrity of the ladder compromised by the weather?",
+                          label: t('safetyQuestions.weatherCompromised'),
                         },
                         {
                           key: "housekeeping",
-                          label: "Housekeeping of Ladder. (Is the top and bottom of your ladder clear of obstruction?)",
+                          label: t('safetyQuestions.housekeeping'),
                         },
-                        { key: "rungsClean", label: "Rungs and boots clean of oil, mud or ice" },
-                        { key: "feetPositioned", label: "Feet are positioned in the middle of the rung" },
+                        { key: "rungsClean", label: t('safetyQuestions.rungsClean') },
+                        { key: "feetPositioned", label: t('safetyQuestions.feetPositioned') },
                         {
                           key: "livePowerPrecautions",
-                          label: "Proper precautions taken when working adjacent to live power",
+                          label: t('safetyQuestions.livePowerPrecautions'),
                         },
-                        { key: "threePointContact", label: "Maintaining 3 points of contact" },
-                        { key: "overheadObstructions", label: "Overhead obstructions Eliminated" },
+                        { key: "threePointContact", label: t('safetyQuestions.threePointContact') },
+                        { key: "overheadObstructions", label: t('safetyQuestions.overheadObstructions') },
                         {
                           key: "stableSurface",
-                          label: "Are you setting your ladder up on stable and non slippery surface?",
+                          label: t('safetyQuestions.stableSurface'),
                         },
-                        { key: "facingLadder", label: "Facing ladder at all the times" },
+                        { key: "facingLadder", label: t('safetyQuestions.facingLadder') },
                       ].map((safety) => (
                         <div key={safety.key} className="space-y-2">
                           <Label className="text-sm">{safety.label}</Label>
@@ -774,7 +776,7 @@ export default function JobHazardReportPage() {
                                 }
                                 className="w-4 h-4"
                               />
-                              <Label htmlFor={`${safety.key}-yes`}>Yes</Label>
+                              <Label htmlFor={`${safety.key}-yes`}>{t('adminEdit.yes')}</Label>
                             </div>
                             <div className="flex items-center space-x-2">
                               <input
@@ -798,7 +800,7 @@ export default function JobHazardReportPage() {
                                 }
                                 className="w-4 h-4"
                               />
-                              <Label htmlFor={`${safety.key}-no`}>No</Label>
+                              <Label htmlFor={`${safety.key}-no`}>{t('adminEdit.no')}</Label>
                             </div>
                           </div>
                         </div>
@@ -816,19 +818,19 @@ export default function JobHazardReportPage() {
                         <div className="flex items-center space-x-2 mb-2">
                           <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
                           <span className="text-sm text-orange-700 dark:text-orange-300 font-medium">
-                            Step Ladder Inspection Required
+                            {t('safetyQuestions.stepLadderInspectionRequired')}
                           </span>
                         </div>
-                        <CardTitle className="text-md md:text-xl">Step Ladder Inspection</CardTitle>
+                        <CardTitle className="text-md md:text-xl">{t('safety.stepLadderInspection')}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         {[
-                          { key: "stepsCondition", label: "Steps: Loose, Cracked, bent, Missing" },
-                          { key: "labelsReadable", label: "Labels: Missing or not readable" },
-                          { key: "topCondition", label: "Top: Cracked, Loose, Bent, Broken" },
-                          { key: "spreaderCondition", label: "Spreader: Loose, Bent, Broken" },
-                          { key: "generalCondition", label: "General: Rust, Corrosion, Loose Parts" },
-                          { key: "bracingCondition", label: "Bracing, Shoes and Rivets in good condition" },
+                          { key: "stepsCondition", label: t('safetyQuestions.stepsCondition') },
+                          { key: "labelsReadable", label: t('safetyQuestions.labelsReadable') },
+                          { key: "topCondition", label: t('safetyQuestions.topCondition') },
+                          { key: "spreaderCondition", label: t('safetyQuestions.spreaderCondition') },
+                          { key: "generalCondition", label: t('safetyQuestions.generalCondition') },
+                          { key: "bracingCondition", label: t('safetyQuestions.bracingCondition') },
                         ].map((condition) => (
                           <div key={condition.key} className="space-y-2">
                             <Label className="text-sm">{condition.label}</Label>
@@ -855,7 +857,7 @@ export default function JobHazardReportPage() {
                                   }
                                   className="w-4 h-4"
                                 />
-                                <Label htmlFor={`step-${condition.key}-yes`}>Yes</Label>
+                                <Label htmlFor={`step-${condition.key}-yes`}>{t('adminEdit.yes')}</Label>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <input
@@ -879,14 +881,14 @@ export default function JobHazardReportPage() {
                                   }
                                   className="w-4 h-4"
                                 />
-                                <Label htmlFor={`step-${condition.key}-no`}>No</Label>
+                                <Label htmlFor={`step-${condition.key}-no`}>{t('adminEdit.no')}</Label>
                               </div>
                             </div>
                           </div>
                         ))}
 
                         <div className="space-y-2">
-                          <Label htmlFor="stepOther">Other:</Label>
+                          <Label htmlFor="stepOther">{t('formFields.other')}:</Label>
                           <Textarea
                             id="stepOther"
                             name="stepLadder.other"
@@ -897,7 +899,7 @@ export default function JobHazardReportPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="stepDetails">Details:</Label>
+                          <Label htmlFor="stepDetails">{t('formFields.details')}:</Label>
                           <Textarea
                             id="stepDetails"
                             name="stepLadder.details"
@@ -919,26 +921,26 @@ export default function JobHazardReportPage() {
                         <div className="flex items-center space-x-2 mb-2">
                           <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
                           <span className="text-sm text-orange-700 dark:text-orange-300 font-medium">
-                            Extension Ladder Inspection Required
+                            {t('safetyQuestions.extensionLadderInspectionRequired')}
                           </span>
                         </div>
-                        <CardTitle className="text-md md:text-xl">Extension Ladder Inspection</CardTitle>
+                        <CardTitle className="text-md md:text-xl">{t('safety.extensionLadderInspection')}</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         {[
-                          { key: "rungsCondition", label: "Rungs: Loose, Cracked, Bent, Missing" },
-                          { key: "railsCondition", label: "Rails: Cracked, Bent, Split, Frayed" },
+                          { key: "rungsCondition", label: t('safetyQuestions.rungsCondition') },
+                          { key: "railsCondition", label: t('safetyQuestions.railsCondition') },
                           { key: "labelsReadable", label: "Labels: Missing, Not readable" },
-                          { key: "hardwareCondition", label: "Hardware: Missing, Loose, Broken" },
-                          { key: "shoesCondition", label: "Shoes: Worn, Broken, Missing" },
-                          { key: "ropePulleyCondition", label: "Rope/Pulley: Loose, Bent, Broken" },
+                          { key: "hardwareCondition", label: t('safetyQuestions.hardwareCondition') },
+                          { key: "shoesCondition", label: t('safetyQuestions.shoesCondition') },
+                          { key: "ropePulleyCondition", label: t('safetyQuestions.ropePulleyCondition') },
                           { key: "bracingCondition", label: "Bracing rivets in good condition" },
                           { key: "generalCondition", label: "General: Rust, Corrosion, Loose" },
-                          { key: "extendedHeight", label: "Extended: 3' above landing" },
-                          { key: "tieOff", label: "Tie Off: Ladder is tied off to prevent tipping" },
-                          { key: "positioning", label: "Positioning: 4:1 Ratio maintained" },
-                          { key: "reach", label: "Reach: Stay within the frame of the ladder" },
-                          { key: "height", label: "Height: Provides adequate height/access" },
+                          { key: "extendedHeight", label: t('safetyQuestions.extendedHeight') },
+                          { key: "tieOff", label: t('safetyQuestions.tieOff') },
+                          { key: "positioning", label: t('safetyQuestions.positioning') },
+                          { key: "reach", label: t('safetyQuestions.reach') },
+                          { key: "height", label: t('safetyQuestions.height') },
                         ].map((condition) => (
                           <div key={condition.key} className="space-y-2">
                             <Label className="text-sm">{condition.label}</Label>
@@ -966,7 +968,7 @@ export default function JobHazardReportPage() {
                                   }
                                   className="w-4 h-4"
                                 />
-                                <Label htmlFor={`ext-${condition.key}-yes`}>Yes</Label>
+                                <Label htmlFor={`ext-${condition.key}-yes`}>{t('adminEdit.yes')}</Label>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <input
@@ -991,7 +993,7 @@ export default function JobHazardReportPage() {
                                   }
                                   className="w-4 h-4"
                                 />
-                                <Label htmlFor={`ext-${condition.key}-no`}>No</Label>
+                                <Label htmlFor={`ext-${condition.key}-no`}>{t('adminEdit.no')}</Label>
                               </div>
                             </div>
                           </div>
@@ -1003,17 +1005,17 @@ export default function JobHazardReportPage() {
                 {/* Additional Safety Measures */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-md md:text-xl">Additional Safety Measures</CardTitle>
+                    <CardTitle className="text-md md:text-xl">{t('safety.additionalSafetyMeasures')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {[
-                      { key: "warmUpStretch", label: "Did you warm up and stretch?" },
-                      { key: "lockoutTagout", label: "Lockout Tagout necessary:" },
-                      { key: "energizedWorkPermit", label: "Energized Work Permit necessary:" },
-                      { key: "emergencyPlan", label: "Emergency Plan/Rescue Plan/Nearest Urgent Care Located" },
-                      { key: "emergencyPlanReviewed", label: "Emergency Plan reviewed:" },
-                      { key: "fireExtinguisher", label: "Nearest fire extinguisher located:" },
-                      { key: "firstAidKit", label: "First aid kit" },
+                      { key: "warmUpStretch", label: t('safetyQuestions.warmUpStretch') },
+                      { key: "lockoutTagout", label: t('safetyQuestions.lockoutTagout') },
+                      { key: "energizedWorkPermit", label: t('safetyQuestions.energizedWorkPermit') },
+                      { key: "emergencyPlan", label: t('safetyQuestions.emergencyPlan') },
+                      { key: "emergencyPlanReviewed", label: t('safetyQuestions.emergencyPlanReviewed') },
+                      { key: "fireExtinguisher", label: t('safetyQuestions.fireExtinguisher') },
+                      { key: "firstAidKit", label: t('safetyQuestions.firstAidKit') },
                     ].map((safety) => (
                       <div key={safety.key} className="space-y-2">
                         <Label className="text-sm">{safety.label}</Label>
@@ -1040,7 +1042,7 @@ export default function JobHazardReportPage() {
                               }
                               className="w-4 h-4"
                             />
-                            <Label htmlFor={`${safety.key}-yes`}>Yes</Label>
+                            <Label htmlFor={`${safety.key}-yes`}>{t('adminEdit.yes')}</Label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <input
@@ -1065,14 +1067,14 @@ export default function JobHazardReportPage() {
                               }
                               className="w-4 h-4"
                             />
-                            <Label htmlFor={`${safety.key}-no`}>No</Label>
+                            <Label htmlFor={`${safety.key}-no`}>{t('adminEdit.no')}</Label>
                           </div>
                         </div>
                       </div>
                     ))}
 
                     <div className="space-y-2">
-                      <Label htmlFor="additionalNotes">Additional Notes:</Label>
+                      <Label htmlFor="additionalNotes">{t('safetyQuestions.additionalNotes')}:</Label>
                       <Textarea
                         id="additionalNotes"
                         name="additionalSafety.additionalNotes"
@@ -1083,7 +1085,7 @@ export default function JobHazardReportPage() {
                     </div>
 
                     <div className="space-y-4">
-                      <Label htmlFor="photos">Add additional photos if necessary:</Label>
+                      <Label htmlFor="photos">{t('safetyQuestions.addPhotos')}:</Label>
                       <input
                         type="file"
                         id="photos"
@@ -1094,7 +1096,7 @@ export default function JobHazardReportPage() {
                       />
                       {formData.photos.length > 0 && (
                         <div className="mt-2">
-                          <p className="text-sm text-gray-600">Selected files:</p>
+                          <p className="text-sm text-gray-600">{t('adminEdit.attachedFiles')}:</p>
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
                             {formData.photos.map((file, index) => (
                               <AttachmentPreview
@@ -1114,11 +1116,11 @@ export default function JobHazardReportPage() {
                 {/* Signature Section */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-md md:text-xl">Digital Signature</CardTitle>
+                    <CardTitle className="text-md md:text-xl">{t('forms.digitalSignature')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Please sign below to confirm the accuracy of this analysis:</Label>
+                      <Label>{t('safetyQuestions.signaturePrompt')}:</Label>
                       <div className="border border-gray-300 rounded-lg p-2 bg-white">
                         <SignatureCanvas
                           ref={signatureRef}
@@ -1138,11 +1140,11 @@ export default function JobHazardReportPage() {
                           onClick={handleSignatureClear}
                           className="text-sm"
                         >
-                          Clear Signature
+                          {t('forms.clearSignature')}
                         </Button>
                       </div>
                       {!formData.signature && (
-                        <p className="text-sm text-red-600">Signature is required to submit the form.</p>
+                        <p className="text-sm text-red-600">{t('safetyQuestions.signatureRequired')}.</p>
                       )}
                     </div>
                   </CardContent>
@@ -1150,7 +1152,7 @@ export default function JobHazardReportPage() {
 
                 {isSuccess && (
                   <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800">
-                    Job Hazard Analysis submitted successfully!
+                    {t('forms.jobHazardAnalysis')} {t('forms.submitSuccess')}
                   </div>
                 )}
 
@@ -1158,12 +1160,12 @@ export default function JobHazardReportPage() {
                   <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800">
                     {error && 'data' in error && typeof error.data === 'object' && error.data && 'error' in error.data 
                       ? (error.data as any).error 
-                      : 'Submission failed'}
+                      : t('forms.submitFailed')}
                   </div>
                 )}
 
                 <Button type="submit" disabled={isLoading || !formData.signature} className="w-full rounded-none">
-                  {isLoading ? 'Submitting...' : 'Submit'}
+                  {isLoading ? t('forms.submitting') : t('common.submit')}
                 </Button>
               </form>
             </CardContent>

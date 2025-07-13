@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppSelector, useAppDispatch } from '@/lib/hooks';
 import { toggleTheme } from '@/lib/features/theme/themeSlice';
 import { updateAdmin } from '@/lib/features/auth/authSlice';
@@ -9,9 +10,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Toast, useToast } from '@/components/ui/toast';
-import { Moon, Sun, Palette, Upload, Image as ImageIcon, X, Save, RotateCcw } from 'lucide-react';
+import { Moon, Sun, Palette, Upload, Image as ImageIcon, X, Save, RotateCcw, Languages } from 'lucide-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export default function SettingsPage() {
+  const { t, i18n } = useTranslation('common');
   const dispatch = useAppDispatch();
   const theme = useAppSelector((state) => state.theme.mode);
   const admin = useAppSelector((state) => state.auth.admin);
@@ -24,6 +32,11 @@ export default function SettingsPage() {
 
   const handleThemeToggle = () => {
     dispatch(toggleTheme());
+  };
+
+  const handleLanguageChange = (language: string) => {
+    i18n.changeLanguage(language);
+    showToast(t('settings.saved'), 'success');
   };
 
   // Cleanup preview URL on unmount
@@ -40,13 +53,13 @@ export default function SettingsPage() {
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        showToast('Please select an image file', 'error');
+        showToast(t('settings.pleaseSelectImage'), 'error');
         return;
       }
       
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        showToast('Image file size must be less than 5MB', 'error');
+        showToast(t('settings.imageSizeLimit'), 'error');
         return;
       }
       
@@ -116,14 +129,14 @@ export default function SettingsPage() {
         setPreviewUrl(null);
         setHasChanges(false);
         
-        showToast('Company logo updated successfully!', 'success');
+        showToast(t('settings.logoUpdatedSuccess'), 'success');
       } else {
         const error = await response.json();
-        showToast(error.error || 'Failed to update logo', 'error');
+        showToast(error.error || t('settings.failedToUpdateLogo'), 'error');
       }
     } catch (error) {
       console.error('Error updating logo:', error);
-      showToast('Failed to update logo', 'error');
+      showToast(t('settings.failedToUpdateLogo'), 'error');
     } finally {
       setIsSavingLogo(false);
     }
@@ -132,9 +145,9 @@ export default function SettingsPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{t('settings.title')}</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Manage your admin portal preferences and configurations
+          {t('settings.manageAdminPreferences')}
         </p>
       </div>
 
@@ -144,21 +157,21 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <ImageIcon className="h-5 w-5 mr-2" />
-              Company Logo
+              {t('settings.companyLogo')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">
-                  {hasChanges ? 'Logo Preview' : 'Current Logo'}
+                  {hasChanges ? t('settings.logoPreview') : t('settings.currentLogo')}
                 </Label>
                 <div className="flex items-center space-x-4">
                   {previewUrl ? (
                     <div className="relative">
                       <img 
                         src={previewUrl} 
-                        alt="Logo Preview" 
+                        alt={t('settings.logoPreview')} 
                         className="h-16 w-16 object-contain rounded border"
                       />
                       <button
@@ -172,7 +185,7 @@ export default function SettingsPage() {
                     <div className="relative">
                       <img 
                         src={admin.companyLogoUrl} 
-                        alt="Company Logo" 
+                        alt={t('settings.companyLogo')} 
                         className="h-16 w-16 object-contain rounded border"
                       />
                       <button
@@ -191,13 +204,13 @@ export default function SettingsPage() {
                     <p className="text-sm font-medium">{admin?.companyName}</p>
                     <p className="text-xs text-gray-500">
                       {hasChanges 
-                        ? (logoFile ? 'New logo selected' : 'Logo will be removed')
-                        : (admin?.companyLogoUrl ? 'Logo uploaded' : 'No logo uploaded')
+                        ? (logoFile ? t('settings.newLogoSelected') : t('settings.logoWillBeRemoved'))
+                        : (admin?.companyLogoUrl ? t('settings.logoUploaded') : t('settings.noLogoUploaded'))
                       }
                     </p>
                     {hasChanges && (
                       <p className="text-xs text-amber-600 font-medium">
-                        Changes not saved yet
+                        {t('settings.changesNotSaved')}
                       </p>
                     )}
                   </div>
@@ -205,7 +218,7 @@ export default function SettingsPage() {
               </div>
               
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Upload New Logo</Label>
+                <Label className="text-sm font-medium">{t('settings.uploadNewLogo')}</Label>
                 <div className="flex items-center space-x-2">
                   <Input
                     type="file"
@@ -216,7 +229,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <p className="text-xs text-gray-500">
-                  Supported formats: PNG, JPG, GIF. Max size: 5MB. Recommended: 200x200px
+                  {t('settings.logoFormatsSupported')}
                 </p>
               </div>
 
@@ -229,11 +242,11 @@ export default function SettingsPage() {
                     className="flex-1"
                   >
                     {isSavingLogo ? (
-                      'Saving...'
+                      t('common.saving')
                     ) : (
                       <>
                         <Save className="h-4 w-4 mr-2" />
-                        Save Changes
+                        {t('settings.saveChanges')}
                       </>
                     )}
                   </Button>
@@ -244,7 +257,7 @@ export default function SettingsPage() {
                     className="flex-1"
                   >
                     <RotateCcw className="h-4 w-4 mr-2" />
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                 </div>
               )}
@@ -257,15 +270,15 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Palette className="h-5 w-5 mr-2" />
-              Appearance
+              {t('settings.appearance')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label className="text-sm font-medium">Theme Mode</Label>
+                <Label className="text-sm font-medium">{t('settings.themeMode')}</Label>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Switch between light and dark theme
+                  {t('settings.themeDescription')}
                 </p>
               </div>
               <Button
@@ -277,15 +290,40 @@ export default function SettingsPage() {
                 {theme === 'light' ? (
                   <>
                     <Moon className="h-4 w-4 mr-2" />
-                    Dark Mode
+                    {t('settings.darkMode')}
                   </>
                 ) : (
                   <>
                     <Sun className="h-4 w-4 mr-2" />
-                    Light Mode
+                    {t('settings.lightMode')}
                   </>
                 )}
               </Button>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">{t('settings.language')}</Label>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {t('settings.selectLanguage')}
+                </p>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-32">
+                    <Languages className="h-4 w-4 mr-2" />
+                    {i18n.language === 'es' ? t('settings.spanish') : t('settings.english')}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
+                    {t('settings.english')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleLanguageChange('es')}>
+                    {t('settings.spanish')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </CardContent>
         </Card>
@@ -293,11 +331,11 @@ export default function SettingsPage() {
         {/* Additional Settings Placeholder */}
         <Card>
           <CardHeader>
-            <CardTitle>System Preferences</CardTitle>
+            <CardTitle>{t('settings.systemPreferences')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Additional system settings will be available here.
+              {t('settings.additionalSystemSettings')}
             </p>
           </CardContent>
         </Card>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -77,6 +78,7 @@ export function AdminDataTable<T>({
   canDelete,
   customActions = [],
 }: AdminDataTableProps<T>) {
+  const { t } = useTranslation('common');
   const [rowSelection, setRowSelection] = useState({});
   const [showCheckboxes, setShowCheckboxes] = useState(false);
   const isMobile = useIsMobile();
@@ -176,7 +178,7 @@ export function AdminDataTable<T>({
                     className="cursor-pointer"
                   >
                     <Edit className="h-4 w-4 mr-2" />
-                    Edit
+                    {t('common.edit')}
                   </DropdownMenuItem>
                 )}
                 {onDelete && (!canDelete || canDelete(item)) && (
@@ -187,23 +189,23 @@ export function AdminDataTable<T>({
                         className="cursor-pointer text-red-600"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
+                        {t('common.delete')}
                       </DropdownMenuItem>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Item</AlertDialogTitle>
+                        <AlertDialogTitle>{t('admin.deleteItem')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to delete this item? This action cannot be undone.
+                          {t('admin.deleteConfirmation')}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction 
                           onClick={() => handleSingleDelete(getRowId(item))}
                           className="bg-red-600 hover:bg-red-700"
                         >
-                          Delete
+                          {t('common.delete')}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -323,9 +325,9 @@ export function AdminDataTable<T>({
             {filters}
             
             <div className="space-y-1">
-              <div className="text-sm font-medium">Search</div>
+              <div className="text-sm font-medium">{t('common.search')}</div>
               <Input
-                placeholder="Search all columns..."
+                placeholder={t('admin.searchAllColumns')}
                 value={searchValue}
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 className="w-full md:w-64"
@@ -348,30 +350,30 @@ export function AdminDataTable<T>({
                         <AlertDialogTrigger asChild>
                           <Button variant="destructive">
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Selected ({Object.keys(rowSelection).length})
+                            {t('admin.deleteSelected')} ({Object.keys(rowSelection).length})
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Selected Items</AlertDialogTitle>
+                            <AlertDialogTitle>{t('admin.deleteSelectedItems')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete {Object.keys(rowSelection).length} selected item(s)? This action cannot be undone.
+                              {t('admin.deleteSelectedConfirmation', { count: Object.keys(rowSelection).length })}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleBulkDelete}>Delete</AlertDialogAction>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleBulkDelete}>{t('common.delete')}</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
                     ) : (
                       <Button variant="destructive" onClick={handleDeleteButtonClick}>
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Cancel Selection
+                        {t('admin.cancelSelection')}
                       </Button>
                     )}
                     <Button variant="outline" onClick={handleCancelSelection}>
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                   </>
                 ) : (
@@ -382,7 +384,7 @@ export function AdminDataTable<T>({
                       disabled={table.getFilteredRowModel().rows.length === 0}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
+                      {t('common.delete')}
                     </Button>
                   )
                 )}
@@ -393,7 +395,7 @@ export function AdminDataTable<T>({
                   disabled={table.getFilteredRowModel().rows.length === 0 || isFetching}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Export CSV
+                  {t('admin.exportCSV')}
                 </Button>
               </>
             )}
@@ -473,7 +475,7 @@ export function AdminDataTable<T>({
                                   className="cursor-pointer"
                                 >
                                   <Edit className="h-4 w-4 mr-2" />
-                                  Edit
+                                  {t('common.edit')}
                                 </DropdownMenuItem>
                               )}
                               {onDelete && (!canDelete || canDelete(item)) && (
@@ -484,23 +486,23 @@ export function AdminDataTable<T>({
                                       className="cursor-pointer text-red-600"
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
-                                      Delete
+                                      {t('common.delete')}
                                     </DropdownMenuItem>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Item</AlertDialogTitle>
+                                      <AlertDialogTitle>{t('admin.deleteItem')}</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                        Are you sure you want to delete this item? This action cannot be undone.
+                                        {t('admin.deleteConfirmation')}
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                                       <AlertDialogAction 
                                         onClick={() => handleSingleDelete(getRowId(item))}
                                         className="bg-red-600 hover:bg-red-700"
                                       >
-                                        Delete
+                                        {t('common.delete')}
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
@@ -517,7 +519,7 @@ export function AdminDataTable<T>({
             ) : (
               <Card className="p-8">
                 <div className="text-center text-sm text-gray-500">
-                  No results.
+                  {t('admin.noResults')}
                 </div>
               </Card>
             )}
@@ -558,7 +560,7 @@ export function AdminDataTable<T>({
                 ) : (
                   <tr>
                     <td colSpan={columns.length} className="h-16 text-center text-sm text-gray-500">
-                      No results.
+                      {t('admin.noResults')}
                     </td>
                   </tr>
                 )}
@@ -593,7 +595,7 @@ export function AdminDataTable<T>({
                   disabled={!table.getCanPreviousPage()}
                   className="flex-1 md:flex-none"
                 >
-                  Previous
+                  {t('common.previous')}
                 </Button>
                 <Button
                   variant="outline"
@@ -602,7 +604,7 @@ export function AdminDataTable<T>({
                   disabled={!table.getCanNextPage()}
                   className="flex-1 md:flex-none"
                 >
-                  Next
+                  {t('common.next')}
                 </Button>
               </>
             )}

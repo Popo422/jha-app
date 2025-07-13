@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
@@ -18,27 +19,29 @@ interface PPERequirementsSectionProps {
 }
 
 const PPERequirementsSection = memo(({ ppe, onChange }: PPERequirementsSectionProps) => {
+  const { t } = useTranslation('common');
+  
   const ppeItems = [
-    { key: "hardHat", label: "Hard Hat" },
-    { key: "boots", label: "Boots" },
-    { key: "gloves", label: "Gloves" },
-    { key: "safetyGlasses", label: "Safety Glasses" },
-    { key: "faceMask", label: "Face Mask (Covid-19)" },
+    { key: "hardHat", label: t('safetyItems.hardHat') },
+    { key: "boots", label: t('safetyItems.boots') },
+    { key: "gloves", label: t('safetyItems.gloves') },
+    { key: "safetyGlasses", label: t('safetyItems.safetyGlasses') },
+    { key: "faceMask", label: t('safetyItems.faceMask') },
   ];
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-md md:text-xl">
-          Personal Protective Equipment (PPE) Requirements
+          {t('safety.ppeRequirements')}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Do you have the following list of PPE available to you for use?
+          {t('safety.ppeDescription')}
         </p>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <Label className="font-medium">Work Uniform Requirements:</Label>
+          <Label className="font-medium">{t('safety.workUniformRequirements')}</Label>
           <div className="space-y-4">
             {ppeItems.map((ppeItem) => (
               <div key={ppeItem.key} className="flex items-center space-x-2">
@@ -55,7 +58,7 @@ const PPERequirementsSection = memo(({ ppe, onChange }: PPERequirementsSectionPr
             ))}
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            If PPE not selected, email will be sent to safety officer.
+            {t('safety.ppeNotice')}
           </p>
         </div>
       </CardContent>

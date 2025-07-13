@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -18,6 +19,7 @@ interface InjuryTimerProps {
 }
 
 export default function InjuryTimer({ showResetButton = false }: InjuryTimerProps) {
+  const { t } = useTranslation('common');
   const [timeDisplay, setTimeDisplay] = useState<TimeDisplay>({ days: 0, hours: 0, minutes: 0, seconds: 0 })
   const [lastResetTime, setLastResetTime] = useState<Date | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -84,7 +86,7 @@ export default function InjuryTimer({ showResetButton = false }: InjuryTimerProp
     return (
       <Card className="bg-card">
         <CardHeader>
-          <CardTitle className="text-card-foreground text-center">Days Without Injury</CardTitle>
+          <CardTitle className="text-card-foreground text-center">{t('safety.daysWithoutInjury')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center items-center space-x-6 mb-4">
@@ -118,25 +120,25 @@ export default function InjuryTimer({ showResetButton = false }: InjuryTimerProp
   return (
     <Card className="bg-card">
       <CardHeader>
-        <CardTitle className="text-card-foreground text-center">Days Without Injury</CardTitle>
+        <CardTitle className="text-card-foreground text-center">{t('safety.daysWithoutInjury')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex justify-center items-center space-x-6 mb-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-card-foreground">{timeDisplay.days}</div>
-            <div className="text-sm text-card-foreground">Days</div>
+            <div className="text-sm text-card-foreground">{t('timeLabels.days')}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-card-foreground">{timeDisplay.hours}</div>
-            <div className="text-sm text-card-foreground">Hours</div>
+            <div className="text-sm text-card-foreground">{t('timeLabels.hours')}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-card-foreground">{timeDisplay.minutes}</div>
-            <div className="text-sm text-card-foreground">Minutes</div>
+            <div className="text-sm text-card-foreground">{t('timeLabels.minutes')}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-card-foreground">{timeDisplay.seconds}</div>
-            <div className="text-sm text-card-foreground">Seconds</div>
+            <div className="text-sm text-card-foreground">{t('timeLabels.seconds')}</div>
           </div>
         </div>
         
@@ -145,19 +147,19 @@ export default function InjuryTimer({ showResetButton = false }: InjuryTimerProp
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm">
-                  Reset Timer
+{t('safety.resetTimer')}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Reset Injury Timer</AlertDialogTitle>
+                  <AlertDialogTitle>{t('safety.resetInjuryTimer')}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to reset the injury timer? This action cannot be undone.
+{t('safety.resetTimerConfirm')}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={resetTimer}>Reset Timer</AlertDialogAction>
+                  <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetTimer}>{t('safety.resetTimer')}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

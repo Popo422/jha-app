@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter, usePathname } from 'next/navigation'
+import { useTranslation } from 'react-i18next'
 import { useAppSelector } from '@/lib/hooks'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -35,6 +36,7 @@ interface AdminSidebarProps {
 }
 
 export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
+  const { t } = useTranslation('common')
   const router = useRouter()
   const pathname = usePathname()
   const { admin } = useAppSelector((state) => state.auth)
@@ -47,47 +49,47 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
   const mainItems: SidebarItem[] = [
     {
-      label: 'Dashboard',
+      label: t('admin.dashboard'),
       href: '/admin',
       icon: Home
     },
     {
-      label: 'Submission Tracker',
+      label: t('admin.submissionTracker'),
       href: '/admin/contractor-tracker',
       icon: FileText
     },
     {
-      label: 'Review Safety Forms',
+      label: t('admin.reviewSafetyForms'),
       href: '/admin/safety-forms',
       icon: ClipboardCheck
     },
     {
-      label: 'Review Time Forms',
+      label: t('admin.reviewTimeForms'),
       href: '/admin/time-forms',
       icon: Clock
     },
     {
-      label: 'Contractors Editor',
+      label: t('admin.contractorsEditor'),
       href: '/admin/contractors',
       icon: Users
     },
     {
-      label: 'Module Configuration',
+      label: t('admin.moduleConfiguration'),
       href: '/admin/modules',
       icon: Puzzle
     },
     {
-      label: 'Admin Editor',
+      label: t('admin.adminEditor'),
       href: '/admin/admin-editor',
       icon: Shield
     },
     {
-      label: 'Toolbox Talks',
+      label: t('admin.toolboxTalks'),
       href: '/admin/toolbox-talks',
       icon: MessageSquare
     },
     {
-      label: 'Reporting',
+      label: t('admin.reporting'),
       href: '/admin/reporting',
       icon: BarChart3
     }
@@ -95,12 +97,12 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
   const bottomItems: SidebarItem[] = [
     {
-      label: 'Settings',
+      label: t('admin.settings'),
       href: '/admin/settings',
       icon: Settings
     },
     {
-      label: 'Help & Support',
+      label: t('admin.helpSupport'),
       href: '/admin/help',
       icon: HelpCircle
     }
@@ -159,7 +161,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               key={item.href}
               variant="ghost"
               className={cn(
-                "w-full justify-start h-11 px-4 text-left font-normal text-white hover:text-white hover:bg-white/10",
+                "w-full justify-start h-11 px-4 text-left font-normal text-white hover:text-white hover:bg-white/10 text-wrap",
                 isActive 
                   ? "bg-blue-600 text-white hover:bg-blue-600" 
                   : ""
@@ -215,7 +217,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           onClick={handleLogout}
         >
           <LogOut className="mr-3 h-4 w-4" />
-          Logout
+          {t('auth.logout')}
         </Button>
         </div>
       </div>

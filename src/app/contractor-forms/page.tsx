@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from 'react-i18next';
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -9,31 +10,31 @@ import { useGetCompanyModulesQuery } from "@/lib/features/company/companyApi";
 import Link from "next/link";
 import { useMemo } from "react";
 
-const allForms = [
-  {
-    id: "job-hazard-analysis",
-    title: "Job Hazard Analysis",
-    href: "/contractor-forms/job-hazard-analysis",
-    description: "This form tracks all potential job hazards on the worksite. To be completed by all employees.",
-  },
-  {
-    id: "start-of-day",
-    title: "Start of Day Report",
-    href: "/contractor-forms/start-of-day-report",
-    description:
-      "This form ensures all crewmen enter the worksite in healthy condition. To be completed by all employees.",
-  },
-  {
-    id: "end-of-day",
-    title: "End of Day Report",
-    href: "/contractor-forms/end-of-day-report",
-    description:
-      "This form captures the general health of the crewmen leaving the job site. To be completed by all employees.",
-  },
-];
 
 export default function ContractorFormsPage() {
+  const { t } = useTranslation('common');
   const { data: modulesData, isLoading } = useGetCompanyModulesQuery();
+  
+  const allForms = [
+    {
+      id: "job-hazard-analysis",
+      title: t('forms.jobHazardAnalysis'),
+      href: "/contractor-forms/job-hazard-analysis",
+      description: t('forms.jobHazardAnalysisDescription'),
+    },
+    {
+      id: "start-of-day",
+      title: t('forms.startOfDayReport'),
+      href: "/contractor-forms/start-of-day-report",
+      description: t('forms.startOfDayReportDescription'),
+    },
+    {
+      id: "end-of-day",
+      title: t('forms.endOfDayReport'),
+      href: "/contractor-forms/end-of-day-report",
+      description: t('forms.endOfDayReportDescription'),
+    },
+  ];
 
   const availableForms = useMemo(() => {
     if (!modulesData?.enabledModules) return [];
@@ -47,7 +48,7 @@ export default function ContractorFormsPage() {
 
       <main className="p-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8 text-foreground text-center">Contractor Forms</h1>
+          <h1 className="text-3xl font-bold mb-8 text-foreground text-center">{t('nav.contractorForms')}</h1>
 
           <div className="grid gap-6">
             {isLoading ? (
@@ -70,7 +71,7 @@ export default function ContractorFormsPage() {
               <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-center">
                 <CardContent className="p-8">
                   <p className="text-muted-foreground">
-                    No forms are currently available. Please contact your administrator.
+                    {t('forms.noFormsAvailable')}
                   </p>
                 </CardContent>
               </Card>
@@ -89,7 +90,7 @@ export default function ContractorFormsPage() {
                       asChild
                       className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                     >
-                      <Link href={form.href}>See Form</Link>
+                      <Link href={form.href}>{t('forms.seeForm')}</Link>
                     </Button>
                   </CardContent>
                 </Card>

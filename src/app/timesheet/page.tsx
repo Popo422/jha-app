@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import { useSubmitTimesheetMutation } from "@/lib/features/timesheets/timesheetsApi";
 import { useModuleAccess } from "@/hooks/useModuleAccess";
 import { useAppSelector } from "@/lib/hooks";
@@ -27,6 +28,7 @@ interface TimesheetFormData {
 }
 
 export default function TimesheetPage() {
+  const { t } = useTranslation('common');
   const { contractor } = useAppSelector((state) => state.auth);
   const { hasAccess, isLoading: moduleLoading } = useModuleAccess('timesheet');
   const [submitTimesheet, { isLoading, isSuccess, isError, error, reset }] = useSubmitTimesheetMutation();
@@ -117,14 +119,14 @@ export default function TimesheetPage() {
         <div className="max-w-4xl mx-auto">
           <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="text-foreground">Timesheet Details</CardTitle>
+              <CardTitle className="text-foreground">{t('pages.timesheetDetails')}</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="date">Date:</Label>
+                    <Label htmlFor="date">{t('formFields.date')}</Label>
                     <Input
                       id="date"
                       name="date"
@@ -139,37 +141,37 @@ export default function TimesheetPage() {
                     <ContractorSelect
                       id="employee"
                       name="employee"
-                      label="Employee:"
-                      placeholder="Person's Name"
+                      label={t('formFields.employee')}
+                      placeholder={t('placeholders.personName')}
                       value={formData.employee}
                       onChange={(value) => setFormData(prev => ({ ...prev, employee: value }))}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="company">Company:</Label>
+                    <Label htmlFor="company">{t('formFields.company')}</Label>
                     <Input
                       id="company"
                       name="company"
-                      placeholder="Client Company Name"
+                      placeholder={t('placeholders.clientCompanyName')}
                       value={formData.company}
                       onChange={handleInputChange}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="jobSite">Job Site:</Label>
+                    <Label htmlFor="jobSite">{t('formFields.jobSite')}</Label>
                     <Input
                       id="jobSite"
                       name="jobSite"
-                      placeholder="Company Location"
+                      placeholder={t('placeholders.companyLocation')}
                       value={formData.jobSite}
                       onChange={handleInputChange}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="jobName">Job Name:</Label>
+                    <Label htmlFor="jobName">{t('formFields.jobName')}</Label>
                     <Input
                       id="jobName"
                       name="jobName"
@@ -180,7 +182,7 @@ export default function TimesheetPage() {
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="jobDescription">Job Description:</Label>
+                    <Label htmlFor="jobDescription">{t('formFields.jobDescription')}</Label>
                     <Textarea
                       id="jobDescription"
                       name="jobDescription"
@@ -192,7 +194,7 @@ export default function TimesheetPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="timeSpent">Time Spent (hours):</Label>
+                    <Label htmlFor="timeSpent">{t('formFields.timeSpentHours')}</Label>
                     <Input
                       id="timeSpent"
                       name="timeSpent"
@@ -211,13 +213,13 @@ export default function TimesheetPage() {
                 {/* Instructions */}
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    <strong>Instructions:</strong> Please fill out all fields to submit your timesheet.
+                    <strong>{t('forms.instructions')}</strong> {t('pages.fillAllFields')}
                   </p>
                 </div>
 
                 {isSuccess && (
                   <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800">
-                    Timesheet submitted successfully!
+                    {t('pages.timesheetSuccess')}
                   </div>
                 )}
 
@@ -225,12 +227,12 @@ export default function TimesheetPage() {
                   <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800">
                     {error && 'data' in error && typeof error.data === 'object' && error.data && 'error' in error.data 
                       ? (error.data as any).error 
-                      : 'Submission failed'}
+                      : t('forms.submitFailed')}
                   </div>
                 )}
 
                 <Button type="submit" disabled={isLoading} className="w-full rounded-none">
-                  {isLoading ? 'Submitting...' : 'Submit Timesheet'}
+                  {isLoading ? t('forms.submitting') : t('pages.submitTimesheet')}
                 </Button>
               </form>
             </CardContent>

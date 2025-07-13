@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAppDispatch } from '@/lib/hooks'
 import { loginSuccess } from '@/lib/features/auth/authSlice'
 import { useLoginMutation } from '@/lib/features/auth/authApi'
@@ -12,6 +13,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
+  const { t } = useTranslation('common')
   const [contractorCode, setContractorCode] = useState('')
   const [showCode, setShowCode] = useState(false)
   const [error, setError] = useState('')
@@ -43,20 +45,20 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <Card className="border rounded-lg">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Contractor Login</CardTitle>
+            <CardTitle className="text-2xl text-center">{t('auth.contractorLogin')}</CardTitle>
             <CardDescription className="text-center">
-              Enter your contractor code to access the system
+              {t('auth.loginDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="contractorCode">Contractor Code</Label>
+                <Label htmlFor="contractorCode">{t('auth.contractorCode')}</Label>
                 <div className="relative">
                   <Input
                     id="contractorCode"
                     type={showCode ? 'text' : 'password'}
-                    placeholder="Enter contractor code"
+                    placeholder={t('placeholders.enterContractorCode')}
                     value={contractorCode}
                     onChange={(e) => setContractorCode(e.target.value)}
                     className={error ? 'border-destructive' : ''}
@@ -81,7 +83,7 @@ export default function LoginPage() {
                 )}
               </div>
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
-                {isLoading ? 'Logging in...' : 'Login'}
+                {isLoading ? t('common.loggingIn') : t('auth.login')}
               </Button>
             </form>
           </CardContent>

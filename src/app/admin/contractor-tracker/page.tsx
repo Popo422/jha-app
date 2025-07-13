@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetContractorsQuery } from '@/lib/features/contractors/contractorsApi';
 import { useGetSubmissionsQuery } from '@/lib/features/submissions/submissionsApi';
@@ -39,6 +40,7 @@ interface ContractorStatus {
 
 
 export default function ContractTrackerPage() {
+  const { t } = useTranslation('common');
   const [filters, setFilters] = useState({
     date: format(new Date(), 'yyyy-MM-dd')
   });
@@ -110,13 +112,13 @@ export default function ContractTrackerPage() {
   const getStatusBadge = useCallback((status: 'completed' | 'pending' | 'missing') => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>;
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{t('admin.approved')}</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">{t('admin.pending')}</Badge>;
       case 'missing':
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Missing</Badge>;
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{t('status.missing')}</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Unknown</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{t('status.unknown')}</Badge>;
     }
   }, []);
 
@@ -130,7 +132,7 @@ export default function ContractTrackerPage() {
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="h-auto p-0 font-medium text-sm"
           >
-            Contractor
+{t('admin.contractor')}
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
@@ -144,7 +146,7 @@ export default function ContractTrackerPage() {
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="h-auto p-0 font-medium text-sm"
           >
-            Email
+{t('auth.email')}
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
@@ -158,7 +160,7 @@ export default function ContractTrackerPage() {
     if (enabledModules.includes('timesheet')) {
       baseColumns.push({
         accessorKey: 'timesheetStatus',
-        header: 'Timesheet',
+        header: t('nav.timesheet'),
         cell: ({ row }: { row: any }) => {
           const status = row.getValue('timesheetStatus') as 'completed' | 'pending' | 'missing';
           return <div className="text-left">{getStatusBadge(status)}</div>;
@@ -169,7 +171,7 @@ export default function ContractTrackerPage() {
     if (enabledModules.includes('job-hazard-analysis')) {
       baseColumns.push({
         accessorKey: 'jhaStatus',
-        header: 'JHA',
+        header: t('forms.jobHazardAnalysis'),
         cell: ({ row }: { row: any }) => {
           const status = row.getValue('jhaStatus') as 'completed' | 'pending' | 'missing';
           return <div className="text-left">{getStatusBadge(status)}</div>;
@@ -180,7 +182,7 @@ export default function ContractTrackerPage() {
     if (enabledModules.includes('end-of-day')) {
       baseColumns.push({
         accessorKey: 'eodStatus',
-        header: 'EOD',
+        header: t('admin.endOfDay'),
         cell: ({ row }: { row: any }) => {
           const status = row.getValue('eodStatus') as 'completed' | 'pending' | 'missing';
           return <div className="text-left">{getStatusBadge(status)}</div>;
@@ -191,7 +193,7 @@ export default function ContractTrackerPage() {
     if (enabledModules.includes('start-of-day')) {
       baseColumns.push({
         accessorKey: 'sodStatus',
-        header: 'SOD',
+        header: t('admin.startOfDay'),
         cell: ({ row }: { row: any }) => {
           const status = row.getValue('sodStatus') as 'completed' | 'pending' | 'missing';
           return <div className="text-left">{getStatusBadge(status)}</div>;
@@ -205,7 +207,7 @@ export default function ContractTrackerPage() {
   const filterComponents = useMemo(() => (
     <>
       <div className="space-y-1">
-        <div className="text-sm font-medium">Date</div>
+        <div className="text-sm font-medium">{t('formFields.date')}</div>
         <Input 
           type="date" 
           className="w-full md:w-40" 
@@ -222,7 +224,7 @@ export default function ContractTrackerPage() {
             className="w-full md:w-auto"
           >
             <X className="h-4 w-4 mr-2" />
-            Clear Filters
+{t('admin.clearFilters')}
           </Button>
         </div>
       )}
@@ -263,16 +265,16 @@ export default function ContractTrackerPage() {
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 {enabledModules.includes('timesheet') && (
-                  <div><span className="font-medium">Timesheet:</span> {getStatusBadge(contractor.timesheetStatus)}</div>
+                  <div><span className="font-medium">{t('nav.timesheet')}:</span> {getStatusBadge(contractor.timesheetStatus)}</div>
                 )}
                 {enabledModules.includes('job-hazard-analysis') && (
-                  <div><span className="font-medium">JHA:</span> {getStatusBadge(contractor.jhaStatus)}</div>
+                  <div><span className="font-medium">{t('forms.jobHazardAnalysis')}:</span> {getStatusBadge(contractor.jhaStatus)}</div>
                 )}
                 {enabledModules.includes('end-of-day') && (
-                  <div><span className="font-medium">EOD:</span> {getStatusBadge(contractor.eodStatus)}</div>
+                  <div><span className="font-medium">{t('admin.endOfDay')}:</span> {getStatusBadge(contractor.eodStatus)}</div>
                 )}
                 {enabledModules.includes('start-of-day') && (
-                  <div><span className="font-medium">SOD:</span> {getStatusBadge(contractor.sodStatus)}</div>
+                  <div><span className="font-medium">{t('admin.startOfDay')}:</span> {getStatusBadge(contractor.sodStatus)}</div>
                 )}
               </div>
             </div>
@@ -285,9 +287,9 @@ export default function ContractTrackerPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Submission Tracker</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{t('admin.submissionTracker')}</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">
-          Monitor contractor form submission status for {format(new Date(filters.date), 'MMMM d, yyyy')}
+{t('admin.monitorContractorStatus')} {format(new Date(filters.date), 'MMMM d, yyyy')}
         </p>
       </div>
       
@@ -300,15 +302,15 @@ export default function ContractTrackerPage() {
         exportFilename="contractor_tracker"
         exportHeaders={useMemo(() => {
           const enabledModules = modulesData?.enabledModules || [];
-          const headers = ['Contractor', 'Email'];
+          const headers = [t('admin.contractor'), t('auth.email')];
           
-          if (enabledModules.includes('timesheet')) headers.push('Timesheet');
-          if (enabledModules.includes('job-hazard-analysis')) headers.push('JHA');
-          if (enabledModules.includes('end-of-day')) headers.push('EOD');
-          if (enabledModules.includes('start-of-day')) headers.push('SOD');
+          if (enabledModules.includes('timesheet')) headers.push(t('nav.timesheet'));
+          if (enabledModules.includes('job-hazard-analysis')) headers.push(t('forms.jobHazardAnalysis'));
+          if (enabledModules.includes('end-of-day')) headers.push(t('admin.endOfDay'));
+          if (enabledModules.includes('start-of-day')) headers.push(t('admin.startOfDay'));
           
           return headers;
-        }, [modulesData])}
+        }, [modulesData, t])}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}

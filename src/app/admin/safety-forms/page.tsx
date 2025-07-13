@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetSubmissionsQuery, useDeleteSubmissionMutation } from "@/lib/features/submissions/submissionsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
@@ -48,6 +49,7 @@ interface Submission {
 const columnHelper = createColumnHelper<Submission>();
 
 export default function SafetyFormsPage() {
+  const { t } = useTranslation('common')
   const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
   const [filters, setFilters] = useState({
     type: '',
@@ -96,9 +98,9 @@ export default function SafetyFormsPage() {
       case 'job-hazard-analysis':
         return 'JHA';
       case 'start-of-day':
-        return 'Start of Day';
+        return t('admin.startOfDay');
       case 'end-of-day':
-        return 'End of Day';
+        return t('admin.endOfDay');
       default:
         return type;
     }
@@ -142,7 +144,7 @@ export default function SafetyFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Contractor
+          {t('admin.contractor')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -156,7 +158,7 @@ export default function SafetyFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Company
+          {t('admin.company')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -170,7 +172,7 @@ export default function SafetyFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Date
+          {t('tableHeaders.date')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -195,7 +197,7 @@ export default function SafetyFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Job Site
+          {t('admin.jobSite')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -203,7 +205,7 @@ export default function SafetyFormsPage() {
     },
     {
       accessorKey: 'submissionType',
-      header: 'Type',
+      header: t('admin.type'),
       cell: ({ row }) => {
         const type = row.getValue('submissionType') as string;
         return (
@@ -222,11 +224,11 @@ export default function SafetyFormsPage() {
   const filterComponents = useMemo(() => (
     <>
       <div className="space-y-1">
-        <div className="text-sm font-medium">Type</div>
+        <div className="text-sm font-medium">{t('admin.type')}</div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-full md:w-48 justify-between">
-              {filters.type ? getSubmissionTypeLabel(filters.type) : 'All Types'}
+              {filters.type ? getSubmissionTypeLabel(filters.type) : t('admin.allTypes')}
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -235,32 +237,32 @@ export default function SafetyFormsPage() {
               console.log('Setting type filter to: ""');
               setFilters(prev => ({ ...prev, type: '' }));
             }}>
-              All Types
+              {t('admin.allTypes')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => {
               console.log('Setting type filter to: job-hazard-analysis');
               setFilters(prev => ({ ...prev, type: 'job-hazard-analysis' }));
             }}>
-              Job Hazard Analysis (JHA)
+              {t('admin.jobHazardAnalysisJHA')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => {
               console.log('Setting type filter to: start-of-day');
               setFilters(prev => ({ ...prev, type: 'start-of-day' }));
             }}>
-              Start of Day
+              {t('admin.startOfDay')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => {
               console.log('Setting type filter to: end-of-day');
               setFilters(prev => ({ ...prev, type: 'end-of-day' }));
             }}>
-              End of Day
+              {t('admin.endOfDay')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
       <div className="space-y-1">
-        <div className="text-sm font-medium">Date From</div>
+        <div className="text-sm font-medium">{t('admin.dateFrom')}</div>
         <Input 
           type="date" 
           className="w-full md:w-40" 
@@ -269,7 +271,7 @@ export default function SafetyFormsPage() {
         />
       </div>
       <div className="space-y-1">
-        <div className="text-sm font-medium">Date To</div>
+        <div className="text-sm font-medium">{t('admin.dateTo')}</div>
         <Input 
           type="date" 
           className="w-full md:w-40" 
@@ -286,7 +288,7 @@ export default function SafetyFormsPage() {
             className="w-full md:w-auto"
           >
             <X className="h-4 w-4 mr-2" />
-            Clear Filters
+            {t('admin.clearFilters')}
           </Button>
         </div>
       )}
@@ -321,9 +323,9 @@ export default function SafetyFormsPage() {
               </Badge>
             </div>
             <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-              <div><span className="font-medium">Company:</span> {submission.company}</div>
-              <div><span className="font-medium">Date:</span> {new Date(submission.date).toLocaleDateString()}</div>
-              <div><span className="font-medium">Job Site:</span> {submission.jobSite}</div>
+              <div><span className="font-medium">{t('admin.company')}:</span> {submission.company}</div>
+              <div><span className="font-medium">{t('tableHeaders.date')}:</span> {new Date(submission.date).toLocaleDateString()}</div>
+              <div><span className="font-medium">{t('admin.jobSite')}:</span> {submission.jobSite}</div>
             </div>
           </div>
           <DropdownMenu>
@@ -338,7 +340,7 @@ export default function SafetyFormsPage() {
                 className="cursor-pointer"
               >
                 <Edit className="h-4 w-4 mr-2" />
-                Edit
+                {t('common.edit')}
               </DropdownMenuItem>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -347,23 +349,23 @@ export default function SafetyFormsPage() {
                     className="cursor-pointer text-red-600"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
+                    {t('common.delete')}
                   </DropdownMenuItem>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Submission</AlertDialogTitle>
+                    <AlertDialogTitle>{t('admin.deleteSubmission')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete this submission by {submission.completedBy}? This action cannot be undone.
+                      {t('admin.deleteSubmissionConfirm', { name: submission.completedBy })}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                     <AlertDialogAction 
                       onClick={() => handleSingleDelete(submission.id)}
                       className="bg-red-600 hover:bg-red-700"
                     >
-                      Delete
+                      {t('common.delete')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -408,9 +410,9 @@ export default function SafetyFormsPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Safety Forms</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{t('admin.safetyFormsTitle')}</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">
-          Manage and review safety form submissions from contractors
+          {t('admin.safetyFormsDescription')}
         </p>
       </div>
       
@@ -424,7 +426,7 @@ export default function SafetyFormsPage() {
         onBulkDelete={handleBulkDelete}
         getRowId={(submission) => submission.id}
         exportFilename="safety_forms"
-        exportHeaders={['Contractor', 'Company', 'Date', 'Job Site', 'Submission Type']}
+        exportHeaders={[t('admin.contractor'), t('admin.company'), t('tableHeaders.date'), t('admin.jobSite'), t('admin.type')]}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}
