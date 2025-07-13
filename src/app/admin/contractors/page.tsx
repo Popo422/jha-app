@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, type Contractor } from "@/lib/features/contractors/contractorsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
@@ -16,6 +17,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 type ViewMode = 'list' | 'add' | 'edit';
 
 export default function ContractorsPage() {
+  const { t } = useTranslation('common');
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -48,10 +50,10 @@ export default function ContractorsPage() {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      showToast(`Code "${text}" copied to clipboard!`, 'success');
+      showToast(t('contractors.codeCopiedToClipboard').replace('{{code}}', text), 'success');
     } catch (err) {
       console.error('Failed to copy: ', err);
-      showToast('Failed to copy code', 'error');
+      showToast(t('contractors.failedToCopyCode'), 'error');
     }
   };
 
@@ -97,28 +99,28 @@ export default function ContractorsPage() {
     const errors: Record<string, string> = {};
 
     if (!formData.firstName.trim()) {
-      errors.firstName = "First name is required";
+      errors.firstName = t('contractors.firstNameRequired');
     }
     if (!formData.lastName.trim()) {
-      errors.lastName = "Last name is required";
+      errors.lastName = t('contractors.lastNameRequired');
     }
     if (!formData.email.trim()) {
-      errors.email = "Email is required";
+      errors.email = t('contractors.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = "Please enter a valid email address";
+      errors.email = t('contractors.validEmailRequired');
     }
     if (!formData.code.trim()) {
-      errors.code = "Contractor code is required";
+      errors.code = t('contractors.contractorCodeRequired');
     } else if (formData.code.trim().length < 2) {
-      errors.code = "Contractor code must be at least 2 characters";
+      errors.code = t('contractors.contractorCodeMinLength');
     }
 
     if (formData.rate && formData.rate.trim()) {
       const rateValue = parseFloat(formData.rate);
       if (isNaN(rateValue) || rateValue < 0) {
-        errors.rate = "Rate must be a valid positive number";
+        errors.rate = t('contractors.rateValidPositiveNumber');
       } else if (rateValue > 9999.99) {
-        errors.rate = "Rate cannot exceed $9,999.99";
+        errors.rate = t('contractors.rateMaxValue');
       }
     }
 
@@ -209,13 +211,13 @@ export default function ContractorsPage() {
       const result = await response.json();
 
       if (response.ok) {
-        setEmailMessage("✅ Code update email sent successfully!");
+        setEmailMessage(`✅ ${t('contractors.codeUpdateEmailSentSuccessfully')}`);
       } else {
-        setEmailMessage(`❌ Failed to send email: ${result.error}`);
+        setEmailMessage(`❌ ${t('contractors.failedToSendEmail')}: ${result.error}`);
       }
     } catch (error) {
       console.error('Error sending code update email:', error);
-      setEmailMessage("❌ Failed to send email. Please try again.");
+      setEmailMessage(`❌ ${t('contractors.failedToSendEmailTryAgain')}`);
     } finally {
       setIsSendingEmail(false);
     }
@@ -225,7 +227,7 @@ export default function ContractorsPage() {
     if (formError && 'data' in formError && typeof formError.data === 'object' && formError.data && 'error' in formError.data) {
       return (formError.data as any).error;
     }
-    return 'An error occurred while saving the contractor';
+    return t('contractors.errorSavingContractor');
   };
 
   const contractors = contractorsData?.contractors || [];
@@ -240,7 +242,7 @@ export default function ContractorsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          First Name
+{t('contractors.firstName')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -253,7 +255,7 @@ export default function ContractorsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Last Name
+{t('contractors.lastName')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -266,7 +268,7 @@ export default function ContractorsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Email
+{t('auth.email')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -279,7 +281,7 @@ export default function ContractorsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Code
+{t('contractors.code')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -290,7 +292,7 @@ export default function ContractorsPage() {
             variant="secondary" 
             className="cursor-pointer hover:bg-secondary/80 transition-colors inline-flex items-center gap-1 w-fit"
             onClick={() => copyToClipboard(code)}
-            title="Click to copy code"
+            title={t('contractors.clickToCopyCode')}
           >
             {code}
             <Copy className="h-3 w-3" />
@@ -306,14 +308,14 @@ export default function ContractorsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Rate
+{t('contractors.rate')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ getValue }) => {
         const rate = getValue() as string | null;
         const rateValue = rate ? parseFloat(rate) : 0;
-        return `$${rateValue.toFixed(2)}/hr`;
+        return `$${rateValue.toFixed(2)}${t('contractors.perHour')}`;
       },
     },
     {
@@ -324,7 +326,7 @@ export default function ContractorsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Company Name
+{t('contractors.companyName')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -345,7 +347,7 @@ export default function ContractorsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Created
+{t('contractors.created')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -363,23 +365,23 @@ export default function ContractorsPage() {
         <div className="flex items-center space-x-4 mb-4">
           <Button variant="ghost" onClick={handleCancel} className="flex items-center space-x-2">
             <ArrowLeft className="h-4 w-4" />
-            <span>Back to Contractors</span>
+            <span>{t('contractors.backToContractors')}</span>
           </Button>
         </div>
         <h1 className="text-3xl font-bold text-foreground">
-          {viewMode === 'add' ? 'Add New Contractor' : 'Edit Contractor'}
+          {viewMode === 'add' ? t('contractors.addNewContractor') : t('contractors.editContractor')}
         </h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Contractor Information</CardTitle>
+          <CardTitle>{t('contractors.contractorInformation')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName">{t('contractors.firstName')}</Label>
                 <Input
                   id="firstName"
                   name="firstName"
@@ -394,7 +396,7 @@ export default function ContractorsPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="lastName">{t('contractors.lastName')}</Label>
                 <Input
                   id="lastName"
                   name="lastName"
@@ -410,7 +412,7 @@ export default function ContractorsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">{t('contractors.emailAddress')}</Label>
               <Input
                 id="email"
                 name="email"
@@ -426,14 +428,14 @@ export default function ContractorsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="code">Contractor Code</Label>
+              <Label htmlFor="code">{t('contractors.contractorCode')}</Label>
               <div className="flex space-x-2">
                 <Input
                   id="code"
                   name="code"
                   value={formData.code}
                   onChange={handleInputChange}
-                  placeholder="e.g., CONT001"
+                  placeholder={t('contractors.contractorCodePlaceholder')}
                   className={formErrors.code ? "border-red-500" : ""}
                   disabled={isFormLoading}
                 />
@@ -445,14 +447,14 @@ export default function ContractorsPage() {
                   className="flex items-center space-x-1 whitespace-nowrap"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  <span>Generate</span>
+                  <span>{t('contractors.generate')}</span>
                 </Button>
               </div>
               {formErrors.code && (
                 <p className="text-sm text-red-500">{formErrors.code}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                This code will be used for contractor login. Click Generate to auto-create a unique code.
+{t('contractors.contractorCodeHelp')}
               </p>
               {viewMode === 'edit' && (
                 <Button
@@ -464,13 +466,13 @@ export default function ContractorsPage() {
                   className="mt-2 flex items-center space-x-2"
                 >
                   <Mail className="h-4 w-4" />
-                  <span>{isSendingEmail ? 'Sending...' : 'Send Updated Code Email'}</span>
+                  <span>{isSendingEmail ? t('contractors.sending') : t('contractors.sendUpdatedCodeEmail')}</span>
                 </Button>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="rate">Hourly Rate ($)</Label>
+              <Label htmlFor="rate">{t('contractors.hourlyRate')}</Label>
               <Input
                 id="rate"
                 name="rate"
@@ -480,7 +482,7 @@ export default function ContractorsPage() {
                 max="9999.99"
                 value={formData.rate}
                 onChange={handleInputChange}
-                placeholder="e.g., 25.00"
+                placeholder={t('contractors.hourlyRatePlaceholder')}
                 className={formErrors.rate ? "border-red-500" : ""}
                 disabled={isFormLoading}
               />
@@ -490,13 +492,13 @@ export default function ContractorsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="companyName">Company Name (Optional)</Label>
+              <Label htmlFor="companyName">{t('contractors.companyNameOptional')}</Label>
               <Input
                 id="companyName"
                 name="companyName"
                 value={formData.companyName}
                 onChange={handleInputChange}
-                placeholder="e.g., ABC Construction"
+                placeholder={t('contractors.companyNamePlaceholder')}
                 className={formErrors.companyName ? "border-red-500" : ""}
                 disabled={isFormLoading}
               />
@@ -504,7 +506,7 @@ export default function ContractorsPage() {
                 <p className="text-sm text-red-500">{formErrors.companyName}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                Optional company name for this contractor. If not provided, will use the parent company name.
+{t('contractors.companyNameHelp')}
               </p>
             </div>
 
@@ -531,7 +533,7 @@ export default function ContractorsPage() {
                 className="flex items-center space-x-2"
               >
                 <Save className="h-4 w-4" />
-                <span>{isFormLoading ? 'Saving...' : (viewMode === 'add' ? 'Add Contractor' : 'Update Contractor')}</span>
+                <span>{isFormLoading ? t('contractors.saving') : (viewMode === 'add' ? t('contractors.addContractor') : t('contractors.updateContractor'))}</span>
               </Button>
               <Button
                 type="button"
@@ -541,7 +543,7 @@ export default function ContractorsPage() {
                 className="flex items-center space-x-2"
               >
                 <X className="h-4 w-4" />
-                <span>Cancel</span>
+                <span>{t('contractors.cancel')}</span>
               </Button>
             </div>
           </form>
@@ -556,14 +558,14 @@ export default function ContractorsPage() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Contractors</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{t('contractors.contractors')}</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">
-              Manage contractor accounts and access codes
+{t('contractors.manageContractorAccounts')}
             </p>
           </div>
           <Button onClick={handleAdd} className="flex items-center space-x-2">
             <Plus className="h-4 w-4" />
-            <span>Add Contractor</span>
+            <span>{t('contractors.addContractor')}</span>
           </Button>
         </div>
       </div>
@@ -577,13 +579,13 @@ export default function ContractorsPage() {
         onDelete={handleDelete}
         getRowId={(contractor) => contractor.id}
         exportFilename="contractors"
-        exportHeaders={["First Name", "Last Name", "Email", "Code", "Rate", "Company Name", "Created"]}
+        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companyName'), t('contractors.created')]}
         getExportData={(contractor) => [
           contractor.firstName,
           contractor.lastName,
           contractor.email,
           contractor.code,
-          `$${(contractor.rate ? parseFloat(contractor.rate) : 0).toFixed(2)}/hr`,
+          `$${(contractor.rate ? parseFloat(contractor.rate) : 0).toFixed(2)}${t('contractors.perHour')}`,
           contractor.companyName || "",
           new Date(contractor.createdAt).toLocaleDateString()
         ]}

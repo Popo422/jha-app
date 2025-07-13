@@ -21,7 +21,8 @@
       "Bash(chmod:*)",
       "Bash(bash:*)",
       "Bash(tar:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

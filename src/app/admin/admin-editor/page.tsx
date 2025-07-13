@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAppSelector } from '@/lib/hooks'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +22,7 @@ interface AdminUser {
 }
 
 export default function AdminEditorPage() {
+  const { t } = useTranslation('common')
   const { admin } = useAppSelector((state) => state.auth)
   const [admins, setAdmins] = useState<AdminUser[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -41,7 +43,7 @@ export default function AdminEditorPage() {
   useEffect(() => {
     // Check if current user is at least admin
     if (!admin || !['admin', 'super-admin'].includes(admin.role)) {
-      alert('Access denied. Admin privileges required.')
+      alert(t('admin.accessDenied'))
       window.location.href = '/admin'
       return
     }
@@ -87,11 +89,11 @@ export default function AdminEditorPage() {
     const newErrors: Record<string, string> = {}
     
     if (!formData.name.trim()) {
-      newErrors.name = 'Full name is required'
+      newErrors.name = t('admin.fullName') + ' is required'
     }
     
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
+      newErrors.email = t('auth.email') + ' is required'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address'
     }
@@ -99,7 +101,7 @@ export default function AdminEditorPage() {
     // Password validation - required for add, optional for edit
     if (currentView === 'add') {
       if (!formData.password) {
-        newErrors.password = 'Password is required'
+        newErrors.password = t('auth.password') + ' is required'
       } else if (formData.password.length < 8) {
         newErrors.password = 'Password must be at least 8 characters'
       }
@@ -247,7 +249,7 @@ export default function AdminEditorPage() {
       <div className="p-6">
         <Card>
           <CardContent className="flex items-center justify-center h-32">
-            <p className="text-destructive">Access denied. Admin privileges required.</p>
+            <p className="text-destructive">{t('admin.accessDenied')}</p>
           </CardContent>
         </Card>
       </div>
@@ -257,28 +259,28 @@ export default function AdminEditorPage() {
   const columns = [
     {
       accessorKey: 'name',
-      header: 'Name'
+      header: t('admin.name')
     },
     {
       accessorKey: 'email',
-      header: 'Email'
+      header: t('auth.email')
     },
     {
       accessorKey: 'role',
-      header: 'Role',
+      header: t('admin.role'),
       cell: ({ row }: any) => (
         <div className="flex items-center gap-2">
           <Badge variant={row.original.role === 'super-admin' ? 'default' : 'secondary'}>
             {row.original.role === 'super-admin' ? (
-              <><Shield className="w-3 h-3 mr-1" /> Super Admin</>
+              <><Shield className="w-3 h-3 mr-1" /> {t('admin.superAdmin')}</>
             ) : (
-              <><UserCheck className="w-3 h-3 mr-1" /> Admin</>
+              <><UserCheck className="w-3 h-3 mr-1" /> {t('admin.admin')}</>
             )}
           </Badge>
           {row.original.role === 'super-admin' && (
-            <div className="flex items-center text-xs text-muted-foreground" title="Protected account - cannot be deleted">
+            <div className="flex items-center text-xs text-muted-foreground" title={t('admin.protectedAccountTooltip')}>
               <Lock className="w-3 h-3 mr-1" />
-              Protected
+              {t('admin.protected')}
             </div>
           )}
         </div>
@@ -286,11 +288,11 @@ export default function AdminEditorPage() {
     },
     {
       accessorKey: 'companyName',
-      header: 'Company'
+      header: t('admin.company')
     },
     {
       accessorKey: 'createdAt',
-      header: 'Created',
+      header: t('admin.created'),
       cell: ({ row }: any) => new Date(row.original.createdAt).toLocaleDateString()
     }
   ]
@@ -307,29 +309,29 @@ export default function AdminEditorPage() {
             setErrors({})
           }} className="flex items-center space-x-2">
             <ArrowLeft className="h-4 w-4" />
-            <span>Back</span>
+            <span>{t('common.back')}</span>
           </Button>
         </div>
         <h1 className="text-3xl font-bold text-foreground">
-          {currentView === 'add' ? 'Add New Admin' : 'Edit Admin'}
+          {currentView === 'add' ? t('admin.addNewAdmin') : t('admin.editAdmin')}
         </h1>
         <p className="text-muted-foreground mt-2">
           {currentView === 'add' 
-            ? 'Create a new admin user for your company' 
-            : 'Update admin user information'
+            ? t('admin.createNewAdmin') 
+            : t('admin.updateAdminInfo')
           }
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Admin Information</CardTitle>
+          <CardTitle>{t('admin.adminInformation')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">{t('admin.fullName')}</Label>
                 <Input
                   id="name"
                   name="name"
@@ -337,7 +339,7 @@ export default function AdminEditorPage() {
                   required
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="Enter full name"
+                  placeholder={t('admin.enterFullName')}
                   className={errors.name ? 'border-red-500' : ''}
                   disabled={isSubmitting}
                 />
@@ -347,7 +349,7 @@ export default function AdminEditorPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">{t('admin.emailAddress')}</Label>
                 <Input
                   id="email"
                   name="email"
@@ -355,7 +357,7 @@ export default function AdminEditorPage() {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="admin@company.com"
+                  placeholder={t('admin.adminEmailPlaceholder')}
                   className={errors.email ? 'border-red-500' : ''}
                   disabled={isSubmitting}
                 />
@@ -366,7 +368,7 @@ export default function AdminEditorPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">{t('admin.role')}</Label>
               <select
                 id="role"
                 name="role"
@@ -375,9 +377,9 @@ export default function AdminEditorPage() {
                 disabled={isSubmitting}
                 className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.role ? 'border-red-500' : ''}`}
               >
-                <option value="admin">Admin</option>
+                <option value="admin">{t('admin.admin')}</option>
                 {admin?.role === 'super-admin' && (
-                  <option value="super-admin">Super Admin</option>
+                  <option value="super-admin">{t('admin.superAdmin')}</option>
                 )}
               </select>
               {errors.role && (
@@ -388,7 +390,7 @@ export default function AdminEditorPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="password">
-                  Password {currentView === 'add' ? '' : '(optional)'}
+                  {t('auth.password')} {currentView === 'add' ? '' : `(${t('admin.passwordOptional').split(' ')[1]})`}
                 </Label>
                 <div className="relative">
                   <Input
@@ -399,8 +401,8 @@ export default function AdminEditorPage() {
                     value={formData.password}
                     onChange={handleInputChange}
                     placeholder={currentView === 'edit' 
-                      ? "Leave blank to keep current password" 
-                      : "Enter secure password (min 8 chars)"
+                      ? t('admin.leaveBlankKeepCurrent') 
+                      : t('admin.enterSecurePassword')
                     }
                     className={errors.password ? 'border-red-500' : ''}
                     disabled={isSubmitting}
@@ -424,7 +426,7 @@ export default function AdminEditorPage() {
               
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">
-                  Confirm Password {currentView === 'add' ? '' : '(if changing)'}
+                  {t('admin.confirmPassword')} {currentView === 'add' ? '' : `(${t('admin.confirmPasswordOptional').split(' ')[2]} ${t('admin.confirmPasswordOptional').split(' ')[3]})`}
                 </Label>
                 <div className="relative">
                   <Input
@@ -435,8 +437,8 @@ export default function AdminEditorPage() {
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     placeholder={currentView === 'edit' 
-                      ? "Confirm new password" 
-                      : "Confirm password"
+                      ? t('admin.confirmNewPassword') 
+                      : t('admin.confirmPassword')
                     }
                     className={errors.confirmPassword ? 'border-red-500' : ''}
                     disabled={isSubmitting}
@@ -473,8 +475,8 @@ export default function AdminEditorPage() {
               >
                 <Save className="h-4 w-4" />
                 <span>{isSubmitting 
-                  ? (currentView === 'edit' ? 'Updating...' : 'Creating...') 
-                  : (currentView === 'edit' ? 'Update Admin' : 'Add Admin')
+                  ? (currentView === 'edit' ? t('admin.updating') : t('admin.creating')) 
+                  : (currentView === 'edit' ? t('admin.updateAdmin') : t('admin.addAdmin'))
                 }</span>
               </Button>
               <Button
@@ -490,7 +492,7 @@ export default function AdminEditorPage() {
                 className="flex items-center space-x-2"
               >
                 <X className="h-4 w-4" />
-                <span>Cancel</span>
+                <span>{t('common.cancel')}</span>
               </Button>
             </div>
           </form>
@@ -511,11 +513,11 @@ export default function AdminEditorPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Admin Editor</h1>
+          <h1 className="text-3xl font-bold">{t('admin.adminEditorTitle')}</h1>
           <p className="text-muted-foreground">
             {admin?.role === 'super-admin' 
-              ? 'Manage admin users' 
-              : 'Add new admin users to your company'
+              ? t('admin.adminEditorDescription') 
+              : t('admin.createNewAdmin')
             }
           </p>
         </div>
@@ -524,14 +526,14 @@ export default function AdminEditorPage() {
           className="flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Add Admin
+          {t('admin.addAdmin')}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Admin Users</CardTitle>
-          <CardDescription>Manage admin users in your company</CardDescription>
+          <CardTitle>{t('admin.adminUsers')}</CardTitle>
+          <CardDescription>{t('admin.adminEditorDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <AdminDataTable
@@ -554,7 +556,7 @@ export default function AdminEditorPage() {
             getRowId={(admin) => admin.id}
             canDelete={(adminUser) => admin?.role === 'super-admin' && adminUser.role !== 'super-admin' && adminUser.id !== admin?.id}
             exportFilename="admin_users"
-            exportHeaders={['Name', 'Email', 'Role', 'Company', 'Created At']}
+            exportHeaders={[t('admin.name'), t('auth.email'), t('admin.role'), t('admin.company'), t('admin.created')]}
             getExportData={(admin) => [
               admin.name || '',
               admin.email || '',

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import type { Timesheet } from '@/lib/features/timesheets/timesheetsApi';
 import type { ColumnDef } from '@tanstack/react-table';
 
 export default function ReportingPage() {
+  const { t } = useTranslation('common')
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedContractors, setSelectedContractors] = useState<string[]>([]);
@@ -295,11 +297,11 @@ export default function ReportingPage() {
 
   const statusFilterText = useMemo(() => {
     switch (statusFilter) {
-      case 'all': return 'All Statuses';
-      case 'approved': return 'Approved Only';
-      case 'pending': return 'Pending Only';
-      case 'rejected': return 'Rejected Only';
-      default: return 'All Statuses';
+      case 'all': return t('admin.allStatuses');
+      case 'approved': return t('admin.approvedOnly');
+      case 'pending': return t('admin.pendingOnly');
+      case 'rejected': return t('admin.rejectedOnly');
+      default: return t('admin.allStatuses');
     }
   }, [statusFilter]);
 
@@ -329,7 +331,7 @@ export default function ReportingPage() {
     ]);
 
     const csvContent = [
-      ['Date', 'Total Approved Hours'],
+      [t('tableHeaders.date'), t('admin.totalApprovedHours')],
       ...csvData
     ]
       .map(row => row.map(field => `"${field}"`).join(','))
@@ -351,11 +353,11 @@ export default function ReportingPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><Check className="w-3 h-3 mr-1" />Approved</Badge>;
+        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><Check className="w-3 h-3 mr-1" />{t('admin.approved')}</Badge>;
       case 'rejected':
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />{t('admin.rejected')}</Badge>;
       default:
-        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />{t('admin.pending')}</Badge>;
     }
   };
 
@@ -410,21 +412,21 @@ export default function ReportingPage() {
   const timesheetColumns: ColumnDef<Timesheet>[] = useMemo(() => [
     {
       accessorKey: "employee",
-      header: "Name",
+      header: t('admin.name'),
       cell: ({ row }) => (
         <div>{row.getValue("employee")}</div>
       ),
     },
     {
       accessorKey: "jobName",
-      header: "Project Name",
+      header: t('admin.projectName'),
       cell: ({ row }) => (
         <div>{row.getValue("jobName") || "N/A"}</div>
       ),
     },
     {
       accessorKey: "timeSpent",
-      header: "Time Spent",
+      header: t('admin.timeSpent'),
       cell: ({ row }) => (
         <div>
           {formatTimeSpent(row.getValue("timeSpent"))}
@@ -433,14 +435,14 @@ export default function ReportingPage() {
     },
     {
       accessorKey: "company",
-      header: "Company Name",
+      header: t('admin.companyName'),
       cell: ({ row }) => (
         <div>{row.getValue("company")}</div>
       ),
     },
     {
       accessorKey: "date",
-      header: "Date",
+      header: t('tableHeaders.date'),
       cell: ({ row }) => (
         <div>
           {new Date(row.getValue("date")).toLocaleDateString()}
@@ -449,80 +451,80 @@ export default function ReportingPage() {
     },
     {
       accessorKey: "jobSite",
-      header: "Job Site",
+      header: t('admin.jobSite'),
       cell: ({ row }) => (
         <div>{row.getValue("jobSite")}</div>
       ),
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: t('tableHeaders.status'),
       cell: ({ row }) => getStatusBadge(row.getValue("status")),
     },
-  ], []);
+  ], [t]);
 
   // Memoized column definitions to prevent re-renders
   const contractorCostColumns = useMemo<ColumnDef<{name: string; hours: number; cost: number}>[]>(() => [
     {
       accessorKey: "name",
-      header: "Contractor Name",
+      header: t('admin.contractorName'),
       cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
     },
     {
       accessorKey: "hours",
-      header: "Total Hours",
+      header: t('admin.totalHours'),
       cell: ({ row }) => <div>{(row.getValue("hours") as number).toFixed(1)} hrs</div>,
     },
     {
       accessorKey: "cost",
-      header: "Total Cost",
+      header: t('admin.totalCost'),
       cell: ({ row }) => <div className="font-semibold text-green-600">${(row.getValue("cost") as number).toFixed(2)}</div>,
     },
-  ], []);
+  ], [t]);
 
   const companyCostColumns = useMemo<ColumnDef<{name: string; hours: number; cost: number; contractors: Set<string>}>[]>(() => [
     {
       accessorKey: "name",
-      header: "Company Name",
+      header: t('admin.companyName'),
       cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
     },
     {
       accessorKey: "hours",
-      header: "Total Hours",
+      header: t('admin.totalHours'),
       cell: ({ row }) => <div>{(row.getValue("hours") as number).toFixed(1)} hrs</div>,
     },
     {
       accessorKey: "cost",
-      header: "Total Cost",
+      header: t('admin.totalCost'),
       cell: ({ row }) => <div className="font-semibold text-green-600">${(row.getValue("cost") as number).toFixed(2)}</div>,
     },
     {
       id: "contractors",
-      header: "Contractors",
+      header: t('admin.contractors'),
       cell: ({ row }) => {
         const contractors = row.original.contractors;
-        return <div>{contractors.size} contractor{contractors.size !== 1 ? 's' : ''}</div>;
+        return <div>{contractors.size} {contractors.size !== 1 ? t('admin.contractors').toLowerCase() : t('admin.contractor').toLowerCase()}</div>;
       },
     },
-  ], []);
+  ], [t]);
 
   const jobSiteCostColumns = useMemo<ColumnDef<{name: string; hours: number; cost: number}>[]>(() => [
     {
       accessorKey: "name",
-      header: "Job Site",
+      header: t('admin.jobSite'),
       cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
     },
     {
       accessorKey: "hours",
-      header: "Total Hours",
+      header: t('admin.totalHours'),
       cell: ({ row }) => <div>{(row.getValue("hours") as number).toFixed(1)} hrs</div>,
     },
     {
       accessorKey: "cost",
-      header: "Total Cost",
+      header: t('admin.totalCost'),
       cell: ({ row }) => <div className="font-semibold text-green-600">${(row.getValue("cost") as number).toFixed(2)}</div>,
     },
-  ], []);
+  ], [t]);
 
   const timesheetFilters = useMemo(() => (
     <div className="flex flex-col gap-4 md:flex-row md:items-center">
@@ -622,7 +624,7 @@ export default function ReportingPage() {
               onClick={() => setSelectedContractors([])}
               className="cursor-pointer"
             >
-              All Contractors
+              {t('admin.allContractors')}
             </DropdownMenuItem>
             <div className="max-h-48 overflow-y-auto">
               {filteredContractors.map((contractor) => (
@@ -693,7 +695,7 @@ export default function ReportingPage() {
         </DropdownMenu>
       </div>
     </div>
-  ), [startDate, endDate, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch, selectedJobNames, filteredJobNames, jobNameSearch, statusFilterText]);
+  ), [startDate, endDate, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch, selectedJobNames, filteredJobNames, jobNameSearch, statusFilterText, t]);
 
   const renderMobileCard = useCallback((timesheet: Timesheet, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
     <Card className="mb-4">
@@ -720,19 +722,19 @@ export default function ReportingPage() {
             
             <div className="space-y-1 mb-3">
               <div className="flex justify-between">
-                <span className="text-sm font-medium text-gray-500">Project:</span>
+                <span className="text-sm font-medium text-gray-500">{t('admin.projectName')}:</span>
                 <span className="text-sm">{timesheet.jobName || "N/A"}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium text-gray-500">Date:</span>
+                <span className="text-sm font-medium text-gray-500">{t('tableHeaders.date')}:</span>
                 <span className="text-sm">{new Date(timesheet.date).toLocaleDateString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium text-gray-500">Job Site:</span>
+                <span className="text-sm font-medium text-gray-500">{t('admin.jobSite')}:</span>
                 <span className="text-sm">{timesheet.jobSite}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium text-gray-500">Status:</span>
+                <span className="text-sm font-medium text-gray-500">{t('tableHeaders.status')}:</span>
                 {getStatusBadge(timesheet.status)}
               </div>
             </div>
@@ -740,13 +742,13 @@ export default function ReportingPage() {
         </div>
       </CardContent>
     </Card>
-  ), []);
+  ), [t]);
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          {activeTab === 'hours' ? 'Time Reports' : 'Cost Reports'}
+          {activeTab === 'hours' ? t('admin.timeReports') : t('admin.costReports')}
         </h1>
       </div>
 
@@ -756,7 +758,7 @@ export default function ReportingPage() {
           {/* Filters Section */}
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
             <div className="space-y-1">
-              <div className="text-sm font-medium">Start Date</div>
+              <div className="text-sm font-medium">{t('admin.startDate')}</div>
               <Input
                 type="date"
                 value={startDate}
@@ -766,7 +768,7 @@ export default function ReportingPage() {
             </div>
 
             <div className="space-y-1">
-              <div className="text-sm font-medium">End Date</div>
+              <div className="text-sm font-medium">{t('admin.endDate')}</div>
               <Input
                 type="date"
                 value={endDate}
@@ -776,12 +778,12 @@ export default function ReportingPage() {
             </div>
 
             <div className="space-y-1">
-              <div className="text-sm font-medium">Contractors</div>
+              <div className="text-sm font-medium">{t('admin.contractors')}</div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="w-full md:w-64 justify-between">
                     {selectedContractors.length === 0 
-                      ? "All Contractors" 
+                      ? t('admin.allContractors') 
                       : selectedContractors.length === 1
                         ? selectedContractorNames[0]
                         : `${selectedContractors.length} contractors selected`
@@ -792,7 +794,7 @@ export default function ReportingPage() {
                 <DropdownMenuContent className="w-64">
                   <div className="p-2">
                     <Input
-                      placeholder="Search contractors..."
+                      placeholder={t('admin.searchContractors')}
                       className="w-full"
                       value={contractorSearch}
                       onChange={(e) => {
@@ -813,7 +815,7 @@ export default function ReportingPage() {
                     onClick={() => setSelectedContractors([])}
                     className="cursor-pointer"
                   >
-                    All Contractors
+                    {t('admin.allContractors')}
                   </DropdownMenuItem>
                   <div className="max-h-48 overflow-y-auto">
                     {filteredContractors.map((contractor) => (
@@ -837,7 +839,7 @@ export default function ReportingPage() {
               className="md:ml-auto"
             >
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              {t('admin.exportCSV')}
             </Button>
           </div>
 
@@ -851,7 +853,7 @@ export default function ReportingPage() {
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
-              Time Reports
+              {t('admin.timeReports')}
             </button>
             <button
               onClick={() => setActiveTab('cost')}
@@ -861,7 +863,7 @@ export default function ReportingPage() {
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
-              Cost Reports
+              {t('admin.costReports')}
             </button>
           </div>
 
@@ -873,7 +875,7 @@ export default function ReportingPage() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      Total Approved Hours
+                      {t('admin.totalApprovedHours')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -888,7 +890,7 @@ export default function ReportingPage() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      Approved Entries
+                      {t('admin.approvedEntries')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -904,7 +906,7 @@ export default function ReportingPage() {
               {/* Hours Chart */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Hours Worked Over Time</CardTitle>
+                  <CardTitle>{t('admin.hoursWorkedOverTime')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {timesheetLoading || timesheetFetching ? (
@@ -913,7 +915,7 @@ export default function ReportingPage() {
                     </div>
                   ) : chartData.length === 0 ? (
                     <div className="h-80 flex items-center justify-center text-gray-500">
-                      No approved timesheets available for the selected date range
+                      {t('admin.noApprovedTimesheets')}
                     </div>
                   ) : (
                     <div className="h-80">
@@ -955,13 +957,13 @@ export default function ReportingPage() {
 
               {/* Hours-focused Analytics */}
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Hours Analytics</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.hoursAnalytics')}</h2>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Hours by Contractor Chart */}
                   <Card className="w-full mx-auto h-fit p-2 gap-4 flex flex-col justify-center items-center">
                     <CardHeader>
-                      <CardTitle>Hours Worked by Contractor</CardTitle>
+                      <CardTitle>{t('admin.hoursWorkedByContractor')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       {timesheetLoading || timesheetFetching ? (
@@ -970,7 +972,7 @@ export default function ReportingPage() {
                         </div>
                       ) : contractorHours.length === 0 ? (
                         <div className="h-80 flex items-center justify-center text-gray-500">
-                          No contractor data available
+                          {t('admin.noContractorData')}
                         </div>
                       ) : (
                         <div className="h-80 flex justify-center items-center">
@@ -1015,7 +1017,7 @@ export default function ReportingPage() {
                   {/* Company Hours Chart */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>Hours per Company</CardTitle>
+                      <CardTitle>{t('admin.hoursPerCompany')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       {timesheetLoading || timesheetFetching ? (
@@ -1024,7 +1026,7 @@ export default function ReportingPage() {
                         </div>
                       ) : companyAnalytics.length === 0 ? (
                         <div className="h-80 flex items-center justify-center text-gray-500">
-                          No company data available
+                          {t('admin.noCompanyData')}
                         </div>
                       ) : (
                         <div className="h-80">
@@ -1062,7 +1064,7 @@ export default function ReportingPage() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      Total Project Cost
+                      {t('admin.totalProjectCost')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -1077,7 +1079,7 @@ export default function ReportingPage() {
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      Avg Cost/Hour
+                      {t('admin.avgCostPerHour')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -1097,7 +1099,7 @@ export default function ReportingPage() {
                 {/* Accumulated Spend Over Time */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Accumulated Spend Over Time</CardTitle>
+                    <CardTitle>{t('admin.accumulatedSpendOverTime')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {timesheetLoading || timesheetFetching ? (
@@ -1106,7 +1108,7 @@ export default function ReportingPage() {
                       </div>
                     ) : accumulatedSpendData.length === 0 ? (
                       <div className="h-80 flex items-center justify-center text-gray-500">
-                        No cost data available for the selected date range
+                        {t('admin.noCostData')}
                       </div>
                     ) : (
                       <div className="h-80">
@@ -1149,7 +1151,7 @@ export default function ReportingPage() {
                 {/* Daily Project Spend */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Daily Project Spend</CardTitle>
+                    <CardTitle>{t('admin.dailyProjectSpend')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {timesheetLoading || timesheetFetching ? (
@@ -1158,7 +1160,7 @@ export default function ReportingPage() {
                       </div>
                     ) : dailySpendData.length === 0 ? (
                       <div className="h-80 flex items-center justify-center text-gray-500">
-                        No cost data available for the selected date range
+                        {t('admin.noCostData')}
                       </div>
                     ) : (
                       <div className="h-80">
@@ -1197,13 +1199,13 @@ export default function ReportingPage() {
 
               {/* Cost-focused Analytics */}
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Cost Analytics</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.costAnalytics')}</h2>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Contractor Cost Table */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>Cost per Contractor</CardTitle>
+                      <CardTitle>{t('admin.costPerContractor')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <AdminDataTable
@@ -1213,7 +1215,7 @@ export default function ReportingPage() {
                         isFetching={timesheetFetching}
                         getRowId={(item) => item.name}
                         exportFilename="contractor_costs"
-                        exportHeaders={["Contractor Name", "Total Hours", "Total Cost"]}
+                        exportHeaders={[t('admin.contractorName'), t('admin.totalHours'), t('admin.totalCost')]}
                         getExportData={(item) => [
                           item.name,
                           `${item.hours.toFixed(1)} hrs`,
@@ -1228,7 +1230,7 @@ export default function ReportingPage() {
                   {/* Company Cost Chart */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>Cost per Company</CardTitle>
+                      <CardTitle>{t('admin.costPerCompany')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       {timesheetLoading || timesheetFetching ? (
@@ -1237,7 +1239,7 @@ export default function ReportingPage() {
                         </div>
                       ) : companyAnalytics.length === 0 ? (
                         <div className="h-80 flex items-center justify-center text-gray-500">
-                          No company data available
+                          {t('admin.noCompanyData')}
                         </div>
                       ) : (
                         <div className="h-80">
@@ -1268,7 +1270,7 @@ export default function ReportingPage() {
                 {/* Job Site Cost Analytics */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Cost per Job Site</CardTitle>
+                    <CardTitle>{t('admin.costPerJobSite')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <AdminDataTable
@@ -1278,7 +1280,7 @@ export default function ReportingPage() {
                       isFetching={timesheetFetching}
                       getRowId={(item) => item.name}
                       exportFilename="jobsite_costs"
-                      exportHeaders={["Job Site", "Total Hours", "Total Cost"]}
+                      exportHeaders={[t('admin.jobSite'), t('admin.totalHours'), t('admin.totalCost')]}
                       getExportData={(item) => [
                         item.name,
                         `${item.hours.toFixed(1)} hrs`,
@@ -1298,7 +1300,7 @@ export default function ReportingPage() {
 
       {/* Timesheet Table */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Timesheet Details</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.timesheetDetails')}</h2>
         <AdminDataTable
           data={filteredTimesheets}
           columns={timesheetColumns}
@@ -1306,7 +1308,7 @@ export default function ReportingPage() {
           isFetching={timesheetFetching}
           getRowId={(timesheet) => timesheet.id}
           exportFilename="timesheets"
-          exportHeaders={["Name", "Project Name", "Time Spent", "Company Name", "Date", "Job Site", "Status"]}
+          exportHeaders={[t('admin.name'), t('admin.projectName'), t('admin.timeSpent'), t('admin.companyName'), t('tableHeaders.date'), t('admin.jobSite'), t('tableHeaders.status')]}
           getExportData={(timesheet) => [
             timesheet.employee,
             timesheet.jobName || "N/A",

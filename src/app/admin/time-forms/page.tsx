@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetTimesheetsQuery, useDeleteTimesheetMutation, type Timesheet } from "@/lib/features/timesheets/timesheetsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
@@ -23,6 +24,7 @@ import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 const columnHelper = createColumnHelper<Timesheet>();
 
 export default function TimeFormsPage() {
+  const { t } = useTranslation('common')
   const [selectedTimesheet, setSelectedTimesheet] = useState<Timesheet | null>(null);
   const [filters, setFilters] = useState({
     dateFrom: '',
@@ -122,11 +124,11 @@ export default function TimeFormsPage() {
   const getStatusBadge = useCallback((status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><Check className="w-3 h-3 mr-1" />Approved</Badge>;
+        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><Check className="w-3 h-3 mr-1" />{t('admin.approved')}</Badge>;
       case 'rejected':
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />{t('admin.rejected')}</Badge>;
       default:
-        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />{t('admin.pending')}</Badge>;
     }
   }, []);
 
@@ -139,7 +141,7 @@ export default function TimeFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Employee
+          {t('admin.employee')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -153,7 +155,7 @@ export default function TimeFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Company
+          {t('admin.company')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -167,7 +169,7 @@ export default function TimeFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Date
+          {t('tableHeaders.date')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -192,7 +194,7 @@ export default function TimeFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Job Site
+          {t('admin.jobSite')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -206,7 +208,7 @@ export default function TimeFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Job Description
+          {t('admin.jobDescription')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -220,7 +222,7 @@ export default function TimeFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Status
+          {t('tableHeaders.status')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -234,7 +236,7 @@ export default function TimeFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Hours Worked
+          {t('admin.hoursWorked')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -248,7 +250,7 @@ export default function TimeFormsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Cost
+          {t('admin.cost')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -265,7 +267,7 @@ export default function TimeFormsPage() {
   const filterComponents = useMemo(() => (
     <>
       <div className="space-y-1">
-        <div className="text-sm font-medium">Date From</div>
+        <div className="text-sm font-medium">{t('admin.dateFrom')}</div>
         <Input
           type="date"
           className="w-full md:w-40"
@@ -274,7 +276,7 @@ export default function TimeFormsPage() {
         />
       </div>
       <div className="space-y-1">
-        <div className="text-sm font-medium">Date To</div>
+        <div className="text-sm font-medium">{t('admin.dateTo')}</div>
         <Input
           type="date"
           className="w-full md:w-40"
@@ -283,24 +285,24 @@ export default function TimeFormsPage() {
         />
       </div>
       <div className="space-y-1">
-        <div className="text-sm font-medium">Company</div>
+        <div className="text-sm font-medium">{t('admin.company')}</div>
         <Input
           type="text"
-          placeholder="Filter by company..."
+          placeholder={t('admin.filterByCompany')}
           className="w-full md:w-48"
           value={filters.company}
           onChange={(e) => setFilters(prev => ({ ...prev, company: e.target.value }))}
         />
       </div>
       <div className="space-y-1">
-        <div className="text-sm font-medium">Status</div>
+        <div className="text-sm font-medium">{t('tableHeaders.status')}</div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-full md:w-48 justify-between">
-              {filters.status === 'all' ? 'All Statuses' : 
-               filters.status === 'approved' ? 'Approved Only' :
-               filters.status === 'pending' ? 'Pending Only' :
-               filters.status === 'rejected' ? 'Rejected Only' : 'All Statuses'}
+              {filters.status === 'all' ? t('admin.allStatuses') : 
+               filters.status === 'approved' ? t('admin.approvedOnly') :
+               filters.status === 'pending' ? t('admin.pendingOnly') :
+               filters.status === 'rejected' ? t('admin.rejectedOnly') : t('admin.allStatuses')}
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -309,28 +311,28 @@ export default function TimeFormsPage() {
               onSelect={() => setFilters(prev => ({ ...prev, status: 'all' }))}
               className="cursor-pointer"
             >
-              All Statuses
+              {t('admin.allStatuses')}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onSelect={() => setFilters(prev => ({ ...prev, status: 'approved' }))}
               className="cursor-pointer"
             >
               <Check className="w-4 h-4 mr-2 text-green-600" />
-              Approved Only
+              {t('admin.approvedOnly')}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onSelect={() => setFilters(prev => ({ ...prev, status: 'pending' }))}
               className="cursor-pointer"
             >
               <Clock className="w-4 h-4 mr-2 text-gray-600" />
-              Pending Only
+              {t('admin.pendingOnly')}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onSelect={() => setFilters(prev => ({ ...prev, status: 'rejected' }))}
               className="cursor-pointer"
             >
               <XCircle className="w-4 h-4 mr-2 text-red-600" />
-              Rejected Only
+              {t('admin.rejectedOnly')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -344,7 +346,7 @@ export default function TimeFormsPage() {
             className="w-full md:w-auto"
           >
             <X className="h-4 w-4 mr-2" />
-            Clear Filters
+            {t('admin.clearFilters')}
           </Button>
         </div>
       )}
@@ -389,14 +391,14 @@ export default function TimeFormsPage() {
               </div>
             </div>
             <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-              <div><span className="font-medium">Company:</span> {timesheet.company}</div>
-              <div><span className="font-medium">Date:</span> {new Date(timesheet.date).toLocaleDateString()}</div>
-              <div><span className="font-medium">Job Site:</span> {timesheet.jobSite}</div>
-              <div><span className="font-medium">Description:</span> 
+              <div><span className="font-medium">{t('admin.company')}:</span> {timesheet.company}</div>
+              <div><span className="font-medium">{t('tableHeaders.date')}:</span> {new Date(timesheet.date).toLocaleDateString()}</div>
+              <div><span className="font-medium">{t('admin.jobSite')}:</span> {timesheet.jobSite}</div>
+              <div><span className="font-medium">{t('admin.jobDescription')}:</span> 
                 <span className="block mt-1 text-gray-800 dark:text-gray-200">{timesheet.jobDescription}</span>
               </div>
               <div className="mt-2">
-                <span className="font-medium">Status:</span> {getStatusBadge(timesheet.status)}
+                <span className="font-medium">{t('tableHeaders.status')}:</span> {getStatusBadge(timesheet.status)}
               </div>
               {timesheet.status === 'rejected' && timesheet.rejectionReason && (
                 <div className="mt-1">
@@ -491,9 +493,9 @@ export default function TimeFormsPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Review Time Forms</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{t('admin.timeFormsTitle')}</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">
-          Manage and review timesheet submissions from employees
+          {t('admin.timeFormsDescription')}
         </p>
       </div>
       
@@ -507,7 +509,7 @@ export default function TimeFormsPage() {
         onBulkDelete={handleBulkDelete}
         getRowId={(timesheet) => timesheet.id}
         exportFilename="timesheets"
-        exportHeaders={['Employee', 'Company', 'Date', 'Job Site', 'Job Description', 'Hours Worked', 'Cost']}
+        exportHeaders={[t('admin.employee'), t('admin.company'), t('tableHeaders.date'), t('admin.jobSite'), t('admin.jobDescription'), t('admin.hoursWorked'), t('admin.cost')]}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}
@@ -515,14 +517,14 @@ export default function TimeFormsPage() {
         onSearchChange={setSearchValue}
         customActions={[
           {
-            label: 'Approve',
+            label: t('admin.approve'),
             icon: Check,
             onClick: (timesheet) => handleApprovalAction(timesheet, 'approve'),
             className: 'text-green-600',
             show: (timesheet) => timesheet.status === 'pending'
           },
           {
-            label: 'Reject',
+            label: t('admin.reject'),
             icon: XCircle,
             onClick: (timesheet) => handleApprovalAction(timesheet, 'reject'),
             className: 'text-red-600',
@@ -536,12 +538,12 @@ export default function TimeFormsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {approvalDialog?.action === 'approve' ? 'Approve' : 'Reject'} Timesheet
+              {approvalDialog?.action === 'approve' ? t('admin.approveTimesheet') : t('admin.rejectTimesheet')}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {approvalDialog?.action === 'approve' 
-                ? `Are you sure you want to approve the timesheet for ${approvalDialog?.timesheet?.employee}?`
-                : `Are you sure you want to reject the timesheet for ${approvalDialog?.timesheet?.employee}?`
+                ? t('admin.approveTimesheetConfirm', { name: approvalDialog?.timesheet?.employee })
+                : t('admin.rejectTimesheetConfirm', { name: approvalDialog?.timesheet?.employee })
               }
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -549,11 +551,11 @@ export default function TimeFormsPage() {
           {approvalDialog?.action === 'reject' && (
             <div className="space-y-2">
               <label htmlFor="rejectionReason" className="text-sm font-medium">
-                Rejection Reason *
+                {t('admin.rejectionReason')}
               </label>
               <Textarea
                 id="rejectionReason"
-                placeholder="Please provide a reason for rejection..."
+                placeholder={t('admin.rejectionReasonPlaceholder')}
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 className="min-h-[80px]"
@@ -563,7 +565,7 @@ export default function TimeFormsPage() {
           
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setApprovalDialog(null)}>
-              Cancel
+              {t('common.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={executeApprovalAction}
@@ -573,7 +575,7 @@ export default function TimeFormsPage() {
                 : 'bg-red-600 hover:bg-red-700'
               }
             >
-              {approvalDialog?.action === 'approve' ? 'Approve' : 'Reject'}
+              {approvalDialog?.action === 'approve' ? t('admin.approve') : t('admin.reject')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

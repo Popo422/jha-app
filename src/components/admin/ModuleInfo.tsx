@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,16 +14,18 @@ interface ModuleInfoProps {
 }
 
 export function ModuleInfo({ modulesData, isLoading }: ModuleInfoProps) {
+  const { t } = useTranslation('common');
+  
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Info className="mr-2 h-5 w-5" />
-            Module Information
+{t('admin.moduleInformation')}
           </CardTitle>
           <CardDescription>
-            Current module configuration details
+{t('admin.moduleConfigurationDetails')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -52,17 +55,17 @@ export function ModuleInfo({ modulesData, isLoading }: ModuleInfoProps) {
       <CardHeader>
         <CardTitle className="flex items-center">
           <Info className="mr-2 h-5 w-5" />
-          Module Information
+          {t('admin.moduleInformation')}
         </CardTitle>
         <CardDescription>
-          Current module configuration details
+          {t('admin.moduleConfigurationDetails')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Module Count */}
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-            Enabled Modules
+{t('admin.enabledModules')}
           </span>
           <Badge variant={enabledCount > 0 ? "default" : "secondary"}>
             {enabledCount} of {totalCount}
@@ -73,7 +76,7 @@ export function ModuleInfo({ modulesData, isLoading }: ModuleInfoProps) {
         {enabledCount > 0 && (
           <div>
             <span className="text-sm font-medium text-gray-600 dark:text-gray-400 block mb-2">
-              Active Modules
+{t('admin.activeModules')}
             </span>
             <div className="flex flex-wrap gap-2">
               {modulesData?.availableModules
@@ -92,12 +95,12 @@ export function ModuleInfo({ modulesData, isLoading }: ModuleInfoProps) {
           <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
               <Calendar className="mr-2 h-4 w-4" />
-              <span className="font-medium mr-2">Last Updated:</span>
+              <span className="font-medium mr-2">{t('admin.lastUpdated')}:</span>
               <span>{format(new Date(lastUpdated.at), 'MMM d, yyyy at h:mm a')}</span>
             </div>
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
               <User className="mr-2 h-4 w-4" />
-              <span className="font-medium mr-2">Updated By:</span>
+              <span className="font-medium mr-2">{t('admin.updatedBy')}:</span>
               <span>{lastUpdated.by}</span>
             </div>
           </div>
@@ -105,7 +108,7 @@ export function ModuleInfo({ modulesData, isLoading }: ModuleInfoProps) {
           <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center text-sm text-gray-500 dark:text-gray-500">
               <Clock className="mr-2 h-4 w-4" />
-              <span>No modification history available</span>
+              <span>{t('admin.noModificationHistory')}</span>
             </div>
           </div>
         )}
@@ -114,7 +117,7 @@ export function ModuleInfo({ modulesData, isLoading }: ModuleInfoProps) {
         {enabledCount === 0 && (
           <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
             <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              ⚠️ No modules are currently enabled. Contractors will not have access to any forms.
+{t('admin.noModulesEnabledWarning')}
             </p>
           </div>
         )}

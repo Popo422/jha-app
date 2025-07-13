@@ -6,6 +6,7 @@ import AuthProvider from "@/providers/AuthProvider";
 import ThemeProvider from "@/components/ThemeProvider";
 import ThemeInitializer from "@/components/ThemeInitializer";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import I18nProvider from "@/providers/I18nProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,16 +33,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ReduxProvider>
-          <ThemeInitializer />
-          <AuthProvider>
-            <ThemeProvider>
-              <ProtectedRoute>
-                {children}
-              </ProtectedRoute>
-            </ThemeProvider>
-          </AuthProvider>
-        </ReduxProvider>
+        <I18nProvider>
+          <ReduxProvider>
+            <ThemeInitializer />
+            <AuthProvider>
+              <ThemeProvider>
+                <ProtectedRoute>
+                  {children}
+                </ProtectedRoute>
+              </ThemeProvider>
+            </AuthProvider>
+          </ReduxProvider>
+        </I18nProvider>
       </body>
     </html>
   );

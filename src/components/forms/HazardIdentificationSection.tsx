@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,13 +38,15 @@ interface HazardIdentificationSectionProps {
 }
 
 const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentificationSectionProps) => {
+  const { t } = useTranslation('common');
+  
   const hazardItems = [
-    { key: "slipFallTrips", label: "Slip/Fall/Trips" },
+    { key: "slipFallTrips", label: t('safetyItems.slipFallTrips') },
     {
       key: "pinchPoint",
-      label: "Pinch point, caught between (vehicle traffic near or in work zone, active heavy machinery, the movement of large heavy equipment etc ..)",
+      label: t('safetyItems.pinchPoint'),
     },
-    { key: "struckBy", label: "Struck By Hazards" },
+    { key: "struckBy", label: t('safetyItems.struckByHazards') },
     { key: "electrical", label: "General Electrical Hazards" },
     { key: "shockArcFlash", label: "Shock/ Arc Flash" },
     { key: "cuts", label: "Cuts" },
@@ -60,8 +63,8 @@ const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentific
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-md md:text-xl">Work Hazard Identification</CardTitle>
-        <p className="text-sm text-muted-foreground">Are the following hazards present on your Job site?</p>
+        <CardTitle className="text-md md:text-xl">{t('safety.workHazardIdentification')}</CardTitle>
+        <p className="text-sm text-muted-foreground">{t('safety.workHazardDescription')}</p>
       </CardHeader>
       <CardContent className="space-y-4">
         {hazardItems.map((hazard) => (
@@ -88,7 +91,7 @@ const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentific
                   }
                   className="w-4 h-4"
                 />
-                <Label htmlFor={`${hazard.key}-yes`}>Yes</Label>
+                <Label htmlFor={`${hazard.key}-yes`}>{t('common.yes')}</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <input
@@ -110,7 +113,7 @@ const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentific
                   }
                   className="w-4 h-4"
                 />
-                <Label htmlFor={`${hazard.key}-no`}>No</Label>
+                <Label htmlFor={`${hazard.key}-no`}>{t('common.no')}</Label>
               </div>
             </div>
 
@@ -119,11 +122,11 @@ const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentific
                 <div className="flex items-center space-x-2 mb-2">
                   <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
                   <span className="text-xs text-orange-700 dark:text-orange-300 font-medium">
-                    Follow-up Question
+                    {t('formFields.followUpQuestion')}
                   </span>
                 </div>
                 <Label className="text-sm font-medium">
-                  Have you taken action to eliminate this safety hazard?
+                  {t('safety.eliminateHazard')}
                 </Label>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
@@ -146,7 +149,7 @@ const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentific
                       }
                       className="w-4 h-4"
                     />
-                    <Label htmlFor={`${hazard.key}Action-yes`}>Yes</Label>
+                    <Label htmlFor={`${hazard.key}Action-yes`}>{t('common.yes')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
@@ -168,7 +171,7 @@ const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentific
                       }
                       className="w-4 h-4"
                     />
-                    <Label htmlFor={`${hazard.key}Action-no`}>No</Label>
+                    <Label htmlFor={`${hazard.key}Action-no`}>{t('common.no')}</Label>
                   </div>
                 </div>
               </div>
@@ -177,7 +180,7 @@ const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentific
         ))}
 
         <div className="space-y-2">
-          <Label htmlFor="hazardDetails">Details:</Label>
+          <Label htmlFor="hazardDetails">{t('formFields.details')}</Label>
           <Textarea
             id="hazardDetails"
             name="hazards.details"

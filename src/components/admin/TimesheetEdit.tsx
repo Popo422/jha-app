@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,7 @@ interface TimesheetEditProps {
 }
 
 export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps) {
+  const { t } = useTranslation('common');
   const [formData, setFormData] = useState({
     date: timesheet.date,
     employee: timesheet.employee,
@@ -56,14 +58,14 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
     try {
       // Validate required fields
       if (!formData.date || !formData.employee || !formData.company || !formData.jobSite || !formData.jobName || !formData.jobDescription || !formData.timeSpent) {
-        showToast('All fields are required', 'error');
+        showToast(t('common.allFieldsRequired'), 'error');
         return;
       }
 
       // Validate time spent is a positive number
       const timeSpentNumber = parseFloat(formData.timeSpent);
       if (isNaN(timeSpentNumber) || timeSpentNumber < 0) {
-        showToast('Time spent must be a valid positive number', 'error');
+        showToast(t('common.timeSpentValidNumber'), 'error');
         return;
       }
 
@@ -80,12 +82,12 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
       }).unwrap();
 
       if (result.success) {
-        showToast('Timesheet updated successfully!', 'success');
+        showToast(t('common.timesheetUpdatedSuccessfully'), 'success');
       } else {
-        showToast(result.error || 'Failed to update timesheet', 'error');
+        showToast(result.error || t('common.failedToUpdateTimesheet'), 'error');
       }
     } catch (error: any) {
-      showToast(error?.data?.error || 'Failed to update timesheet', 'error');
+      showToast(error?.data?.error || t('common.failedToUpdateTimesheet'), 'error');
     }
   }, [formData, timesheet.id, updateTimesheet, showToast]);
 
@@ -95,17 +97,17 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
         <Button variant="ghost" onClick={onBack} className="p-2">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-2xl font-bold">Edit Timesheet</h2>
+        <h2 className="text-2xl font-bold">{t('admin.editTimesheet')}</h2>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Timesheet Details</CardTitle>
+          <CardTitle>{t('admin.timesheetDetails')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="date">Date:</Label>
+              <Label htmlFor="date">{t('formFields.date')}</Label>
               <Input
                 id="date"
                 name="date"
@@ -119,48 +121,48 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
               <ContractorSelect
                 id="employee"
                 name="employee"
-                label="Employee:"
+                label={`${t('formFields.employee')}`}
                 value={formData.employee || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, employee: value }))}
-                placeholder="Employee name"
+                placeholder={t('formFields.employeeName')}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="company">Company:</Label>
+              <Label htmlFor="company">{t('formFields.company')}</Label>
               <Input
                 id="company"
                 name="company"
                 value={formData.company || ''}
                 onChange={handleInputChange}
-                placeholder="Client company name"
+                placeholder={t('formFields.clientCompanyName')}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="jobSite">Job Site:</Label>
+              <Label htmlFor="jobSite">{t('formFields.jobSite')}</Label>
               <Input
                 id="jobSite"
                 name="jobSite"
                 value={formData.jobSite || ''}
                 onChange={handleInputChange}
-                placeholder="Company location"
+                placeholder={t('formFields.companyLocation')}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="jobName">Job Name:</Label>
+              <Label htmlFor="jobName">{t('formFields.jobName')}</Label>
               <Input
                 id="jobName"
                 name="jobName"
                 value={formData.jobName || ''}
                 onChange={handleInputChange}
-                placeholder="Name or title of the job"
+                placeholder={t('formFields.jobNamePlaceholder')}
                 required
               />
             </div>
             <div className="space-y-2 md:col-span-1">
-              <Label htmlFor="timeSpent">Time Spent (hours):</Label>
+              <Label htmlFor="timeSpent">{t('formFields.timeSpentHours')}</Label>
               <Input
                 id="timeSpent"
                 name="timeSpent"
@@ -169,20 +171,20 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 min="0"
                 value={formData.timeSpent || ''}
                 onChange={handleInputChange}
-                placeholder="Hours spent on site"
+                placeholder={t('formFields.hoursSpentOnSite')}
                 required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="jobDescription">Job Description:</Label>
+            <Label htmlFor="jobDescription">{t('formFields.jobDescription')}</Label>
             <Textarea
               id="jobDescription"
               name="jobDescription"
               value={formData.jobDescription || ''}
               onChange={handleInputChange}
-              placeholder="Information about the job"
+              placeholder={t('formFields.jobDescriptionPlaceholder')}
               className="min-h-[100px]"
             
             />
@@ -190,10 +192,10 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
 
           <div className="flex gap-3">
             <Button variant="outline" onClick={onBack}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? 'Saving...' : 'Save Changes'}
+              {isLoading ? t('common.saving') : t('common.saveChanges')}
             </Button>
           </div>
         </CardContent>

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useGetContractorsQuery } from '@/lib/features/contractors/contractorsApi'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,16 +22,21 @@ interface ContractorSelectProps {
 }
 
 export default function ContractorSelect({
-  label = "Completed by:",
+  label,
   value,
   onChange,
   required = false,
   disabled = false,
-  placeholder = "Select or type contractor name...",
+  placeholder,
   className,
   id,
   name
 }: ContractorSelectProps) {
+  const { t } = useTranslation('common')
+  
+  // Use translations as defaults if not provided
+  const finalLabel = label || t('formFields.completedBy')
+  const finalPlaceholder = placeholder || t('placeholders.selectContractor')
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [inputValue, setInputValue] = useState(value)
@@ -112,9 +118,9 @@ export default function ContractorSelect({
 
   return (
     <div className={cn("relative", className)}>
-      {label && (
+      {finalLabel && (
         <Label htmlFor={id} className="block text-sm font-medium mb-2">
-          {label}
+          {finalLabel}
         </Label>
       )}
       
@@ -127,7 +133,7 @@ export default function ContractorSelect({
             value={inputValue}
             onChange={handleInputChange}
             onFocus={handleInputFocus}
-            placeholder={placeholder}
+            placeholder={finalPlaceholder}
             required={required}
             disabled={disabled}
             className="pr-20"
@@ -164,7 +170,7 @@ export default function ContractorSelect({
         {isOpen && (
           <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
             {isLoading ? (
-              <div className="p-2 text-sm text-gray-500">Loading contractors...</div>
+              <div className="p-2 text-sm text-gray-500">{t('status.loadingContractors')}</div>
             ) : filteredContractors.length > 0 ? (
               filteredContractors.map((contractor) => {
                 const fullName = `${contractor.firstName} ${contractor.lastName}`
@@ -191,7 +197,7 @@ export default function ContractorSelect({
               })
             ) : (
               <div className="p-2 text-sm text-gray-500">
-                {searchTerm ? 'No contractors found' : 'Start typing to search contractors'}
+                {searchTerm ? t('status.noContractorsFound') : t('placeholders.searchContractors')}
               </div>
             )}
           </div>

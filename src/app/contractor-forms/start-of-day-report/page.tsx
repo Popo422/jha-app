@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from 'react-i18next';
 import { useSubmitFormMutation } from "@/lib/features/submissions/submissionsApi";
 import { useAppSelector } from "@/lib/hooks";
 import Header from "@/components/Header";
@@ -34,6 +35,7 @@ interface StartOfDayReportFormData {
 }
 
 export default function StartOfDayReportPage() {
+  const { t } = useTranslation('common');
   const { contractor } = useAppSelector((state) => state.auth);
   
   const [formData, setFormData] = useState<StartOfDayReportFormData>({
@@ -165,15 +167,15 @@ export default function StartOfDayReportPage() {
             <Button variant="ghost" asChild className="mb-4">
               <Link href="/contractor-forms">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Forms
+                {t('forms.backToForms')}
               </Link>
             </Button>
-            <h1 className="text-3xl font-bold text-foreground">Start of Day Report</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t('forms.startOfDayReport')}</h1>
           </div>
           
           <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="text-foreground">Report Details</CardTitle>
+              <CardTitle className="text-foreground">{t('forms.reportDetails')}</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -189,7 +191,7 @@ export default function StartOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="date">Date:</Label>
+                    <Label htmlFor="date">{t('formFields.date')}</Label>
                     <Input
                       id="date"
                       name="date"
@@ -201,7 +203,7 @@ export default function StartOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="supervisor">Supervisor:</Label>
+                    <Label htmlFor="supervisor">{t('formFields.supervisor')}</Label>
                     <Input
                       id="supervisor"
                       name="supervisor"
@@ -212,7 +214,7 @@ export default function StartOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="jobSite">Job Site:</Label>
+                    <Label htmlFor="jobSite">{t('formFields.jobSite')}</Label>
                     <Input
                       id="jobSite"
                       name="jobSite"
@@ -222,18 +224,18 @@ export default function StartOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="jobName">Job Name:</Label>
+                    <Label htmlFor="jobName">{t('formFields.jobName')}</Label>
                     <Input
                       id="jobName"
                       name="jobName"
                       value={formData.jobName}
                       onChange={handleInputChange}
-                      placeholder="Name or title of the job"
+                      placeholder={t('placeholders.jobNamePlaceholder')}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="company">Company:</Label>
+                    <Label htmlFor="company">{t('formFields.company')}</Label>
                     <Input
                       id="company"
                       name="company"
@@ -243,7 +245,7 @@ export default function StartOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="timeClocked">Time Clocked In:</Label>
+                    <Label htmlFor="timeClocked">{t('formFields.timeClockedIn')}</Label>
                     <Input
                       id="timeClocked"
                       name="timeClocked"
@@ -259,7 +261,7 @@ export default function StartOfDayReportPage() {
                 {/* Instructions */}
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    <strong>Instructions:</strong> {`Any injuries or COVID-19 related symptoms must be reported to your supervisor immediately. Please Answer "Yes" or "No"`}
+                    <strong>{t('forms.instructions')}</strong> {`Any injuries or COVID-19 related symptoms must be reported to your supervisor immediately. Please Answer "${t('adminEdit.yes')}" or "${t('adminEdit.no')}"`}
                   </p>
                 </div>
 
@@ -267,14 +269,14 @@ export default function StartOfDayReportPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-md md:text-xl">
-                      Health and Safety Check
+                      {t('adminEdit.healthAndSafetyCheck')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Free from injury */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        Are you free from injury when reporting to work?
+                        {t('adminEdit.freeFromInjuryReporting')}?
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -287,7 +289,7 @@ export default function StartOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="injury-yes">Yes</Label>
+                          <Label htmlFor="injury-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -299,7 +301,7 @@ export default function StartOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="injury-no">No</Label>
+                          <Label htmlFor="injury-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -307,7 +309,7 @@ export default function StartOfDayReportPage() {
                     {/* Free from fever */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        Are you free from fever when reporting to work?
+                        {t('adminEdit.freeFromFeverReporting')}?
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -320,7 +322,7 @@ export default function StartOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="fever-yes">Yes</Label>
+                          <Label htmlFor="fever-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -332,7 +334,7 @@ export default function StartOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="fever-no">No</Label>
+                          <Label htmlFor="fever-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -340,7 +342,7 @@ export default function StartOfDayReportPage() {
                     {/* Free from COVID symptoms */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        Are you free of COVID-19 symptoms when reporting to work? (Symptoms include fever, sore throat, headache, body aches, fatigue, runny nose or coughing.)
+                        {t('adminEdit.freeFromCovidSymptomsReporting')}?
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -353,7 +355,7 @@ export default function StartOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="covid-symptoms-yes">Yes</Label>
+                          <Label htmlFor="covid-symptoms-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -365,7 +367,7 @@ export default function StartOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="covid-symptoms-no">No</Label>
+                          <Label htmlFor="covid-symptoms-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -373,7 +375,7 @@ export default function StartOfDayReportPage() {
                     {/* Free from direct exposure */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        Are you free from direct exposure to a positive COVID-19 or suspected positive case?
+                        {t('adminEdit.freeFromDirectCovidExposure')}?
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -386,7 +388,7 @@ export default function StartOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="exposure-yes">Yes</Label>
+                          <Label htmlFor="exposure-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -398,7 +400,7 @@ export default function StartOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="exposure-no">No</Label>
+                          <Label htmlFor="exposure-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -406,7 +408,7 @@ export default function StartOfDayReportPage() {
                     {/* Travel question */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        {`Have you traveled out of the country, visited a "hotspot state" or went on a cruise in the last 14 days?`}
+                        {t('adminEdit.traveledOutOfCountryHotspot')}?
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -419,7 +421,7 @@ export default function StartOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="travel-yes">Yes</Label>
+                          <Label htmlFor="travel-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -431,7 +433,7 @@ export default function StartOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="travel-no">No</Label>
+                          <Label htmlFor="travel-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                       
@@ -441,18 +443,18 @@ export default function StartOfDayReportPage() {
                           <div className="flex items-center space-x-2 mb-2">
                             <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
                             <span className="text-xs text-orange-700 dark:text-orange-300 font-medium">
-                              Follow-up Question
+                              {t('formFields.followUpQuestion')}
                             </span>
                           </div>
                           <Label htmlFor="travelExplanation" className="text-sm font-medium">
-                            Explanation:
+                            {t('formFields.explanation')}:
                           </Label>
                           <Textarea
                             id="travelExplanation"
                             name="travelExplanation"
                             value={formData.travelExplanation}
                             onChange={handleInputChange}
-                            placeholder="Please provide details about your travel"
+                            placeholder={t('adminEdit.travelDetailsPlaceholder')}
                             rows={3}
                             className="w-full"
                           />
@@ -463,7 +465,7 @@ export default function StartOfDayReportPage() {
                     {/* Physical distancing */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        Is everyone on site practicing physical distancing and have access to proper facial secretion suppressor and sanitary agents?
+                        {t('adminEdit.physicalDistancingAndSanitaryAgents')}?
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -476,7 +478,7 @@ export default function StartOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="distancing-yes">Yes</Label>
+                          <Label htmlFor="distancing-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -488,7 +490,7 @@ export default function StartOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="distancing-no">No</Label>
+                          <Label htmlFor="distancing-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -498,11 +500,11 @@ export default function StartOfDayReportPage() {
                 {/* Signature Section */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-md md:text-xl">Digital Signature</CardTitle>
+                    <CardTitle className="text-md md:text-xl">{t('forms.digitalSignature')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Please sign below to confirm the accuracy of this report:</Label>
+                      <Label>{t('safetyQuestions.signaturePrompt')}:</Label>
                       <div className="border border-gray-300 rounded-lg p-2 bg-white">
                         <SignatureCanvas
                           ref={signatureRef}
@@ -522,11 +524,11 @@ export default function StartOfDayReportPage() {
                           onClick={handleSignatureClear}
                           className="text-sm"
                         >
-                          Clear Signature
+                          {t('forms.clearSignature')}
                         </Button>
                       </div>
                       {!formData.signature && (
-                        <p className="text-sm text-red-600">Signature is required to submit the form.</p>
+                        <p className="text-sm text-red-600">{t('safetyQuestions.signatureRequired')}.</p>
                       )}
                     </div>
                   </CardContent>
@@ -534,7 +536,7 @@ export default function StartOfDayReportPage() {
 
                 {isSuccess && (
                   <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800">
-                    Start of Day Report submitted successfully!
+                    {t('forms.startOfDayReport')} {t('forms.submitSuccess')}
                   </div>
                 )}
 
@@ -542,12 +544,12 @@ export default function StartOfDayReportPage() {
                   <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800">
                     {error && 'data' in error && typeof error.data === 'object' && error.data && 'error' in error.data 
                       ? (error.data as any).error 
-                      : 'Submission failed'}
+                      : t('forms.submitFailed')}
                   </div>
                 )}
 
                 <Button type="submit" disabled={isLoading || !formData.signature} className="w-full rounded-none">
-                  {isLoading ? 'Submitting...' : 'Submit'}
+                  {isLoading ? t('forms.submitting') : t('common.submit')}
                 </Button>
               </form>
             </CardContent>

@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslation } from 'react-i18next'
 import { useAppSelector } from '@/lib/hooks'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,7 @@ interface AdminHeaderProps {
 }
 
 export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
+  const { t } = useTranslation('common')
   const { admin } = useAppSelector((state) => state.auth)
   
   const adminName = admin?.name || 'Admin User'
@@ -35,7 +37,7 @@ export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
           >
             <Menu className="h-5 w-5 text-gray-600 dark:text-gray-400" />
           </Button>
-          <h1 className="text-xl lg:text-2xl font-semibold text-gray-900 dark:text-gray-100">Admin Portal</h1>
+          <h1 className="text-xl lg:text-2xl font-semibold text-gray-900 dark:text-gray-100">{t('admin.adminPortal')}</h1>
         </div>
 
         {/* Right side - User Panel */}

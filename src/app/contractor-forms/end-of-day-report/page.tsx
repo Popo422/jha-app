@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from 'react-i18next';
 import { useSubmitFormMutation } from "@/lib/features/submissions/submissionsApi";
 import { useAppSelector } from "@/lib/hooks";
 import Header from "@/components/Header";
@@ -36,6 +37,7 @@ interface EndOfDayReportFormData {
 }
 
 export default function EndOfDayReportPage() {
+  const { t } = useTranslation('common');
   const { contractor } = useAppSelector((state) => state.auth);
   
   const [formData, setFormData] = useState<EndOfDayReportFormData>({
@@ -185,15 +187,15 @@ export default function EndOfDayReportPage() {
             <Button variant="ghost" asChild className="mb-4">
               <Link href="/contractor-forms">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Forms
+                {t('forms.backToForms')}
               </Link>
             </Button>
-            <h1 className="text-3xl font-bold text-foreground">End of Day Report</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t('forms.endOfDayReport')}</h1>
           </div>
 
           <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="text-foreground">Report Details</CardTitle>
+              <CardTitle className="text-foreground">{t('forms.reportDetails')}</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -209,7 +211,7 @@ export default function EndOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="date">Date:</Label>
+                    <Label htmlFor="date">{t('formFields.date')}</Label>
                     <Input
                       id="date"
                       name="date"
@@ -221,7 +223,7 @@ export default function EndOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="supervisor">Supervisor:</Label>
+                    <Label htmlFor="supervisor">{t('formFields.supervisor')}</Label>
                     <Input
                       id="supervisor"
                       name="supervisor"
@@ -232,7 +234,7 @@ export default function EndOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="jobSite">Job Site:</Label>
+                    <Label htmlFor="jobSite">{t('formFields.jobSite')}</Label>
                     <Input
                       id="jobSite"
                       name="jobSite"
@@ -242,18 +244,18 @@ export default function EndOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="jobName">Job Name:</Label>
+                    <Label htmlFor="jobName">{t('formFields.jobName')}</Label>
                     <Input
                       id="jobName"
                       name="jobName"
                       value={formData.jobName}
                       onChange={handleInputChange}
-                      placeholder="Name or title of the job"
+                      placeholder={t('placeholders.jobNamePlaceholder')}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="company">Company:</Label>
+                    <Label htmlFor="company">{t('formFields.company')}</Label>
                     <Input
                       id="company"
                       name="company"
@@ -263,7 +265,7 @@ export default function EndOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="timeClocked">Time Clocked Out:</Label>
+                    <Label htmlFor="timeClocked">{t('adminEdit.timeClockedOut')}</Label>
                     <Input
                       id="timeClocked"
                       name="timeClocked"
@@ -279,7 +281,7 @@ export default function EndOfDayReportPage() {
                 {/* Instructions */}
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    <strong>Instructions:</strong> {`Any injuries or COVID-19 related symptoms must be reported to your supervisor immediately. Please Answer "Yes" or "No"`}
+                    <strong>{t('forms.instructions')}</strong> {`Any injuries or COVID-19 related symptoms must be reported to your supervisor immediately. Please Answer "${t('adminEdit.yes')}" or "${t('adminEdit.no')}"`}
                   </p>
                 </div>
 
@@ -287,14 +289,14 @@ export default function EndOfDayReportPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-md md:text-xl">
-                      End of Day Health and Safety Check
+                      {t('adminEdit.endOfDayHealthSafetyCheck')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Free from injury */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        Are you leaving the job site free from any injuries?
+                        {t('adminEdit.leavingJobSiteFreeFromInjuries')}
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -307,7 +309,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="injury-yes">Yes</Label>
+                          <Label htmlFor="injury-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -319,7 +321,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="injury-no">No</Label>
+                          <Label htmlFor="injury-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -327,7 +329,7 @@ export default function EndOfDayReportPage() {
                     {/* Completed JHA */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        Did you complete the JHA form today?
+                        {t('adminEdit.completedJHAToday')}
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -340,7 +342,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="jha-yes">Yes</Label>
+                          <Label htmlFor="jha-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -352,7 +354,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="jha-no">No</Label>
+                          <Label htmlFor="jha-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -360,7 +362,7 @@ export default function EndOfDayReportPage() {
                     {/* Free from fever */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        Are you free from fever when reporting to work?
+                        {t('adminEdit.freeFromFeverReporting')}
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -373,7 +375,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="fever-yes">Yes</Label>
+                          <Label htmlFor="fever-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -385,7 +387,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="fever-no">No</Label>
+                          <Label htmlFor="fever-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -393,7 +395,7 @@ export default function EndOfDayReportPage() {
                     {/* Free from COVID symptoms */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        Are you free of COVID-19 symptoms when reporting to work? (Symptoms include fever, sore throat, headache, body aches, fatigue, runny nose or coughing.)
+                        {t('adminEdit.freeFromCovidSymptomsReporting')}
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -406,7 +408,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="covid-symptoms-yes">Yes</Label>
+                          <Label htmlFor="covid-symptoms-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -418,7 +420,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="covid-symptoms-no">No</Label>
+                          <Label htmlFor="covid-symptoms-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -426,7 +428,7 @@ export default function EndOfDayReportPage() {
                     {/* Free from direct exposure */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        Are you free from direct exposure to a positive COVID-19 or suspected positive case?
+                        {t('adminEdit.freeFromDirectCovidExposure')}
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -439,7 +441,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="exposure-yes">Yes</Label>
+                          <Label htmlFor="exposure-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -451,7 +453,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="exposure-no">No</Label>
+                          <Label htmlFor="exposure-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -459,7 +461,7 @@ export default function EndOfDayReportPage() {
                     {/* Travel question */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        {`Have you traveled out of the country, visited a "hotspot state" or went on a cruise in the last 14 days?`}
+                        {t('adminEdit.traveledOutOfCountryHotspot')}
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -472,7 +474,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="travel-yes">Yes</Label>
+                          <Label htmlFor="travel-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -484,7 +486,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="travel-no">No</Label>
+                          <Label htmlFor="travel-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -492,7 +494,7 @@ export default function EndOfDayReportPage() {
                     {/* Physical distancing */}
                     <div className="space-y-2">
                       <Label className="font-medium">
-                        Is everyone on site practicing physical distancing and have access to proper facial secretion suppressor and sanitary agents?
+                        {t('adminEdit.physicalDistancingAndSanitaryAgents')}
                       </Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-2">
@@ -505,7 +507,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="distancing-yes">Yes</Label>
+                          <Label htmlFor="distancing-yes">{t('adminEdit.yes')}</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <input
@@ -517,7 +519,7 @@ export default function EndOfDayReportPage() {
                             onChange={handleInputChange}
                             className="w-4 h-4"
                           />
-                          <Label htmlFor="distancing-no">No</Label>
+                          <Label htmlFor="distancing-no">{t('adminEdit.no')}</Label>
                         </div>
                       </div>
                     </div>
@@ -527,11 +529,11 @@ export default function EndOfDayReportPage() {
                 {/* File Upload Section */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-md md:text-xl">File Attachments</CardTitle>
+                    <CardTitle className="text-md md:text-xl">{t('adminEdit.fileAttachments')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="attachments">Attach a file:</Label>
+                      <Label htmlFor="attachments">{t('adminEdit.attachedFiles')}:</Label>
                       <input
                         type="file"
                         id="attachments"
@@ -542,7 +544,7 @@ export default function EndOfDayReportPage() {
                       />
                       {formData.attachments.length > 0 && (
                         <div className="mt-2">
-                          <p className="text-sm text-gray-600">Selected files:</p>
+                          <p className="text-sm text-gray-600">{t('adminEdit.attachedFiles')}:</p>
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
                             {formData.attachments.map((file, index) => (
                               <AttachmentPreview
@@ -562,11 +564,11 @@ export default function EndOfDayReportPage() {
                 {/* Signature Section */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-md md:text-xl">Digital Signature</CardTitle>
+                    <CardTitle className="text-md md:text-xl">{t('forms.digitalSignature')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Please sign below to confirm the accuracy of this report:</Label>
+                      <Label>{t('adminEdit.employeeSignature')}:</Label>
                       <div className="border border-gray-300 rounded-lg p-2 bg-white">
                         <SignatureCanvas
                           ref={signatureRef}
@@ -586,11 +588,11 @@ export default function EndOfDayReportPage() {
                           onClick={handleSignatureClear}
                           className="text-sm"
                         >
-                          Clear Signature
+                          {t('forms.clearSignature')}
                         </Button>
                       </div>
                       {!formData.signature && (
-                        <p className="text-sm text-red-600">Signature is required to submit the form.</p>
+                        <p className="text-sm text-red-600">{t('adminEdit.employeeSignature')} is required.</p>
                       )}
                     </div>
                   </CardContent>
@@ -598,7 +600,7 @@ export default function EndOfDayReportPage() {
 
                 {isSuccess && (
                   <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800">
-                    End of Day Report submitted successfully!
+                    {t('forms.endOfDayReport')} {t('forms.submitSuccess')}
                   </div>
                 )}
 
@@ -606,12 +608,12 @@ export default function EndOfDayReportPage() {
                   <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800">
                     {error && 'data' in error && typeof error.data === 'object' && error.data && 'error' in error.data 
                       ? (error.data as any).error 
-                      : 'Submission failed'}
+                      : t('forms.submitFailed')}
                   </div>
                 )}
 
                 <Button type="submit" disabled={isLoading || !formData.signature} className="w-full rounded-none">
-                  {isLoading ? 'Submitting...' : 'Submit'}
+                  {isLoading ? t('forms.submitting') : t('common.submit')}
                 </Button>
               </form>
             </CardContent>

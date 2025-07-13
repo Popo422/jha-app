@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +38,7 @@ interface JobHazardAnalysisEditProps {
 }
 
 export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardAnalysisEditProps) {
+  const { t } = useTranslation('common');
   const [formData, setFormData] = useState(submission.formData);
   const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
   const [updateSubmission, { isLoading }] = useUpdateSubmissionMutation();
@@ -133,12 +135,12 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
           ...prev,
           uploadedFiles: (prev.uploadedFiles || []).filter((file: any) => file.url !== fileUrl)
         }));
-        showToast('Attachment deleted successfully!', 'success');
+        showToast(t('common.attachmentDeletedSuccessfully'), 'success');
       } else {
-        showToast(result.error || 'Failed to delete attachment', 'error');
+        showToast(result.error || t('common.failedToDeleteAttachment'), 'error');
       }
     } catch (error: any) {
-      showToast(error?.data?.error || 'Failed to delete attachment', 'error');
+      showToast(error?.data?.error || t('common.failedToDeleteAttachment'), 'error');
     } finally {
       setDeletingFiles(prev => {
         const newSet = new Set(prev);
@@ -162,12 +164,12 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
       }).unwrap();
 
       if (result.success) {
-        showToast('Changes saved successfully!', 'success');
+        showToast(t('common.changesSavedSuccessfully'), 'success');
       } else {
-        showToast(result.error || 'Failed to save changes', 'error');
+        showToast(result.error || t('common.failedToSaveChanges'), 'error');
       }
     } catch (error: any) {
-      showToast(error?.data?.error || 'Failed to save changes', 'error');
+      showToast(error?.data?.error || t('common.failedToSaveChanges'), 'error');
     }
   }, [formData, submission.id, submission.jobSite, updateSubmission, showToast]);
 
@@ -177,12 +179,12 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
         <Button variant="ghost" onClick={onBack} className="p-2">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-2xl font-bold">Edit Job Hazard Analysis</h2>
+        <h2 className="text-2xl font-bold">{t('common.edit')} {t('forms.jobHazardAnalysis')}</h2>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Report Details</CardTitle>
+          <CardTitle>{t('forms.reportDetails')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Basic Information */}
@@ -196,7 +198,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="date">Date:</Label>
+              <Label htmlFor="date">{t('formFields.date')}</Label>
               <Input
                 id="date"
                 name="date"
@@ -206,7 +208,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="supervisor">Supervisor:</Label>
+              <Label htmlFor="supervisor">{t('formFields.supervisor')}</Label>
               <Input
                 id="supervisor"
                 name="supervisor"
@@ -215,7 +217,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="company">Company:</Label>
+              <Label htmlFor="company">{t('formFields.company')}</Label>
               <Input
                 id="company"
                 name="company"
@@ -224,7 +226,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="jobName">Job Name:</Label>
+              <Label htmlFor="jobName">{t('formFields.jobName')}</Label>
               <Input
                 id="jobName"
                 name="jobName"
@@ -248,7 +250,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
           {/* Tool Inspection Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Tool Inspection</CardTitle>
+              <CardTitle>{t('safety.toolInspection')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -264,7 +266,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="powerToolsGFCI-yes">Yes</Label>
+                    <Label htmlFor="powerToolsGFCI-yes">{t('common.yes')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
@@ -276,7 +278,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="powerToolsGFCI-no">No</Label>
+                    <Label htmlFor="powerToolsGFCI-no">{t('common.no')}</Label>
                   </div>
                 </div>
               </div>
@@ -294,7 +296,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="usingLadder-yes">Yes</Label>
+                    <Label htmlFor="usingLadder-yes">{t('common.yes')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <input
@@ -306,7 +308,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                       onChange={handleInputChange}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor="usingLadder-no">No</Label>
+                    <Label htmlFor="usingLadder-no">{t('common.no')}</Label>
                   </div>
                 </div>
               </div>
@@ -337,47 +339,47 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
           {formData.usingLadder === true && (
             <Card>
               <CardHeader>
-                <CardTitle>General Ladder Safety</CardTitle>
+                <CardTitle>{t('safety.generalLadderSafety')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { key: 'ladderAltered', label: 'Has the ladder been altered in any way?' },
-                  { key: 'weatherCompromised', label: 'Is the ladder compromised by weather conditions?' },
-                  { key: 'housekeeping', label: 'Is housekeeping adequate around the ladder area?' },
-                  { key: 'rungsClean', label: 'Are ladder rungs clean and free of slippery materials?' },
-                  { key: 'feetPositioned', label: 'Are your feet positioned properly on the rungs?' },
-                  { key: 'livePowerPrecautions', label: 'Have you taken precautions around live power?' },
-                  { key: 'threePointContact', label: 'Are you maintaining three-point contact?' },
-                  { key: 'overheadObstructions', label: 'Are there overhead obstructions?' },
-                  { key: 'stableSurface', label: 'Is the ladder on a stable surface?' },
-                  { key: 'facingLadder', label: 'Are you facing the ladder when climbing?' }
-                ].map((question) => (
-                  <div key={question.key} className="space-y-2">
-                    <Label className="font-medium">{question.label}</Label>
+                  'ladderAltered',
+                  'weatherCompromised',
+                  'housekeeping',
+                  'rungsClean',
+                  'feetPositioned',
+                  'livePowerPrecautions',
+                  'threePointContact',
+                  'overheadObstructions',
+                  'stableSurface',
+                  'facingLadder'
+                ].map((questionKey) => (
+                  <div key={questionKey} className="space-y-2">
+                    <Label className="font-medium">{t(`safetyQuestions.${questionKey}`)}</Label>
                     <div className="flex gap-4">
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          id={`${question.key}-yes`}
-                          name={question.key}
+                          id={`${questionKey}-yes`}
+                          name={questionKey}
                           value="true"
-                          checked={formData[question.key] === true}
+                          checked={formData[questionKey] === true}
                           onChange={handleInputChange}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor={`${question.key}-yes`}>Yes</Label>
+                        <Label htmlFor={`${questionKey}-yes`}>{t('common.yes')}</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          id={`${question.key}-no`}
-                          name={question.key}
+                          id={`${questionKey}-no`}
+                          name={questionKey}
                           value="false"
-                          checked={formData[question.key] === false}
+                          checked={formData[questionKey] === false}
                           onChange={handleInputChange}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor={`${question.key}-no`}>No</Label>
+                        <Label htmlFor={`${questionKey}-no`}>{t('common.no')}</Label>
                       </div>
                     </div>
                   </div>
@@ -390,43 +392,43 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
           {formData.usingLadder === true && (formData.ladderType || []).includes('Step') && (
             <Card>
               <CardHeader>
-                <CardTitle>Step Ladder Inspection</CardTitle>
+                <CardTitle>{t('safety.stepLadderInspection')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { key: 'stepsCondition', label: 'Steps/rungs in good condition?' },
-                  { key: 'labelsReadable', label: 'All labels readable?' },
-                  { key: 'topCondition', label: 'Top platform in good condition?' },
-                  { key: 'spreaderCondition', label: 'Spreader/locking mechanism working properly?' },
-                  { key: 'generalCondition', label: 'General condition acceptable?' },
-                  { key: 'bracingCondition', label: 'All bracing and hardware tight?' }
-                ].map((question) => (
-                  <div key={question.key} className="space-y-2">
-                    <Label className="font-medium">{question.label}</Label>
+                  'stepsCondition',
+                  'labelsReadable',
+                  'topCondition',
+                  'spreaderCondition',
+                  'generalCondition',
+                  'bracingCondition'
+                ].map((questionKey) => (
+                  <div key={questionKey} className="space-y-2">
+                    <Label className="font-medium">{t(`safetyQuestions.${questionKey}`)}</Label>
                     <div className="flex gap-4">
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          id={`${question.key}-yes`}
-                          name={question.key}
+                          id={`${questionKey}-yes`}
+                          name={questionKey}
                           value="true"
-                          checked={formData[question.key] === true}
+                          checked={formData[questionKey] === true}
                           onChange={handleInputChange}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor={`${question.key}-yes`}>Yes</Label>
+                        <Label htmlFor={`${questionKey}-yes`}>{t('common.yes')}</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          id={`${question.key}-no`}
-                          name={question.key}
+                          id={`${questionKey}-no`}
+                          name={questionKey}
                           value="false"
-                          checked={formData[question.key] === false}
+                          checked={formData[questionKey] === false}
                           onChange={handleInputChange}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor={`${question.key}-no`}>No</Label>
+                        <Label htmlFor={`${questionKey}-no`}>{t('common.no')}</Label>
                       </div>
                     </div>
                   </div>
@@ -460,50 +462,50 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
           {formData.usingLadder === true && (formData.ladderType || []).includes('Extension') && (
             <Card>
               <CardHeader>
-                <CardTitle>Extension Ladder Inspection</CardTitle>
+                <CardTitle>{t('safety.extensionLadderInspection')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { key: 'rungsCondition', label: 'Rungs in good condition?' },
-                  { key: 'railsCondition', label: 'Rails in good condition?' },
-                  { key: 'labelsReadable', label: 'All labels readable?' },
-                  { key: 'hardwareCondition', label: 'Hardware in good condition?' },
-                  { key: 'shoesCondition', label: 'Shoes in good condition?' },
-                  { key: 'ropePulleyCondition', label: 'Rope and pulley in good condition?' },
-                  { key: 'bracingCondition', label: 'All bracing and hardware tight?' },
-                  { key: 'generalCondition', label: 'General condition acceptable?' },
-                  { key: 'extendedHeight', label: 'Extended no more than 3 feet above support?' },
-                  { key: 'tieOff', label: 'Tied off at the top?' },
-                  { key: 'positioning', label: 'Positioned at proper angle (4:1 ratio)?' },
-                  { key: 'reach', label: 'Reach from ladder is limited?' },
-                  { key: 'height', label: 'Height of ladder is adequate for the job?' }
-                ].map((question) => (
-                  <div key={question.key} className="space-y-2">
-                    <Label className="font-medium">{question.label}</Label>
+                  'rungsCondition',
+                  'railsCondition',
+                  'labelsReadable',
+                  'hardwareCondition',
+                  'shoesCondition',
+                  'ropePulleyCondition',
+                  'bracingCondition',
+                  'generalCondition',
+                  'extendedHeight',
+                  'tieOff',
+                  'positioning',
+                  'reach',
+                  'height'
+                ].map((questionKey) => (
+                  <div key={questionKey} className="space-y-2">
+                    <Label className="font-medium">{t(`safetyQuestions.${questionKey}`)}</Label>
                     <div className="flex gap-4">
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          id={`${question.key}-yes`}
-                          name={question.key}
+                          id={`${questionKey}-yes`}
+                          name={questionKey}
                           value="true"
-                          checked={formData[question.key] === true}
+                          checked={formData[questionKey] === true}
                           onChange={handleInputChange}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor={`${question.key}-yes`}>Yes</Label>
+                        <Label htmlFor={`${questionKey}-yes`}>{t('common.yes')}</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          id={`${question.key}-no`}
-                          name={question.key}
+                          id={`${questionKey}-no`}
+                          name={questionKey}
                           value="false"
-                          checked={formData[question.key] === false}
+                          checked={formData[questionKey] === false}
                           onChange={handleInputChange}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor={`${question.key}-no`}>No</Label>
+                        <Label htmlFor={`${questionKey}-no`}>{t('common.no')}</Label>
                       </div>
                     </div>
                   </div>
@@ -515,44 +517,44 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
           {/* Additional Safety Measures */}
           <Card>
             <CardHeader>
-              <CardTitle>Additional Safety Measures</CardTitle>
+              <CardTitle>{t('safety.additionalSafetyMeasures')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {[
-                { key: 'warmUpStretch', label: 'Did you warm up and stretch before starting work?' },
-                { key: 'lockoutTagout', label: 'Is lockout/tagout required for this job?' },
-                { key: 'energizedWorkPermit', label: 'Do you have an energized work permit if required?' },
-                { key: 'emergencyPlan', label: 'Is there an emergency action plan for this job?' },
-                { key: 'emergencyPlanReviewed', label: 'Has the emergency action plan been reviewed?' },
-                { key: 'fireExtinguisher', label: 'Is a fire extinguisher readily available?' },
-                { key: 'firstAidKit', label: 'Is a first aid kit readily available?' }
-              ].map((question) => (
-                <div key={question.key} className="space-y-2">
-                  <Label className="font-medium">{question.label}</Label>
+                'warmUpStretch',
+                'lockoutTagout',
+                'energizedWorkPermit',
+                'emergencyPlan',
+                'emergencyPlanReviewed',
+                'fireExtinguisher',
+                'firstAidKit'
+              ].map((questionKey) => (
+                <div key={questionKey} className="space-y-2">
+                  <Label className="font-medium">{t(`safetyQuestions.${questionKey}`)}</Label>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
                       <input
                         type="radio"
-                        id={`${question.key}-yes`}
-                        name={question.key}
+                        id={`${questionKey}-yes`}
+                        name={questionKey}
                         value="true"
-                        checked={formData[question.key] === true}
+                        checked={formData[questionKey] === true}
                         onChange={handleInputChange}
                         className="w-4 h-4"
                       />
-                      <Label htmlFor={`${question.key}-yes`}>Yes</Label>
+                      <Label htmlFor={`${questionKey}-yes`}>{t('common.yes')}</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <input
                         type="radio"
-                        id={`${question.key}-no`}
-                        name={question.key}
+                        id={`${questionKey}-no`}
+                        name={questionKey}
                         value="false"
-                        checked={formData[question.key] === false}
+                        checked={formData[questionKey] === false}
                         onChange={handleInputChange}
                         className="w-4 h-4"
                       />
-                      <Label htmlFor={`${question.key}-no`}>No</Label>
+                      <Label htmlFor={`${questionKey}-no`}>{t('common.no')}</Label>
                     </div>
                   </div>
                 </div>
@@ -575,7 +577,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
           {/* File Attachments Section */}
           <Card>
             <CardHeader>
-              <CardTitle>File Attachments</CardTitle>
+              <CardTitle>{t('adminEdit.fileAttachments')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -597,7 +599,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No files attached</p>
+                  <p className="text-sm text-gray-500">{t('common.no')} files attached</p>
                 )}
               </div>
             </CardContent>
@@ -606,7 +608,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
           {/* Signature Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Digital Signature</CardTitle>
+              <CardTitle>{t('forms.digitalSignature')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -631,7 +633,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                     onClick={handleSignatureClear}
                     className="text-sm"
                   >
-                    Clear Signature
+                    {t('forms.clearSignature')}
                   </Button>
                 </div>
                 {formData.signature && (
@@ -647,9 +649,9 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
           </Card>
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onBack}>Cancel</Button>
+            <Button variant="outline" onClick={onBack}>{t('common.cancel')}</Button>
             <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? 'Saving...' : 'Save Changes'}
+              {isLoading ? t('common.save') + '...' : t('common.save') + ' Changes'}
             </Button>
           </div>
         </CardContent>

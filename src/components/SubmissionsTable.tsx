@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import {
   useReactTable,
   getCoreRowModel,
@@ -43,14 +44,14 @@ interface SubmissionsTableProps {
   onDelete?: (id: string) => void;
 }
 
-const getFormTypeLabel = (type: string) => {
+const getFormTypeLabel = (type: string, t: any) => {
   switch (type) {
     case "end-of-day":
-      return "End of Day Report";
+      return t('forms.endOfDayReport');
     case "start-of-day":
-      return "Start of Day Report";
+      return t('forms.startOfDayReport');
     case "job-hazard-analysis":
-      return "Job Hazard Analysis";
+      return t('forms.jobHazardAnalysis');
     default:
       return type;
   }
@@ -69,16 +70,18 @@ const getFormTypeBadgeVariant = (type: string) => {
   }
 };
 
-const formTypeOptions = [
-  { value: "end-of-day", label: "End of Day Report" },
-  { value: "start-of-day", label: "Start of Day Report" },
-  { value: "job-hazard-analysis", label: "Job Hazard Analysis" },
+const getFormTypeOptions = (t: any) => [
+  { value: "end-of-day", label: t('forms.endOfDayReport') },
+  { value: "start-of-day", label: t('forms.startOfDayReport') },
+  { value: "job-hazard-analysis", label: t('forms.jobHazardAnalysis') },
 ];
 
 export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTableProps) {
+  const { t } = useTranslation('common');
   const [selectedFormTypes, setSelectedFormTypes] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteSubmission, { isLoading: isDeleting }] = useDeleteSubmissionMutation();
+  const formTypeOptions = getFormTypeOptions(t);
 
   // Filter data based on selected form types and search query
   const filteredData = useMemo(() => {
@@ -97,7 +100,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
           item.jobSite.toLowerCase().includes(query) ||
           item.completedBy.toLowerCase().includes(query) ||
           item.date.toLowerCase().includes(query) ||
-          getFormTypeLabel(item.submissionType).toLowerCase().includes(query)
+          getFormTypeLabel(item.submissionType, t).toLowerCase().includes(query)
       );
     }
 
@@ -134,7 +137,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
             >
-              Date
+              {t('tableHeaders.date')}
               {column.getIsSorted() === "asc" ? (
                 <ChevronUp className="ml-1 h-3 w-3" />
               ) : column.getIsSorted() === "desc" ? (
@@ -160,7 +163,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
             >
-              Type
+              {t('admin.type')}
               {column.getIsSorted() === "asc" ? (
                 <ChevronUp className="ml-1 h-3 w-3" />
               ) : column.getIsSorted() === "desc" ? (
@@ -175,7 +178,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
           const type = row.getValue("submissionType") as string;
           return (
             <Badge variant={getFormTypeBadgeVariant(type) as any} className="text-xs">
-              <span className="hidden sm:inline">{getFormTypeLabel(type)}</span>
+              <span className="hidden sm:inline">{getFormTypeLabel(type, t)}</span>
               <span className="sm:hidden">
                 {type === "end-of-day" ? "EOD" : type === "start-of-day" ? "SOD" : "JHA"}
               </span>
@@ -192,7 +195,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
             >
-              Site
+              {t('tableHeaders.jobSite')}
               {column.getIsSorted() === "asc" ? (
                 <ChevronUp className="ml-1 h-3 w-3" />
               ) : column.getIsSorted() === "desc" ? (
@@ -217,7 +220,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
             >
-              Modified
+              {t('admin.modified')}
               {column.getIsSorted() === "asc" ? (
                 <ChevronUp className="ml-1 h-3 w-3" />
               ) : column.getIsSorted() === "desc" ? (
@@ -259,20 +262,20 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Submission</AlertDialogTitle>
+                    <AlertDialogTitle>{t('admin.deleteSubmission')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete this {getFormTypeLabel(submission.submissionType).toLowerCase()} submission for {submission.jobSite} from {format(new Date(submission.date), "MMM dd, yyyy")}?
+                      {t('admin.deleteSubmissionConfirm', { name: getFormTypeLabel(submission.submissionType, t).toLowerCase() + ' submission for ' + submission.jobSite + ' from ' + format(new Date(submission.date), "MMM dd, yyyy") })}
                       <br /><br />
-                      <strong>This action cannot be undone.</strong>
+                      <strong>{t('admin.cannotBeUndone')}</strong>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={() => handleDelete(submission.id)}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      Delete
+                      {t('common.delete')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -366,7 +369,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1">
                   <Filter className="h-4 w-4" />
-                  Filter
+                  {t('common.filter')}
                   {selectedFormTypes.length > 0 && (
                     <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 text-xs">
                       {selectedFormTypes.length}
@@ -375,7 +378,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuLabel>Form Types</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('admin.formTypes')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {formTypeOptions.map((option) => (
                   <DropdownMenuCheckboxItem
@@ -392,7 +395,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
             {(selectedFormTypes.length > 0 || searchQuery.trim()) && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-xs">
                 <X className="h-3 w-3" />
-                Clear
+                {t('admin.clearFilters')}
               </Button>
             )}
           </div>
@@ -400,7 +403,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
           <div className="relative max-w-sm w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
             <Input
-              placeholder="Search submissions..."
+              placeholder={t('admin.searchSubmissions')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 text-sm"
@@ -411,7 +414,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
       <CardContent>
         {data.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm">
-            No submissions found. Start by creating your first form submission.
+            {t('admin.noSubmissionsFound')}
           </div>
         ) : (
           <>
@@ -449,8 +452,8 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
                       <tr>
                         <td colSpan={columns.length} className="h-16 sm:h-24 text-center text-muted-foreground text-sm">
                           {selectedFormTypes.length > 0 || searchQuery.trim()
-                            ? "No submissions match the current filters or search."
-                            : "No submissions found."}
+                            ? t('admin.noSubmissionsMatch')
+                            : t('admin.noSubmissionsFound')}
                         </td>
                       </tr>
                     )}
@@ -462,14 +465,14 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 sm:space-x-2 py-4">
               <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
                 <span className="hidden sm:inline">
-                  Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
+                  {t('admin.showing')} {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} {t('admin.to')}{" "}
                   {Math.min(
                     (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
                     filteredData.length
                   )}{" "}
-                  of {filteredData.length} submissions
+                  {t('admin.of')} {filteredData.length} {t('admin.submissions')}
                 </span>
-                <span className="sm:hidden">{filteredData.length} total</span>
+                <span className="sm:hidden">{filteredData.length} {t('admin.total')}</span>
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <Button
@@ -479,10 +482,10 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
                   disabled={!table.getCanPreviousPage()}
                   className="text-xs"
                 >
-                  Previous
+                  {t('common.previous')}
                 </Button>
                 <div className="text-xs text-muted-foreground px-2">
-                  {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                  {table.getState().pagination.pageIndex + 1} {t('admin.of')} {table.getPageCount()}
                 </div>
                 <Button
                   variant="outline"
@@ -491,7 +494,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
                   disabled={!table.getCanNextPage()}
                   className="text-xs"
                 >
-                  Next
+                  {t('common.next')}
                 </Button>
               </div>
             </div>

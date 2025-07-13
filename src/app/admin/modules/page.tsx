@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useCallback } from "react";
+import { useTranslation } from 'react-i18next';
 import { useGetModulesQuery } from "@/lib/features/modules/modulesApi";
 import { ModuleInfo } from "@/components/admin/ModuleInfo";
 import { ModuleConfiguration } from "@/components/admin/ModuleConfiguration";
 
 export default function ModulesPage() {
+  const { t } = useTranslation('common');
   const { data: modulesData, isLoading, refetch } = useGetModulesQuery();
 
   const handleConfigurationSuccess = useCallback(() => {
@@ -15,9 +17,9 @@ export default function ModulesPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Module Management</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">{t('admin.moduleManagement')}</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">
-          Configure and monitor which modules are available to contractors
+          {t('admin.moduleManagementDescription')}
         </p>
       </div>
 
