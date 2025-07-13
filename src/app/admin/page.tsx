@@ -97,7 +97,7 @@ export default function AdminPage() {
       <div className="p-6">
         <Card>
           <CardContent className="flex items-center justify-center h-32">
-            <p className="text-destructive">Error loading dashboard: {error}</p>
+            <p className="text-destructive">{t('status.errorLoadingDashboard')} {error}</p>
           </CardContent>
         </Card>
       </div>
@@ -225,13 +225,13 @@ export default function AdminPage() {
                           <p className="text-sm font-medium text-red-900">
                             {stats.actionRequired.urgentSafetyForms} urgent safety form{stats.actionRequired.urgentSafetyForms !== 1 ? 's' : ''}
                           </p>
-                          <p className="text-xs text-red-600">Requires immediate attention</p>
+                          <p className="text-xs text-red-600">{t('status.requiresImmediateAttention')}</p>
                         </div>
                         <button 
                           onClick={() => router.push('/admin/safety-forms')}
                           className="text-red-600 hover:text-red-800 text-sm font-medium"
                         >
-                          Review →
+                          {t('common.review')} →
                         </button>
                       </div>
                     )}
@@ -241,13 +241,13 @@ export default function AdminPage() {
                           <p className="text-sm font-medium text-yellow-900">
                             {stats.actionRequired.recentSafetyForms} recent safety form{stats.actionRequired.recentSafetyForms !== 1 ? 's' : ''}
                           </p>
-                          <p className="text-xs text-yellow-600">From last 3 days</p>
+                          <p className="text-xs text-yellow-600">{t('status.fromLastThreeDays')}</p>
                         </div>
                         <button 
                           onClick={() => router.push('/admin/safety-forms')}
                           className="text-yellow-600 hover:text-yellow-800 text-sm font-medium"
                         >
-                          Review →
+                          {t('common.review')} →
                         </button>
                       </div>
                     )}
@@ -278,7 +278,7 @@ export default function AdminPage() {
                   </>
                 ) : (
                   <div className="text-center py-4">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Unable to load action items</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('status.unableToLoadActionItems')}</p>
                   </div>
                 )}
               </div>

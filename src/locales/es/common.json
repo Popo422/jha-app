@@ -317,6 +317,7 @@
     "seconds": "Segundos"
   },
   "common": {
+    "review": "Revisión",
     "loading": "Cargando...",
     "save": "Guardar",
     "cancel": "Cancelar",
@@ -410,13 +411,18 @@
     "justNow": "Ahora mismo",
     "hourAgo": "hora atrás",
     "hoursAgo": "horas atrás",
-    "dayAgo": "día atrás", 
+    "dayAgo": "día atrás",
     "daysAgo": "días atrás",
     "noRecentActivity": "Sin actividad reciente",
     "formSubmitted": "formulario enviado",
     "timesheetSubmitted": "Hoja de tiempo enviada",
     "loadingFormStatus": "Cargando estado del formulario...",
-    "unableToLoadFormStatus": "No se puede cargar el estado del formulario. Por favor inténtelo de nuevo."
+    "unableToLoadFormStatus": "No se puede cargar el estado del formulario. Por favor inténtelo de nuevo.",
+    "errorLoadingDashboard": "Error al cargar el panel de control:",
+    "unableToLoadActionItems": "No se pueden cargar los elementos de acción.",
+    "requiresImmediateAttention": "Requiere atención inmediata",
+    "fromLastThreeDays": "Desde los ultimos 3 dias",
+    "noActionsRequired": "¡Todo al día! No se requieren acciones."
   },
   "onboarding": {
     "welcomeToJHA": "Bienvenido a la Aplicación JHA",

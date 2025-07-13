@@ -317,6 +317,7 @@
     "seconds": "Seconds"
   },
   "common": {
+    "review": "Review",
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
@@ -416,7 +417,12 @@
     "formSubmitted": "form submitted",
     "timesheetSubmitted": "Timesheet submitted",
     "loadingFormStatus": "Loading form status...",
-    "unableToLoadFormStatus": "Unable to load form status. Please try again."
+    "unableToLoadFormStatus": "Unable to load form status. Please try again.",
+    "errorLoadingDashboard": ">Error loading dashboard:",
+    "unableToLoadActionItems": "Unable to load action items.",
+    "requiresImmediateAttention": "Requires immediate attention",
+    "fromLastThreeDays": "From last 3 days",
+    "noActionsRequired": "All caught up! No actions required."
   },
   "onboarding": {
     "welcomeToJHA": "Welcome to JHA App",
