@@ -55,10 +55,10 @@ export function ModuleInfo({ modulesData, isLoading }: ModuleInfoProps) {
       <CardHeader>
         <CardTitle className="flex items-center">
           <Info className="mr-2 h-5 w-5" />
-          Module Information
+          {t('admin.moduleInformation')}
         </CardTitle>
         <CardDescription>
-          Current module configuration details
+          {t('admin.moduleConfigurationDetails')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
