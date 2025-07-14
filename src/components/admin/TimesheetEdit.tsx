@@ -18,8 +18,7 @@ interface Timesheet {
   date: string;
   employee: string;
   company: string;
-  jobSite: string;
-  jobName?: string;
+  projectName: string;
   jobDescription: string;
   timeSpent: string;
   createdAt: string;
@@ -37,8 +36,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
     date: timesheet.date,
     employee: timesheet.employee,
     company: timesheet.company,
-    jobSite: timesheet.jobSite,
-    jobName: timesheet.jobName || '',
+    projectName: timesheet.projectName || '',
     jobDescription: timesheet.jobDescription,
     timeSpent: timesheet.timeSpent,
   });
@@ -57,7 +55,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
   const handleSave = useCallback(async () => {
     try {
       // Validate required fields
-      if (!formData.date || !formData.employee || !formData.company || !formData.jobSite || !formData.jobName || !formData.jobDescription || !formData.timeSpent) {
+      if (!formData.date || !formData.employee || !formData.company || !formData.projectName || !formData.jobDescription || !formData.timeSpent) {
         showToast(t('common.allFieldsRequired'), 'error');
         return;
       }
@@ -74,8 +72,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
         date: formData.date,
         employee: formData.employee,
         company: formData.company,
-        jobSite: formData.jobSite,
-        jobName: formData.jobName,
+        projectName: formData.projectName,
         jobDescription: formData.jobDescription,
         timeSpent: formData.timeSpent,
         authType: 'admin'
@@ -140,24 +137,13 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="jobSite">{t('formFields.jobSite')}</Label>
+              <Label htmlFor="projectName">{t('formFields.projectName')}</Label>
               <Input
-                id="jobSite"
-                name="jobSite"
-                value={formData.jobSite || ''}
+                id="projectName"
+                name="projectName"
+                value={formData.projectName || ''}
                 onChange={handleInputChange}
-                placeholder={t('formFields.companyLocation')}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="jobName">{t('formFields.jobName')}</Label>
-              <Input
-                id="jobName"
-                name="jobName"
-                value={formData.jobName || ''}
-                onChange={handleInputChange}
-                placeholder={t('formFields.jobNamePlaceholder')}
+                placeholder={t('formFields.projectNamePlaceholder')}
                 required
               />
             </div>

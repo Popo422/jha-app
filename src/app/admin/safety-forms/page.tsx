@@ -39,7 +39,7 @@ interface Submission {
   date: string;
   dateTimeClocked?: string;
   company: string;
-  jobSite: string;
+  projectName: string;
   submissionType: string;
   formData: Record<string, any>;
   createdAt: string;
@@ -190,18 +190,18 @@ export default function SafetyFormsPage() {
       },
     },
     {
-      accessorKey: 'jobSite',
+      accessorKey: 'projectName',
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          {t('admin.jobSite')}
+          {t('admin.projectName')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div className="text-sm">{row.getValue('jobSite')}</div>,
+      cell: ({ row }) => <div className="text-sm">{row.getValue('projectName')}</div>,
     },
     {
       accessorKey: 'submissionType',
@@ -299,7 +299,7 @@ export default function SafetyFormsPage() {
     submission.completedBy,
     submission.company,
     submission.date,
-    submission.jobSite,
+    submission.projectName,
     submission.submissionType
   ], []);
 
@@ -325,7 +325,7 @@ export default function SafetyFormsPage() {
             <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
               <div><span className="font-medium">{t('admin.company')}:</span> {submission.company}</div>
               <div><span className="font-medium">{t('tableHeaders.date')}:</span> {new Date(submission.date).toLocaleDateString()}</div>
-              <div><span className="font-medium">{t('admin.jobSite')}:</span> {submission.jobSite}</div>
+              <div><span className="font-medium">{t('admin.projectName')}:</span> {submission.projectName}</div>
             </div>
           </div>
           <DropdownMenu>
@@ -426,7 +426,7 @@ export default function SafetyFormsPage() {
         onBulkDelete={handleBulkDelete}
         getRowId={(submission) => submission.id}
         exportFilename="safety_forms"
-        exportHeaders={[t('admin.contractor'), t('admin.company'), t('tableHeaders.date'), t('admin.jobSite'), t('admin.type')]}
+        exportHeaders={[t('admin.contractor'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.type')]}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}

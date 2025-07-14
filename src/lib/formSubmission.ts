@@ -1,6 +1,6 @@
 interface SubmissionData {
   submissionType: 'end-of-day' | 'job-hazard-analysis' | 'start-of-day'
-  jobSite: string
+  projectName: string
   supervisorDateClockedIn?: string
   supervisorDateClockedOut?: string
   formData: Record<string, any>
@@ -19,7 +19,7 @@ export async function submitForm(data: SubmissionData): Promise<SubmissionRespon
     
     // Add form fields
     formData.append('submissionType', data.submissionType)
-    formData.append('jobSite', data.jobSite)
+    formData.append('projectName', data.projectName)
     formData.append('formData', JSON.stringify(data.formData))
     
     if (data.supervisorDateClockedIn) {

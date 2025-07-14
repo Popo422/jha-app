@@ -21,8 +21,7 @@ interface TimesheetFormData {
   date: string;
   employee: string;
   company: string;
-  jobSite: string;
-  jobName: string;
+  projectName: string;
   jobDescription: string;
   timeSpent: string;
 }
@@ -37,8 +36,7 @@ export default function TimesheetPage() {
     date: new Date().toISOString().split("T")[0],
     employee: contractor?.name || "",
     company: contractor?.companyName || "",
-    jobSite: "",
-    jobName: "",
+    projectName: "",
     jobDescription: "",
     timeSpent: ""
   });
@@ -48,8 +46,7 @@ export default function TimesheetPage() {
       date: new Date().toISOString().split("T")[0],
       employee: contractor?.name || "",
       company: contractor?.companyName || "",
-      jobSite: "",
-      jobName: "",
+      projectName: "",
       jobDescription: "",
       timeSpent: ""
     });
@@ -160,29 +157,18 @@ export default function TimesheetPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="jobSite">{t('formFields.jobSite')}</Label>
+                    <Label htmlFor="projectName">{t('formFields.projectName')}</Label>
                     <Input
-                      id="jobSite"
-                      name="jobSite"
-                      placeholder={t('placeholders.companyLocation')}
-                      value={formData.jobSite}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="jobName">{t('formFields.jobName')}</Label>
-                    <Input
-                      id="jobName"
-                      name="jobName"
-                      placeholder="Name or title of the job"
-                      value={formData.jobName}
+                      id="projectName"
+                      name="projectName"
+                      placeholder={t('placeholders.projectName')}
+                      value={formData.projectName}
                       onChange={handleInputChange}
                       required
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="jobDescription">{t('formFields.jobDescription')}</Label>
+                    <Label htmlFor="jobDescription">{t('formFields.explanationOfWorkCompleted')}</Label>
                     <Textarea
                       id="jobDescription"
                       name="jobDescription"

@@ -93,6 +93,7 @@
     "costPerCompany": "Costo por Empresa",
     "companyName": "Nombre de la Empresa",
     "costPerJobSite": "Costo por Sitio de Trabajo",
+    "costPerProject": "Costo por Proyecto",
     "jobSite": "Sitio de Trabajo",
     "timesheetDetails": "Detalles de la Hoja de Tiempo",
     "projectName": "Nombre del Proyecto",
@@ -252,6 +253,7 @@
     "timeSpentHours": "Tiempo Trabajado (horas):",
     "employee": "Empleado:",
     "jobDescription": "Descripción del Trabajo:",
+    "explanationOfWorkCompleted": "Explicación del Trabajo Completado:",
     "completedBy": "Completado por:",
     "details": "Detalles:",
     "followUpQuestion": "Pregunta de Seguimiento",
@@ -389,6 +391,7 @@
   "tableHeaders": {
     "date": "Fecha",
     "jobSite": "Sitio de Trabajo",
+    "projectName": "Nombre del Proyecto",
     "hours": "Horas",
     "status": "Estado",
     "details": "Detalles"

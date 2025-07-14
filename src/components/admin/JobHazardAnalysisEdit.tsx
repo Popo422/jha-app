@@ -24,8 +24,7 @@ interface Submission {
   date: string;
   dateTimeClocked?: string;
   company: string;
-  jobSite: string;
-  jobName?: string;
+  projectName: string;
   submissionType: string;
   formData: Record<string, any>;
   createdAt: string;
@@ -157,8 +156,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
         completedBy: formData.completedBy,
         date: formData.date,
         company: formData.company,
-        jobSite: submission.jobSite,
-        jobName: formData.jobName,
+        projectName: formData.projectName,
         formData: formData,
         authType: 'admin'
       }).unwrap();
@@ -171,7 +169,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
     } catch (error: any) {
       showToast(error?.data?.error || t('common.failedToSaveChanges'), 'error');
     }
-  }, [formData, submission.id, submission.jobSite, updateSubmission, showToast]);
+  }, [formData, submission.id, updateSubmission, showToast]);
 
   return (
     <div className="space-y-6">
@@ -226,13 +224,13 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="jobName">{t('formFields.jobName')}</Label>
+              <Label htmlFor="projectName">{t('formFields.projectName')}</Label>
               <Input
-                id="jobName"
-                name="jobName"
-                value={formData.jobName || ''}
+                id="projectName"
+                name="projectName"
+                value={formData.projectName || ''}
                 onChange={handleInputChange}
-                placeholder="Name or title of the job"
+                placeholder="Name or title of the project"
                 required
               />
             </div>

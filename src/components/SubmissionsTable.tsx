@@ -97,7 +97,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (item) =>
-          item.jobSite.toLowerCase().includes(query) ||
+          item.projectName.toLowerCase().includes(query) ||
           item.completedBy.toLowerCase().includes(query) ||
           item.date.toLowerCase().includes(query) ||
           getFormTypeLabel(item.submissionType, t).toLowerCase().includes(query)
@@ -187,7 +187,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
         },
       },
       {
-        accessorKey: "jobSite",
+        accessorKey: "projectName",
         header: ({ column }) => {
           return (
             <Button
@@ -195,7 +195,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
             >
-              {t('tableHeaders.jobSite')}
+              {t('tableHeaders.projectName')}
               {column.getIsSorted() === "asc" ? (
                 <ChevronUp className="ml-1 h-3 w-3" />
               ) : column.getIsSorted() === "desc" ? (
@@ -207,8 +207,8 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
           );
         },
         cell: ({ row }) => {
-          const site = row.getValue("jobSite") as string;
-          return <div className="text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">{site}</div>;
+          const projectName = row.getValue("projectName") as string;
+          return <div className="text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">{projectName}</div>;
         },
       },
       {
@@ -264,7 +264,7 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
                   <AlertDialogHeader>
                     <AlertDialogTitle>{t('admin.deleteSubmission')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      {t('admin.deleteSubmissionConfirm', { name: getFormTypeLabel(submission.submissionType, t).toLowerCase() + ' submission for ' + submission.jobSite + ' from ' + format(new Date(submission.date), "MMM dd, yyyy") })}
+                      {t('admin.deleteSubmissionConfirm', { name: getFormTypeLabel(submission.submissionType, t).toLowerCase() + ' submission for ' + submission.projectName + ' from ' + format(new Date(submission.date), "MMM dd, yyyy") })}
                       <br /><br />
                       <strong>{t('admin.cannotBeUndone')}</strong>
                     </AlertDialogDescription>

@@ -22,7 +22,8 @@
       "Bash(bash:*)",
       "Bash(tar:*)",
       "Bash(ls:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

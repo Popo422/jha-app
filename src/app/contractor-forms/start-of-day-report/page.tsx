@@ -20,8 +20,7 @@ interface StartOfDayReportFormData {
   completedBy: string;
   date: string;
   supervisor: string;
-  jobSite: string;
-  jobName: string;
+  projectName: string;
   company: string;
   timeClocked: string;
   freeFromInjury: boolean | null;
@@ -42,8 +41,7 @@ export default function StartOfDayReportPage() {
     completedBy: contractor?.name || "",
     date: new Date().toISOString().split("T")[0],
     supervisor: "",
-    jobSite: "",
-    jobName: "",
+    projectName: "",
     company: contractor?.companyName || "",
     timeClocked: "",
     freeFromInjury: null,
@@ -104,8 +102,7 @@ export default function StartOfDayReportPage() {
         completedBy: contractor?.name || "",
         date: new Date().toISOString().split("T")[0],
         supervisor: "",
-        jobSite: "",
-        jobName: "",
+        projectName: "",
         company: contractor?.companyName || "",
         timeClocked: "",
         freeFromInjury: null,
@@ -133,7 +130,7 @@ export default function StartOfDayReportPage() {
 
     await submitForm({
       submissionType: 'start-of-day',
-      jobSite: formData.jobSite,
+      projectName: formData.projectName,
       date: formData.date,
       dateTimeClocked: clockInDateTime,
       formData: {
@@ -141,7 +138,7 @@ export default function StartOfDayReportPage() {
         date: formData.date,
         supervisor: formData.supervisor,
         company: formData.company,
-        jobName: formData.jobName,
+        projectName: formData.projectName,
         timeClocked: formData.timeClocked,
         freeFromInjury: formData.freeFromInjury,
         freeFromFever: formData.freeFromFever,
@@ -214,23 +211,13 @@ export default function StartOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="jobSite">{t('formFields.jobSite')}</Label>
+                    <Label htmlFor="projectName">{t('formFields.projectName')}</Label>
                     <Input
-                      id="jobSite"
-                      name="jobSite"
-                      value={formData.jobSite}
+                      id="projectName"
+                      name="projectName"
+                      value={formData.projectName}
                       onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="jobName">{t('formFields.jobName')}</Label>
-                    <Input
-                      id="jobName"
-                      name="jobName"
-                      value={formData.jobName}
-                      onChange={handleInputChange}
-                      placeholder={t('placeholders.jobNamePlaceholder')}
+                      placeholder={t('placeholders.projectName')}
                       required
                     />
                   </div>

@@ -22,8 +22,7 @@ interface Submission {
   date: string;
   dateTimeClocked?: string;
   company: string;
-  jobSite: string;
-  jobName?: string;
+  projectName: string;
   submissionType: string;
   formData: Record<string, any>;
   createdAt: string;
@@ -139,8 +138,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
         completedBy: formData.completedBy,
         date: formData.date,
         company: formData.company,
-        jobSite: formData.jobSite,
-        jobName: formData.jobName,
+        projectName: formData.projectName,
         dateTimeClocked: dateTimeClocked,
         formData: formData,
         authType: 'admin'
@@ -200,15 +198,6 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="jobSite">{t('formFields.jobSite')}:</Label>
-              <Input
-                id="jobSite"
-                name="jobSite"
-                value={formData.jobSite || ''}
-                onChange={handleInputChange}
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="company">{t('formFields.company')}:</Label>
               <Input
                 id="company"
@@ -218,13 +207,13 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="jobName">{t('formFields.jobName')}:</Label>
+              <Label htmlFor="projectName">{t('formFields.projectName')}:</Label>
               <Input
-                id="jobName"
-                name="jobName"
-                value={formData.jobName || ''}
+                id="projectName"
+                name="projectName"
+                value={formData.projectName || ''}
                 onChange={handleInputChange}
-                placeholder="Name or title of the job"
+                placeholder="Name or title of the project"
                 required
               />
             </div>
