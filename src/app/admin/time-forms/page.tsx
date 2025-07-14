@@ -187,18 +187,18 @@ export default function TimeFormsPage() {
       },
     },
     {
-      accessorKey: 'jobSite',
+      accessorKey: 'projectName',
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          {t('admin.jobSite')}
+          {t('admin.projectName')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div className="text-sm">{row.getValue('jobSite')}</div>,
+      cell: ({ row }) => <div className="text-sm">{row.getValue('projectName')}</div>,
     },
     {
       accessorKey: 'jobDescription',
@@ -361,7 +361,7 @@ export default function TimeFormsPage() {
       timesheet.employee,
       timesheet.company,
       timesheet.date,
-      timesheet.jobSite,
+      timesheet.projectName,
       timesheet.jobDescription,
       timesheet.timeSpent,
       `$${cost.toFixed(2)}`
@@ -393,7 +393,7 @@ export default function TimeFormsPage() {
             <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
               <div><span className="font-medium">{t('admin.company')}:</span> {timesheet.company}</div>
               <div><span className="font-medium">{t('tableHeaders.date')}:</span> {new Date(timesheet.date).toLocaleDateString()}</div>
-              <div><span className="font-medium">{t('admin.jobSite')}:</span> {timesheet.jobSite}</div>
+              <div><span className="font-medium">{t('admin.projectName')}:</span> {timesheet.projectName}</div>
               <div><span className="font-medium">{t('admin.jobDescription')}:</span> 
                 <span className="block mt-1 text-gray-800 dark:text-gray-200">{timesheet.jobDescription}</span>
               </div>
@@ -509,7 +509,7 @@ export default function TimeFormsPage() {
         onBulkDelete={handleBulkDelete}
         getRowId={(timesheet) => timesheet.id}
         exportFilename="timesheets"
-        exportHeaders={[t('admin.employee'), t('admin.company'), t('tableHeaders.date'), t('admin.jobSite'), t('admin.jobDescription'), t('admin.hoursWorked'), t('admin.cost')]}
+        exportHeaders={[t('admin.employee'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.jobDescription'), t('admin.hoursWorked'), t('admin.cost')]}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}

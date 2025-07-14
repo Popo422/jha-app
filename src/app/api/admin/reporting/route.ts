@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         employee: timesheets.employee,
         userId: timesheets.userId,
         timeSpent: timesheets.timeSpent,
-        jobSite: timesheets.jobSite,
+        projectName: timesheets.projectName,
         jobDescription: timesheets.jobDescription,
       })
       .from(timesheets)

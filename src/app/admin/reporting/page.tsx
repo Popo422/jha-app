@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,23 +30,24 @@ import type { ColumnDef } from '@tanstack/react-table';
 
 export default function ReportingPage() {
   const { t } = useTranslation('common')
+  const isMobile = useIsMobile();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedContractors, setSelectedContractors] = useState<string[]>([]);
-  const [selectedJobNames, setSelectedJobNames] = useState<string[]>([]);
+  const [selectedProjectNames, setSelectedProjectNames] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [contractorSearch, setContractorSearch] = useState('');
-  const [jobNameSearch, setJobNameSearch] = useState('');
+  const [projectNameSearch, setProjectNameSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // Default to all statuses
   const [activeTab, setActiveTab] = useState('hours'); // 'hours' or 'cost'
   const [contractorCostSearch, setContractorCostSearch] = useState('');
   const [companyCostSearch, setCompanyCostSearch] = useState('');
-  const [jobSiteCostSearch, setJobSiteCostSearch] = useState('');
+  const [projectCostSearch, setProjectCostSearch] = useState('');
   
   // Debounced search values to prevent excessive filtering
   const debouncedContractorCostSearch = useDebouncedValue(contractorCostSearch, 300);
   const debouncedCompanyCostSearch = useDebouncedValue(companyCostSearch, 300);
-  const debouncedJobSiteCostSearch = useDebouncedValue(jobSiteCostSearch, 300);
+  const debouncedProjectCostSearch = useDebouncedValue(projectCostSearch, 300);
 
   const { admin } = useSelector((state: RootState) => state.auth);
 
@@ -97,10 +99,11 @@ export default function ReportingPage() {
   }, [selectedContractors, contractorsData?.contractors]);
 
   // Create job name filter string
-  const jobNameFilterString = useMemo(() => {
-    if (selectedJobNames.length === 0) return undefined;
-    return selectedJobNames.join('|');
-  }, [selectedJobNames]);
+  // Create project name filter string
+  const projectNameFilterString = useMemo(() => {
+    if (selectedProjectNames.length === 0) return undefined;
+    return selectedProjectNames.join('|');
+  }, [selectedProjectNames]);
 
   // Get timesheets data
   const { 
@@ -112,7 +115,6 @@ export default function ReportingPage() {
     dateTo: endDate || undefined,
     search: search || undefined,
     employees: employeesFilterString,
-    jobName: jobNameFilterString,
     status: statusFilter || undefined,
     authType: 'admin'
   });
@@ -197,23 +199,26 @@ export default function ReportingPage() {
     return Array.from(companyMap.values()).sort((a, b) => b.cost - a.cost);
   }, [approvedTimesheets, getCost]);
 
-  // Job site analytics
-  const jobSiteAnalytics = useMemo(() => {
-    const jobSiteMap = new Map<string, { name: string; hours: number; cost: number }>();
+  // Project analytics
+  const projectAnalytics = useMemo(() => {
+    const projectMap = new Map<string, { name: string; hours: number; cost: number }>();
     
     approvedTimesheets.forEach(timesheet => {
       const hours = parseFloat(timesheet.timeSpent || '0');
       const cost = getCost(timesheet);
-      const existing = jobSiteMap.get(timesheet.jobSite) || { name: timesheet.jobSite, hours: 0, cost: 0 };
-      jobSiteMap.set(timesheet.jobSite, {
-        name: timesheet.jobSite,
+      const projectName = timesheet.projectName;
+      const existing = projectMap.get(projectName) || { name: projectName, hours: 0, cost: 0 };
+      projectMap.set(projectName, {
+        name: projectName,
         hours: existing.hours + hours,
         cost: existing.cost + cost
       });
     });
     
-    return Array.from(jobSiteMap.values()).sort((a, b) => b.cost - a.cost);
+    return Array.from(projectMap.values()).sort((a, b) => b.cost - a.cost);
   }, [approvedTimesheets, getCost]);
+
+  // This section was moved to project analytics above
 
   // Accumulated spend over time
   const accumulatedSpendData = useMemo(() => {
@@ -285,15 +290,15 @@ export default function ReportingPage() {
     );
   }, [companyAnalytics, debouncedCompanyCostSearch]);
 
-  const filteredJobSiteAnalytics = useMemo(() => {
-    if (!debouncedJobSiteCostSearch) return jobSiteAnalytics;
-    const searchTerm = debouncedJobSiteCostSearch.toLowerCase();
-    return jobSiteAnalytics.filter(jobSite =>
-      jobSite.name.toLowerCase().includes(searchTerm) ||
-      jobSite.hours.toFixed(1).includes(searchTerm) ||
-      jobSite.cost.toFixed(2).includes(searchTerm)
+  const filteredProjectAnalytics = useMemo(() => {
+    if (!debouncedProjectCostSearch) return projectAnalytics;
+    const searchTerm = debouncedProjectCostSearch.toLowerCase();
+    return projectAnalytics.filter(project =>
+      project.name.toLowerCase().includes(searchTerm) ||
+      project.hours.toFixed(1).includes(searchTerm) ||
+      project.cost.toFixed(2).includes(searchTerm)
     );
-  }, [jobSiteAnalytics, debouncedJobSiteCostSearch]);
+  }, [projectAnalytics, debouncedProjectCostSearch]);
 
   const statusFilterText = useMemo(() => {
     switch (statusFilter) {
@@ -314,11 +319,11 @@ export default function ReportingPage() {
     );
   };
 
-  const handleJobNameToggle = (jobName: string) => {
-    setSelectedJobNames(prev => 
-      prev.includes(jobName) 
-        ? prev.filter(name => name !== jobName)
-        : [...prev, jobName]
+  const handleProjectNameToggle = (projectName: string) => {
+    setSelectedProjectNames(prev => 
+      prev.includes(projectName) 
+        ? prev.filter(name => name !== projectName)
+        : [...prev, projectName]
     );
   };
 
@@ -369,16 +374,17 @@ export default function ReportingPage() {
       .map(contractor => `${contractor.firstName} ${contractor.lastName}`);
   }, [contractorsData?.contractors, selectedContractors]);
 
-  // Get unique job names from timesheet data
-  const uniqueJobNames = useMemo(() => {
+  // Get unique project names from timesheet data
+  const uniqueProjectNames = useMemo(() => {
     if (!timesheetData?.timesheets) return [];
-    const jobNames = new Set<string>();
+    const projectNames = new Set<string>();
     timesheetData.timesheets.forEach(timesheet => {
-      if (timesheet.jobName && timesheet.jobName.trim()) {
-        jobNames.add(timesheet.jobName.trim());
+      const projectName = timesheet.projectName;
+      if (projectName && projectName.trim()) {
+        projectNames.add(projectName.trim());
       }
     });
-    return Array.from(jobNames).sort();
+    return Array.from(projectNames).sort();
   }, [timesheetData?.timesheets]);
 
 
@@ -391,14 +397,14 @@ export default function ReportingPage() {
     );
   }, [contractorsData?.contractors, contractorSearch]);
 
-  // Filtered job names for search
-  const filteredJobNames = useMemo(() => {
-    if (!uniqueJobNames.length) return [];
-    if (!jobNameSearch) return uniqueJobNames;
-    return uniqueJobNames.filter(jobName => 
-      jobName.toLowerCase().includes(jobNameSearch.toLowerCase())
+  // Filtered project names for search
+  const filteredProjectNames = useMemo(() => {
+    if (!uniqueProjectNames.length) return [];
+    if (!projectNameSearch) return uniqueProjectNames;
+    return uniqueProjectNames.filter(projectName => 
+      projectName.toLowerCase().includes(projectNameSearch.toLowerCase())
     );
-  }, [uniqueJobNames, jobNameSearch]);
+  }, [uniqueProjectNames, projectNameSearch]);
 
   const formatTimeSpent = (timeSpent: string) => {
     const hours = parseFloat(timeSpent);
@@ -414,21 +420,21 @@ export default function ReportingPage() {
       accessorKey: "employee",
       header: t('admin.name'),
       cell: ({ row }) => (
-        <div>{row.getValue("employee")}</div>
+        <div className="font-medium">{row.getValue("employee")}</div>
       ),
     },
     {
-      accessorKey: "jobName",
+      accessorKey: "projectName",
       header: t('admin.projectName'),
       cell: ({ row }) => (
-        <div>{row.getValue("jobName") || "N/A"}</div>
+        <div className="max-w-32 truncate">{row.getValue("projectName") || "N/A"}</div>
       ),
     },
     {
       accessorKey: "timeSpent",
       header: t('admin.timeSpent'),
       cell: ({ row }) => (
-        <div>
+        <div className="text-center">
           {formatTimeSpent(row.getValue("timeSpent"))}
         </div>
       ),
@@ -437,23 +443,16 @@ export default function ReportingPage() {
       accessorKey: "company",
       header: t('admin.companyName'),
       cell: ({ row }) => (
-        <div>{row.getValue("company")}</div>
+        <div className="max-w-32 truncate">{row.getValue("company")}</div>
       ),
     },
     {
       accessorKey: "date",
       header: t('tableHeaders.date'),
       cell: ({ row }) => (
-        <div>
+        <div className="text-sm">
           {new Date(row.getValue("date")).toLocaleDateString()}
         </div>
-      ),
-    },
-    {
-      accessorKey: "jobSite",
-      header: t('admin.jobSite'),
-      cell: ({ row }) => (
-        <div>{row.getValue("jobSite")}</div>
       ),
     },
     {
@@ -508,194 +507,210 @@ export default function ReportingPage() {
     },
   ], [t]);
 
-  const jobSiteCostColumns = useMemo<ColumnDef<{name: string; hours: number; cost: number}>[]>(() => [
+  const projectCostColumns = useMemo<ColumnDef<{name: string; hours: number; cost: number}>[]>(() => [
     {
       accessorKey: "name",
-      header: t('admin.jobSite'),
-      cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+      header: t('admin.projectName'),
+      cell: ({ row }) => <div>{row.getValue("name")}</div>,
     },
     {
       accessorKey: "hours",
       header: t('admin.totalHours'),
-      cell: ({ row }) => <div>{(row.getValue("hours") as number).toFixed(1)} hrs</div>,
+      cell: ({ row }) => <div>{(row.getValue("hours") as number).toFixed(1)}</div>,
     },
     {
       accessorKey: "cost",
       header: t('admin.totalCost'),
-      cell: ({ row }) => <div className="font-semibold text-green-600">${(row.getValue("cost") as number).toFixed(2)}</div>,
+      cell: ({ row }) => <div>${(row.getValue("cost") as number).toFixed(2)}</div>,
     },
   ], [t]);
 
   const timesheetFilters = useMemo(() => (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center">
-      <div className="space-y-1">
-        <div className="text-sm font-medium">From Date</div>
+    <div className="flex flex-wrap gap-3 items-end">
+      <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">From Date</label>
         <Input
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="w-full md:w-40"
+          className="h-9 w-auto"
         />
       </div>
-      <div className="space-y-1">
-        <div className="text-sm font-medium">To Date</div>
+      <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">To Date</label>
         <Input
           type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
-          className="w-full md:w-40"
+          className="h-9 w-auto"
         />
       </div>
-      <div className="space-y-1">
-        <div className="text-sm font-medium">Status</div>
+      <div className="flex flex-col">
+        <label className="text-sm font-medium mb-1">Status</label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full md:w-48 justify-between">
-              {statusFilterText}
-              <ChevronDown className="h-4 w-4" />
+            <Button variant="outline" className="h-9 justify-between min-w-[120px]">
+              <span className="truncate">{statusFilterText}</span>
+              <ChevronDown className="h-4 w-4 flex-shrink-0 ml-2" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem 
-              onSelect={() => setStatusFilter('all')}
-              className="cursor-pointer"
-            >
-              All Statuses
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onSelect={() => setStatusFilter('approved')}
-              className="cursor-pointer"
-            >
-              <Check className="w-4 h-4 mr-2 text-green-600" />
-              Approved Only
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onSelect={() => setStatusFilter('pending')}
-              className="cursor-pointer"
-            >
-              <Clock className="w-4 h-4 mr-2 text-gray-600" />
-              Pending Only
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onSelect={() => setStatusFilter('rejected')}
-              className="cursor-pointer"
-            >
-              <XCircle className="w-4 h-4 mr-2 text-red-600" />
-              Rejected Only
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <DropdownMenuContent>
+              <DropdownMenuItem 
+                onSelect={() => setStatusFilter('all')}
+                className="cursor-pointer"
+              >
+                All Statuses
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onSelect={() => setStatusFilter('approved')}
+                className="cursor-pointer"
+              >
+                <Check className="w-4 h-4 mr-2 text-green-600" />
+                Approved Only
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onSelect={() => setStatusFilter('pending')}
+                className="cursor-pointer"
+              >
+                <Clock className="w-4 h-4 mr-2 text-gray-600" />
+                Pending Only
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onSelect={() => setStatusFilter('rejected')}
+                className="cursor-pointer"
+              >
+                <XCircle className="w-4 h-4 mr-2 text-red-600" />
+                Rejected Only
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Contractors</label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-9 justify-between min-w-[140px]">
+                <span className="truncate">
+                  {selectedContractors.length === 0 
+                    ? "All Contractors" 
+                    : selectedContractors.length === 1
+                      ? selectedContractorNames[0]
+                      : `${selectedContractors.length} contractors selected`
+                  }
+                </span>
+                <ChevronDown className="h-4 w-4 flex-shrink-0 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-64">
+              <div className="p-2">
+                <Input
+                  placeholder="Search contractors..."
+                  className="w-full"
+                  value={contractorSearch}
+                  onChange={(e) => {
+                    setContractorSearch(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onFocus={(e) => {
+                    e.stopPropagation();
+                  }}
+                />
+              </div>
+              <DropdownMenuItem
+                onClick={() => setSelectedContractors([])}
+                className="cursor-pointer"
+              >
+                {t('admin.allContractors')}
+              </DropdownMenuItem>
+              <div className="max-h-48 overflow-y-auto">
+                {filteredContractors.map((contractor) => (
+                  <DropdownMenuCheckboxItem
+                    key={contractor.id}
+                    checked={selectedContractors.includes(contractor.id)}
+                    onCheckedChange={() => handleContractorToggle(contractor.id)}
+                  >
+                    {contractor.firstName} {contractor.lastName}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Projects</label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-9 justify-between min-w-[140px]">
+                <span className="truncate">
+                  {selectedProjectNames.length === 0 
+                    ? "All Projects" 
+                    : selectedProjectNames.length === 1
+                      ? selectedProjectNames[0]
+                      : `${selectedProjectNames.length} projects selected`
+                  }
+                </span>
+                <ChevronDown className="h-4 w-4 flex-shrink-0 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-64">
+              <div className="p-2">
+                <Input
+                  placeholder="Search projects..."
+                  className="w-full"
+                  value={projectNameSearch}
+                  onChange={(e) => {
+                    setProjectNameSearch(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onFocus={(e) => {
+                    e.stopPropagation();
+                  }}
+                />
+              </div>
+              <DropdownMenuItem
+                onClick={() => setSelectedProjectNames([])}
+                className="cursor-pointer"
+              >
+                All Projects
+              </DropdownMenuItem>
+              <div className="max-h-48 overflow-y-auto">
+                {filteredProjectNames.map((projectName) => (
+                  <DropdownMenuCheckboxItem
+                    key={projectName}
+                    checked={selectedProjectNames.includes(projectName)}
+                    onCheckedChange={() => handleProjectNameToggle(projectName)}
+                  >
+                    {projectName}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        {/* <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Export</label>
+          <Button 
+            variant="outline" 
+            onClick={exportToCSV}
+            disabled={chartData.length === 0 || timesheetFetching}
+            className="h-9 min-w-[100px]"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {t('admin.exportCSV')}
+          </Button>
+        </div> */}
       </div>
-      <div className="space-y-1">
-        <div className="text-sm font-medium">Contractors</div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full md:w-64 justify-between">
-              {selectedContractors.length === 0 
-                ? "All Contractors" 
-                : selectedContractors.length === 1
-                  ? selectedContractorNames[0]
-                  : `${selectedContractors.length} contractors selected`
-              }
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-64">
-            <div className="p-2">
-              <Input
-                placeholder="Search contractors..."
-                className="w-full"
-                value={contractorSearch}
-                onChange={(e) => {
-                  setContractorSearch(e.target.value);
-                }}
-                onKeyDown={(e) => {
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-                onFocus={(e) => {
-                  e.stopPropagation();
-                }}
-              />
-            </div>
-            <DropdownMenuItem
-              onClick={() => setSelectedContractors([])}
-              className="cursor-pointer"
-            >
-              {t('admin.allContractors')}
-            </DropdownMenuItem>
-            <div className="max-h-48 overflow-y-auto">
-              {filteredContractors.map((contractor) => (
-                <DropdownMenuCheckboxItem
-                  key={contractor.id}
-                  checked={selectedContractors.includes(contractor.id)}
-                  onCheckedChange={() => handleContractorToggle(contractor.id)}
-                >
-                  {contractor.firstName} {contractor.lastName}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <div className="space-y-1">
-        <div className="text-sm font-medium">Projects</div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full md:w-64 justify-between">
-              {selectedJobNames.length === 0 
-                ? "All Projects" 
-                : selectedJobNames.length === 1
-                  ? selectedJobNames[0]
-                  : `${selectedJobNames.length} projects selected`
-              }
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-64">
-            <div className="p-2">
-              <Input
-                placeholder="Search projects..."
-                className="w-full"
-                value={jobNameSearch}
-                onChange={(e) => {
-                  setJobNameSearch(e.target.value);
-                }}
-                onKeyDown={(e) => {
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-                onFocus={(e) => {
-                  e.stopPropagation();
-                }}
-              />
-            </div>
-            <DropdownMenuItem
-              onClick={() => setSelectedJobNames([])}
-              className="cursor-pointer"
-            >
-              All Projects
-            </DropdownMenuItem>
-            <div className="max-h-48 overflow-y-auto">
-              {filteredJobNames.map((jobName) => (
-                <DropdownMenuCheckboxItem
-                  key={jobName}
-                  checked={selectedJobNames.includes(jobName)}
-                  onCheckedChange={() => handleJobNameToggle(jobName)}
-                >
-                  {jobName}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-  ), [startDate, endDate, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch, selectedJobNames, filteredJobNames, jobNameSearch, statusFilterText, t]);
+  ), [startDate, endDate, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch, selectedProjectNames, filteredProjectNames, projectNameSearch, statusFilterText, t]);
 
   const renderMobileCard = useCallback((timesheet: Timesheet, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
     <Card className="mb-4">
@@ -706,36 +721,32 @@ export default function ReportingPage() {
               type="checkbox"
               checked={isSelected}
               onChange={onToggleSelect}
-              className="w-4 h-4 mt-1 mr-3"
+              className="w-4 h-4 mt-1 mr-3 flex-shrink-0"
             />
           )}
-          <div className="flex-1">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <div className="font-semibold text-lg">{timesheet.employee}</div>
-                <div className="text-sm text-gray-600">{timesheet.company}</div>
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-lg truncate">{timesheet.employee}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 truncate">{timesheet.company}</div>
               </div>
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="ml-2 flex-shrink-0">
                 {formatTimeSpent(timesheet.timeSpent)}
               </Badge>
             </div>
             
-            <div className="space-y-1 mb-3">
-              <div className="flex justify-between">
-                <span className="text-sm font-medium text-gray-500">{t('admin.projectName')}:</span>
-                <span className="text-sm">{timesheet.jobName || "N/A"}</span>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('admin.projectName')}:</span>
+                <span className="text-sm text-right ml-2 truncate">{timesheet.projectName || "N/A"}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm font-medium text-gray-500">{t('tableHeaders.date')}:</span>
-                <span className="text-sm">{new Date(timesheet.date).toLocaleDateString()}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('tableHeaders.date')}:</span>
+                <span className="text-sm text-right ml-2">{new Date(timesheet.date).toLocaleDateString()}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm font-medium text-gray-500">{t('admin.jobSite')}:</span>
-                <span className="text-sm">{timesheet.jobSite}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm font-medium text-gray-500">{t('tableHeaders.status')}:</span>
-                {getStatusBadge(timesheet.status)}
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('tableHeaders.status')}:</span>
+                <div className="ml-2">{getStatusBadge(timesheet.status)}</div>
               </div>
             </div>
           </div>
@@ -745,15 +756,15 @@ export default function ReportingPage() {
   ), [t]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
           {activeTab === 'hours' ? t('admin.timeReports') : t('admin.costReports')}
         </h1>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="p-6 space-y-4">
+         <div className="p-6 space-y-4">
           
           {/* Filters Section */}
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
@@ -844,34 +855,36 @@ export default function ReportingPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-fit">
-            <button
-              onClick={() => setActiveTab('hours')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'hours'
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-              }`}
-            >
-              {t('admin.timeReports')}
-            </button>
-            <button
-              onClick={() => setActiveTab('cost')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'cost'
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-              }`}
-            >
-              {t('admin.costReports')}
-            </button>
+          <div className="w-full overflow-x-auto">
+            <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-fit min-w-full sm:min-w-0">
+              <button
+                onClick={() => setActiveTab('hours')}
+                className={`px-4 py-3 rounded-md text-sm font-medium transition-colors min-w-0 flex-1 sm:flex-none whitespace-nowrap ${
+                  activeTab === 'hours'
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+              >
+                {t('admin.timeReports')}
+              </button>
+              <button
+                onClick={() => setActiveTab('cost')}
+                className={`px-4 py-3 rounded-md text-sm font-medium transition-colors min-w-0 flex-1 sm:flex-none whitespace-nowrap ${
+                  activeTab === 'cost'
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                }`}
+              >
+                {t('admin.costReports')}
+              </button>
+            </div>
           </div>
 
           {/* Tab Content */}
           {activeTab === 'hours' && (
             <>
               {/* Hours Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -905,47 +918,49 @@ export default function ReportingPage() {
 
               {/* Hours Chart */}
               <Card>
-                <CardHeader>
-                  <CardTitle>{t('admin.hoursWorkedOverTime')}</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">{t('admin.hoursWorkedOverTime')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {timesheetLoading || timesheetFetching ? (
-                    <div className="h-80 flex items-center justify-center">
-                      <Skeleton className="h-80 w-full" />
+                    <div className="h-64 md:h-80 flex items-center justify-center">
+                      <Skeleton className="h-64 md:h-80 w-full" />
                     </div>
                   ) : chartData.length === 0 ? (
-                    <div className="h-80 flex items-center justify-center text-gray-500">
+                    <div className="h-64 md:h-80 flex items-center justify-center text-gray-500">
                       {t('admin.noApprovedTimesheets')}
                     </div>
                   ) : (
-                    <div className="h-80">
+                    <div className="h-64 md:h-80 w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData}>
+                        <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                           <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                           <XAxis 
                             dataKey="date" 
-                            tick={{ fontSize: 12 }}
+                            tick={{ fontSize: 10 }}
                             tickFormatter={(value) => {
                               const date = new Date(value);
                               return `${date.getMonth() + 1}/${date.getDate()}`;
                             }}
+                            interval="preserveStartEnd"
                           />
-                          <YAxis tick={{ fontSize: 12 }} />
+                          <YAxis tick={{ fontSize: 10 }} width={35} />
                           <Tooltip
                             formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Total Hours']}
                             labelFormatter={(label) => {
                               const date = new Date(label);
                               return date.toLocaleDateString();
                             }}
+                            contentStyle={{ fontSize: '12px' }}
                           />
-                          <Legend />
+                          <Legend wrapperStyle={{ fontSize: '12px' }} />
                           <Line 
                             type="monotone" 
                             dataKey="totalHours" 
                             stroke="#3b82f6" 
                             strokeWidth={2}
-                            dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                            activeDot={{ r: 6 }}
+                            dot={{ fill: '#3b82f6', strokeWidth: 2, r: 3 }}
+                            activeDot={{ r: 5 }}
                             name="Total Hours"
                           />
                         </LineChart>
@@ -956,59 +971,59 @@ export default function ReportingPage() {
               </Card>
 
               {/* Hours-focused Analytics */}
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.hoursAnalytics')}</h2>
+              <div className="space-y-4 md:space-y-6">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.hoursAnalytics')}</h2>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                   {/* Hours by Contractor Chart */}
-                  <Card className="w-full mx-auto h-fit p-2 gap-4 flex flex-col justify-center items-center">
-                    <CardHeader>
-                      <CardTitle>{t('admin.hoursWorkedByContractor')}</CardTitle>
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">{t('admin.hoursWorkedByContractor')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       {timesheetLoading || timesheetFetching ? (
-                        <div className="h-80 flex items-center justify-center">
-                          <Skeleton className="h-80 w-full" />
+                        <div className="h-64 md:h-80 flex items-center justify-center">
+                          <Skeleton className="h-64 md:h-80 w-full" />
                         </div>
                       ) : contractorHours.length === 0 ? (
-                        <div className="h-80 flex items-center justify-center text-gray-500">
+                        <div className="h-64 md:h-80 flex items-center justify-center text-gray-500">
                           {t('admin.noContractorData')}
                         </div>
                       ) : (
-                        <div className="h-80 flex justify-center items-center">
-                          <div style={{ width: Math.min(contractorHours.length * 120 + 100, 600), height: '100%' }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart 
-                                data={contractorHours.slice(0, 10)} 
-                                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                              >
-                              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                              <XAxis 
-                                dataKey="name" 
-                                tick={{ fontSize: 10 }}
-                                angle={-45}
-                                textAnchor="end"
-                                height={80}
-                                interval={0}
-                              />
-                              <YAxis 
-                                tick={{ fontSize: 12 }} 
-                                domain={[0, 'dataMax']}
-                                tickFormatter={(value) => `${value}h`}
-                              />
-                              <Tooltip 
-                                formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Hours Worked']}
-                                labelFormatter={(label) => `Contractor: ${label}`}
-                              />
-                              <Bar 
-                                dataKey="hours" 
-                                fill="#3b82f6" 
-                                radius={[4, 4, 0, 0]}
-                                maxBarSize={80}
-                              />
-                            </BarChart>
-                            </ResponsiveContainer>
-                          </div>
+                        <div className="h-64 md:h-80 w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart 
+                              data={contractorHours.slice(0, 10)} 
+                              margin={{ top: 10, right: 10, left: 10, bottom: 60 }}
+                            >
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                            <XAxis 
+                              dataKey="name" 
+                              tick={{ fontSize: 9 }}
+                              angle={-45}
+                              textAnchor="end"
+                              height={80}
+                              interval={0}
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 10 }} 
+                              domain={[0, 'dataMax']}
+                              tickFormatter={(value) => `${value}h`}
+                              width={35}
+                            />
+                            <Tooltip 
+                              formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Hours Worked']}
+                              labelFormatter={(label) => `Contractor: ${label}`}
+                              contentStyle={{ fontSize: '11px' }}
+                            />
+                            <Bar 
+                              dataKey="hours" 
+                              fill="#3b82f6" 
+                              radius={[4, 4, 0, 0]}
+                              maxBarSize={60}
+                            />
+                          </BarChart>
+                          </ResponsiveContainer>
                         </div>
                       )}
                     </CardContent>
@@ -1016,36 +1031,39 @@ export default function ReportingPage() {
 
                   {/* Company Hours Chart */}
                   <Card>
-                    <CardHeader>
-                      <CardTitle>{t('admin.hoursPerCompany')}</CardTitle>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">{t('admin.hoursPerCompany')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       {timesheetLoading || timesheetFetching ? (
-                        <div className="h-80 flex items-center justify-center">
-                          <Skeleton className="h-80 w-full" />
+                        <div className="h-64 md:h-80 flex items-center justify-center">
+                          <Skeleton className="h-64 md:h-80 w-full" />
                         </div>
                       ) : companyAnalytics.length === 0 ? (
-                        <div className="h-80 flex items-center justify-center text-gray-500">
+                        <div className="h-64 md:h-80 flex items-center justify-center text-gray-500">
                           {t('admin.noCompanyData')}
                         </div>
                       ) : (
-                        <div className="h-80">
+                        <div className="h-64 md:h-80 w-full">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
                                 data={companyAnalytics}
                                 cx="50%"
                                 cy="50%"
-                                outerRadius={120}
+                                outerRadius={isMobile ? 80 : 120}
                                 fill="#8884d8"
                                 dataKey="hours"
-                                label={({ name, hours }) => `${name}: ${hours.toFixed(1)}h`}
+                                label={isMobile ? false : ({ name, hours }) => `${name}: ${hours.toFixed(1)}h`}
                               >
                                 {companyAnalytics.map((entry, index) => (
                                   <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                                 ))}
                               </Pie>
-                              <Tooltip formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Total Hours']} />
+                              <Tooltip 
+                                formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Total Hours']} 
+                                contentStyle={{ fontSize: '12px' }}
+                              />
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
@@ -1060,7 +1078,7 @@ export default function ReportingPage() {
           {activeTab === 'cost' && (
             <>
               {/* Cost Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -1095,50 +1113,52 @@ export default function ReportingPage() {
               </div>
 
               {/* Cost Charts Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                 {/* Accumulated Spend Over Time */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle>{t('admin.accumulatedSpendOverTime')}</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">{t('admin.accumulatedSpendOverTime')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {timesheetLoading || timesheetFetching ? (
-                      <div className="h-80 flex items-center justify-center">
-                        <Skeleton className="h-80 w-full" />
+                      <div className="h-64 md:h-80 flex items-center justify-center">
+                        <Skeleton className="h-64 md:h-80 w-full" />
                       </div>
                     ) : accumulatedSpendData.length === 0 ? (
-                      <div className="h-80 flex items-center justify-center text-gray-500">
+                      <div className="h-64 md:h-80 flex items-center justify-center text-gray-500">
                         {t('admin.noCostData')}
                       </div>
                     ) : (
-                      <div className="h-80">
+                      <div className="h-64 md:h-80 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={accumulatedSpendData}>
+                          <LineChart data={accumulatedSpendData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                             <XAxis 
                               dataKey="date" 
-                              tick={{ fontSize: 12 }}
+                              tick={{ fontSize: 10 }}
                               tickFormatter={(value) => {
                                 const date = new Date(value);
                                 return `${date.getMonth() + 1}/${date.getDate()}`;
                               }}
+                              interval="preserveStartEnd"
                             />
-                            <YAxis tick={{ fontSize: 12 }} />
+                            <YAxis tick={{ fontSize: 10 }} width={50} />
                             <Tooltip
                               formatter={(value: number) => [`$${value.toFixed(2)}`, 'Accumulated Cost']}
                               labelFormatter={(label) => {
                                 const date = new Date(label);
                                 return date.toLocaleDateString();
                               }}
+                              contentStyle={{ fontSize: '12px' }}
                             />
-                            <Legend />
+                            <Legend wrapperStyle={{ fontSize: '12px' }} />
                             <Line 
                               type="monotone" 
                               dataKey="accumulatedCost" 
                               stroke="#10b981" 
                               strokeWidth={2}
-                              dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-                              activeDot={{ r: 6 }}
+                              dot={{ fill: '#10b981', strokeWidth: 2, r: 3 }}
+                              activeDot={{ r: 5 }}
                               name="Accumulated Cost"
                             />
                           </LineChart>
@@ -1150,40 +1170,42 @@ export default function ReportingPage() {
 
                 {/* Daily Project Spend */}
                 <Card>
-                  <CardHeader>
-                    <CardTitle>{t('admin.dailyProjectSpend')}</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">{t('admin.dailyProjectSpend')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {timesheetLoading || timesheetFetching ? (
-                      <div className="h-80 flex items-center justify-center">
-                        <Skeleton className="h-80 w-full" />
+                      <div className="h-64 md:h-80 flex items-center justify-center">
+                        <Skeleton className="h-64 md:h-80 w-full" />
                       </div>
                     ) : dailySpendData.length === 0 ? (
-                      <div className="h-80 flex items-center justify-center text-gray-500">
+                      <div className="h-64 md:h-80 flex items-center justify-center text-gray-500">
                         {t('admin.noCostData')}
                       </div>
                     ) : (
-                      <div className="h-80">
+                      <div className="h-64 md:h-80 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={dailySpendData}>
+                          <BarChart data={dailySpendData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                             <XAxis 
                               dataKey="date" 
-                              tick={{ fontSize: 12 }}
+                              tick={{ fontSize: 10 }}
                               tickFormatter={(value) => {
                                 const date = new Date(value);
                                 return `${date.getMonth() + 1}/${date.getDate()}`;
                               }}
+                              interval="preserveStartEnd"
                             />
-                            <YAxis tick={{ fontSize: 12 }} />
+                            <YAxis tick={{ fontSize: 10 }} width={50} />
                             <Tooltip
                               formatter={(value: number) => [`$${value.toFixed(2)}`, 'Daily Cost']}
                               labelFormatter={(label) => {
                                 const date = new Date(label);
                                 return date.toLocaleDateString();
                               }}
+                              contentStyle={{ fontSize: '12px' }}
                             />
-                            <Legend />
+                            <Legend wrapperStyle={{ fontSize: '12px' }} />
                             <Bar 
                               dataKey="cost" 
                               fill="#3b82f6"
@@ -1198,10 +1220,10 @@ export default function ReportingPage() {
               </div>
 
               {/* Cost-focused Analytics */}
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.costAnalytics')}</h2>
+              <div className="space-y-4 md:space-y-6">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.costAnalytics')}</h2>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                   {/* Contractor Cost Table */}
                   <Card>
                     <CardHeader>
@@ -1229,36 +1251,39 @@ export default function ReportingPage() {
 
                   {/* Company Cost Chart */}
                   <Card>
-                    <CardHeader>
-                      <CardTitle>{t('admin.costPerCompany')}</CardTitle>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">{t('admin.costPerCompany')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       {timesheetLoading || timesheetFetching ? (
-                        <div className="h-80 flex items-center justify-center">
-                          <Skeleton className="h-80 w-full" />
+                        <div className="h-64 md:h-80 flex items-center justify-center">
+                          <Skeleton className="h-64 md:h-80 w-full" />
                         </div>
                       ) : companyAnalytics.length === 0 ? (
-                        <div className="h-80 flex items-center justify-center text-gray-500">
+                        <div className="h-64 md:h-80 flex items-center justify-center text-gray-500">
                           {t('admin.noCompanyData')}
                         </div>
                       ) : (
-                        <div className="h-80">
+                        <div className="h-64 md:h-80 w-full">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
                                 data={companyAnalytics}
                                 cx="50%"
                                 cy="50%"
-                                outerRadius={120}
+                                outerRadius={isMobile ? 80 : 120}
                                 fill="#8884d8"
                                 dataKey="cost"
-                                label={({ name, cost }) => `${name}: $${cost.toFixed(0)}`}
+                                label={isMobile ? false : ({ name, cost }) => `${name}: $${cost.toFixed(0)}`}
                               >
                                 {companyAnalytics.map((entry, index) => (
                                   <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                                 ))}
                               </Pie>
-                              <Tooltip formatter={(value: number) => [`$${value.toFixed(2)}`, 'Total Cost']} />
+                              <Tooltip 
+                                formatter={(value: number) => [`$${value.toFixed(2)}`, 'Total Cost']} 
+                                contentStyle={{ fontSize: '12px' }}
+                              />
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
@@ -1270,24 +1295,24 @@ export default function ReportingPage() {
                 {/* Job Site Cost Analytics */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>{t('admin.costPerJobSite')}</CardTitle>
+                    <CardTitle>{t('admin.costPerProject')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <AdminDataTable
-                      data={filteredJobSiteAnalytics}
-                      columns={jobSiteCostColumns}
+                      data={filteredProjectAnalytics}
+                      columns={projectCostColumns}
                       isLoading={timesheetLoading}
                       isFetching={timesheetFetching}
                       getRowId={(item) => item.name}
-                      exportFilename="jobsite_costs"
-                      exportHeaders={[t('admin.jobSite'), t('admin.totalHours'), t('admin.totalCost')]}
-                      getExportData={(item) => [
+                      exportFilename="project_costs"
+                      exportHeaders={[t('admin.projectName'), t('admin.totalHours'), t('admin.totalCost')]}
+                      getExportData={(item: {name: string; hours: number; cost: number}) => [
                         item.name,
                         `${item.hours.toFixed(1)} hrs`,
                         `$${item.cost.toFixed(2)}`
                       ]}
-                      searchValue={jobSiteCostSearch}
-                      onSearchChange={setJobSiteCostSearch}
+                      searchValue={projectCostSearch}
+                      onSearchChange={setProjectCostSearch}
                     />
                   </CardContent>
                 </Card>
@@ -1300,22 +1325,22 @@ export default function ReportingPage() {
 
       {/* Timesheet Table */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.timesheetDetails')}</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.timesheetDetails')}</h2>
         <AdminDataTable
           data={filteredTimesheets}
           columns={timesheetColumns}
           isLoading={timesheetLoading}
           isFetching={timesheetFetching}
           getRowId={(timesheet) => timesheet.id}
-          exportFilename="timesheets"
-          exportHeaders={[t('admin.name'), t('admin.projectName'), t('admin.timeSpent'), t('admin.companyName'), t('tableHeaders.date'), t('admin.jobSite'), t('tableHeaders.status')]}
+          exportFilename="approved_timesheets"
+          exportHeaders={[t('admin.name'), t('admin.projectName'), t('admin.timeSpent'), t('admin.companyName'), t('tableHeaders.date'), t('admin.projectLocation'), t('tableHeaders.status')]}
           getExportData={(timesheet) => [
             timesheet.employee,
-            timesheet.jobName || "N/A",
+            timesheet.projectName || "N/A",
             formatTimeSpent(timesheet.timeSpent),
             timesheet.company,
             new Date(timesheet.date).toLocaleDateString(),
-            timesheet.jobSite,
+            timesheet.projectName,
             timesheet.status
           ]}
           searchValue={search}

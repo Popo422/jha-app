@@ -138,9 +138,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { date, employee, company, jobSite, jobName, jobDescription, timeSpent } = body;
+    const { date, employee, company, projectName, jobDescription, timeSpent } = body;
 
-    if (!date || !employee || !company || !jobSite || !jobName || !jobDescription || !timeSpent) {
+    if (!date || !employee || !company || !projectName || !jobDescription || !timeSpent) {
       return NextResponse.json(
         { error: 'All fields are required' },
         { status: 400 }
@@ -171,8 +171,7 @@ export async function POST(request: NextRequest) {
       date,
       employee,
       company,
-      jobSite,
-      jobName: jobName,
+      projectName,
       jobDescription,
       timeSpent: timeSpentNumber.toString(),
     }).returning();
@@ -216,7 +215,7 @@ export async function GET(request: NextRequest) {
     const company = searchParams.get('company');
     const search = searchParams.get('search');
     const status = searchParams.get('status');
-    const jobName = searchParams.get('jobName');
+    const projectName = searchParams.get('projectName');
     const employees = searchParams.get('employees');
 
     // Build query conditions
@@ -250,15 +249,15 @@ export async function GET(request: NextRequest) {
         or(
           ilike(timesheets.employee, `%${search}%`),
           ilike(timesheets.company, `%${search}%`),
-          ilike(timesheets.jobSite, `%${search}%`),
+          ilike(timesheets.projectName, `%${search}%`),
           ilike(timesheets.jobDescription, `%${search}%`)
         )
       );
     }
 
-    // Add job name filter if specified
-    if (jobName) {
-      conditions.push(ilike(timesheets.jobName, `%${jobName}%`));
+    // Add project name filter if specified
+    if (projectName) {
+      conditions.push(ilike(timesheets.projectName, `%${projectName}%`));
     }
 
     // Add employees filter if specified (for contractor filtering)
@@ -355,9 +354,9 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const { id, date, employee, company, jobSite, jobName, jobDescription, timeSpent } = await request.json();
+    const { id, date, employee, company, projectName, jobDescription, timeSpent } = await request.json();
 
-    if (!id || !date || !employee || !company || !jobSite || !jobName || !jobDescription || !timeSpent) {
+    if (!id || !date || !employee || !company || !projectName || !jobDescription || !timeSpent) {
       return NextResponse.json(
         { error: 'All fields are required' },
         { status: 400 }
@@ -390,8 +389,7 @@ export async function PUT(request: NextRequest) {
         date,
         employee,
         company,
-        jobSite,
-        jobName: jobName,
+        projectName,
         jobDescription,
         timeSpent: timeSpentNumber.toString(),
         status: 'pending', // Reset to pending when timesheet is updated

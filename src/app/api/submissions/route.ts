@@ -151,13 +151,13 @@ export async function POST(request: NextRequest) {
     const submissionType = formData.get('submissionType') as string
     const date = formData.get('date') as string
     const dateTimeClocked = formData.get('dateTimeClocked') as string
-    const jobSite = formData.get('jobSite') as string
+    const projectName = formData.get('projectName') as string
     const formDataJson = formData.get('formData') as string
 
     // Validate required fields
-    if (!submissionType || !jobSite || !formDataJson || !date) {
+    if (!submissionType || !projectName || !formDataJson || !date) {
       return NextResponse.json(
-        { error: 'Missing required fields: submissionType, jobSite, date, formData' },
+        { error: 'Missing required fields: submissionType, projectName, date, formData' },
         { status: 400 }
       )
     }
@@ -252,8 +252,7 @@ export async function POST(request: NextRequest) {
       date: date,
       dateTimeClocked: dateTimeClocked ? new Date(dateTimeClocked) : null,
       company: parsedFormData.company || decoded.contractor.companyName,
-      jobSite: jobSite,
-      jobName: parsedFormData.jobName,
+      projectName: projectName,
       submissionType: submissionType,
       formData: parsedFormData,
     }).returning()
@@ -263,13 +262,13 @@ export async function POST(request: NextRequest) {
       userId: decoded.user.id,
       submissionType: submissionType,
       date: date,
-      jobSite: jobSite,
+      projectName: projectName,
       submissionId: submission[0].id
     })
     sendEventToUser(decoded.user.id, 'submission_created', {
       submissionType: submissionType,
       date: date,
-      jobSite: jobSite,
+      projectName: projectName,
       submissionId: submission[0].id
     })
 
@@ -349,7 +348,7 @@ export async function GET(request: NextRequest) {
         or(
           ilike(submissions.completedBy, `%${search}%`),
           ilike(submissions.company, `%${search}%`),
-          ilike(submissions.jobSite, `%${search}%`),
+          ilike(submissions.projectName, `%${search}%`),
           ilike(submissions.submissionType, `%${search}%`)
         )
       )
@@ -455,7 +454,7 @@ export async function DELETE(request: NextRequest) {
         submissionId: submissionId,
         submissionType: existingSubmission[0].submissionType,
         date: existingSubmission[0].date,
-        jobSite: existingSubmission[0].jobSite
+        projectName: existingSubmission[0].projectName
       })
     } else if (auth.isAdmin) {
       // Send SSE event to the original submission owner if admin is deleting
@@ -463,7 +462,7 @@ export async function DELETE(request: NextRequest) {
         submissionId: submissionId,
         submissionType: existingSubmission[0].submissionType,
         date: existingSubmission[0].date,
-        jobSite: existingSubmission[0].jobSite,
+        projectName: existingSubmission[0].projectName,
         deletedByAdmin: true
       })
     }
@@ -501,7 +500,7 @@ export async function PUT(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { id, completedBy, date, dateTimeClocked, company, jobSite, jobName, formData } = body
+    const { id, completedBy, date, dateTimeClocked, company, projectName, formData } = body
 
     if (!id) {
       return NextResponse.json(
@@ -572,8 +571,7 @@ export async function PUT(request: NextRequest) {
       updateData.dateTimeClocked = dateTimeClocked ? new Date(dateTimeClocked) : null
     }
     if (company !== undefined) updateData.company = company
-    if (jobSite !== undefined) updateData.jobSite = jobSite
-    if (jobName !== undefined) updateData.jobName = jobName || null
+    if (projectName !== undefined) updateData.projectName = projectName
     if (processedFormData !== undefined) updateData.formData = processedFormData
 
     // Update the submission
@@ -588,7 +586,7 @@ export async function PUT(request: NextRequest) {
       submissionId: id,
       submissionType: existingSubmission[0].submissionType,
       date: updatedSubmission[0].date,
-      jobSite: updatedSubmission[0].jobSite,
+      projectName: updatedSubmission[0].projectName,
       updatedByAdmin: auth.isAdmin
     })
 

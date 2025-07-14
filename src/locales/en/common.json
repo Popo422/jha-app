@@ -93,6 +93,7 @@
     "costPerCompany": "Cost per Company",
     "companyName": "Company Name",
     "costPerJobSite": "Cost per Job Site",
+    "costPerProject": "Cost per Project",
     "jobSite": "Job Site",
     "timesheetDetails": "Timesheet Details",
     "projectName": "Project Name",
@@ -252,6 +253,7 @@
     "timeSpentHours": "Time Spent (hours):",
     "employee": "Employee:",
     "jobDescription": "Job Description:",
+    "explanationOfWorkCompleted": "Explanation of Work Completed:",
     "completedBy": "Completed by:",
     "details": "Details:",
     "followUpQuestion": "Follow-up Question",
@@ -389,6 +391,7 @@
   "tableHeaders": {
     "date": "Date",
     "jobSite": "Job Site",
+    "projectName": "Project Name",
     "hours": "Hours",
     "status": "Status",
     "details": "Details"

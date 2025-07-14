@@ -24,8 +24,7 @@ interface JobHazardAnalysisFormData {
   completedBy: string;
   date: string;
   supervisor: string;
-  jobSite: string;
-  jobName: string;
+  projectName: string;
   company: string;
   hazards: {
     slipFallTrips: boolean;
@@ -142,8 +141,7 @@ export default function JobHazardReportPage() {
     completedBy: contractor?.name || "",
     date: new Date().toISOString().split("T")[0],
     supervisor: "",
-    jobSite: "",
-    jobName: "",
+    projectName: "",
     company: contractor?.companyName || "",
     hazards: {
       slipFallTrips: false,
@@ -255,8 +253,7 @@ export default function JobHazardReportPage() {
       completedBy: contractor?.name || "",
       date: new Date().toISOString().split("T")[0],
       supervisor: "",
-      jobSite: "",
-      jobName: "",
+      projectName: "",
       company: contractor?.companyName || "",
       hazards: {
         slipFallTrips: false,
@@ -458,14 +455,14 @@ export default function JobHazardReportPage() {
 
     await submitForm({
       submissionType: 'job-hazard-analysis',
-      jobSite: formData.jobSite,
+      projectName: formData.projectName,
       date: formData.date,
       formData: {
         completedBy: formData.completedBy,
         date: formData.date,
         supervisor: formData.supervisor,
         company: formData.company,
-        jobName: formData.jobName,
+        projectName: formData.projectName,
         hazards: formData.hazards,
         ppe: formData.ppe,
         fallProtection: formData.fallProtection,
@@ -540,12 +537,8 @@ export default function JobHazardReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="jobSite">{t('formFields.jobSite')}</Label>
-                    <Input id="jobSite" name="jobSite" value={formData.jobSite} onChange={handleInputChange} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="jobName">{t('formFields.jobName')}</Label>
-                    <Input id="jobName" name="jobName" value={formData.jobName} onChange={handleInputChange} placeholder={t('placeholders.jobNamePlaceholder')} required />
+                    <Label htmlFor="projectName">{t('formFields.projectName')}</Label>
+                    <Input id="projectName" name="projectName" value={formData.projectName} onChange={handleInputChange} placeholder={t('placeholders.projectName')} required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="company">{t('formFields.company')}</Label>

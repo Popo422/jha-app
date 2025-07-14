@@ -3,7 +3,7 @@ import type { RootState } from '@/lib/store'
 
 export interface SubmissionData {
   submissionType: 'end-of-day' | 'job-hazard-analysis' | 'start-of-day'
-  jobSite: string
+  projectName: string
   date: string
   dateTimeClocked?: string
   formData: Record<string, any>
@@ -18,8 +18,7 @@ export interface Submission {
   date: string
   dateTimeClocked?: string
   company: string
-  jobSite: string
-  jobName?: string
+  projectName: string
   submissionType: string
   formData: Record<string, any>
   createdAt: string
@@ -54,8 +53,7 @@ export interface UpdateSubmissionData {
   date?: string
   dateTimeClocked?: string
   company?: string
-  jobSite?: string
-  jobName?: string
+  projectName?: string
   formData?: Record<string, any>
 }
 
@@ -105,7 +103,7 @@ export const submissionsApi = createApi({
         
         // Add form fields
         formData.append('submissionType', data.submissionType)
-        formData.append('jobSite', data.jobSite)
+        formData.append('projectName', data.projectName)
         formData.append('date', data.date)
         formData.append('formData', JSON.stringify(data.formData))
         

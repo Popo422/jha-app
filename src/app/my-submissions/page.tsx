@@ -83,7 +83,7 @@ export default function MySubmissionsPage() {
                             <thead>
                               <tr className="border-b bg-muted/50">
                                 <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground text-sm">{t('tableHeaders.date')}</th>
-                                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground text-sm">{t('tableHeaders.jobSite')}</th>
+                                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground text-sm">{t('tableHeaders.projectName')}</th>
                                 <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground text-sm">{t('tableHeaders.hours')}</th>
                                 <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground text-sm">{t('tableHeaders.status')}</th>
                                 <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground text-sm">{t('tableHeaders.details')}</th>
@@ -96,8 +96,7 @@ export default function MySubmissionsPage() {
                                     <div className="text-sm font-medium">{format(new Date(timesheet.date), "MMM dd, yyyy")}</div>
                                   </td>
                                   <td className="p-4 align-middle">
-                                    <div className="text-sm">{timesheet.jobSite}</div>
-                                    <div className="text-xs text-muted-foreground">{timesheet.jobName}</div>
+                                    <div className="text-sm">{timesheet.projectName}</div>
                                   </td>
                                   <td className="p-4 align-middle">
                                     <div className="text-sm font-medium">{timesheet.timeSpent} hrs</div>
