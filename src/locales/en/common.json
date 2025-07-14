@@ -258,7 +258,8 @@
     "details": "Details:",
     "followUpQuestion": "Follow-up Question",
     "other": "Other",
-    "explanation": "Explanation"
+    "explanation": "Explanation",
+    "projectName":"Project Name"
   },
   "placeholders": {
     "enterContractorCode": "Enter contractor code",
@@ -272,7 +273,8 @@
     "employeeName": "Employee Name",
     "jobNamePlaceholder": "Name or title of the job",
     "hoursSpentOnSite": "Hours spent on site",
-    "jobDescriptionPlaceholder": "Describe the work performed..."
+    "jobDescriptionPlaceholder": "Describe the work performed...",
+    "projectName": "Name of project"
   },
   "safety": {
     "toolInspection": "Tool Inspection",
