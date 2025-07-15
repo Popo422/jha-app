@@ -53,10 +53,14 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
   const signatureRef = useRef<SignatureCanvas>(null);
   const reviewerSignatureRefs = useRef<(SignatureCanvas | null)[]>([]);
   const investigatorSignatureRefs = useRef<(SignatureCanvas | null)[]>([]);
+  const [isLoadingSignature, setIsLoadingSignature] = useState(false);
+  const [isLoadingReviewerSignatures, setIsLoadingReviewerSignatures] = useState<boolean[]>([]);
+  const [isLoadingInvestigatorSignatures, setIsLoadingInvestigatorSignatures] = useState<boolean[]>([]);
 
   // Load main signature into canvas when component mounts
   useEffect(() => {
     if (formData.signature && signatureRef.current) {
+      setIsLoadingSignature(true);
       const canvas = signatureRef.current.getCanvas();
       const ctx = canvas.getContext('2d');
       if (ctx) {
@@ -64,6 +68,10 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
         img.onload = () => {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          setIsLoadingSignature(false);
+        };
+        img.onerror = () => {
+          setIsLoadingSignature(false);
         };
         img.src = formData.signature;
       }
@@ -73,8 +81,12 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
   // Load reviewer signatures into canvases
   useEffect(() => {
     if (formData.reviewers) {
+      const newLoadingStates = [...isLoadingReviewerSignatures];
       formData.reviewers.forEach((reviewer: ReviewerData, index: number) => {
         if (reviewer.signature && reviewerSignatureRefs.current[index]) {
+          newLoadingStates[index] = true;
+          setIsLoadingReviewerSignatures(newLoadingStates);
+          
           const canvas = reviewerSignatureRefs.current[index]!.getCanvas();
           const ctx = canvas.getContext('2d');
           if (ctx) {
@@ -82,6 +94,18 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
             img.onload = () => {
               ctx.clearRect(0, 0, canvas.width, canvas.height);
               ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              setIsLoadingReviewerSignatures(prev => {
+                const updated = [...prev];
+                updated[index] = false;
+                return updated;
+              });
+            };
+            img.onerror = () => {
+              setIsLoadingReviewerSignatures(prev => {
+                const updated = [...prev];
+                updated[index] = false;
+                return updated;
+              });
             };
             img.src = reviewer.signature;
           }
@@ -93,8 +117,12 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
   // Load investigator signatures into canvases
   useEffect(() => {
     if (formData.investigators) {
+      const newLoadingStates = [...isLoadingInvestigatorSignatures];
       formData.investigators.forEach((investigator: InvestigatorData, index: number) => {
         if (investigator.signature && investigatorSignatureRefs.current[index]) {
+          newLoadingStates[index] = true;
+          setIsLoadingInvestigatorSignatures(newLoadingStates);
+          
           const canvas = investigatorSignatureRefs.current[index]!.getCanvas();
           const ctx = canvas.getContext('2d');
           if (ctx) {
@@ -102,6 +130,18 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
             img.onload = () => {
               ctx.clearRect(0, 0, canvas.width, canvas.height);
               ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              setIsLoadingInvestigatorSignatures(prev => {
+                const updated = [...prev];
+                updated[index] = false;
+                return updated;
+              });
+            };
+            img.onerror = () => {
+              setIsLoadingInvestigatorSignatures(prev => {
+                const updated = [...prev];
+                updated[index] = false;
+                return updated;
+              });
             };
             img.src = investigator.signature;
           }
@@ -218,12 +258,16 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
   };
 
   const handleSignatureEnd = () => {
-    if (signatureRef.current) {
-      const signatureData = signatureRef.current.toDataURL();
-      setFormData((prev: any) => ({
-        ...prev,
-        signature: signatureData,
-      }));
+    if (signatureRef.current && !isLoadingSignature) {
+      try {
+        const signatureData = signatureRef.current.toDataURL();
+        setFormData((prev: any) => ({
+          ...prev,
+          signature: signatureData,
+        }));
+      } catch (error) {
+        console.warn('Could not export signature - canvas may be tainted');
+      }
     }
   };
 
@@ -238,11 +282,15 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
 
   const handleReviewerSignatureEnd = useCallback((index: number) => {
     const canvas = reviewerSignatureRefs.current[index];
-    if (canvas) {
-      const signatureData = canvas.toDataURL();
-      handleReviewerChange(index, 'signature', signatureData);
+    if (canvas && !isLoadingReviewerSignatures[index]) {
+      try {
+        const signatureData = canvas.toDataURL();
+        handleReviewerChange(index, 'signature', signatureData);
+      } catch (error) {
+        console.warn('Could not export reviewer signature - canvas may be tainted');
+      }
     }
-  }, [handleReviewerChange]);
+  }, [handleReviewerChange, isLoadingReviewerSignatures]);
 
   const handleReviewerSignatureClear = useCallback((index: number) => {
     const canvas = reviewerSignatureRefs.current[index];
@@ -254,11 +302,15 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
 
   const handleInvestigatorSignatureEnd = useCallback((index: number) => {
     const canvas = investigatorSignatureRefs.current[index];
-    if (canvas) {
-      const signatureData = canvas.toDataURL();
-      handleInvestigatorChange(index, 'signature', signatureData);
+    if (canvas && !isLoadingInvestigatorSignatures[index]) {
+      try {
+        const signatureData = canvas.toDataURL();
+        handleInvestigatorChange(index, 'signature', signatureData);
+      } catch (error) {
+        console.warn('Could not export investigator signature - canvas may be tainted');
+      }
     }
-  }, [handleInvestigatorChange]);
+  }, [handleInvestigatorChange, isLoadingInvestigatorSignatures]);
 
   const handleInvestigatorSignatureClear = useCallback((index: number) => {
     const canvas = investigatorSignatureRefs.current[index];
