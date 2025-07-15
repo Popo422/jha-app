@@ -504,7 +504,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                     canvasProps={{
                       width: 400,
                       height: 200,
-                      className: "signature-canvas w-full max-w-md mx-auto border rounded"
+                      className: "signature-canvas w-full max-w-md mx-auto border rounded bg-white"
                     }}
                     onBegin={handleSignatureStart}
                     onEnd={handleSignatureEnd}

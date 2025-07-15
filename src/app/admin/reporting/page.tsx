@@ -763,6 +763,32 @@ export default function ReportingPage() {
         </h1>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="w-full overflow-x-auto">
+        <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-fit min-w-full sm:min-w-0">
+          <button
+            onClick={() => setActiveTab('hours')}
+            className={`px-4 py-3 rounded-md text-sm font-medium transition-colors min-w-0 flex-1 sm:flex-none whitespace-nowrap ${
+              activeTab === 'hours'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+            }`}
+          >
+            {t('admin.timeReports')}
+          </button>
+          <button
+            onClick={() => setActiveTab('cost')}
+            className={`px-4 py-3 rounded-md text-sm font-medium transition-colors min-w-0 flex-1 sm:flex-none whitespace-nowrap ${
+              activeTab === 'cost'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+            }`}
+          >
+            {t('admin.costReports')}
+          </button>
+        </div>
+      </div>
+
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
          <div className="p-6 space-y-4">
           
@@ -854,31 +880,6 @@ export default function ReportingPage() {
             </Button>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="w-full overflow-x-auto">
-            <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg w-fit min-w-full sm:min-w-0">
-              <button
-                onClick={() => setActiveTab('hours')}
-                className={`px-4 py-3 rounded-md text-sm font-medium transition-colors min-w-0 flex-1 sm:flex-none whitespace-nowrap ${
-                  activeTab === 'hours'
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-                }`}
-              >
-                {t('admin.timeReports')}
-              </button>
-              <button
-                onClick={() => setActiveTab('cost')}
-                className={`px-4 py-3 rounded-md text-sm font-medium transition-colors min-w-0 flex-1 sm:flex-none whitespace-nowrap ${
-                  activeTab === 'cost'
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-                }`}
-              >
-                {t('admin.costReports')}
-              </button>
-            </div>
-          </div>
 
           {/* Tab Content */}
           {activeTab === 'hours' && (

@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      enabledModules: company[0].enabledModules || ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'timesheet']
+      enabledModules: company[0].enabledModules || ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'timesheet']
     })
 
   } catch (error) {

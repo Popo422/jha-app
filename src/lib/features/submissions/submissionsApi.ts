@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { RootState } from '@/lib/store'
 
 export interface SubmissionData {
-  submissionType: 'end-of-day' | 'job-hazard-analysis' | 'start-of-day'
+  submissionType: 'end-of-day' | 'job-hazard-analysis' | 'start-of-day' | 'incident-report'
   projectName: string
   date: string
   dateTimeClocked?: string
