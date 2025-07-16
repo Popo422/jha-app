@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, type Contractor } from "@/lib/features/contractors/contractorsApi";
+import { useCreateSubcontractorMutation } from "@/lib/features/subcontractors/subcontractorsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Toast, useToast } from "@/components/ui/toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import SubcontractorSelect from "@/components/SubcontractorSelect";
 import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -33,6 +36,8 @@ export default function ContractorsPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailMessage, setEmailMessage] = useState<string>("");
+  const [isSubcontractorModalOpen, setIsSubcontractorModalOpen] = useState(false);
+  const [newSubcontractorName, setNewSubcontractorName] = useState("");
   
   const { toast, showToast, hideToast } = useToast();
   
@@ -43,6 +48,7 @@ export default function ContractorsPage() {
   const [deleteContractor, { isLoading: isDeleting }] = useDeleteContractorMutation();
   const [createContractor, { isLoading: isCreating, error: createError }] = useCreateContractorMutation();
   const [updateContractor, { isLoading: isUpdating, error: updateError }] = useUpdateContractorMutation();
+  const [createSubcontractor, { isLoading: isCreatingSubcontractor }] = useCreateSubcontractorMutation();
 
   const isFormLoading = isCreating || isUpdating;
   const formError = createError || updateError;
@@ -230,6 +236,27 @@ export default function ContractorsPage() {
     return t('contractors.errorSavingContractor');
   };
 
+  const handleCreateSubcontractor = async () => {
+    if (!newSubcontractorName.trim()) return;
+
+    try {
+      const result = await createSubcontractor({
+        name: newSubcontractorName.trim()
+      }).unwrap();
+      
+      // Auto-select the new subcontractor in the form
+      setFormData(prev => ({ ...prev, companyName: result.subcontractor.name }));
+      
+      // Close modal and reset
+      setIsSubcontractorModalOpen(false);
+      setNewSubcontractorName("");
+      
+      showToast('Company/Subcontractor created successfully', 'success');
+    } catch (error: any) {
+      showToast(error.data?.error || 'Failed to create company/subcontractor', 'error');
+    }
+  };
+
   const contractors = contractorsData?.contractors || [];
 
   // Define table columns
@@ -326,7 +353,7 @@ export default function ContractorsPage() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-{t('contractors.companyName')}
+{t('contractors.companySubcontractor')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -492,21 +519,35 @@ export default function ContractorsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="companyName">{t('contractors.companyNameOptional')}</Label>
-              <Input
-                id="companyName"
-                name="companyName"
-                value={formData.companyName}
-                onChange={handleInputChange}
-                placeholder={t('contractors.companyNamePlaceholder')}
-                className={formErrors.companyName ? "border-red-500" : ""}
-                disabled={isFormLoading}
-              />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <SubcontractorSelect
+                    id="companyName"
+                    name="companyName"
+                    label={t('contractors.companySubcontractor')}
+                    value={formData.companyName}
+                    onChange={(value) => setFormData(prev => ({ ...prev, companyName: value }))}
+                    placeholder={t('contractors.companyNamePlaceholder')}
+                    disabled={isFormLoading}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="default"
+                    onClick={() => setIsSubcontractorModalOpen(true)}
+                    disabled={isFormLoading}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
               {formErrors.companyName && (
                 <p className="text-sm text-red-500">{formErrors.companyName}</p>
               )}
               <p className="text-xs text-muted-foreground">
-{t('contractors.companyNameHelp')}
+                Optional: Select or enter a company/subcontractor name
               </p>
             </div>
 
@@ -579,7 +620,7 @@ export default function ContractorsPage() {
         onDelete={handleDelete}
         getRowId={(contractor) => contractor.id}
         exportFilename="contractors"
-        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companyName'), t('contractors.created')]}
+        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), t('contractors.created')]}
         getExportData={(contractor) => [
           contractor.firstName,
           contractor.lastName,
@@ -604,6 +645,43 @@ export default function ContractorsPage() {
         show={toast.show}
         onClose={hideToast}
       />
+
+      {/* Add Subcontractor Modal */}
+      <AlertDialog open={isSubcontractorModalOpen} onOpenChange={setIsSubcontractorModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add New {t('contractors.companySubcontractor')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter the company/subcontractor name below. It will be automatically selected in the form.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="subcontractor-name">{t('contractors.companySubcontractor')} Name</Label>
+              <Input
+                id="subcontractor-name"
+                value={newSubcontractorName}
+                onChange={(e) => setNewSubcontractorName(e.target.value)}
+                placeholder="Enter name"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setIsSubcontractorModalOpen(false);
+              setNewSubcontractorName("");
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleCreateSubcontractor} 
+              disabled={isCreatingSubcontractor || !newSubcontractorName.trim()}
+            >
+              {isCreatingSubcontractor ? 'Creating...' : 'Create'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

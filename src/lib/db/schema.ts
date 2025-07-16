@@ -93,6 +93,17 @@ export const projects = pgTable('projects', {
   companyProjectUnique: unique().on(table.companyId, table.name),
 }))
 
+export const subcontractors = pgTable('subcontractors', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  companyId: uuid('company_id').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: same subcontractor name can exist across companies but not within same company
+  companySubcontractorUnique: unique().on(table.companyId, table.name),
+}))
+
 export const toolboxTalks = pgTable('toolbox_talks', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull(),

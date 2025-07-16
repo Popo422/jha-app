@@ -17,6 +17,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
+import SubcontractorSelect from "@/components/SubcontractorSelect";
 
 interface TimesheetFormData {
   date: string;
@@ -147,13 +148,13 @@ export default function TimesheetPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="company">{t('formFields.company')}</Label>
-                    <Input
+                    <SubcontractorSelect
                       id="company"
                       name="company"
-                      placeholder={t('placeholders.clientCompanyName')}
                       value={formData.company}
-                      onChange={handleInputChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
+                      label="Company/Subcontractor"
+                      placeholder={t('placeholders.clientCompanyName')}
                       required
                     />
                   </div>

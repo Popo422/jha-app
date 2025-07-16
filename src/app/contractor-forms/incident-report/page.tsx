@@ -17,6 +17,7 @@ import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
+import SubcontractorSelect from "@/components/SubcontractorSelect";
 
 interface ReviewerData {
   name: string;
@@ -426,12 +427,12 @@ export default function IncidentReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="companySubcontractor">{t('incidentReport.companySubcontractor')}</Label>
-                    <Input
+                    <SubcontractorSelect
                       id="companySubcontractor"
                       name="companySubcontractor"
                       value={formData.companySubcontractor}
-                      onChange={handleInputChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, companySubcontractor: value }))}
+                      label="Company/Subcontractor"
                       required
                     />
                   </div>

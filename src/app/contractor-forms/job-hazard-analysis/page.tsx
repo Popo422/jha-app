@@ -20,6 +20,7 @@ import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
+import SubcontractorSelect from "@/components/SubcontractorSelect";
 
 interface JobHazardAnalysisFormData {
   completedBy: string;
@@ -549,8 +550,14 @@ export default function JobHazardReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="company">{t('formFields.company')}</Label>
-                    <Input id="company" name="company" value={formData.company} onChange={handleInputChange} required />
+                    <SubcontractorSelect
+                      id="company"
+                      name="company"
+                      value={formData.company}
+                      onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
+                      label="Company/Subcontractor"
+                      required
+                    />
                   </div>
                 </div>
 

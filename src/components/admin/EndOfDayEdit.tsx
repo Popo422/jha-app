@@ -12,6 +12,7 @@ import { ArrowLeft } from "lucide-react";
 import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
+import ProjectSelect from "@/components/ProjectSelect";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/lib/store";
 
@@ -233,12 +234,12 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="projectName">{t('formFields.projectName')}:</Label>
-              <Input
+              <ProjectSelect
                 id="projectName"
                 name="projectName"
                 value={formData.projectName || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
+                label={t('formFields.projectName')}
                 placeholder="Name or title of the project"
                 required
               />

@@ -36,6 +36,13 @@
       "when": 1752650477253,
       "tag": "0004_sweet_wolf_cub",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1752669690788,
+      "tag": "0005_famous_white_queen",
+      "breakpoints": true
     }
   ]
 }
