@@ -15,6 +15,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import SignatureCanvas from "react-signature-canvas";
 import ContractorSelect from "@/components/ContractorSelect";
+import ProjectSelect from "@/components/ProjectSelect";
 
 interface StartOfDayReportFormData {
   completedBy: string;
@@ -211,12 +212,12 @@ export default function StartOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="projectName">{t('formFields.projectName')}</Label>
-                    <Input
+                    <ProjectSelect
                       id="projectName"
                       name="projectName"
                       value={formData.projectName}
-                      onChange={handleInputChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
+                      label={t('formFields.projectName')}
                       placeholder={t('placeholders.projectName')}
                       required
                     />

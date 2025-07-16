@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      enabledModules: company[0].enabledModules || ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'timesheet'],
+      enabledModules: company[0].enabledModules || ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'timesheet'],
       availableModules: [
         { id: 'start-of-day', name: 'Start of Day Report', description: 'Daily morning health and safety check' },
         { id: 'end-of-day', name: 'End of Day Report', description: 'Daily evening status and incident report' },

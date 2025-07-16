@@ -52,6 +52,8 @@ const getFormTypeLabel = (type: string, t: any) => {
       return t('forms.startOfDayReport');
     case "job-hazard-analysis":
       return t('forms.jobHazardAnalysis');
+    case "incident-report":
+      return t('forms.incidentReport');
     default:
       return type;
   }
@@ -65,6 +67,8 @@ const getFormTypeBadgeVariant = (type: string) => {
       return "default";
     case "job-hazard-analysis":
       return "secondary";
+    case "incident-report":
+      return "outline";
     default:
       return "outline";
   }
@@ -74,6 +78,7 @@ const getFormTypeOptions = (t: any) => [
   { value: "end-of-day", label: t('forms.endOfDayReport') },
   { value: "start-of-day", label: t('forms.startOfDayReport') },
   { value: "job-hazard-analysis", label: t('forms.jobHazardAnalysis') },
+  { value: "incident-report", label: t('forms.incidentReport') },
 ];
 
 export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTableProps) {

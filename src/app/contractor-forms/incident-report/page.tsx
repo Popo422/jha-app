@@ -16,6 +16,7 @@ import Link from "next/link";
 import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
+import ProjectSelect from "@/components/ProjectSelect";
 
 interface ReviewerData {
   name: string;
@@ -415,13 +416,13 @@ export default function IncidentReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="projectName">{t('formFields.projectName')}</Label>
-                    <Input 
-                      id="projectName" 
-                      name="projectName" 
-                      value={formData.projectName} 
-                      onChange={handleInputChange} 
-                      required 
+                    <ProjectSelect
+                      id="projectName"
+                      name="projectName"
+                      value={formData.projectName}
+                      onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
+                      label={t('formFields.projectName')}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -933,7 +934,7 @@ export default function IncidentReportPage() {
                     {formData.reviewers.map((reviewer, index) => (
                       <div key={index} className="border p-4 rounded-lg space-y-4">
                         <div className="flex justify-between items-center">
-                          <h4 className="font-medium">Reviewer {index + 1}</h4>
+                          <h4 className="font-medium">{t('incidentReport.reviewerName')} {index + 1}</h4>
                           {formData.reviewers.length > 1 && (
                             <Button
                               type="button"
@@ -1009,7 +1010,7 @@ export default function IncidentReportPage() {
                     {formData.investigators.map((investigator, index) => (
                       <div key={index} className="border p-4 rounded-lg space-y-4">
                         <div className="flex justify-between items-center">
-                          <h4 className="font-medium">Investigator {index + 1}</h4>
+                          <h4 className="font-medium">{t('incidentReport.investigatorTitle')} {index + 1}</h4>
                           {formData.investigators.length > 1 && (
                             <Button
                               type="button"
