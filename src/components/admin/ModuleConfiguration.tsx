@@ -358,7 +358,7 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
             disabled={!hasChanges || isUpdating}
             className="flex-1 sm:flex-none"
           >
-{t('common.reset')}
+{t('admin.reset')}
           </Button>
         </div>
 
