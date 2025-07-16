@@ -62,7 +62,7 @@ export default function AppSidebar() {
       if (item.moduleId === 'forms') {
         // Show contractor forms if any form modules are enabled
         return modulesData.enabledModules.some(module => 
-          ['start-of-day', 'end-of-day', 'job-hazard-analysis'].includes(module)
+          ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report'].includes(module)
         );
       }
       return modulesData.enabledModules.includes(item.moduleId);

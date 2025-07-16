@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import JobHazardAnalysisEdit from "@/components/admin/JobHazardAnalysisEdit";
 import StartOfDayEdit from "@/components/admin/StartOfDayEdit";
 import EndOfDayEdit from "@/components/admin/EndOfDayEdit";
+import IncidentReportEdit from "@/components/admin/IncidentReportEdit";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -101,6 +102,8 @@ export default function SafetyFormsPage() {
         return t('admin.startOfDay');
       case 'end-of-day':
         return t('admin.endOfDay');
+      case 'incident-report':
+        return t('forms.incidentReport');
       default:
         return type;
     }
@@ -114,6 +117,8 @@ export default function SafetyFormsPage() {
         return 'bg-green-100 text-green-800';
       case 'end-of-day':
         return 'bg-orange-100 text-orange-800';
+      case 'incident-report':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -257,6 +262,12 @@ export default function SafetyFormsPage() {
             }}>
               {t('admin.endOfDay')}
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              console.log('Setting type filter to: incident-report');
+              setFilters(prev => ({ ...prev, type: 'incident-report' }));
+            }}>
+              {t('forms.incidentReport')}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -397,6 +408,12 @@ export default function SafetyFormsPage() {
             )}
             {editingSubmission.submissionType === 'end-of-day' && (
               <EndOfDayEdit 
+                submission={editingSubmission} 
+                onBack={() => setEditingSubmission(null)} 
+              />
+            )}
+            {editingSubmission.submissionType === 'incident-report' && (
+              <IncidentReportEdit 
                 submission={editingSubmission} 
                 onBack={() => setEditingSubmission(null)} 
               />

@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useGetContractorsQuery } from '@/lib/features/contractors/contractorsApi'
+import { useGetProjectsQuery } from '@/lib/features/projects/projectsApi'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { ChevronDown, Check, X } from 'lucide-react'
+import { ChevronDown, Check, X, MapPin, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface ContractorSelectProps {
+interface ProjectSelectProps {
   label?: string
   value: string
   onChange: (value: string) => void
@@ -21,7 +21,7 @@ interface ContractorSelectProps {
   name?: string
 }
 
-export default function ContractorSelect({
+export default function ProjectSelect({
   label,
   value,
   onChange,
@@ -31,24 +31,24 @@ export default function ContractorSelect({
   className,
   id,
   name
-}: ContractorSelectProps) {
+}: ProjectSelectProps) {
   const { t } = useTranslation('common')
   
   // Use translations as defaults if not provided
-  const finalLabel = label || t('formFields.completedBy')
-  const finalPlaceholder = placeholder || t('placeholders.selectContractor')
+  const finalLabel = label || 'Project Name'
+  const finalPlaceholder = placeholder || 'Select or search project...'
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [inputValue, setInputValue] = useState(value)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const { data: contractorsData, isLoading } = useGetContractorsQuery({
+  const { data: projectsData, isLoading } = useGetProjectsQuery({
     search: searchTerm,
     limit: 100
   })
 
-  const contractors = contractorsData?.contractors || []
+  const projects = projectsData?.projects || []
 
   // Update input value when prop value changes
   useEffect(() => {
@@ -79,10 +79,10 @@ export default function ContractorSelect({
     }
   }
 
-  const handleContractorSelect = (contractor: any) => {
-    const fullName = `${contractor.firstName} ${contractor.lastName}`
-    setInputValue(fullName)
-    onChange(fullName)
+  const handleProjectSelect = (project: any) => {
+    const projectName = project.name
+    setInputValue(projectName)
+    onChange(projectName)
     setIsOpen(false)
     setSearchTerm('')
   }
@@ -107,13 +107,16 @@ export default function ContractorSelect({
     setIsOpen(false)
   }
 
-  // Filter contractors based on search term
-  const filteredContractors = contractors.filter(contractor => {
-    const fullName = `${contractor.firstName} ${contractor.lastName}`.toLowerCase()
-    const email = contractor.email.toLowerCase()
+  // Filter projects based on search term
+  const filteredProjects = projects.filter(project => {
+    const projectName = project.name.toLowerCase()
+    const projectManager = project.projectManager.toLowerCase()
+    const location = project.location.toLowerCase()
     const search = searchTerm.toLowerCase()
     
-    return fullName.includes(search) || email.includes(search)
+    return projectName.includes(search) || 
+           projectManager.includes(search) || 
+           location.includes(search)
   })
 
   return (
@@ -170,24 +173,32 @@ export default function ContractorSelect({
         {isOpen && (
           <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
             {isLoading ? (
-              <div className="p-2 text-sm text-gray-500 dark:text-gray-400">{t('status.loadingContractors')}</div>
-            ) : filteredContractors.length > 0 ? (
-              filteredContractors.map((contractor) => {
-                const fullName = `${contractor.firstName} ${contractor.lastName}`
-                const isSelected = fullName === inputValue
+              <div className="p-2 text-sm text-gray-500 dark:text-gray-400">Loading projects...</div>
+            ) : filteredProjects.length > 0 ? (
+              filteredProjects.map((project) => {
+                const isSelected = project.name === inputValue
                 
                 return (
                   <div
-                    key={contractor.id}
+                    key={project.id}
                     className={cn(
-                      "p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between",
+                      "p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between",
                       isSelected && "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
                     )}
-                    onClick={() => handleContractorSelect(contractor)}
+                    onClick={() => handleProjectSelect(project)}
                   >
-                    <div>
-                      <div className="font-medium">{fullName}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{contractor.email}</div>
+                    <div className="flex-1">
+                      <div className="font-medium">{project.name}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-4 mt-1">
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          {project.projectManager}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {project.location}
+                        </div>
+                      </div>
                     </div>
                     {isSelected && (
                       <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -197,7 +208,7 @@ export default function ContractorSelect({
               })
             ) : (
               <div className="p-2 text-sm text-gray-500 dark:text-gray-400">
-                {searchTerm ? t('status.noContractorsFound') : t('placeholders.searchContractors')}
+                {searchTerm ? 'No projects found' : 'Search for projects...'}
               </div>
             )}
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,28 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
   const [deleteAttachment] = useDeleteAttachmentMutation();
   const { toast, showToast, hideToast } = useToast();
   const signatureRef = useRef<SignatureCanvas>(null);
+  const [isLoadingSignature, setIsLoadingSignature] = useState(false);
+
+  // Load main signature into canvas when component mounts
+  useEffect(() => {
+    if (formData.signature && signatureRef.current) {
+      setIsLoadingSignature(true);
+      const canvas = signatureRef.current.getCanvas();
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const img = new Image();
+        img.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          setIsLoadingSignature(false);
+        };
+        img.onerror = () => {
+          setIsLoadingSignature(false);
+        };
+        img.src = formData.signature;
+      }
+    }
+  }, [formData.signature]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -70,12 +92,16 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
   };
 
   const handleSignatureEnd = () => {
-    if (signatureRef.current) {
-      const signatureData = signatureRef.current.toDataURL();
-      setFormData((prev: any) => ({
-        ...prev,
-        signature: signatureData,
-      }));
+    if (signatureRef.current && !isLoadingSignature) {
+      try {
+        const signatureData = signatureRef.current.toDataURL();
+        setFormData((prev: any) => ({
+          ...prev,
+          signature: signatureData,
+        }));
+      } catch (error) {
+        console.warn('Could not export signature - canvas may be tainted');
+      }
     }
   };
 
@@ -504,7 +530,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                     canvasProps={{
                       width: 400,
                       height: 200,
-                      className: "signature-canvas w-full max-w-md mx-auto border rounded"
+                      className: "signature-canvas w-full max-w-md mx-auto border rounded bg-white"
                     }}
                     onBegin={handleSignatureStart}
                     onEnd={handleSignatureEnd}
@@ -521,14 +547,6 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                     {t('forms.clearSignature')}
                   </Button>
                 </div>
-                {formData.signature && (
-                  <div className="mt-2">
-                    <Label>{t('adminEdit.currentSignature')}:</Label>
-                    <div className="border border-gray-200 rounded p-2">
-                      <img src={formData.signature} alt="Current signature" className="max-w-md max-h-40" />
-                    </div>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>

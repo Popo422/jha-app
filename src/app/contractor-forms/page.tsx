@@ -34,6 +34,12 @@ export default function ContractorFormsPage() {
       href: "/contractor-forms/end-of-day-report",
       description: t('forms.endOfDayReportDescription'),
     },
+    {
+      id: "incident-report",
+      title: t('forms.incidentReport'),
+      href: "/contractor-forms/incident-report",
+      description: t('forms.incidentReportDescription'),
+    },
   ];
 
   const availableForms = useMemo(() => {
