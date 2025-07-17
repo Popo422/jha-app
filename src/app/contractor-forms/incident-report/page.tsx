@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
@@ -108,6 +109,7 @@ export default function IncidentReportPage() {
   const { t } = useTranslation('common');
   const { contractor } = useAppSelector((state) => state.auth);
   const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
+  const router = useRouter();
   const signatureRef = useRef<SignatureCanvas>(null);
   const reviewerSignatureRefs = useRef<(SignatureCanvas | null)[]>([]);
   const investigatorSignatureRefs = useRef<(SignatureCanvas | null)[]>([]);
@@ -229,9 +231,14 @@ export default function IncidentReportPage() {
 
   useEffect(() => {
     if (isSuccess) {
+      // Redirect to contractor forms after a brief delay
+      setTimeout(() => {
+        router.push('/contractor-forms');
+      }, 1500);
+      
       resetFormData();
     }
-  }, [isSuccess, resetFormData]);
+  }, [isSuccess, resetFormData, router]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

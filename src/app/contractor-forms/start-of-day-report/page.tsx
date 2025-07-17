@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import SignatureCanvas from "react-signature-canvas";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
@@ -59,6 +60,7 @@ export default function StartOfDayReportPage() {
   const signatureRef = useRef<SignatureCanvas>(null);
 
   const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
+  const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -97,9 +99,14 @@ export default function StartOfDayReportPage() {
     }
   };
 
-  // Reset form on successful submission
+  // Reset form and redirect on successful submission
   useEffect(() => {
     if (isSuccess) {
+      // Redirect to contractor forms after a brief delay
+      setTimeout(() => {
+        router.push('/contractor-forms');
+      }, 1500);
+      
       setFormData({
         completedBy: contractor?.name || "",
         date: new Date().toISOString().split("T")[0],

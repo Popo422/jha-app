@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import HazardIdentificationSection from "@/components/forms/HazardIdentificationSection";
 import PPERequirementsSection from "@/components/forms/PPERequirementsSection";
 import FallProtectionSection from "@/components/forms/FallProtectionSection";
@@ -137,6 +138,7 @@ export default function JobHazardReportPage() {
   const { t } = useTranslation('common');
   const { contractor } = useAppSelector((state) => state.auth);
   const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
+  const router = useRouter();
   const signatureRef = useRef<SignatureCanvas>(null);
   
   const [formData, setFormData] = useState<JobHazardAnalysisFormData>({
@@ -366,9 +368,13 @@ export default function JobHazardReportPage() {
     }
   }, [contractor]);
 
-  // Reset form on successful submission
+  // Reset form and redirect on successful submission
   useEffect(() => {
     if (isSuccess) {
+      // Redirect to contractor forms after a brief delay
+      setTimeout(() => {
+        router.push('/contractor-forms');
+      }, 1500);
       resetFormData();
     }
   }, [isSuccess, resetFormData]);
