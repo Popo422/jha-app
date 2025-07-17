@@ -16,6 +16,7 @@ import Link from "next/link";
 import SignatureCanvas from "react-signature-canvas";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
+import SubcontractorSelect from "@/components/SubcontractorSelect";
 
 interface StartOfDayReportFormData {
   completedBy: string;
@@ -223,12 +224,12 @@ export default function StartOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="company">{t('formFields.company')}</Label>
-                    <Input
+                    <SubcontractorSelect
                       id="company"
                       name="company"
                       value={formData.company}
-                      onChange={handleInputChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
+                      label="Company/Subcontractor"
                       required
                     />
                   </div>

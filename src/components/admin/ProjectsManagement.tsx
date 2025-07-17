@@ -142,7 +142,7 @@ export function ProjectsManagement() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Project Name
+          {t('tableHeaders.projectName')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -155,7 +155,7 @@ export function ProjectsManagement() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Project Manager
+          {t('admin.projectManager')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -168,7 +168,7 @@ export function ProjectsManagement() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Location
+          {t('admin.location')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -181,7 +181,7 @@ export function ProjectsManagement() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Created
+          {t('admin.created')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -198,7 +198,7 @@ export function ProjectsManagement() {
       <AlertDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Add New Project</AlertDialogTitle>
+            <AlertDialogTitle>{t('admin.addProject')}</AlertDialogTitle>
             <AlertDialogDescription>
               Enter the project details below.
             </AlertDialogDescription>
@@ -206,7 +206,7 @@ export function ProjectsManagement() {
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">Project Name</Label>
+                <Label htmlFor="name">{t('tableHeaders.projectName')}</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -219,7 +219,7 @@ export function ProjectsManagement() {
                 )}
               </div>
               <div>
-                <Label htmlFor="projectManager">Project Manager</Label>
+                <Label htmlFor="projectManager">{t('admin.projectManager')}</Label>
                 <Input
                   id="projectManager"
                   value={formData.projectManager}
@@ -232,7 +232,7 @@ export function ProjectsManagement() {
                 )}
               </div>
               <div>
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="location">{t('admin.location')}</Label>
                 <Input
                   id="location"
                   value={formData.location}
@@ -266,7 +266,7 @@ export function ProjectsManagement() {
       <AlertDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Edit Project</AlertDialogTitle>
+            <AlertDialogTitle>{t('admin.editProject')}</AlertDialogTitle>
             <AlertDialogDescription>
               Update the project details below.
             </AlertDialogDescription>
@@ -274,7 +274,7 @@ export function ProjectsManagement() {
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="edit-name">Project Name</Label>
+                <Label htmlFor="edit-name">{t('tableHeaders.projectName')}</Label>
                 <Input
                   id="edit-name"
                   value={formData.name}
@@ -287,7 +287,7 @@ export function ProjectsManagement() {
                 )}
               </div>
               <div>
-                <Label htmlFor="edit-projectManager">Project Manager</Label>
+                <Label htmlFor="edit-projectManager">{t('admin.projectManager')}</Label>
                 <Input
                   id="edit-projectManager"
                   value={formData.projectManager}
@@ -300,7 +300,7 @@ export function ProjectsManagement() {
                 )}
               </div>
               <div>
-                <Label htmlFor="edit-location">Location</Label>
+                <Label htmlFor="edit-location">{t('admin.location')}</Label>
                 <Input
                   id="edit-location"
                   value={formData.location}
@@ -336,11 +336,11 @@ export function ProjectsManagement() {
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center">
               <Building className="mr-2 h-5 w-5" />
-              Projects Management
+              {t('admin.projectManagement')}
             </div>
             <Button onClick={handleAdd}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Project
+              {t('admin.addProject')}
             </Button>
           </CardTitle>
         </CardHeader>
@@ -354,7 +354,7 @@ export function ProjectsManagement() {
             onDelete={handleDelete}
             getRowId={(project) => project.id}
             exportFilename="projects"
-            exportHeaders={['Project Name', 'Project Manager', 'Location', 'Created']}
+            exportHeaders={[t('tableHeaders.projectName'), t('admin.projectManager'), t('admin.location'), t('admin.created')]}
             getExportData={(project) => [
               project.name,
               project.projectManager,

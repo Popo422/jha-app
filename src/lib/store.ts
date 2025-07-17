@@ -11,6 +11,7 @@ import { modulesApi } from './features/modules/modulesApi'
 import { companyApi } from './features/company/companyApi'
 import { reportingApi } from './features/reporting/reportingApi'
 import { projectsApi } from './features/projects/projectsApi'
+import { subcontractorsApi } from './features/subcontractors/subcontractorsApi'
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,7 @@ export const store = configureStore({
     [companyApi.reducerPath]: companyApi.reducer,
     [reportingApi.reducerPath]: reportingApi.reducer,
     [projectsApi.reducerPath]: projectsApi.reducer,
+    [subcontractorsApi.reducerPath]: subcontractorsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -36,7 +38,8 @@ export const store = configureStore({
       modulesApi.middleware,
       companyApi.middleware,
       reportingApi.middleware,
-      projectsApi.middleware
+      projectsApi.middleware,
+      subcontractorsApi.middleware
     ),
 })
 

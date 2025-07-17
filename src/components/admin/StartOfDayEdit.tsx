@@ -13,6 +13,8 @@ import { ArrowLeft } from "lucide-react";
 import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
+import ProjectSelect from "@/components/ProjectSelect";
+import SubcontractorSelect from "@/components/SubcontractorSelect";
 
 interface Submission {
   id: string;
@@ -221,21 +223,21 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="company">{t('formFields.company')}:</Label>
-              <Input
+              <SubcontractorSelect
                 id="company"
                 name="company"
                 value={formData.company || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
+                label="Company/Subcontractor"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="projectName">{t('formFields.projectName')}:</Label>
-              <Input
+              <ProjectSelect
                 id="projectName"
                 name="projectName"
                 value={formData.projectName || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
+                label={t('formFields.projectName')}
                 placeholder={t('formFields.projectNamePlaceholder')}
                 required
               />

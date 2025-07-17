@@ -11,6 +11,7 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { useUpdateTimesheetMutation } from "@/lib/features/timesheets/timesheetsApi";
 import { ArrowLeft } from "lucide-react";
 import ContractorSelect from "@/components/ContractorSelect";
+import ProjectSelect from "@/components/ProjectSelect";
 
 interface Timesheet {
   id: string;
@@ -137,12 +138,12 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="projectName">{t('formFields.projectName')}</Label>
-              <Input
+              <ProjectSelect
                 id="projectName"
                 name="projectName"
                 value={formData.projectName || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
+                label={t('formFields.projectName')}
                 placeholder={t('formFields.projectNamePlaceholder')}
                 required
               />

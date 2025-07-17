@@ -13,6 +13,7 @@ import { ArrowLeft, Plus, X } from "lucide-react";
 import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
+import ProjectSelect from "@/components/ProjectSelect";
 
 interface ReviewerData {
   name: string;
@@ -416,12 +417,13 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="projectName">{t('formFields.projectName')}</Label>
-              <Input
+              <ProjectSelect
                 id="projectName"
                 name="projectName"
                 value={formData.projectName || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
+                label={t('formFields.projectName')}
+                required
               />
             </div>
             <div className="space-y-2">
