@@ -21,6 +21,7 @@ import {
   Puzzle,
   Shield,
   Home,
+  Camera,
 } from 'lucide-react'
 
 interface SidebarItem {
@@ -92,6 +93,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       label: t('admin.reporting'),
       href: '/admin/reporting',
       icon: BarChart3
+    },
+    {
+      label: t('admin.projectSnapshot'),
+      href: '/admin/project-snapshot',
+      icon: Camera
     }
   ]
 

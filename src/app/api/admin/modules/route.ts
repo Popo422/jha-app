@@ -67,12 +67,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      enabledModules: company[0].enabledModules || ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'timesheet'],
+      enabledModules: company[0].enabledModules || ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'timesheet'],
       availableModules: [
         { id: 'start-of-day', name: 'Start of Day Report', description: 'Daily morning health and safety check' },
         { id: 'end-of-day', name: 'End of Day Report', description: 'Daily evening status and incident report' },
         { id: 'job-hazard-analysis', name: 'Job Hazard Analysis (JHA)', description: 'Hazard identification and risk assessment' },
         { id: 'incident-report', name: 'Incident Report', description: 'Incident documentation and safety compliance reporting' },
+        { id: 'quick-incident-report', name: 'Quick Incident Report', description: 'Quick incident documentation with basic details' },
         { id: 'timesheet', name: 'Timesheet', description: 'Time tracking and job details' }
       ],
       lastUpdated: {
@@ -115,7 +116,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const validModules = ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'timesheet']
+    const validModules = ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'timesheet']
     const invalidModules = enabledModules.filter(module => !validModules.includes(module))
     
     if (invalidModules.length > 0) {

@@ -9,7 +9,7 @@ export const companies = pgTable('companies', {
   logoUrl: text('logo_url'), // Optional company logo URL
   injuryTimerLastReset: timestamp('injury_timer_last_reset').defaultNow(),
   injuryTimerResetBy: text('injury_timer_reset_by'),
-  enabledModules: jsonb('enabled_modules').default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'timesheet']), // Available modules for this company
+  enabledModules: jsonb('enabled_modules').default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'timesheet']), // Available modules for this company
   modulesLastUpdatedAt: timestamp('modules_last_updated_at'),
   modulesLastUpdatedBy: text('modules_last_updated_by'), // Admin name who last updated modules
   modulesLastUpdatedByUserId: text('modules_last_updated_by_user_id'), // Admin user ID for reference

@@ -31,9 +31,9 @@ export default function LoginPage() {
       // Update Redux state with login data
       dispatch(loginSuccess(result))
       
-      // Login successful, redirect to announcements page
-      console.log('Login successful, redirecting to announcements...')
-      router.push('/announcements')
+      // Login successful, redirect to contractor forms page
+      console.log('Login successful, redirecting to contractor forms...')
+      router.push('/contractor-forms')
     } catch (error: any) {
       console.error('Login error:', error)
       setError(error.data?.error || 'Login failed. Please try again.')

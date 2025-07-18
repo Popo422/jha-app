@@ -1,5 +1,5 @@
 interface SubmissionData {
-  submissionType: 'end-of-day' | 'job-hazard-analysis' | 'start-of-day'
+  submissionType: 'end-of-day' | 'job-hazard-analysis' | 'start-of-day' | 'incident-report' | 'quick-incident-report'
   projectName: string
   supervisorDateClockedIn?: string
   supervisorDateClockedOut?: string
