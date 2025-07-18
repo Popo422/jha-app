@@ -13,6 +13,7 @@ import JobHazardAnalysisEdit from "@/components/admin/JobHazardAnalysisEdit";
 import StartOfDayEdit from "@/components/admin/StartOfDayEdit";
 import EndOfDayEdit from "@/components/admin/EndOfDayEdit";
 import IncidentReportEdit from "@/components/admin/IncidentReportEdit";
+import QuickIncidentReportEdit from "@/components/admin/QuickIncidentReportEdit";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -104,6 +105,8 @@ export default function SafetyFormsPage() {
         return t('admin.endOfDay');
       case 'incident-report':
         return t('forms.incidentReport');
+      case 'quick-incident-report':
+        return t('forms.quickIncidentReport');
       default:
         return type;
     }
@@ -119,6 +122,8 @@ export default function SafetyFormsPage() {
         return 'bg-orange-100 text-orange-800';
       case 'incident-report':
         return 'bg-red-100 text-red-800';
+      case 'quick-incident-report':
+        return 'bg-pink-100 text-pink-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -268,6 +273,12 @@ export default function SafetyFormsPage() {
             }}>
               {t('forms.incidentReport')}
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              console.log('Setting type filter to: quick-incident-report');
+              setFilters(prev => ({ ...prev, type: 'quick-incident-report' }));
+            }}>
+              {t('forms.quickIncidentReport')}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -414,6 +425,12 @@ export default function SafetyFormsPage() {
             )}
             {editingSubmission.submissionType === 'incident-report' && (
               <IncidentReportEdit 
+                submission={editingSubmission} 
+                onBack={() => setEditingSubmission(null)} 
+              />
+            )}
+            {editingSubmission.submissionType === 'quick-incident-report' && (
+              <QuickIncidentReportEdit 
                 submission={editingSubmission} 
                 onBack={() => setEditingSubmission(null)} 
               />

@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
         and(
           eq(submissions.companyId, admin.companyId),
           gte(submissions.createdAt, todayStart),
-          sql`${submissions.submissionType} IN ('job-hazard-analysis', 'incident-report')`
+          sql`${submissions.submissionType} IN ('job-hazard-analysis', 'incident-report', 'quick-incident-report')`
         )
       )
 

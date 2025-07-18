@@ -34,15 +34,22 @@ export default function ContractorFormsPage() {
       href: "/contractor-forms/end-of-day-report",
       description: t('forms.endOfDayReportDescription'),
     },
-    // {
-    //   id: "incident-report",
-    //   title: t('forms.incidentReport'),
-    //   href: "/contractor-forms/incident-report",
-    //   description: t('forms.incidentReportDescription'),
-    // },
+    {
+      id: "incident-report",
+      title: t('forms.incidentReport'),
+      href: "/contractor-forms/incident-report",
+      description: t('forms.incidentReportDescription'),
+    },
+    {
+      id: "quick-incident-report",
+      title: t('forms.quickIncidentReport'),
+      href: "/contractor-forms/quick-incident-report",
+      description: t('forms.quickIncidentReportDescription'),
+    },
   ];
 
   const availableForms = useMemo(() => {
+    console.log('modulesData', modulesData)
     if (!modulesData?.enabledModules) return [];
     return allForms.filter(form => modulesData.enabledModules.includes(form.id));
   }, [modulesData]);

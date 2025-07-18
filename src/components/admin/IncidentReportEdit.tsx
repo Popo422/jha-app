@@ -9,21 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Toast, useToast } from "@/components/ui/toast";
 import { useUpdateSubmissionMutation, useDeleteAttachmentMutation } from "@/lib/features/submissions/submissionsApi";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
-
-interface ReviewerData {
-  name: string;
-  signature: string;
-}
-
-interface InvestigatorData {
-  signature: string;
-  title: string;
-}
+import SubcontractorSelect from "@/components/SubcontractorSelect";
 
 interface Submission {
   id: string;
@@ -52,11 +43,7 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
   const [deleteAttachment] = useDeleteAttachmentMutation();
   const { toast, showToast, hideToast } = useToast();
   const signatureRef = useRef<SignatureCanvas>(null);
-  const reviewerSignatureRefs = useRef<(SignatureCanvas | null)[]>([]);
-  const investigatorSignatureRefs = useRef<(SignatureCanvas | null)[]>([]);
   const [isLoadingSignature, setIsLoadingSignature] = useState(false);
-  const [isLoadingReviewerSignatures, setIsLoadingReviewerSignatures] = useState<boolean[]>([]);
-  const [isLoadingInvestigatorSignatures, setIsLoadingInvestigatorSignatures] = useState<boolean[]>([]);
 
   // Load main signature into canvas when component mounts
   useEffect(() => {
@@ -79,78 +66,6 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
     }
   }, [formData.signature]);
 
-  // Load reviewer signatures into canvases
-  useEffect(() => {
-    if (formData.reviewers) {
-      const newLoadingStates = [...isLoadingReviewerSignatures];
-      formData.reviewers.forEach((reviewer: ReviewerData, index: number) => {
-        if (reviewer.signature && reviewerSignatureRefs.current[index]) {
-          newLoadingStates[index] = true;
-          setIsLoadingReviewerSignatures(newLoadingStates);
-          
-          const canvas = reviewerSignatureRefs.current[index]!.getCanvas();
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            const img = new Image();
-            img.onload = () => {
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-              setIsLoadingReviewerSignatures(prev => {
-                const updated = [...prev];
-                updated[index] = false;
-                return updated;
-              });
-            };
-            img.onerror = () => {
-              setIsLoadingReviewerSignatures(prev => {
-                const updated = [...prev];
-                updated[index] = false;
-                return updated;
-              });
-            };
-            img.src = reviewer.signature;
-          }
-        }
-      });
-    }
-  }, [formData.reviewers]);
-
-  // Load investigator signatures into canvases
-  useEffect(() => {
-    if (formData.investigators) {
-      const newLoadingStates = [...isLoadingInvestigatorSignatures];
-      formData.investigators.forEach((investigator: InvestigatorData, index: number) => {
-        if (investigator.signature && investigatorSignatureRefs.current[index]) {
-          newLoadingStates[index] = true;
-          setIsLoadingInvestigatorSignatures(newLoadingStates);
-          
-          const canvas = investigatorSignatureRefs.current[index]!.getCanvas();
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            const img = new Image();
-            img.onload = () => {
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-              setIsLoadingInvestigatorSignatures(prev => {
-                const updated = [...prev];
-                updated[index] = false;
-                return updated;
-              });
-            };
-            img.onerror = () => {
-              setIsLoadingInvestigatorSignatures(prev => {
-                const updated = [...prev];
-                updated[index] = false;
-                return updated;
-              });
-            };
-            img.src = investigator.signature;
-          }
-        }
-      });
-    }
-  }, [formData.investigators]);
-
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev: any) => ({
@@ -159,92 +74,10 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
     }));
   }, []);
 
-  const handleCheckboxArrayChange = useCallback((arrayName: string, value: string, checked: boolean) => {
-    setFormData((prev: any) => {
-      const currentArray = prev[arrayName] || [];
-      const newArray = checked 
-        ? [...currentArray, value] 
-        : currentArray.filter((item: string) => item !== value);
-      
-      return {
-        ...prev,
-        [arrayName]: newArray,
-      };
-    });
-  }, []);
-
-  const handleWitnessChange = useCallback((index: number, value: string) => {
-    setFormData((prev: any) => {
-      const newWitnesses = [...(prev.witnesses || [])];
-      newWitnesses[index] = value;
-      return {
-        ...prev,
-        witnesses: newWitnesses,
-      };
-    });
-  }, []);
-
-  const addWitness = useCallback(() => {
+  const handleRadioChange = useCallback((name: string, value: string) => {
     setFormData((prev: any) => ({
       ...prev,
-      witnesses: [...(prev.witnesses || []), ""],
-    }));
-  }, []);
-
-  const removeWitness = useCallback((index: number) => {
-    setFormData((prev: any) => ({
-      ...prev,
-      witnesses: (prev.witnesses || []).filter((_: any, i: number) => i !== index),
-    }));
-  }, []);
-
-  const handleReviewerChange = useCallback((index: number, field: keyof ReviewerData, value: string) => {
-    setFormData((prev: any) => {
-      const newReviewers = [...(prev.reviewers || [])];
-      newReviewers[index] = { ...newReviewers[index], [field]: value };
-      return {
-        ...prev,
-        reviewers: newReviewers,
-      };
-    });
-  }, []);
-
-  const addReviewer = useCallback(() => {
-    setFormData((prev: any) => ({
-      ...prev,
-      reviewers: [...(prev.reviewers || []), { name: "", signature: "" }],
-    }));
-  }, []);
-
-  const removeReviewer = useCallback((index: number) => {
-    setFormData((prev: any) => ({
-      ...prev,
-      reviewers: (prev.reviewers || []).filter((_: any, i: number) => i !== index),
-    }));
-  }, []);
-
-  const handleInvestigatorChange = useCallback((index: number, field: keyof InvestigatorData, value: string) => {
-    setFormData((prev: any) => {
-      const newInvestigators = [...(prev.investigators || [])];
-      newInvestigators[index] = { ...newInvestigators[index], [field]: value };
-      return {
-        ...prev,
-        investigators: newInvestigators,
-      };
-    });
-  }, []);
-
-  const addInvestigator = useCallback(() => {
-    setFormData((prev: any) => ({
-      ...prev,
-      investigators: [...(prev.investigators || []), { signature: "", title: "" }],
-    }));
-  }, []);
-
-  const removeInvestigator = useCallback((index: number) => {
-    setFormData((prev: any) => ({
-      ...prev,
-      investigators: (prev.investigators || []).filter((_: any, i: number) => i !== index),
+      [name]: value,
     }));
   }, []);
 
@@ -280,46 +113,6 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
       }));
     }
   };
-
-  const handleReviewerSignatureEnd = useCallback((index: number) => {
-    const canvas = reviewerSignatureRefs.current[index];
-    if (canvas && !isLoadingReviewerSignatures[index]) {
-      try {
-        const signatureData = canvas.toDataURL();
-        handleReviewerChange(index, 'signature', signatureData);
-      } catch (error) {
-        console.warn('Could not export reviewer signature - canvas may be tainted');
-      }
-    }
-  }, [handleReviewerChange, isLoadingReviewerSignatures]);
-
-  const handleReviewerSignatureClear = useCallback((index: number) => {
-    const canvas = reviewerSignatureRefs.current[index];
-    if (canvas) {
-      canvas.clear();
-      handleReviewerChange(index, 'signature', "");
-    }
-  }, [handleReviewerChange]);
-
-  const handleInvestigatorSignatureEnd = useCallback((index: number) => {
-    const canvas = investigatorSignatureRefs.current[index];
-    if (canvas && !isLoadingInvestigatorSignatures[index]) {
-      try {
-        const signatureData = canvas.toDataURL();
-        handleInvestigatorChange(index, 'signature', signatureData);
-      } catch (error) {
-        console.warn('Could not export investigator signature - canvas may be tainted');
-      }
-    }
-  }, [handleInvestigatorChange, isLoadingInvestigatorSignatures]);
-
-  const handleInvestigatorSignatureClear = useCallback((index: number) => {
-    const canvas = investigatorSignatureRefs.current[index];
-    if (canvas) {
-      canvas.clear();
-      handleInvestigatorChange(index, 'signature', "");
-    }
-  }, [handleInvestigatorChange]);
 
   const handleDeleteAttachment = useCallback(async (fileUrl: string, fileName: string) => {
     try {
@@ -388,17 +181,18 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Basic Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-2">
               <ContractorSelect
                 id="completedBy"
                 name="completedBy"
+                label={t('forms.completedBy')}
                 value={formData.completedBy || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reportDate">{t('incidentReport.reportDate')}</Label>
+              <Label htmlFor="reportDate">{t('forms.reportDate')}</Label>
               <Input
                 id="reportDate"
                 name="reportDate"
@@ -408,633 +202,437 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="supervisor">{t('formFields.supervisor')}</Label>
-              <Input
+              <ContractorSelect
                 id="supervisor"
                 name="supervisor"
+                label={t('forms.supervisor')}
                 value={formData.supervisor || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
               />
             </div>
             <div className="space-y-2">
               <ProjectSelect
                 id="projectName"
                 name="projectName"
+                label={t('forms.projectName')}
                 value={formData.projectName || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
-                label={t('formFields.projectName')}
-                required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="companySubcontractor">{t('incidentReport.companySubcontractor')}</Label>
-              <Input
+              <SubcontractorSelect
                 id="companySubcontractor"
                 name="companySubcontractor"
+                label={t('forms.companySubcontractor')}
                 value={formData.companySubcontractor || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, companySubcontractor: value }))}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="injuredParty">{t('incidentReport.injuredParty')}</Label>
-              <Input
+              <ContractorSelect
                 id="injuredParty"
                 name="injuredParty"
+                label={t('forms.injuredParty')}
                 value={formData.injuredParty || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, injuredParty: value }))}
               />
             </div>
           </div>
 
-          {/* Accident/Incident Category */}
+          {/* Person Involved */}
           <Card>
             <CardHeader>
-              <CardTitle>{t('incidentReport.accidentIncidentCategory')}</CardTitle>
-              <p className="text-sm text-muted-foreground">{t('incidentReport.checkAllThatApply')}</p>
+              <CardTitle>{t('forms.personInvolved')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[
-                  'Injury', 'Illness', 'Near Miss', 'Property Damage', 'Fire', 'Chemical Exposure',
-                  'On-site Equipment', 'Motor Vehicle', 'Electrical', 'Mechanical', 'Spill'
-                ].map((category) => (
-                  <div key={category} className="flex items-center space-x-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">{t('forms.fullName')}</Label>
+                  <Input
+                    id="fullName"
+                    name="fullName"
+                    value={formData.fullName || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">{t('forms.phone')}</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="address">{t('forms.address')}</Label>
+                <Textarea
+                  id="address"
+                  name="address"
+                  value={formData.address || ''}
+                  onChange={handleInputChange}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">{t('forms.email')}</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email || ''}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <Label htmlFor="identification">{t('forms.identification')}</Label>
+                <select
+                  id="identification"
+                  name="identification"
+                  value={formData.identification || ''}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">{t('forms.selectIdentification')}</option>
+                  <option value="drivers-license">{t('forms.driversLicense')}</option>
+                  <option value="passport">{t('forms.passport')}</option>
+                  <option value="other">{t('forms.other')}</option>
+                </select>
+                
+                {formData.identification && (
+                  <div className="space-y-2">
+                    <Label htmlFor="identificationDetails">
+                      {formData.identification === 'drivers-license' && t('forms.driversLicenseNo')}
+                      {formData.identification === 'passport' && t('forms.passportNo')}
+                      {formData.identification === 'other' && t('forms.provideDetails')}
+                    </Label>
+                    <Input
+                      id="identificationDetails"
+                      name="identificationDetails"
+                      value={formData.identificationDetails || ''}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* The Incident */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('forms.theIncident')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="incidentDate">{t('forms.dateOfIncident')}</Label>
+                  <Input
+                    id="incidentDate"
+                    name="incidentDate"
+                    type="datetime-local"
+                    value={formData.incidentDate || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="location">{t('forms.location')}</Label>
+                <Textarea
+                  id="location"
+                  name="location"
+                  value={formData.location || ''}
+                  onChange={handleInputChange}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="describeIncident">{t('forms.describeIncident')}</Label>
+                <Textarea
+                  id="describeIncident"
+                  name="describeIncident"
+                  value={formData.describeIncident || ''}
+                  onChange={handleInputChange}
+                  rows={5}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Injuries */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('forms.injuries')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <Label className="font-medium">{t('forms.wasAnyoneInjured')}</Label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
                     <input
-                      type="checkbox"
-                      id={`category-${category}`}
-                      checked={(formData.accidentCategory || []).includes(category)}
-                      onChange={(e) =>
-                        handleCheckboxArrayChange('accidentCategory', category, e.target.checked)
-                      }
+                      type="radio"
+                      id="injured-yes"
+                      name="anyoneInjured"
+                      value="Yes"
+                      checked={formData.anyoneInjured === "Yes"}
+                      onChange={() => handleRadioChange('anyoneInjured', "Yes")}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor={`category-${category}`}>{category}</Label>
+                    <Label htmlFor="injured-yes">{t('forms.yes')}</Label>
                   </div>
-                ))}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="accidentCategoryOther">{t('formFields.other')}:</Label>
-                <Input
-                  id="accidentCategoryOther"
-                  name="accidentCategoryOther"
-                  value={formData.accidentCategoryOther || ''}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Date and Time of Accident */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.dateTimeOfAccident')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="accidentDate">{t('incidentReport.accidentDate')}</Label>
-                  <Input
-                    id="accidentDate"
-                    name="accidentDate"
-                    type="date"
-                    value={formData.accidentDate || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="accidentTime">{t('incidentReport.accidentTime')}</Label>
-                  <Input
-                    id="accidentTime"
-                    name="accidentTime"
-                    type="time"
-                    value={formData.accidentTime || ''}
-                    onChange={handleInputChange}
-                  />
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="injured-no"
+                      name="anyoneInjured"
+                      value="No"
+                      checked={formData.anyoneInjured === "No"}
+                      onChange={() => handleRadioChange('anyoneInjured', "No")}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="injured-no">{t('forms.no')}</Label>
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Narrative Report */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.narrativeReport')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="narrativeReport">{t('incidentReport.narrativeReportDescription')}</Label>
-                <Textarea
-                  id="narrativeReport"
-                  name="narrativeReport"
-                  value={formData.narrativeReport || ''}
-                  onChange={handleInputChange}
-                  rows={6}
-                />
-              </div>
+              {formData.anyoneInjured === "Yes" && (
+                <div className="space-y-2">
+                  <Label htmlFor="injuryDescription">{t('forms.describeInjuries')}</Label>
+                  <Textarea
+                    id="injuryDescription"
+                    name="injuryDescription"
+                    value={formData.injuryDescription || ''}
+                    onChange={handleInputChange}
+                    rows={4}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Witnesses */}
           <Card>
             <CardHeader>
-              <CardTitle>{t('incidentReport.witnessToAccident')}</CardTitle>
+              <CardTitle>{t('forms.witnesses')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {(formData.witnesses || []).map((witness: string, index: number) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <Input
-                    value={witness}
-                    onChange={(e) => handleWitnessChange(index, e.target.value)}
-                    placeholder={`Witness ${index + 1} name`}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeWitness(index)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addWitness}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Witness
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Injured/Ill Person Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.injuredIll')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="injuredName">{t('incidentReport.injuredName')}</Label>
-                  <Input
-                    id="injuredName"
-                    name="injuredName"
-                    value={formData.injuredName || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="injuredAddress">{t('incidentReport.address')}</Label>
-                  <Input
-                    id="injuredAddress"
-                    name="injuredAddress"
-                    value={formData.injuredAddress || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="injuredAge">{t('incidentReport.age')}</Label>
-                  <Input
-                    id="injuredAge"
-                    name="injuredAge"
-                    value={formData.injuredAge || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lengthOfService">{t('incidentReport.lengthOfService')}</Label>
-                  <Input
-                    id="lengthOfService"
-                    name="lengthOfService"
-                    value={formData.lengthOfService || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="timeOnPresentJob">{t('incidentReport.timeOnPresentJob')}</Label>
-                  <Input
-                    id="timeOnPresentJob"
-                    name="timeOnPresentJob"
-                    value={formData.timeOnPresentJob || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="timeClassification">{t('incidentReport.timeClassification')}</Label>
-                  <Input
-                    id="timeClassification"
-                    name="timeClassification"
-                    value={formData.timeClassification || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Severity of Injury */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.severityOfInjury')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Input
-                  id="severityOfInjury"
-                  name="severityOfInjury"
-                  value={formData.severityOfInjury || ''}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Estimated Days Away */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.estimatedDaysAway')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Input
-                  id="estimatedDaysAway"
-                  name="estimatedDaysAway"
-                  type="number"
-                  value={formData.estimatedDaysAway || ''}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Nature of Injury */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.natureOfInjury')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Textarea
-                  id="natureOfInjury"
-                  name="natureOfInjury"
-                  value={formData.natureOfInjury || ''}
-                  onChange={handleInputChange}
-                  rows={4}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Classification of Injury */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.classificationOfInjury')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  'Fatality', 'Lost Time', 'Restricted Work', 'Medical Treatment', 'First Aid', 'Near Miss'
-                ].map((classification) => (
-                  <div key={classification} className="flex items-center space-x-2">
+              <div className="space-y-4">
+                <Label className="font-medium">{t('forms.wereThereWitnesses')}</Label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
                     <input
-                      type="checkbox"
-                      id={`classification-${classification}`}
-                      checked={(formData.injuryClassification || []).includes(classification)}
-                      onChange={(e) =>
-                        handleCheckboxArrayChange('injuryClassification', classification, e.target.checked)
-                      }
+                      type="radio"
+                      id="witnesses-yes"
+                      name="witnessesPresent"
+                      value="Yes"
+                      checked={formData.witnessesPresent === "Yes"}
+                      onChange={() => handleRadioChange('witnessesPresent', "Yes")}
                       className="w-4 h-4"
                     />
-                    <Label htmlFor={`classification-${classification}`}>{classification}</Label>
+                    <Label htmlFor="witnesses-yes">{t('forms.yes')}</Label>
                   </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="partOfBodyAffected">{t('incidentReport.partOfBodyAffected')}</Label>
-                  <Input
-                    id="partOfBodyAffected"
-                    name="partOfBodyAffected"
-                    value={formData.partOfBodyAffected || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="degreeOfDisability">{t('incidentReport.degreeOfDisability')}</Label>
-                  <Input
-                    id="degreeOfDisability"
-                    name="degreeOfDisability"
-                    value={formData.degreeOfDisability || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dateMedicalCareReceived">{t('incidentReport.dateMedicalCareReceived')}</Label>
-                  <Input
-                    id="dateMedicalCareReceived"
-                    name="dateMedicalCareReceived"
-                    type="date"
-                    value={formData.dateMedicalCareReceived || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="whereMedicalCareReceived">{t('incidentReport.whereMedicalCareReceived')}</Label>
-                  <Input
-                    id="whereMedicalCareReceived"
-                    name="whereMedicalCareReceived"
-                    value={formData.whereMedicalCareReceived || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="addressIfOffSite">{t('incidentReport.addressIfOffSite')}</Label>
-                  <Input
-                    id="addressIfOffSite"
-                    name="addressIfOffSite"
-                    value={formData.addressIfOffSite || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Property Damage */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.propertyDamage')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="damageDescription">{t('incidentReport.damageDescription')}</Label>
-                  <Textarea
-                    id="damageDescription"
-                    name="damageDescription"
-                    value={formData.damageDescription || ''}
-                    onChange={handleInputChange}
-                    rows={4}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="costOfDamage">{t('incidentReport.costOfDamage')}</Label>
-                  <Input
-                    id="costOfDamage"
-                    name="costOfDamage"
-                    type="number"
-                    step="0.01"
-                    value={formData.costOfDamage || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Accident Analysis */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.accidentAnalysis')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="wasWeatherFactor">{t('incidentReport.wasWeatherFactor')}</Label>
-                  <Input
-                    id="wasWeatherFactor"
-                    name="wasWeatherFactor"
-                    value={formData.wasWeatherFactor || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="unsafeConditions">{t('incidentReport.unsafeConditions')}</Label>
-                  <Textarea
-                    id="unsafeConditions"
-                    name="unsafeConditions"
-                    value={formData.unsafeConditions || ''}
-                    onChange={handleInputChange}
-                    rows={4}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="personalFactors">{t('incidentReport.personalFactors')}</Label>
-                  <Textarea
-                    id="personalFactors"
-                    name="personalFactors"
-                    value={formData.personalFactors || ''}
-                    onChange={handleInputChange}
-                    rows={4}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* On-Site Accidents */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.onSiteAccidents')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="levelOfPPERequired">{t('incidentReport.levelOfPPERequired')}</Label>
-                  <Textarea
-                    id="levelOfPPERequired"
-                    name="levelOfPPERequired"
-                    value={formData.levelOfPPERequired || ''}
-                    onChange={handleInputChange}
-                    rows={3}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="modifications">{t('incidentReport.modifications')}</Label>
-                  <Textarea
-                    id="modifications"
-                    name="modifications"
-                    value={formData.modifications || ''}
-                    onChange={handleInputChange}
-                    rows={3}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="wasInjuredUsingRequiredEquipment">{t('incidentReport.wasInjuredUsingRequiredEquipment')}</Label>
-                  <Input
-                    id="wasInjuredUsingRequiredEquipment"
-                    name="wasInjuredUsingRequiredEquipment"
-                    value={formData.wasInjuredUsingRequiredEquipment || ''}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="howEquipmentUseDiffered">{t('incidentReport.howEquipmentUseDiffered')}</Label>
-                  <Textarea
-                    id="howEquipmentUseDiffered"
-                    name="howEquipmentUseDiffered"
-                    value={formData.howEquipmentUseDiffered || ''}
-                    onChange={handleInputChange}
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Action Taken */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.actionTakenToPreventRecurrence')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Textarea
-                  id="actionTakenToPreventRecurrence"
-                  name="actionTakenToPreventRecurrence"
-                  value={formData.actionTakenToPreventRecurrence || ''}
-                  onChange={handleInputChange}
-                  rows={4}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Report Reviewed By */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.reportReviewedBy')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {(formData.reviewers || []).map((reviewer: ReviewerData, index: number) => (
-                <div key={index} className="space-y-4 p-4 border rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Reviewer {index + 1}</h4>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeReviewer(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="witnesses-no"
+                      name="witnessesPresent"
+                      value="No"
+                      checked={formData.witnessesPresent === "No"}
+                      onChange={() => handleRadioChange('witnessesPresent', "No")}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="witnesses-no">{t('forms.no')}</Label>
                   </div>
-                  <div className="space-y-4">
+                </div>
+              </div>
+
+              {formData.witnessesPresent === "Yes" && (
+                <div className="space-y-2">
+                  <Label htmlFor="witnessDetails">{t('forms.witnessNamesAndContact')}</Label>
+                  <Textarea
+                    id="witnessDetails"
+                    name="witnessDetails"
+                    value={formData.witnessDetails || ''}
+                    onChange={handleInputChange}
+                    rows={4}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Police / Medical Services */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('forms.policeMedicalServices')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <Label className="font-medium">{t('forms.policeNotified')}</Label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="police-yes"
+                      name="policeNotified"
+                      value="Yes"
+                      checked={formData.policeNotified === "Yes"}
+                      onChange={() => handleRadioChange('policeNotified', "Yes")}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="police-yes">{t('forms.yes')}</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="police-no"
+                      name="policeNotified"
+                      value="No"
+                      checked={formData.policeNotified === "No"}
+                      onChange={() => handleRadioChange('policeNotified', "No")}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="police-no">{t('forms.no')}</Label>
+                  </div>
+                </div>
+              </div>
+
+              {formData.policeNotified === "Yes" && (
+                <div className="space-y-4">
+                  <Label className="font-medium">{t('forms.wasReportFiled')}</Label>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="report-filed-yes"
+                        name="reportFiled"
+                        value="Yes"
+                        checked={formData.reportFiled === "Yes"}
+                        onChange={() => handleRadioChange('reportFiled', "Yes")}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="report-filed-yes">{t('forms.yes')}</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="report-filed-no"
+                        name="reportFiled"
+                        value="No"
+                        checked={formData.reportFiled === "No"}
+                        onChange={() => handleRadioChange('reportFiled', "No")}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="report-filed-no">{t('forms.no')}</Label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <Label className="font-medium">{t('forms.wasMedicalTreatmentProvided')}</Label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="medical-yes"
+                      name="medicalTreatment"
+                      value="Yes"
+                      checked={formData.medicalTreatment === "Yes"}
+                      onChange={() => handleRadioChange('medicalTreatment', "Yes")}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="medical-yes">{t('forms.yes')}</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="medical-no"
+                      name="medicalTreatment"
+                      value="No"
+                      checked={formData.medicalTreatment === "No"}
+                      onChange={() => handleRadioChange('medicalTreatment', "No")}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="medical-no">{t('forms.no')}</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="medical-refused"
+                      name="medicalTreatment"
+                      value="Refused"
+                      checked={formData.medicalTreatment === "Refused"}
+                      onChange={() => handleRadioChange('medicalTreatment', "Refused")}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="medical-refused">{t('forms.refused')}</Label>
+                  </div>
+                </div>
+              </div>
+
+              {formData.medicalTreatment === "Yes" && (
+                <div className="space-y-4">
+                  <Label className="font-medium">{t('forms.whereMedicalTreatmentProvided')}</Label>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="medical-onsite"
+                        name="medicalTreatmentLocation"
+                        value="On Site"
+                        checked={formData.medicalTreatmentLocation === "On Site"}
+                        onChange={() => handleRadioChange('medicalTreatmentLocation', "On Site")}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="medical-onsite">{t('forms.onSite')}</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="medical-hospital"
+                        name="medicalTreatmentLocation"
+                        value="Hospital"
+                        checked={formData.medicalTreatmentLocation === "Hospital"}
+                        onChange={() => handleRadioChange('medicalTreatmentLocation', "Hospital")}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="medical-hospital">{t('forms.hospital')}</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="medical-other"
+                        name="medicalTreatmentLocation"
+                        value="Other"
+                        checked={formData.medicalTreatmentLocation === "Other"}
+                        onChange={() => handleRadioChange('medicalTreatmentLocation', "Other")}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="medical-other">{t('forms.other')}</Label>
+                    </div>
+                  </div>
+                  
+                  {formData.medicalTreatmentLocation === "Other" && (
                     <div className="space-y-2">
-                      <Label htmlFor={`reviewer-name-${index}`}>{t('incidentReport.reviewerName')}</Label>
+                      <Label htmlFor="medicalTreatmentDetails">{t('forms.provideDetails')}</Label>
                       <Input
-                        id={`reviewer-name-${index}`}
-                        value={reviewer.name}
-                        onChange={(e) => handleReviewerChange(index, 'name', e.target.value)}
+                        id="medicalTreatmentDetails"
+                        name="medicalTreatmentDetails"
+                        value={formData.medicalTreatmentDetails || ''}
+                        onChange={handleInputChange}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label>{t('incidentReport.reviewerSignature')}</Label>
-                      <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800">
-                        <SignatureCanvas
-                          ref={(ref) => {
-                            reviewerSignatureRefs.current[index] = ref;
-                          }}
-                          canvasProps={{
-                            width: 400,
-                            height: 200,
-                            className: "signature-canvas w-full max-w-md mx-auto border rounded bg-white"
-                          }}
-                          onEnd={() => handleReviewerSignatureEnd(index)}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleReviewerSignatureClear(index)}
-                        className="text-sm"
-                      >
-                        {t('forms.clearSignature')}
-                      </Button>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addReviewer}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {t('incidentReport.addReviewer')}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Others Participating */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('incidentReport.othersParticipating')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {(formData.investigators || []).map((investigator: InvestigatorData, index: number) => (
-                <div key={index} className="space-y-4 p-4 border rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Investigator {index + 1}</h4>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeInvestigator(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`investigator-title-${index}`}>{t('incidentReport.investigatorTitle')}</Label>
-                      <Input
-                        id={`investigator-title-${index}`}
-                        value={investigator.title}
-                        onChange={(e) => handleInvestigatorChange(index, 'title', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>{t('incidentReport.investigatorSignature')}</Label>
-                      <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800">
-                        <SignatureCanvas
-                          ref={(ref) => {
-                            investigatorSignatureRefs.current[index] = ref;
-                          }}
-                          canvasProps={{
-                            width: 400,
-                            height: 200,
-                            className: "signature-canvas w-full max-w-md mx-auto border rounded bg-white"
-                          }}
-                          onEnd={() => handleInvestigatorSignatureEnd(index)}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleInvestigatorSignatureClear(index)}
-                        className="text-sm"
-                      >
-                        {t('forms.clearSignature')}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addInvestigator}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {t('incidentReport.addInvestigator')}
-              </Button>
+              )}
             </CardContent>
           </Card>
 
@@ -1069,14 +667,36 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
             </CardContent>
           </Card>
 
-          {/* Signature */}
+          {/* Person Filing Report */}
           <Card>
             <CardHeader>
-              <CardTitle>{t('forms.digitalSignature')}</CardTitle>
+              <CardTitle>{t('forms.personFilingReport')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reporterFullName">{t('forms.fullName')}</Label>
+                  <Input
+                    id="reporterFullName"
+                    name="reporterFullName"
+                    value={formData.reporterFullName || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reporterDate">{t('forms.date')}</Label>
+                  <Input
+                    id="reporterDate"
+                    name="reporterDate"
+                    type="date"
+                    value={formData.reporterDate || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label>Employee Signature:</Label>
+                <Label>{t('forms.signature')}</Label>
                 <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800">
                   <SignatureCanvas
                     ref={signatureRef}
@@ -1100,6 +720,48 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
                     {t('forms.clearSignature')}
                   </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ADMIN SECTION */}
+          <Card className="border-orange-200 bg-orange-50 dark:bg-orange-900/20">
+            <CardHeader>
+              <CardTitle className="text-orange-800 dark:text-orange-200">{t('forms.adminSection')}</CardTitle>
+              <p className="text-sm text-orange-600 dark:text-orange-300">{t('forms.adminOnlySection')}</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <ContractorSelect
+                    id="adminReportReviewedBy"
+                    name="adminReportReviewedBy"
+                    label={t('forms.reportReviewedBy')}
+                    value={formData.adminReportReviewedBy || ''}
+                    onChange={(value) => setFormData(prev => ({ ...prev, adminReportReviewedBy: value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="adminReviewDate">{t('forms.date')}</Label>
+                  <Input
+                    id="adminReviewDate"
+                    name="adminReviewDate"
+                    type="date"
+                    value={formData.adminReviewDate || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="adminFollowUpAction">{t('forms.followUpActionTaken')}</Label>
+                <Textarea
+                  id="adminFollowUpAction"
+                  name="adminFollowUpAction"
+                  value={formData.adminFollowUpAction || ''}
+                  onChange={handleInputChange}
+                  rows={4}
+                />
               </div>
             </CardContent>
           </Card>
