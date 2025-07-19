@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { firstName, lastName, email, code, rate, companyName } = body
+    const { firstName, lastName, email, code, rate, companyName, language } = body
 
     // Validate required fields
     if (!firstName || !lastName || !email || !code) {
@@ -192,6 +192,13 @@ export async function POST(request: NextRequest) {
       contractorData.companyName = companyName.trim()
     }
 
+    // Add language if provided, otherwise default to 'en'
+    if (language && (language === 'en' || language === 'es')) {
+      contractorData.language = language
+    } else {
+      contractorData.language = 'en'
+    }
+
     // Create contractor record
     const contractor = await db.insert(contractors).values(contractorData).returning()
 
@@ -254,7 +261,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, firstName, lastName, email, code, rate, companyName } = body
+    const { id, firstName, lastName, email, code, rate, companyName, language } = body
 
     if (!id) {
       return NextResponse.json(
@@ -320,6 +327,13 @@ export async function PUT(request: NextRequest) {
       updateData.companyName = companyName.trim()
     } else {
       updateData.companyName = null
+    }
+
+    // Add language if provided, otherwise default to 'en'
+    if (language && (language === 'en' || language === 'es')) {
+      updateData.language = language
+    } else {
+      updateData.language = 'en'
     }
 
     // Update contractor

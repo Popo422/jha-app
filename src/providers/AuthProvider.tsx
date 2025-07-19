@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { restoreAuth, loginFailure } from '@/lib/features/auth/authSlice'
+import { useTranslation } from 'react-i18next'
 
 interface AuthContextType {
   isLoading: boolean
@@ -33,6 +34,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const pathname = usePathname()
   const dispatch = useAppDispatch()
   const { isAuthenticated } = useAppSelector((state) => state.auth)
+  const { i18n } = useTranslation()
 
   useEffect(() => {
     const validateAuth = async () => {
@@ -76,6 +78,12 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         if (response.ok) {
           const data = await response.json()
           console.log('✅ Token validated successfully')
+          
+          // Apply contractor's language preference
+          if (data.contractor?.language) {
+            console.log(`🌐 Setting language to: ${data.contractor.language}`)
+            await i18n.changeLanguage(data.contractor.language)
+          }
           
           // Restore auth state
           dispatch(restoreAuth({

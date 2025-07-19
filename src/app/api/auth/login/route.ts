@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
       companyName: contractorData.companyName || company?.name || 'Unknown Company',
       code: contractorData.code,
       companyId: contractorData.companyId,
-      companyLogoUrl: company?.logoUrl || null
+      companyLogoUrl: company?.logoUrl || null,
+      language: contractorData.language || 'en'
     }
 
     // Generate JWT token with user and contractor info

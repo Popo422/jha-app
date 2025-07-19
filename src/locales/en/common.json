@@ -243,7 +243,8 @@
     "pleaseSelectImage": "Please select an image file",
     "imageSizeLimit": "Image file size must be less than 5MB",
     "logoUpdatedSuccess": "Company logo updated successfully!",
-    "failedToUpdateLogo": "Failed to update logo"
+    "failedToUpdateLogo": "Failed to update logo",
+    "saveError": "Failed to save settings"
   },
   "forms": {
     "jobHazardAnalysis": "Job Hazard Analysis",
@@ -400,6 +401,7 @@
   "common": {
     "review": "Review",
     "loading": "Loading...",
+    "updating": "Updating...",
     "save": "Save",
     "cancel": "Cancel",
     "edit": "Edit",

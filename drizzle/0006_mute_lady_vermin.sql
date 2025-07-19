@@ -1,0 +1,2 @@
+ALTER TABLE "companies" ALTER COLUMN "enabled_modules" SET DEFAULT '["start-of-day","end-of-day","job-hazard-analysis","incident-report","quick-incident-report","timesheet"]'::jsonb;--> statement-breakpoint
+ALTER TABLE "contractors" ADD COLUMN "language" text DEFAULT 'en';
