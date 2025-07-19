@@ -105,6 +105,11 @@ const authSlice = createSlice({
     updateAdmin: (state, action: PayloadAction<Admin>) => {
       state.admin = action.payload
     },
+    updateContractorLanguage: (state, action: PayloadAction<string>) => {
+      if (state.contractor) {
+        state.contractor.language = action.payload
+      }
+    },
   },
 })
 
@@ -118,6 +123,7 @@ export const {
   adminLoginFailure,
   adminLogout,
   restoreAdminAuth,
-  updateAdmin
+  updateAdmin,
+  updateContractorLanguage
 } = authSlice.actions
 export default authSlice.reducer

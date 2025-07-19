@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppSelector, useAppDispatch } from '@/lib/hooks';
 import { toggleTheme } from '@/lib/features/theme/themeSlice';
+import { updateContractorLanguage } from '@/lib/features/auth/authSlice';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -24,6 +25,7 @@ export default function ContractorSettingsPage() {
   const dispatch = useAppDispatch();
   const theme = useAppSelector((state) => state.theme.mode);
   const contractor = useAppSelector((state) => state.auth.contractor);
+  const [isUpdatingLanguage, setIsUpdatingLanguage] = useState(false);
   
   const { toast, showToast, hideToast } = useToast();
 
@@ -32,9 +34,37 @@ export default function ContractorSettingsPage() {
     showToast(t('settings.saved'), 'success');
   };
 
-  const handleLanguageChange = (language: string) => {
-    i18n.changeLanguage(language);
-    showToast(t('settings.saved'), 'success');
+  const handleLanguageChange = async (language: string) => {
+    setIsUpdatingLanguage(true);
+    
+    try {
+      // Update language in the UI immediately
+      await i18n.changeLanguage(language);
+      
+      // Update language preference in the database
+      const response = await fetch('/api/contractor/preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ language }),
+      });
+
+      if (response.ok) {
+        // Update Redux state with new language
+        dispatch(updateContractorLanguage(language));
+        showToast(t('settings.saved'), 'success');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to update language preference:', errorData);
+        showToast(t('settings.saveError') || 'Failed to save language preference', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating language preference:', error);
+      showToast(t('settings.saveError') || 'Failed to save language preference', 'error');
+    } finally {
+      setIsUpdatingLanguage(false);
+    }
   };
 
   return (
@@ -125,16 +155,23 @@ export default function ContractorSettingsPage() {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="w-32">
+                      <Button variant="outline" size="sm" className="w-32" disabled={isUpdatingLanguage}>
                         <Languages className="h-4 w-4 mr-2" />
-                        {i18n.language === 'es' ? t('settings.spanish') : t('settings.english')}
+                        {isUpdatingLanguage ? t('common.updating') || 'Updating...' : 
+                         (i18n.language === 'es' ? t('settings.spanish') : t('settings.english'))}
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
+                      <DropdownMenuItem 
+                        onClick={() => handleLanguageChange('en')}
+                        disabled={isUpdatingLanguage}
+                      >
                         {t('settings.english')}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleLanguageChange('es')}>
+                      <DropdownMenuItem 
+                        onClick={() => handleLanguageChange('es')}
+                        disabled={isUpdatingLanguage}
+                      >
                         {t('settings.spanish')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>

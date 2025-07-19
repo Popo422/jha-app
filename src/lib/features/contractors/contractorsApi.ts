@@ -9,6 +9,7 @@ export interface Contractor {
   code: string
   rate?: string | null
   companyName?: string | null
+  language?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -20,6 +21,7 @@ export interface CreateContractorRequest {
   code: string
   rate?: string
   companyName?: string
+  language?: string
 }
 
 export interface UpdateContractorRequest {
@@ -30,6 +32,7 @@ export interface UpdateContractorRequest {
   code: string
   rate?: string
   companyName?: string
+  language?: string
 }
 
 export interface ContractorsResponse {

@@ -13,7 +13,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const { t } = useTranslation('common')
+  const { t, i18n } = useTranslation('common')
   const [contractorCode, setContractorCode] = useState('')
   const [showCode, setShowCode] = useState(false)
   const [error, setError] = useState('')
@@ -27,6 +27,12 @@ export default function LoginPage() {
 
     try {
       const result = await login({ contractorCode }).unwrap()
+      
+      // Apply contractor's language preference immediately
+      if (result.contractor?.language) {
+        console.log(`🌐 Setting language to: ${result.contractor.language}`)
+        await i18n.changeLanguage(result.contractor.language)
+      }
       
       // Update Redux state with login data
       dispatch(loginSuccess(result))

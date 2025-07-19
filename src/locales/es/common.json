@@ -243,7 +243,8 @@
     "pleaseSelectImage": "Por favor seleccione un archivo de imagen",
     "imageSizeLimit": "El tamaño del archivo de imagen debe ser menor a 5MB",
     "logoUpdatedSuccess": "¡Logo de la empresa actualizado exitosamente!",
-    "failedToUpdateLogo": "Fallo al actualizar el logo"
+    "failedToUpdateLogo": "Fallo al actualizar el logo",
+    "saveError": "Error al guardar la configuración"
   },
   "forms": {
     "jobHazardAnalysis": "Análisis de Peligros del Trabajo",
@@ -400,6 +401,7 @@
   "common": {
     "review": "Revisión",
     "loading": "Cargando...",
+    "updating": "Actualizando...",
     "save": "Guardar",
     "cancel": "Cancelar",
     "edit": "Editar",
@@ -590,7 +592,8 @@
     "updateContractor": "Actualizar Contratista",
     "cancel": "Cancelar",
     "contractors": "Contratistas",
-    "manageContractorAccounts": "Gestionar cuentas de contratistas y códigos de acceso"
+    "manageContractorAccounts": "Gestionar cuentas de contratistas y códigos de acceso",
+    "languagePreferenceHelp": "Selecciona el idioma preferido del contratista para formularios e interfaces"
   },
   "safetyQuestions": {
     "ladderAltered": "¿Ha sido alterada la escalera de alguna manera?",

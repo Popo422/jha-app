@@ -11,6 +11,7 @@ export interface Contractor {
   code: string
   companyId: string
   companyLogoUrl: string | null
+  language: string
 }
 
 export interface Admin {

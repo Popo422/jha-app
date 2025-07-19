@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Toast, useToast } from "@/components/ui/toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
 import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -32,6 +33,7 @@ export default function ContractorsPage() {
     code: "",
     rate: "",
     companyName: "",
+    language: "en",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -72,6 +74,7 @@ export default function ContractorsPage() {
       code: contractor.code,
       rate: contractor.rate || "0.00",
       companyName: contractor.companyName || "",
+      language: contractor.language || "en",
     });
     setFormErrors({});
     setEmailMessage("");
@@ -87,6 +90,7 @@ export default function ContractorsPage() {
       code: "",
       rate: "0.00",
       companyName: "",
+      language: "en",
     });
     setFormErrors({});
     setEmailMessage("");
@@ -96,7 +100,7 @@ export default function ContractorsPage() {
   const handleCancel = () => {
     setViewMode('list');
     setEditingContractor(null);
-    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "" });
+    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en" });
     setFormErrors({});
     setEmailMessage("");
   };
@@ -152,7 +156,7 @@ export default function ContractorsPage() {
       }
       setViewMode('list');
       setEditingContractor(null);
-      setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "" });
+      setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en" });
     } catch (error) {
       console.error('Failed to save contractor:', error);
     }
@@ -367,6 +371,27 @@ export default function ContractorsPage() {
       },
     },
     {
+      accessorKey: "language",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Language
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const language = getValue() as string | null;
+        return (
+          <div className="text-sm">
+            {language === 'es' ? 'Español' : 'English'}
+          </div>
+        );
+      },
+    },
+    {
       accessorKey: "createdAt",
       header: ({ column }) => (
         <Button
@@ -551,6 +576,37 @@ export default function ContractorsPage() {
               </p>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="language">Language Preference</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isFormLoading}
+                    className="w-full justify-between"
+                  >
+                    {formData.language === 'en' ? 'English' : 'Español'}
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full">
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, language: 'en' }))}
+                  >
+                    English
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, language: 'es' }))}
+                  >
+                    Español
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className="text-xs text-muted-foreground">
+                {t('contractors.languagePreferenceHelp')}
+              </p>
+            </div>
+
             {formError && (
               <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
                 {getErrorMessage()}
@@ -620,7 +676,7 @@ export default function ContractorsPage() {
         onDelete={handleDelete}
         getRowId={(contractor) => contractor.id}
         exportFilename="contractors"
-        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), t('contractors.created')]}
+        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), 'Language', t('contractors.created')]}
         getExportData={(contractor) => [
           contractor.firstName,
           contractor.lastName,
@@ -628,6 +684,7 @@ export default function ContractorsPage() {
           contractor.code,
           `$${(contractor.rate ? parseFloat(contractor.rate) : 0).toFixed(2)}${t('contractors.perHour')}`,
           contractor.companyName || "",
+          contractor.language === 'es' ? 'Español' : 'English',
           new Date(contractor.createdAt).toLocaleDateString()
         ]}
         searchValue={search}
