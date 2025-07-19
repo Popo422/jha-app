@@ -35,9 +35,11 @@ export default function ReportingPage() {
   const [endDate, setEndDate] = useState('');
   const [selectedContractors, setSelectedContractors] = useState<string[]>([]);
   const [selectedProjectNames, setSelectedProjectNames] = useState<string[]>([]);
+  const [selectedSubcontractors, setSelectedSubcontractors] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [contractorSearch, setContractorSearch] = useState('');
   const [projectNameSearch, setProjectNameSearch] = useState('');
+  const [subcontractorSearch, setSubcontractorSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // Default to all statuses
   const [activeTab, setActiveTab] = useState('hours'); // 'hours' or 'cost'
   const [contractorCostSearch, setContractorCostSearch] = useState('');
@@ -105,6 +107,12 @@ export default function ReportingPage() {
     return selectedProjectNames.join('|');
   }, [selectedProjectNames]);
 
+  // Create subcontractor filter string
+  const subcontractorFilterString = useMemo(() => {
+    if (selectedSubcontractors.length === 0) return undefined;
+    return selectedSubcontractors.join('|');
+  }, [selectedSubcontractors]);
+
   // Get timesheets data
   const { 
     data: timesheetData, 
@@ -116,6 +124,8 @@ export default function ReportingPage() {
     search: search || undefined,
     employees: employeesFilterString,
     status: statusFilter || undefined,
+    jobName: projectNameFilterString,
+    company: subcontractorFilterString,
     authType: 'admin'
   });
 
@@ -327,6 +337,90 @@ export default function ReportingPage() {
     );
   };
 
+  const handleSubcontractorToggle = (subcontractor: string) => {
+    setSelectedSubcontractors(prev => 
+      prev.includes(subcontractor) 
+        ? prev.filter(name => name !== subcontractor)
+        : [...prev, subcontractor]
+    );
+  };
+
+  // Auto-clear invalid selections when filters change
+  useEffect(() => {
+    if (selectedContractors.length > 0 && selectedProjectNames.length > 0 && timesheetData?.timesheets && contractorsData?.contractors) {
+      // Check if selected contractors worked on selected projects
+      const validContractorIds = new Set<string>();
+      
+      timesheetData.timesheets.forEach(timesheet => {
+        if (selectedProjectNames.includes(timesheet.projectName)) {
+          const contractor = contractorsData.contractors.find(c => 
+            timesheet.employee.includes(`${c.firstName} ${c.lastName}`)
+          );
+          if (contractor) {
+            validContractorIds.add(contractor.id);
+          }
+        }
+      });
+      
+      const invalidContractors = selectedContractors.filter(id => !validContractorIds.has(id));
+      if (invalidContractors.length > 0) {
+        setSelectedContractors(prev => prev.filter(id => validContractorIds.has(id)));
+      }
+    }
+  }, [selectedProjectNames, timesheetData?.timesheets, contractorsData?.contractors]);
+
+  useEffect(() => {
+    if (selectedProjectNames.length > 0 && selectedContractors.length > 0 && timesheetData?.timesheets && contractorsData?.contractors) {
+      // Check if selected projects have work from selected contractors
+      const contractorNames = contractorsData.contractors
+        .filter(contractor => selectedContractors.includes(contractor.id))
+        .map(contractor => `${contractor.firstName} ${contractor.lastName}`);
+      
+      const validProjects = new Set<string>();
+      
+      timesheetData.timesheets.forEach(timesheet => {
+        if (contractorNames.some(name => timesheet.employee.includes(name))) {
+          if (timesheet.projectName && timesheet.projectName.trim()) {
+            validProjects.add(timesheet.projectName.trim());
+          }
+        }
+      });
+      
+      const invalidProjects = selectedProjectNames.filter(name => !validProjects.has(name));
+      if (invalidProjects.length > 0) {
+        setSelectedProjectNames(prev => prev.filter(name => validProjects.has(name)));
+      }
+    }
+  }, [selectedContractors, timesheetData?.timesheets, contractorsData?.contractors]);
+
+  // Auto-clear invalid subcontractor selections when contractors or projects change
+  useEffect(() => {
+    if (selectedSubcontractors.length > 0 && (selectedContractors.length > 0 || selectedProjectNames.length > 0) && timesheetData?.timesheets && contractorsData?.contractors) {
+      // Check if selected subcontractors have work from selected contractors/projects
+      const validSubcontractors = new Set<string>();
+      
+      timesheetData.timesheets.forEach(timesheet => {
+        const matchesContractor = selectedContractors.length === 0 || 
+          contractorsData.contractors.some(contractor => 
+            selectedContractors.includes(contractor.id) && 
+            timesheet.employee.includes(`${contractor.firstName} ${contractor.lastName}`)
+          );
+        const matchesProject = selectedProjectNames.length === 0 || selectedProjectNames.includes(timesheet.projectName);
+        
+        if (matchesContractor && matchesProject) {
+          if (timesheet.company && timesheet.company.trim()) {
+            validSubcontractors.add(timesheet.company.trim());
+          }
+        }
+      });
+      
+      const invalidSubcontractors = selectedSubcontractors.filter(name => !validSubcontractors.has(name));
+      if (invalidSubcontractors.length > 0) {
+        setSelectedSubcontractors(prev => prev.filter(name => validSubcontractors.has(name)));
+      }
+    }
+  }, [selectedContractors, selectedProjectNames, timesheetData?.timesheets, contractorsData?.contractors]);
+
   const exportToCSV = () => {
     if (!chartData.length) return;
     
@@ -374,28 +468,114 @@ export default function ReportingPage() {
       .map(contractor => `${contractor.firstName} ${contractor.lastName}`);
   }, [contractorsData?.contractors, selectedContractors]);
 
-  // Get unique project names from timesheet data
+  // Get unique project names from timesheet data, filtered by selected contractors and subcontractors
   const uniqueProjectNames = useMemo(() => {
     if (!timesheetData?.timesheets) return [];
+    
+    let filteredTimesheets = timesheetData.timesheets;
+    
+    // Filter by selected contractors
+    if (selectedContractors.length > 0) {
+      const contractorNames = contractorsData?.contractors
+        .filter(contractor => selectedContractors.includes(contractor.id))
+        .map(contractor => `${contractor.firstName} ${contractor.lastName}`) || [];
+      
+      filteredTimesheets = filteredTimesheets.filter(timesheet =>
+        contractorNames.some(name => timesheet.employee.includes(name))
+      );
+    }
+    
+    // Filter by selected subcontractors
+    if (selectedSubcontractors.length > 0) {
+      filteredTimesheets = filteredTimesheets.filter(timesheet =>
+        selectedSubcontractors.some(subcontractor => 
+          timesheet.company.toLowerCase().includes(subcontractor.toLowerCase())
+        )
+      );
+    }
+    
     const projectNames = new Set<string>();
-    timesheetData.timesheets.forEach(timesheet => {
+    filteredTimesheets.forEach(timesheet => {
       const projectName = timesheet.projectName;
       if (projectName && projectName.trim()) {
         projectNames.add(projectName.trim());
       }
     });
     return Array.from(projectNames).sort();
-  }, [timesheetData?.timesheets]);
+  }, [timesheetData?.timesheets, selectedContractors, selectedSubcontractors, contractorsData?.contractors]);
+
+  // Get unique subcontractor names from timesheet data, filtered by selected contractors and projects
+  const uniqueSubcontractors = useMemo(() => {
+    if (!timesheetData?.timesheets) return [];
+    
+    let filteredTimesheets = timesheetData.timesheets;
+    
+    // Filter by selected contractors
+    if (selectedContractors.length > 0) {
+      const contractorNames = contractorsData?.contractors
+        .filter(contractor => selectedContractors.includes(contractor.id))
+        .map(contractor => `${contractor.firstName} ${contractor.lastName}`) || [];
+      
+      filteredTimesheets = filteredTimesheets.filter(timesheet =>
+        contractorNames.some(name => timesheet.employee.includes(name))
+      );
+    }
+    
+    // Filter by selected projects
+    if (selectedProjectNames.length > 0) {
+      filteredTimesheets = filteredTimesheets.filter(timesheet =>
+        selectedProjectNames.includes(timesheet.projectName)
+      );
+    }
+    
+    const subcontractorNames = new Set<string>();
+    filteredTimesheets.forEach(timesheet => {
+      const companyName = timesheet.company;
+      if (companyName && companyName.trim()) {
+        subcontractorNames.add(companyName.trim());
+      }
+    });
+    return Array.from(subcontractorNames).sort();
+  }, [timesheetData?.timesheets, selectedContractors, selectedProjectNames, contractorsData?.contractors]);
 
 
-  // Filtered contractors for search
+  // Filtered contractors for search, project, and subcontractor filtering
   const filteredContractors = useMemo(() => {
     if (!contractorsData?.contractors) return [];
-    if (!contractorSearch) return contractorsData.contractors;
-    return contractorsData.contractors.filter(contractor => 
+    
+    let availableContractors = contractorsData.contractors;
+    
+    // If projects or subcontractors are selected, only show contractors who worked on those projects/subcontractors
+    if ((selectedProjectNames.length > 0 || selectedSubcontractors.length > 0) && timesheetData?.timesheets) {
+      const contractorsOnFilteredWork = new Set<string>();
+      
+      timesheetData.timesheets.forEach(timesheet => {
+        const matchesProject = selectedProjectNames.length === 0 || selectedProjectNames.includes(timesheet.projectName);
+        const matchesSubcontractor = selectedSubcontractors.length === 0 || 
+          selectedSubcontractors.some(sub => timesheet.company.toLowerCase().includes(sub.toLowerCase()));
+        
+        if (matchesProject && matchesSubcontractor) {
+          // Find contractor by matching employee name
+          const contractor = contractorsData.contractors.find(c => 
+            timesheet.employee.includes(`${c.firstName} ${c.lastName}`)
+          );
+          if (contractor) {
+            contractorsOnFilteredWork.add(contractor.id);
+          }
+        }
+      });
+      
+      availableContractors = contractorsData.contractors.filter(contractor =>
+        contractorsOnFilteredWork.has(contractor.id)
+      );
+    }
+    
+    // Apply search filter
+    if (!contractorSearch) return availableContractors;
+    return availableContractors.filter(contractor => 
       `${contractor.firstName} ${contractor.lastName}`.toLowerCase().includes(contractorSearch.toLowerCase())
     );
-  }, [contractorsData?.contractors, contractorSearch]);
+  }, [contractorsData?.contractors, contractorSearch, selectedProjectNames, selectedSubcontractors, timesheetData?.timesheets]);
 
   // Filtered project names for search
   const filteredProjectNames = useMemo(() => {
@@ -405,6 +585,15 @@ export default function ReportingPage() {
       projectName.toLowerCase().includes(projectNameSearch.toLowerCase())
     );
   }, [uniqueProjectNames, projectNameSearch]);
+
+  // Filtered subcontractors for search
+  const filteredSubcontractors = useMemo(() => {
+    if (!uniqueSubcontractors.length) return [];
+    if (!subcontractorSearch) return uniqueSubcontractors;
+    return uniqueSubcontractors.filter(subcontractor => 
+      subcontractor.toLowerCase().includes(subcontractorSearch.toLowerCase())
+    );
+  }, [uniqueSubcontractors, subcontractorSearch]);
 
   const formatTimeSpent = (timeSpent: string) => {
     const hours = parseFloat(timeSpent);
@@ -697,20 +886,64 @@ export default function ReportingPage() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        {/* <div className="flex flex-col">
-          <label className="text-sm font-medium mb-1">Export</label>
-          <Button 
-            variant="outline" 
-            onClick={exportToCSV}
-            disabled={chartData.length === 0 || timesheetFetching}
-            className="h-9 min-w-[100px]"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            {t('admin.exportCSV')}
-          </Button>
-        </div> */}
+        <div className="flex flex-col">
+          <label className="text-sm font-medium mb-1">Subcontractors</label>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-9 justify-between min-w-[140px]">
+                <span className="truncate">
+                  {selectedSubcontractors.length === 0 
+                    ? "All Subcontractors" 
+                    : selectedSubcontractors.length === 1
+                      ? selectedSubcontractors[0]
+                      : `${selectedSubcontractors.length} subcontractors selected`
+                  }
+                </span>
+                <ChevronDown className="h-4 w-4 flex-shrink-0 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-64">
+              <div className="p-2">
+                <Input
+                  placeholder="Search subcontractors..."
+                  className="w-full"
+                  value={subcontractorSearch}
+                  onChange={(e) => {
+                    setSubcontractorSearch(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onFocus={(e) => {
+                    e.stopPropagation();
+                  }}
+                />
+              </div>
+              <DropdownMenuItem
+                onClick={() => setSelectedSubcontractors([])}
+                className="cursor-pointer"
+              >
+                All Subcontractors
+              </DropdownMenuItem>
+              <div className="max-h-48 overflow-y-auto">
+                {filteredSubcontractors.map((subcontractor) => (
+                  <DropdownMenuCheckboxItem
+                    key={subcontractor}
+                    checked={selectedSubcontractors.includes(subcontractor)}
+                    onCheckedChange={() => handleSubcontractorToggle(subcontractor)}
+                  >
+                    {subcontractor}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-  ), [startDate, endDate, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch, selectedProjectNames, filteredProjectNames, projectNameSearch, statusFilterText, t]);
+  ), [startDate, endDate, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch, selectedProjectNames, filteredProjectNames, projectNameSearch, selectedSubcontractors, filteredSubcontractors, subcontractorSearch, statusFilterText, t]);
 
   const renderMobileCard = useCallback((timesheet: Timesheet, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
     <Card className="mb-4">
@@ -862,6 +1095,116 @@ export default function ReportingPage() {
                         onCheckedChange={() => handleContractorToggle(contractor.id)}
                       >
                         {contractor.firstName} {contractor.lastName}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-sm font-medium">{t('admin.projects')}</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full md:w-64 justify-between">
+                    {selectedProjectNames.length === 0 
+                      ? t('admin.allProjects') 
+                      : selectedProjectNames.length === 1
+                        ? selectedProjectNames[0]
+                        : `${selectedProjectNames.length} projects selected`
+                    }
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64">
+                  <div className="p-2">
+                    <Input
+                      placeholder={t('admin.searchProjects')}
+                      className="w-full"
+                      value={projectNameSearch}
+                      onChange={(e) => {
+                        setProjectNameSearch(e.target.value);
+                      }}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onFocus={(e) => {
+                        e.stopPropagation();
+                      }}
+                    />
+                  </div>
+                  <DropdownMenuItem
+                    onClick={() => setSelectedProjectNames([])}
+                    className="cursor-pointer"
+                  >
+                    {t('admin.allProjects')}
+                  </DropdownMenuItem>
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredProjectNames.map((projectName) => (
+                      <DropdownMenuCheckboxItem
+                        key={projectName}
+                        checked={selectedProjectNames.includes(projectName)}
+                        onCheckedChange={() => handleProjectNameToggle(projectName)}
+                      >
+                        {projectName}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-sm font-medium">{t('admin.subcontractors')}</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full md:w-64 justify-between">
+                    {selectedSubcontractors.length === 0 
+                      ? t('admin.allSubcontractors') 
+                      : selectedSubcontractors.length === 1
+                        ? selectedSubcontractors[0]
+                        : `${selectedSubcontractors.length} subcontractors selected`
+                    }
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64">
+                  <div className="p-2">
+                    <Input
+                      placeholder={t('admin.searchSubcontractors')}
+                      className="w-full"
+                      value={subcontractorSearch}
+                      onChange={(e) => {
+                        setSubcontractorSearch(e.target.value);
+                      }}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onFocus={(e) => {
+                        e.stopPropagation();
+                      }}
+                    />
+                  </div>
+                  <DropdownMenuItem
+                    onClick={() => setSelectedSubcontractors([])}
+                    className="cursor-pointer"
+                  >
+                    {t('admin.allSubcontractors')}
+                  </DropdownMenuItem>
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredSubcontractors.map((subcontractor) => (
+                      <DropdownMenuCheckboxItem
+                        key={subcontractor}
+                        checked={selectedSubcontractors.includes(subcontractor)}
+                        onCheckedChange={() => handleSubcontractorToggle(subcontractor)}
+                      >
+                        {subcontractor}
                       </DropdownMenuCheckboxItem>
                     ))}
                   </div>

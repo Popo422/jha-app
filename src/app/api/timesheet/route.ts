@@ -216,6 +216,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const status = searchParams.get('status');
     const projectName = searchParams.get('projectName');
+    const jobName = searchParams.get('jobName');
     const employees = searchParams.get('employees');
 
     // Build query conditions
@@ -238,9 +239,16 @@ export async function GET(request: NextRequest) {
       conditions.push(lte(timesheets.date, dateTo));
     }
 
-    // Add company filter if specified
+    // Add company filter if specified (filtering by subcontractor/company names)
     if (company) {
-      conditions.push(eq(timesheets.company, company));
+      // Handle multiple company names separated by '|'
+      const companyNames = company.split('|').filter(Boolean);
+      if (companyNames.length > 0) {
+        const companyConditions = companyNames.map(name => 
+          ilike(timesheets.company, `%${name.trim()}%`)
+        );
+        conditions.push(or(...companyConditions));
+      }
     }
 
     // Add search filter if specified
@@ -255,7 +263,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Add project name filter if specified
+    // Add job name filter if specified (filtering by project name)
+    if (jobName) {
+      // Handle multiple project names separated by '|'
+      const projectNames = jobName.split('|').filter(Boolean);
+      if (projectNames.length > 0) {
+        const projectConditions = projectNames.map(name => 
+          ilike(timesheets.projectName, `%${name.trim()}%`)
+        );
+        conditions.push(or(...projectConditions));
+      }
+    }
+
+      // Add project name filter if specified
     if (projectName) {
       conditions.push(ilike(timesheets.projectName, `%${projectName}%`));
     }
