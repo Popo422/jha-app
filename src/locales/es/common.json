@@ -592,7 +592,8 @@
     "updateContractor": "Actualizar Contratista",
     "cancel": "Cancelar",
     "contractors": "Contratistas",
-    "manageContractorAccounts": "Gestionar cuentas de contratistas y códigos de acceso"
+    "manageContractorAccounts": "Gestionar cuentas de contratistas y códigos de acceso",
+    "languagePreferenceHelp": "Selecciona el idioma preferido del contratista para formularios e interfaces"
   },
   "safetyQuestions": {
     "ladderAltered": "¿Ha sido alterada la escalera de alguna manera?",

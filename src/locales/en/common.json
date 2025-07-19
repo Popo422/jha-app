@@ -592,7 +592,8 @@
     "updateContractor": "Update Contractor",
     "cancel": "Cancel",
     "contractors": "Contractors",
-    "manageContractorAccounts": "Manage contractor accounts and access codes"
+    "manageContractorAccounts": "Manage contractor accounts and access codes",
+    "languagePreferenceHelp": "Select the contractor's preferred language for forms and interfaces"
   },
   "safetyQuestions": {
     "ladderAltered": "Has the ladder been altered in any way?",

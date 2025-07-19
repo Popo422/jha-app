@@ -603,7 +603,7 @@ export default function ContractorsPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <p className="text-xs text-muted-foreground">
-                Select the contractor's preferred language for forms and interfaces
+                {t('contractors.languagePreferenceHelp')}
               </p>
             </div>
 
