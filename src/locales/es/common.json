@@ -596,7 +596,10 @@
     "cancel": "Cancelar",
     "contractors": "Contratistas",
     "manageContractorAccounts": "Agregar, gestionar y ver contratistas, subcontratistas y empleados en esta pantalla.",
-    "languagePreferenceHelp": "Selecciona el idioma preferido del contratista para formularios e interfaces"
+    "languagePreferenceHelp": "Selecciona el idioma preferido del contratista para formularios e interfaces",
+    "contractorLimitExceeded": "Límite de Contratistas Excedido",
+    "contractorLimitMessage": "Has alcanzado el número máximo de contratistas ({limit}) para tu nivel de membresía. Por favor actualiza tu membresía para agregar más contratistas.",
+    "upgradeToAddMore": "Actualizar para agregar contratistas ilimitados"
   },
   "safetyQuestions": {
     "ladderAltered": "¿Ha sido alterada la escalera de alguna manera?",

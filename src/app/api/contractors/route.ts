@@ -1,14 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, desc, and, or, ilike } from 'drizzle-orm'
+import { eq, desc, and, or, ilike, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contractors } from '@/lib/db/schema'
+import { contractors, companies } from '@/lib/db/schema'
 import { emailService } from '@/lib/email-service'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
-// PostgreSQL error codes
 const PG_UNIQUE_VIOLATION = '23505'
+async function checkContractorLimit(companyId: string): Promise<{ canAdd: boolean; currentCount: number; limit: number; membershipLevel: string | null }> {
+  const company = await db.select({
+    membershipInfo: companies.membershipInfo
+  }).from(companies).where(eq(companies.id, companyId)).limit(1)
+
+  if (company.length === 0) {
+    throw new Error('Company not found')
+  }
+
+  const membershipInfo = company[0].membershipInfo as any
+  const membershipLevel = membershipInfo?.membershipLevel || '1'
+
+  // Get current contractor count
+  const contractorCountResult = await db.select({ count: count() })
+    .from(contractors)
+    .where(eq(contractors.companyId, companyId))
+
+  const currentCount = contractorCountResult[0]?.count || 0
+  let limit = 100 // Default limit for non-level 3 members
+  if (membershipLevel === '3') {
+    limit = Number.MAX_SAFE_INTEGER // Unlimited for level 3
+  }
+
+  return {
+    canAdd: currentCount < limit,
+    currentCount,
+    limit,
+    membershipLevel
+  }
+}
 
 // Helper function to authenticate admin requests
 function authenticateAdmin(request: NextRequest): { admin: any } {
@@ -137,7 +166,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if email already exists within the same company
+    const limitCheck = await checkContractorLimit(auth.admin.companyId)
+    if (!limitCheck.canAdd && limitCheck.membershipLevel !== '3') {
+      return NextResponse.json(
+        { 
+          error: 'Contractor limit exceeded',
+          message: `You have reached the maximum number of contractors (${limitCheck.limit}) for your membership level. Please upgrade to add more contractors.`,
+          currentCount: limitCheck.currentCount,
+          limit: limitCheck.limit,
+          membershipLevel: limitCheck.membershipLevel
+        },
+        { status: 403 }
+      )
+    }
+
     const existingEmailContractor = await db
       .select()
       .from(contractors)

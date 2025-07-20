@@ -596,7 +596,10 @@
     "cancel": "Cancel",
     "contractors": "Contractors",
     "manageContractorAccounts": "Add, manage and view contractors, subcontractors and employees on this screen.",
-    "languagePreferenceHelp": "Select the contractor's preferred language for forms and interfaces"
+    "languagePreferenceHelp": "Select the contractor's preferred language for forms and interfaces",
+    "contractorLimitExceeded": "Contractor Limit Exceeded",
+    "contractorLimitMessage": "You have reached the maximum number of contractors ({limit}) for your membership level. Please upgrade to add more contractors.",
+    "upgradeToAddMore": "Upgrade to add unlimited contractors"
   },
   "safetyQuestions": {
     "ladderAltered": "Has the ladder been altered in any way?",
