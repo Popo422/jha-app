@@ -49,7 +49,7 @@ export default function TimeFormsPage() {
   });
 
   const [deleteTimesheet] = useDeleteTimesheetMutation();
-  const [approvalDialog, setApprovalDialog] = useState<{ timesheet: Timesheet; action: 'approve' | 'reject' } | null>(null);
+  const [approvalDialog, setApprovalDialog] = useState<{ timesheet: Timesheet; action: 'approve' | 'reject' | 'pending' } | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
   const data = timesheetsData?.timesheets || [];
@@ -88,7 +88,7 @@ export default function TimeFormsPage() {
     refetch();
   }, [deleteTimesheet, refetch]);
 
-  const handleApprovalAction = useCallback(async (timesheet: Timesheet, action: 'approve' | 'reject') => {
+  const handleApprovalAction = useCallback(async (timesheet: Timesheet, action: 'approve' | 'reject' | 'pending') => {
     setApprovalDialog({ timesheet, action });
     setRejectionReason('');
   }, []);
@@ -439,6 +439,42 @@ export default function TimeFormsPage() {
                   </DropdownMenuItem>
                 </>
               )}
+              {timesheet.status === 'approved' && (
+                <>
+                  <DropdownMenuItem 
+                    onClick={() => handleApprovalAction(timesheet, 'reject')}
+                    className="cursor-pointer text-red-600"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Reject
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleApprovalAction(timesheet, 'pending')}
+                    className="cursor-pointer text-orange-600"
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+{t('admin.setPending')}
+                  </DropdownMenuItem>
+                </>
+              )}
+              {timesheet.status === 'rejected' && (
+                <>
+                  <DropdownMenuItem 
+                    onClick={() => handleApprovalAction(timesheet, 'approve')}
+                    className="cursor-pointer text-green-600"
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Approve
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleApprovalAction(timesheet, 'pending')}
+                    className="cursor-pointer text-orange-600"
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+{t('admin.setPending')}
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuItem 
                 onClick={() => handleEdit(timesheet)}
                 className="cursor-pointer"
@@ -521,14 +557,21 @@ export default function TimeFormsPage() {
             icon: Check,
             onClick: (timesheet) => handleApprovalAction(timesheet, 'approve'),
             className: 'text-green-600',
-            show: (timesheet) => timesheet.status === 'pending'
+            show: (timesheet) => timesheet.status === 'pending' || timesheet.status === 'rejected'
           },
           {
             label: t('admin.reject'),
             icon: XCircle,
             onClick: (timesheet) => handleApprovalAction(timesheet, 'reject'),
             className: 'text-red-600',
-            show: (timesheet) => timesheet.status === 'pending'
+            show: (timesheet) => timesheet.status === 'pending' || timesheet.status === 'approved'
+          },
+          {
+            label: t('admin.setPending'),
+            icon: Clock,
+            onClick: (timesheet) => handleApprovalAction(timesheet, 'pending'),
+            className: 'text-orange-600',
+            show: (timesheet) => timesheet.status === 'approved' || timesheet.status === 'rejected'
           }
         ]}
       />
@@ -538,12 +581,16 @@ export default function TimeFormsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {approvalDialog?.action === 'approve' ? t('admin.approveTimesheet') : t('admin.rejectTimesheet')}
+              {approvalDialog?.action === 'approve' ? t('admin.approveTimesheet') : 
+               approvalDialog?.action === 'reject' ? t('admin.rejectTimesheet') : 
+               t('admin.setPendingTimesheet')}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {approvalDialog?.action === 'approve' 
-                ? t('admin.approveTimesheetConfirm', { name: approvalDialog?.timesheet?.employee })
-                : t('admin.rejectTimesheetConfirm', { name: approvalDialog?.timesheet?.employee })
+                ? `Are you sure you want to approve the timesheet for ${approvalDialog?.timesheet?.employee || 'this employee'}?`
+                : approvalDialog?.action === 'reject'
+                ? `Are you sure you want to reject the timesheet for ${approvalDialog?.timesheet?.employee || 'this employee'}?`
+                : `${t('admin.setPendingTimesheetConfirm')} ${approvalDialog?.timesheet?.employee || 'this employee'}?`
               }
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -572,10 +619,14 @@ export default function TimeFormsPage() {
               disabled={approvalDialog?.action === 'reject' && !rejectionReason.trim()}
               className={approvalDialog?.action === 'approve' 
                 ? 'bg-green-600 hover:bg-green-700' 
-                : 'bg-red-600 hover:bg-red-700'
+                : approvalDialog?.action === 'reject'
+                ? 'bg-red-600 hover:bg-red-700'
+                : 'bg-orange-600 hover:bg-orange-700'
               }
             >
-              {approvalDialog?.action === 'approve' ? t('admin.approve') : t('admin.reject')}
+              {approvalDialog?.action === 'approve' ? t('admin.approve') : 
+               approvalDialog?.action === 'reject' ? t('admin.reject') : 
+               t('admin.setPending')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

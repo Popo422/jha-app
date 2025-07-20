@@ -13,6 +13,12 @@ export const companies = pgTable('companies', {
   modulesLastUpdatedAt: timestamp('modules_last_updated_at'),
   modulesLastUpdatedBy: text('modules_last_updated_by'), // Admin name who last updated modules
   modulesLastUpdatedByUserId: text('modules_last_updated_by_user_id'), // Admin user ID for reference
+  membershipInfo: jsonb('membership_info').default({
+    membershipLevel: "3",
+    user: null,
+    memberships: [],
+    tokenVerifiedAt: new Date().toISOString()
+  }), // JSON field for membership level and user data
   createdBy: uuid('created_by'), // Super-admin user ID who created this company
   wordpressUserId: text('wordpress_user_id'), // WordPress user ID for company owner
   createdAt: timestamp('created_at').notNull().defaultNow(),

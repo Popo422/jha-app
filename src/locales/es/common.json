@@ -138,6 +138,9 @@
     "rejectTimesheet": "Rechazar Hoja de Tiempo",
     "approveTimesheetConfirm": "¿Está seguro de que desea aprobar la hoja de tiempo para {name}?",
     "rejectTimesheetConfirm": "¿Está seguro de que desea rechazar la hoja de tiempo para {name}?",
+    "setPending": "Establecer como Pendiente",
+    "setPendingTimesheet": "Establecer Hoja de Tiempo como Pendiente",
+    "setPendingTimesheetConfirm": "¿Está seguro de que desea establecer la hoja de tiempo de vuelta al estado pendiente para",
     "rejectionReason": "Razón del Rechazo *",
     "rejectionReasonPlaceholder": "Por favor proporcione una razón para el rechazo...",
     "deleteTimesheet": "Eliminar Hoja de Tiempo",
@@ -592,7 +595,7 @@
     "updateContractor": "Actualizar Contratista",
     "cancel": "Cancelar",
     "contractors": "Contratistas",
-    "manageContractorAccounts": "Gestionar cuentas de contratistas y códigos de acceso",
+    "manageContractorAccounts": "Agregar, gestionar y ver contratistas, subcontratistas y empleados en esta pantalla.",
     "languagePreferenceHelp": "Selecciona el idioma preferido del contratista para formularios e interfaces"
   },
   "safetyQuestions": {

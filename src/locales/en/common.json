@@ -138,6 +138,9 @@
     "rejectTimesheet": "Reject Timesheet",
     "approveTimesheetConfirm": "Are you sure you want to approve the timesheet for {name}?",
     "rejectTimesheetConfirm": "Are you sure you want to reject the timesheet for {name}?",
+    "setPending": "Set to Pending",
+    "setPendingTimesheet": "Set Timesheet to Pending",
+    "setPendingTimesheetConfirm": "Are you sure you want to set the timesheet back to pending status for",
     "rejectionReason": "Rejection Reason *",
     "rejectionReasonPlaceholder": "Please provide a reason for rejection...",
     "deleteTimesheet": "Delete Timesheet",
@@ -592,7 +595,7 @@
     "updateContractor": "Update Contractor",
     "cancel": "Cancel",
     "contractors": "Contractors",
-    "manageContractorAccounts": "Manage contractor accounts and access codes",
+    "manageContractorAccounts": "Add, manage and view contractors, subcontractors and employees on this screen.",
     "languagePreferenceHelp": "Select the contractor's preferred language for forms and interfaces"
   },
   "safetyQuestions": {
