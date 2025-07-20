@@ -455,9 +455,9 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (!['approve', 'reject'].includes(action)) {
+    if (!['approve', 'reject', 'pending'].includes(action)) {
       return NextResponse.json(
-        { error: 'Action must be either "approve" or "reject"' },
+        { error: 'Action must be "approve", "reject", or "pending"' },
         { status: 400 }
       );
     }
@@ -480,18 +480,29 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Timesheet not found' }, { status: 404 });
     }
 
-    const status = action === 'approve' ? 'approved' : 'rejected';
+    const status = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'pending';
     
-    // Update the timesheet with approval/rejection
+    // Update the timesheet with approval/rejection/pending
+    const updateData: any = {
+      status,
+      updatedAt: new Date()
+    };
+
+    if (action === 'approve' || action === 'reject') {
+      updateData.approvedBy = auth.admin.id;
+      updateData.approvedByName = auth.admin.name;
+      updateData.approvedAt = new Date();
+      updateData.rejectionReason = action === 'reject' ? rejectionReason : null;
+    } else if (action === 'pending') {
+      // Reset approval fields when setting back to pending
+      updateData.approvedBy = null;
+      updateData.approvedByName = null;
+      updateData.approvedAt = null;
+      updateData.rejectionReason = null;
+    }
+
     const result = await db.update(timesheets)
-      .set({
-        status,
-        approvedBy: auth.admin.id,
-        approvedByName: auth.admin.name,
-        approvedAt: new Date(),
-        rejectionReason: action === 'reject' ? rejectionReason : null,
-        updatedAt: new Date()
-      })
+      .set(updateData)
       .where(eq(timesheets.id, id))
       .returning();
 

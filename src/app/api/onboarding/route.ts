@@ -4,8 +4,15 @@ import { companies, users } from '@/lib/db/schema'
 import { eq, or } from 'drizzle-orm'
 import bcrypt from 'bcrypt'
 import { put } from '@vercel/blob'
-import { verifyMembershipAccess } from '@/lib/membership-helper'
+import { verifyMembershipAccess, type MembershipVerificationResult, type UserData, type MembershipData } from '@/lib/membership-helper'
 import * as jwt from 'jsonwebtoken'
+
+interface CompanyMembershipInfo {
+  membershipLevel: string | null
+  user: UserData
+  memberships: MembershipData[]
+  tokenVerifiedAt: string
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,15 +35,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get WordPress user ID from token
+    // Get WordPress user ID from token and membership info
     const JWT_SECRET = process.env.WORDPRESS_JWT_SECRET || 'your-wordpress-jwt-secret-here'
     const accessToken = request.cookies.get('access_token')?.value
-    let wordpressUserId = null
+    let wordpressUserId: string | null = null
+    let membershipInfo: CompanyMembershipInfo | null = null
     
     if (accessToken) {
-      const membershipResult = verifyMembershipAccess(JWT_SECRET, accessToken)
+      const membershipResult: MembershipVerificationResult = verifyMembershipAccess(JWT_SECRET, accessToken)
       if (membershipResult.isValid && membershipResult.user?.id) {
         wordpressUserId = membershipResult.user.id.toString()
+        // Store complete membership information using the actual schema
+        const activeMembership = membershipResult.memberships?.find(m => 
+          m.status === '1' && !m.is_expired && new Date(m.expire_time) > new Date()
+        )
+        
+        membershipInfo = {
+          membershipLevel: activeMembership?.level_id || null,
+          user: membershipResult.user,
+          memberships: membershipResult.memberships || [],
+          tokenVerifiedAt: new Date().toISOString()
+        }
       }
     }
 
@@ -169,6 +188,7 @@ export async function POST(request: NextRequest) {
         address: address || null,
         logoUrl: null, // Will be updated after logo upload
         wordpressUserId: wordpressUserId,
+        membershipInfo: membershipInfo,
       })
       .returning()
 

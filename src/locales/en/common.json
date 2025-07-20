@@ -138,6 +138,9 @@
     "rejectTimesheet": "Reject Timesheet",
     "approveTimesheetConfirm": "Are you sure you want to approve the timesheet for {name}?",
     "rejectTimesheetConfirm": "Are you sure you want to reject the timesheet for {name}?",
+    "setPending": "Set to Pending",
+    "setPendingTimesheet": "Set Timesheet to Pending",
+    "setPendingTimesheetConfirm": "Are you sure you want to set the timesheet back to pending status for",
     "rejectionReason": "Rejection Reason *",
     "rejectionReasonPlaceholder": "Please provide a reason for rejection...",
     "deleteTimesheet": "Delete Timesheet",
@@ -592,8 +595,11 @@
     "updateContractor": "Update Contractor",
     "cancel": "Cancel",
     "contractors": "Contractors",
-    "manageContractorAccounts": "Manage contractor accounts and access codes",
-    "languagePreferenceHelp": "Select the contractor's preferred language for forms and interfaces"
+    "manageContractorAccounts": "Add, manage and view contractors, subcontractors and employees on this screen.",
+    "languagePreferenceHelp": "Select the contractor's preferred language for forms and interfaces",
+    "contractorLimitExceeded": "Contractor Limit Exceeded",
+    "contractorLimitMessage": "You have reached the maximum number of contractors ({limit}) for your membership level. Please upgrade to add more contractors.",
+    "upgradeToAddMore": "Upgrade to add unlimited contractors"
   },
   "safetyQuestions": {
     "ladderAltered": "Has the ladder been altered in any way?",

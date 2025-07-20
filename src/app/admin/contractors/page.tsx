@@ -157,8 +157,20 @@ export default function ContractorsPage() {
       setViewMode('list');
       setEditingContractor(null);
       setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en" });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save contractor:', error);
+      
+      // Handle contractor limit exceeded error
+      if (error?.data?.error === 'Contractor limit exceeded') {
+        showToast(
+          `${t('contractors.contractorLimitExceeded')}: ${error.data.message}`,
+          'error'
+        );
+      } else if (error?.data?.error) {
+        showToast(error.data.error, 'error');
+      } else {
+        showToast('Failed to save contractor', 'error');
+      }
     }
   };
 

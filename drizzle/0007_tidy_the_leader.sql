@@ -1,0 +1,1 @@
+ALTER TABLE "companies" ADD COLUMN "membership_info" jsonb DEFAULT '{"membershipLevel":"3","user":null,"memberships":[],"tokenVerifiedAt":"2025-07-20T01:38:58.979Z"}'::jsonb;
