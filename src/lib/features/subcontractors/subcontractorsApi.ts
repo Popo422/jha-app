@@ -17,13 +17,18 @@ export interface UpdateSubcontractorRequest {
   name: string
 }
 
+export interface PaginationInfo {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
 export interface SubcontractorsResponse {
   subcontractors: Subcontractor[]
-  meta: {
-    limit: number
-    offset: number
-    companyId: string
-  }
+  pagination?: PaginationInfo
 }
 
 export interface SubcontractorResponse {
@@ -57,11 +62,11 @@ export const subcontractorsApi = createApi({
   }),
   tagTypes: ['Subcontractor'],
   endpoints: (builder) => ({
-    getSubcontractors: builder.query<SubcontractorsResponse, { search?: string; limit?: number; offset?: number }>({
-      query: ({ search, limit = 50, offset = 0 } = {}) => {
+    getSubcontractors: builder.query<SubcontractorsResponse, { search?: string; page?: number; pageSize?: number }>({
+      query: ({ search, page = 1, pageSize = 50 } = {}) => {
         const params = new URLSearchParams({
-          limit: limit.toString(),
-          offset: offset.toString(),
+          page: page.toString(),
+          pageSize: pageSize.toString(),
         })
         if (search) {
           params.append('search', search)

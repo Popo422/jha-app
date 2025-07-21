@@ -35,9 +35,19 @@ export interface TimesheetResponse {
   error?: string
 }
 
+export interface PaginationInfo {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
 export interface GetTimesheetsResponse {
   timesheets: Timesheet[]
   contractorRates?: Record<string, string>
+  pagination?: PaginationInfo
   meta: {
     limit: number
     offset: number
@@ -116,15 +126,23 @@ export const timesheetsApi = createApi({
       status?: string
       jobName?: string
       employees?: string
+      page?: number
+      pageSize?: number
       limit?: number
       offset?: number
       authType?: 'contractor' | 'admin' | 'any'
     }>({
-      query: ({ dateFrom, dateTo, company, search, status, jobName, employees, limit = 50, offset = 0, authType }) => {
-        const params = new URLSearchParams({
-          limit: limit.toString(),
-          offset: offset.toString(),
-        })
+      query: ({ dateFrom, dateTo, company, search, status, jobName, employees, page, pageSize, limit, offset, authType }) => {
+        const params = new URLSearchParams()
+        
+        // Use page/pageSize if provided, otherwise fall back to limit/offset
+        if (page !== undefined && pageSize !== undefined) {
+          params.append('page', page.toString())
+          params.append('pageSize', pageSize.toString())
+        } else {
+          params.append('limit', (limit || 50).toString())
+          params.append('offset', (offset || 0).toString())
+        }
         
         if (dateFrom) {
           params.append('dateFrom', dateFrom)

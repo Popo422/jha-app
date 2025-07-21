@@ -3,7 +3,7 @@
 import { useMemo, useCallback, useState } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetTimesheetsQuery, useDeleteTimesheetMutation, type Timesheet } from "@/lib/features/timesheets/timesheetsApi";
+import { useGetTimesheetsQuery, useDeleteTimesheetMutation, type Timesheet, type PaginationInfo } from "@/lib/features/timesheets/timesheetsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import TimesheetEdit from "@/components/admin/TimesheetEdit";
 import { Button } from "@/components/ui/button";
@@ -34,10 +34,18 @@ export default function TimeFormsPage() {
   });
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebouncedValue(searchValue, 300);
+  const [clientPagination, setClientPagination] = useState({
+    currentPage: 1,
+    pageSize: 10
+  });
+  const [serverPagination, setServerPagination] = useState({
+    page: 1,
+    pageSize: 50
+  });
 
   const { data: timesheetsData, refetch, isLoading, isFetching } = useGetTimesheetsQuery({
-    limit: 1000,
-    offset: 0,
+    page: serverPagination.page,
+    pageSize: serverPagination.pageSize,
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
     company: filters.company || undefined,
@@ -52,8 +60,33 @@ export default function TimeFormsPage() {
   const [approvalDialog, setApprovalDialog] = useState<{ timesheet: Timesheet; action: 'approve' | 'reject' | 'pending' } | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  const data = timesheetsData?.timesheets || [];
+  const allData = timesheetsData?.timesheets || [];
   const contractorRates = timesheetsData?.contractorRates || {};
+  const serverPaginationInfo = timesheetsData?.pagination;
+
+  // Client-side pagination logic
+  const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
+  const endIndex = startIndex + clientPagination.pageSize;
+  const data = allData.slice(startIndex, endIndex);
+  
+  // Create client pagination info
+  const totalClientPages = Math.ceil(allData.length / clientPagination.pageSize);
+  
+  // Calculate total pages considering both client view and server data
+  const estimatedTotalRecords = serverPaginationInfo?.total || allData.length;
+  const estimatedTotalPages = Math.ceil(estimatedTotalRecords / clientPagination.pageSize);
+  
+  const paginationInfo = {
+    page: clientPagination.currentPage,
+    pageSize: clientPagination.pageSize,
+    total: estimatedTotalRecords,
+    totalPages: estimatedTotalPages,
+    hasNextPage: clientPagination.currentPage < totalClientPages || (serverPaginationInfo?.hasNextPage || false),
+    hasPreviousPage: clientPagination.currentPage > 1
+  };
+
+  // Check if we need to prefetch next batch
+  const shouldPrefetch = clientPagination.currentPage >= totalClientPages - 2 && serverPaginationInfo?.hasNextPage;
 
   const clearFilters = useCallback(() => {
     setFilters({
@@ -63,7 +96,41 @@ export default function TimeFormsPage() {
       status: 'all'
     });
     setSearchValue('');
+    setClientPagination({ currentPage: 1, pageSize: 10 });
+    setServerPagination({ page: 1, pageSize: 50 });
   }, []);
+
+  const handlePageChange = useCallback((page: number) => {
+    const totalClientPages = Math.ceil(allData.length / clientPagination.pageSize);
+    
+    if (page <= totalClientPages) {
+      // Navigate within current batch
+      setClientPagination(prev => ({ ...prev, currentPage: page }));
+    } else {
+      // Need to fetch next batch
+      const nextServerPage = serverPagination.page + 1;
+      setServerPagination(prev => ({ ...prev, page: nextServerPage }));
+      setClientPagination({ currentPage: 1, pageSize: clientPagination.pageSize });
+    }
+  }, [allData.length, clientPagination.pageSize, serverPagination.page]);
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setClientPagination({ currentPage: 1, pageSize });
+  }, []);
+
+  // Prefetch next batch when near end
+  const { data: prefetchData } = useGetTimesheetsQuery({
+    page: serverPagination.page + 1,
+    pageSize: serverPagination.pageSize,
+    dateFrom: filters.dateFrom || undefined,
+    dateTo: filters.dateTo || undefined,
+    company: filters.company || undefined,
+    search: debouncedSearch || undefined,
+    status: filters.status !== 'all' ? filters.status : undefined,
+    authType: 'admin'
+  }, {
+    skip: !shouldPrefetch
+  });
 
   const hasActiveFilters = filters.dateFrom || filters.dateTo || filters.company || filters.status !== 'all' || searchValue;
 
@@ -551,6 +618,10 @@ export default function TimeFormsPage() {
         renderMobileCard={renderMobileCard}
         searchValue={searchValue}
         onSearchChange={setSearchValue}
+        serverSide={true}
+        pagination={paginationInfo}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
         customActions={[
           {
             label: t('admin.approve'),

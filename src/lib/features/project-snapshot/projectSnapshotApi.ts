@@ -10,10 +10,26 @@ export interface ProjectSnapshotData {
   subcontractorCount: number;
 }
 
+export interface PaginationInfo {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface GetProjectSnapshotResponse {
+  projects: ProjectSnapshotData[];
+  pagination: PaginationInfo;
+}
+
 export interface GetProjectSnapshotParams {
   companyId: string;
   project?: string;
   subcontractor?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface GetProjectSnapshotFiltersParams {
@@ -44,11 +60,17 @@ export const projectSnapshotApi = createApi({
   }),
   tagTypes: ['ProjectSnapshot', 'ProjectSnapshotFilters'],
   endpoints: (builder) => ({
-    getProjectSnapshot: builder.query<ProjectSnapshotData[], GetProjectSnapshotParams>({
-      query: ({ companyId, project, subcontractor }) => {
+    getProjectSnapshot: builder.query<GetProjectSnapshotResponse, GetProjectSnapshotParams>({
+      query: ({ companyId, project, subcontractor, page, pageSize }) => {
         const params = new URLSearchParams({
           companyId,
         })
+        
+        // Use page/pageSize if provided
+        if (page !== undefined && pageSize !== undefined) {
+          params.append('page', page.toString())
+          params.append('pageSize', pageSize.toString())
+        }
         
         if (project) {
           params.append('project', project)

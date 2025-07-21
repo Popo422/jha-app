@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetSubmissionsQuery, useDeleteSubmissionMutation } from "@/lib/features/submissions/submissionsApi";
+import { useGetSubmissionsQuery, useDeleteSubmissionMutation, type PaginationInfo } from "@/lib/features/submissions/submissionsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,27 +61,56 @@ export default function SafetyFormsPage() {
   });
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebouncedValue(searchValue, 300);
+  const [clientPagination, setClientPagination] = useState({
+    currentPage: 1,
+    pageSize: 10
+  });
+  const [serverPagination, setServerPagination] = useState({
+    page: 1,
+    pageSize: 50
+  });
 
-  const queryParams = useMemo(() => ({
-    limit: 1000,
-    offset: 0,
+  const { data: submissionsData, refetch, isLoading, isFetching } = useGetSubmissionsQuery({
+    page: serverPagination.page,
+    pageSize: serverPagination.pageSize,
     type: filters.type || undefined,
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
     company: filters.company || undefined,
     search: debouncedSearch || undefined,
-    authType: 'admin' as const
-  }), [filters.type, filters.dateFrom, filters.dateTo, filters.company, debouncedSearch]);
-
-  console.log('Safety forms query params:', queryParams);
-
-  const { data: submissionsData, refetch, isLoading, isFetching } = useGetSubmissionsQuery(queryParams, {
+    authType: 'admin'
+  }, {
     refetchOnMountOrArgChange: true
   });
 
   const [deleteSubmission] = useDeleteSubmissionMutation();
 
-  const data = submissionsData?.submissions || [];
+  const allData = submissionsData?.submissions || [];
+  const serverPaginationInfo = submissionsData?.pagination;
+
+  // Client-side pagination logic
+  const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
+  const endIndex = startIndex + clientPagination.pageSize;
+  const data = allData.slice(startIndex, endIndex);
+  
+  // Create client pagination info
+  const totalClientPages = Math.ceil(allData.length / clientPagination.pageSize);
+  
+  // Calculate total pages considering both client view and server data
+  const estimatedTotalRecords = serverPaginationInfo?.total || allData.length;
+  const estimatedTotalPages = Math.ceil(estimatedTotalRecords / clientPagination.pageSize);
+  
+  const paginationInfo = {
+    page: clientPagination.currentPage,
+    pageSize: clientPagination.pageSize,
+    total: estimatedTotalRecords,
+    totalPages: estimatedTotalPages,
+    hasNextPage: clientPagination.currentPage < totalClientPages || (serverPaginationInfo?.hasNextPage || false),
+    hasPreviousPage: clientPagination.currentPage > 1
+  };
+
+  // Check if we need to prefetch next batch
+  const shouldPrefetch = clientPagination.currentPage >= totalClientPages - 2 && serverPaginationInfo?.hasNextPage;
 
   const clearFilters = useCallback(() => {
     setFilters({
@@ -91,9 +120,43 @@ export default function SafetyFormsPage() {
       company: ''
     });
     setSearchValue('');
+    setClientPagination({ currentPage: 1, pageSize: 10 });
+    setServerPagination({ page: 1, pageSize: 50 });
   }, []);
 
   const hasActiveFilters = filters.type || filters.dateFrom || filters.dateTo || filters.company || searchValue;
+
+  const handlePageChange = useCallback((page: number) => {
+    const totalClientPages = Math.ceil(allData.length / clientPagination.pageSize);
+    
+    if (page <= totalClientPages) {
+      // Navigate within current batch
+      setClientPagination(prev => ({ ...prev, currentPage: page }));
+    } else {
+      // Need to fetch next batch
+      const nextServerPage = serverPagination.page + 1;
+      setServerPagination(prev => ({ ...prev, page: nextServerPage }));
+      setClientPagination({ currentPage: 1, pageSize: clientPagination.pageSize });
+    }
+  }, [allData.length, clientPagination.pageSize, serverPagination.page]);
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setClientPagination({ currentPage: 1, pageSize });
+  }, []);
+
+  // Prefetch next batch when near end
+  const { data: prefetchData } = useGetSubmissionsQuery({
+    page: serverPagination.page + 1,
+    pageSize: serverPagination.pageSize,
+    type: filters.type || undefined,
+    dateFrom: filters.dateFrom || undefined,
+    dateTo: filters.dateTo || undefined,
+    company: filters.company || undefined,
+    search: debouncedSearch || undefined,
+    authType: 'admin'
+  }, {
+    skip: !shouldPrefetch
+  });
 
   const getSubmissionTypeLabel = useCallback((type: string) => {
     switch (type) {
@@ -466,6 +529,10 @@ export default function SafetyFormsPage() {
         renderMobileCard={renderMobileCard}
         searchValue={searchValue}
         onSearchChange={setSearchValue}
+        serverSide={true}
+        pagination={paginationInfo}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
       />
     </div>
   );

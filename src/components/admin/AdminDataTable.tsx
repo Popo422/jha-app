@@ -39,6 +39,15 @@ export interface CustomAction<T> {
   show?: (item: T) => boolean;
 }
 
+export interface PaginationInfo {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export interface AdminDataTableProps<T> {
   data: T[];
   columns: ColumnDef<T>[];
@@ -57,6 +66,11 @@ export interface AdminDataTableProps<T> {
   onSearchChange?: (value: string) => void;
   canDelete?: (item: T) => boolean;
   customActions?: CustomAction<T>[];
+  // Server-side pagination props
+  serverSide?: boolean;
+  pagination?: PaginationInfo;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 export function AdminDataTable<T>({
@@ -77,6 +91,10 @@ export function AdminDataTable<T>({
   onSearchChange,
   canDelete,
   customActions = [],
+  serverSide = false,
+  pagination,
+  onPageChange,
+  onPageSizeChange,
 }: AdminDataTableProps<T>) {
   const { t } = useTranslation('common');
   const [rowSelection, setRowSelection] = useState({});
@@ -225,13 +243,23 @@ export function AdminDataTable<T>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: serverSide ? undefined : getFilteredRowModel(),
+    getPaginationRowModel: serverSide ? undefined : getPaginationRowModel(),
+    getSortedRowModel: serverSide ? undefined : getSortedRowModel(),
     onRowSelectionChange: setRowSelection,
     state: {
       rowSelection,
+      ...(serverSide && pagination ? {
+        pagination: {
+          pageIndex: pagination.page - 1,
+          pageSize: pagination.pageSize,
+        },
+      } : {}),
     },
+    ...(serverSide ? {
+      manualPagination: true,
+      pageCount: pagination?.totalPages || 0,
+    } : {}),
     getRowId: (row) => getRowId(row),
   });
 
@@ -573,6 +601,11 @@ export function AdminDataTable<T>({
           <div className="text-sm text-muted-foreground">
             {isLoading ? (
               <Skeleton className="h-4 w-48" />
+            ) : serverSide && pagination ? (
+              <>
+                {Object.keys(rowSelection).length} of{" "}
+                {data.length} row(s) selected. Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} total.
+              </>
             ) : (
               <>
                 {table.getFilteredSelectedRowModel().rows.length} of{" "}
@@ -580,11 +613,61 @@ export function AdminDataTable<T>({
               </>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {serverSide && pagination && onPageSizeChange && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Rows per page:</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8">
+                      {pagination.pageSize}
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {[5, 10, 25, 50].map((pageSize) => (
+                      <DropdownMenuItem
+                        key={pageSize}
+                        onClick={() => onPageSizeChange(pageSize)}
+                        className={pagination.pageSize === pageSize ? "bg-accent" : ""}
+                      >
+                        {pageSize}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
             {isLoading ? (
               <>
                 <Skeleton className="h-8 w-20" />
                 <Skeleton className="h-8 w-16" />
+              </>
+            ) : serverSide && pagination && onPageChange ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(pagination.page - 1)}
+                  disabled={!pagination.hasPreviousPage}
+                  className="flex-1 md:flex-none"
+                >
+                  {t('common.previous')}
+                </Button>
+                <div className="flex items-center gap-1 px-2">
+                  <span className="text-sm">
+                    Page {pagination.page} of {pagination.totalPages}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(pagination.page + 1)}
+                  disabled={!pagination.hasNextPage}
+                  className="flex-1 md:flex-none"
+                >
+                  {t('common.next')}
+                </Button>
               </>
             ) : (
               <>

@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetProjectsQuery, useDeleteProjectMutation, useCreateProjectMutation, useUpdateProjectMutation, type Project } from "@/lib/features/projects/projectsApi";
+import { useGetProjectsQuery, useDeleteProjectMutation, useCreateProjectMutation, useUpdateProjectMutation, type Project, type PaginationInfo } from "@/lib/features/projects/projectsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,11 +27,21 @@ export function ProjectsManagement() {
     location: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [clientPagination, setClientPagination] = useState({
+    currentPage: 1,
+    pageSize: 10
+  });
+  const [serverPagination, setServerPagination] = useState({
+    page: 1,
+    pageSize: 50
+  });
   
   const { showToast } = useToast();
   
-  const { data: projectsData, isLoading, error, refetch } = useGetProjectsQuery({
+  const { data: projectsData, isLoading, isFetching, refetch } = useGetProjectsQuery({
     search: debouncedSearch || undefined,
+    page: serverPagination.page,
+    pageSize: serverPagination.pageSize
   });
   
   const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation();
@@ -40,6 +50,60 @@ export function ProjectsManagement() {
 
   const isFormLoading = isCreating || isUpdating;
   const formError = createError || updateError;
+
+  const allProjects = projectsData?.projects || [];
+  const serverPaginationInfo = projectsData?.pagination;
+
+  // Client-side pagination logic
+  const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
+  const endIndex = startIndex + clientPagination.pageSize;
+  const data = allProjects.slice(startIndex, endIndex);
+  
+  // Create client pagination info
+  const totalClientPages = Math.ceil(allProjects.length / clientPagination.pageSize);
+  
+  // Calculate total pages considering both client view and server data
+  const estimatedTotalRecords = serverPaginationInfo?.total || allProjects.length;
+  const estimatedTotalPages = Math.ceil(estimatedTotalRecords / clientPagination.pageSize);
+  
+  const paginationInfo = {
+    page: clientPagination.currentPage,
+    pageSize: clientPagination.pageSize,
+    total: estimatedTotalRecords,
+    totalPages: estimatedTotalPages,
+    hasNextPage: clientPagination.currentPage < totalClientPages || (serverPaginationInfo?.hasNextPage || false),
+    hasPreviousPage: clientPagination.currentPage > 1
+  };
+
+  // Check if we need to prefetch next batch
+  const shouldPrefetch = clientPagination.currentPage >= totalClientPages - 2 && serverPaginationInfo?.hasNextPage;
+
+  const handlePageChange = useCallback((page: number) => {
+    const totalClientPages = Math.ceil(allProjects.length / clientPagination.pageSize);
+    
+    if (page <= totalClientPages) {
+      // Navigate within current batch
+      setClientPagination(prev => ({ ...prev, currentPage: page }));
+    } else {
+      // Need to fetch next batch
+      const nextServerPage = serverPagination.page + 1;
+      setServerPagination(prev => ({ ...prev, page: nextServerPage }));
+      setClientPagination({ currentPage: 1, pageSize: clientPagination.pageSize });
+    }
+  }, [allProjects.length, clientPagination.pageSize, serverPagination.page]);
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setClientPagination({ currentPage: 1, pageSize });
+  }, []);
+
+  // Prefetch next batch when near end
+  const { data: prefetchData } = useGetProjectsQuery({
+    search: debouncedSearch || undefined,
+    page: serverPagination.page + 1,
+    pageSize: serverPagination.pageSize
+  }, {
+    skip: !shouldPrefetch
+  });
 
   const handleEdit = (project: Project) => {
     setEditingProject(project);
@@ -114,7 +178,7 @@ export function ProjectsManagement() {
   };
 
   const handleDelete = async (projectId: string) => {
-    const project = projects.find(p => p.id === projectId);
+    const project = allProjects.find(p => p.id === projectId);
     if (!project) return;
 
     if (!confirm(`Are you sure you want to delete "${project.name}"?`)) {
@@ -129,8 +193,6 @@ export function ProjectsManagement() {
       showToast(error.data?.error || 'Failed to delete project', 'error');
     }
   };
-
-  const projects = projectsData?.projects || [];
 
   // Define table columns
   const columns: ColumnDef<Project>[] = [
@@ -346,10 +408,10 @@ export function ProjectsManagement() {
         </CardHeader>
         <CardContent>
           <AdminDataTable
-            data={projects}
+            data={data}
             columns={columns}
             isLoading={isLoading}
-            isFetching={isLoading}
+            isFetching={isFetching}
             onEdit={handleEdit}
             onDelete={handleDelete}
             getRowId={(project) => project.id}
@@ -363,6 +425,10 @@ export function ProjectsManagement() {
             ]}
             searchValue={search}
             onSearchChange={setSearch}
+            serverSide={true}
+            pagination={paginationInfo}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
           />
         </CardContent>
       </Card>

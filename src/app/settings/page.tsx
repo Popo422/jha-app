@@ -158,7 +158,10 @@ export default function ContractorSettingsPage() {
                       <Button variant="outline" size="sm" className="w-32" disabled={isUpdatingLanguage}>
                         <Languages className="h-4 w-4 mr-2" />
                         {isUpdatingLanguage ? t('common.updating') || 'Updating...' : 
-                         (i18n.language === 'es' ? t('settings.spanish') : t('settings.english'))}
+                         (i18n.language === 'es' ? t('settings.spanish') : 
+                          i18n.language === 'pl' ? t('settings.polish') :
+                          i18n.language === 'zh' ? t('settings.chinese') :
+                          t('settings.english'))}
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
@@ -173,6 +176,18 @@ export default function ContractorSettingsPage() {
                         disabled={isUpdatingLanguage}
                       >
                         {t('settings.spanish')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleLanguageChange('pl')}
+                        disabled={isUpdatingLanguage}
+                      >
+                        {t('settings.polish')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleLanguageChange('zh')}
+                        disabled={isUpdatingLanguage}
+                      >
+                        {t('settings.chinese')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -194,7 +209,10 @@ export default function ContractorSettingsPage() {
                   <div className="flex justify-between">
                     <span className="text-sm font-medium">{t('settings.currentLanguage')}</span>
                     <span className="text-sm text-muted-foreground">
-                      {i18n.language === 'es' ? t('settings.spanish') : t('settings.english')}
+                      {i18n.language === 'es' ? t('settings.spanish') : 
+                       i18n.language === 'pl' ? t('settings.polish') :
+                       i18n.language === 'zh' ? t('settings.chinese') :
+                       t('settings.english')}
                     </span>
                   </div>
                   <div className="flex justify-between">

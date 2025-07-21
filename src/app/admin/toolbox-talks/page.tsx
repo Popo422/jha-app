@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from 'react-i18next';
 import '../../../styles/tiptap.css';
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { useEditor, EditorContent } from '@tiptap/react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
+import { useGetToolboxTalksQuery, useCreateToolboxTalkMutation, useUpdateToolboxTalkMutation, useDeleteToolboxTalkMutation, type ToolboxTalk, type PaginationInfo } from '@/lib/features/toolbox-talks/toolboxTalksApi';
 import StarterKit from '@tiptap/starter-kit';
 import { ImageResize } from 'tiptap-extension-resize-image';
 import TextStyle from '@tiptap/extension-text-style';
@@ -32,23 +33,12 @@ import FontSize from 'tiptap-extension-font-size';
 import { CustomImageExtension } from '@/components/editor/CustomImageExtension';
 
 type ViewMode = 'list' | 'add' | 'edit';
-type ToolboxTalk = {
-  id: string;
-  title: string;
-  content: string; // HTML content from WYSIWYG editor
-  status: 'draft' | 'published';
-  authorName: string;
-  publishedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+// ToolboxTalk type is now imported from the API
 
 export default function ToolboxTalksPage() {
   const { t } = useTranslation('common');
   const { toast, showToast, hideToast } = useToast();
   const { admin } = useSelector((state: RootState) => state.auth);
-  const [toolboxTalks, setToolboxTalks] = useState<ToolboxTalk[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [editingTalk, setEditingTalk] = useState<ToolboxTalk | null>(null);
   const [formData, setFormData] = useState({
@@ -60,6 +50,77 @@ export default function ToolboxTalksPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [pendingImages, setPendingImages] = useState<Map<string, File>>(new Map());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [clientPagination, setClientPagination] = useState({
+    currentPage: 1,
+    pageSize: 10
+  });
+  const [serverPagination, setServerPagination] = useState({
+    page: 1,
+    pageSize: 50
+  });
+
+  // RTK Query hooks
+  const { data: toolboxTalksData, isLoading, isFetching, refetch } = useGetToolboxTalksQuery({
+    page: serverPagination.page,
+    pageSize: serverPagination.pageSize
+  });
+  
+  const [createToolboxTalk, { isLoading: isCreating }] = useCreateToolboxTalkMutation();
+  const [updateToolboxTalk, { isLoading: isUpdating }] = useUpdateToolboxTalkMutation();
+  const [deleteToolboxTalk] = useDeleteToolboxTalkMutation();
+
+  const allToolboxTalks = toolboxTalksData?.toolboxTalks || [];
+  const serverPaginationInfo = toolboxTalksData?.pagination;
+
+  // Client-side pagination logic
+  const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
+  const endIndex = startIndex + clientPagination.pageSize;
+  const data = allToolboxTalks.slice(startIndex, endIndex);
+  
+  // Create client pagination info
+  const totalClientPages = Math.ceil(allToolboxTalks.length / clientPagination.pageSize);
+  
+  // Calculate total pages considering both client view and server data
+  const estimatedTotalRecords = serverPaginationInfo?.total || allToolboxTalks.length;
+  const estimatedTotalPages = Math.ceil(estimatedTotalRecords / clientPagination.pageSize);
+  
+  const paginationInfo = {
+    page: clientPagination.currentPage,
+    pageSize: clientPagination.pageSize,
+    total: estimatedTotalRecords,
+    totalPages: estimatedTotalPages,
+    hasNextPage: clientPagination.currentPage < totalClientPages || (serverPaginationInfo?.hasNextPage || false),
+    hasPreviousPage: clientPagination.currentPage > 1
+  };
+
+  // Check if we need to prefetch next batch
+  const shouldPrefetch = clientPagination.currentPage >= totalClientPages - 2 && serverPaginationInfo?.hasNextPage;
+
+  const handlePageChange = useCallback((page: number) => {
+    const totalClientPages = Math.ceil(allToolboxTalks.length / clientPagination.pageSize);
+    
+    if (page <= totalClientPages) {
+      // Navigate within current batch
+      setClientPagination(prev => ({ ...prev, currentPage: page }));
+    } else {
+      // Need to fetch next batch
+      const nextServerPage = serverPagination.page + 1;
+      setServerPagination(prev => ({ ...prev, page: nextServerPage }));
+      setClientPagination({ currentPage: 1, pageSize: clientPagination.pageSize });
+    }
+  }, [allToolboxTalks.length, clientPagination.pageSize, serverPagination.page]);
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setClientPagination({ currentPage: 1, pageSize });
+  }, []);
+
+  // Prefetch next batch when near end
+  const { data: prefetchData } = useGetToolboxTalksQuery({
+    page: serverPagination.page + 1,
+    pageSize: serverPagination.pageSize
+  }, {
+    skip: !shouldPrefetch
+  });
 
   // TipTap editor
   const editor = useEditor({
@@ -105,28 +166,7 @@ export default function ToolboxTalksPage() {
     },
   });
 
-  // Load toolbox talks
-  const loadToolboxTalks = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/admin/toolbox-talks');
-      if (response.ok) {
-        const data = await response.json();
-        setToolboxTalks(data.toolboxTalks);
-      } else {
-        throw new Error('Failed to load toolbox talks');
-      }
-    } catch (error) {
-      showToast("Failed to load toolbox talks", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Load data on component mount
-  useEffect(() => {
-    loadToolboxTalks();
-  }, []);
+  // Data is now loaded via RTK Query
 
   // Cleanup blob URLs on unmount
   useEffect(() => {
@@ -257,7 +297,6 @@ export default function ToolboxTalksPage() {
   const handleSave = async () => {
     if (!validateForm()) return;
 
-    setIsLoading(true);
     try {
       // Get old image URLs if editing
       const oldImageUrls = editingTalk ? extractImageUrls(editingTalk.content) : [];
@@ -275,68 +314,55 @@ export default function ToolboxTalksPage() {
       // Get new image URLs after processing
       const newImageUrls = extractImageUrls(finalContent);
 
-      const url = '/api/admin/toolbox-talks';
-      const method = editingTalk ? 'PUT' : 'POST';
-      const body = editingTalk 
-        ? { id: editingTalk.id, ...formData, content: finalContent }
-        : { ...formData, content: finalContent };
+      const saveData = {
+        title: formData.title,
+        content: finalContent,
+        status: formData.status,
+        authorName: formData.authorName
+      };
 
       console.log('Final content being saved:', finalContent);
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (response.ok) {
-        showToast(`${t('nav.toolboxTalks')} ${editingTalk ? t('admin.updating') : t('admin.creating')} successfully`, "success");
-        
-        // Delete unused images from blob storage if editing
-        if (editingTalk && oldImageUrls.length > 0) {
-          await deleteUnusedImages(oldImageUrls, newImageUrls);
-        }
-
-        // Clear pending images only after successful save
-        setPendingImages(new Map());
-        setViewMode('list');
-        loadToolboxTalks();
+      if (editingTalk) {
+        await updateToolboxTalk({
+          id: editingTalk.id,
+          ...saveData
+        }).unwrap();
       } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to save toolbox talk');
+        await createToolboxTalk(saveData).unwrap();
       }
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : "Failed to save toolbox talk", "error");
-    } finally {
-      setIsLoading(false);
+
+      showToast(`${t('nav.toolboxTalks')} ${editingTalk ? t('admin.updating') : t('admin.creating')} successfully`, "success");
+      
+      // Delete unused images from blob storage if editing
+      if (editingTalk && oldImageUrls.length > 0) {
+        await deleteUnusedImages(oldImageUrls, newImageUrls);
+      }
+
+      // Clear pending images only after successful save
+      setPendingImages(new Map());
+      setViewMode('list');
+    } catch (error: any) {
+      showToast(error.data?.error || error.message || "Failed to save toolbox talk", "error");
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       // Find the toolbox talk to get its images before deletion
-      const talkToDelete = toolboxTalks.find(talk => talk.id === id);
+      const talkToDelete = allToolboxTalks.find(talk => talk.id === id);
       const imageUrls = talkToDelete ? extractImageUrls(talkToDelete.content) : [];
 
-      const response = await fetch('/api/admin/toolbox-talks', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      });
+      await deleteToolboxTalk(id).unwrap();
 
-      if (response.ok) {
-        // Delete all associated images from blob storage
-        if (imageUrls.length > 0) {
-          await deleteUnusedImages(imageUrls, []);
-        }
-
-        showToast("Toolbox talk deleted successfully", "success");
-        loadToolboxTalks();
-      } else {
-        throw new Error('Failed to delete toolbox talk');
+      // Delete all associated images from blob storage
+      if (imageUrls.length > 0) {
+        await deleteUnusedImages(imageUrls, []);
       }
-    } catch (error) {
-      showToast("Failed to delete toolbox talk", "error");
+
+      showToast("Toolbox talk deleted successfully", "success");
+    } catch (error: any) {
+      showToast(error.data?.error || "Failed to delete toolbox talk", "error");
     }
   };
 
@@ -725,9 +751,9 @@ export default function ToolboxTalksPage() {
           }}>
             {t('common.cancel')}
           </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
+          <Button onClick={handleSave} disabled={isCreating || isUpdating}>
             <Save className="h-4 w-4 mr-2" />
-            {isLoading ? t('common.saving') : t('common.save')}
+            {(isCreating || isUpdating) ? t('common.saving') : t('common.save')}
           </Button>
         </div>
       </div>
@@ -762,9 +788,9 @@ export default function ToolboxTalksPage() {
         <CardContent>
           <AdminDataTable
             columns={columns}
-            data={toolboxTalks}
+            data={data}
             isLoading={isLoading}
-            isFetching={false}
+            isFetching={isFetching}
             onEdit={(talk) => handleEdit(talk)}
             onDelete={(id) => handleDelete(id)}
             getRowId={(talk) => talk.id}
@@ -778,6 +804,10 @@ export default function ToolboxTalksPage() {
               talk.publishedAt ? new Date(talk.publishedAt).toLocaleDateString() : '',
               new Date(talk.createdAt).toLocaleDateString()
             ]}
+            serverSide={true}
+            pagination={paginationInfo}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
           />
         </CardContent>
       </Card>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, desc, and, gte, lte, or, ilike } from 'drizzle-orm'
+import { eq, desc, and, gte, lte, or, ilike, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { submissions } from '@/lib/db/schema'
 import { put } from '@vercel/blob'
@@ -304,13 +304,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Get remaining query parameters
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '50');
+    const limit = pageSize;
+    const offset = (page - 1) * pageSize;
     const submissionType = searchParams.get('type')
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
     const company = searchParams.get('company')
     const search = searchParams.get('search')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
 
     // Build query conditions
     const conditions = []
@@ -354,6 +356,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Get total count for pagination
+    let totalCount
+    if (conditions.length === 0) {
+      // No conditions - admin viewing all submissions
+      const countResult = await db.select({ count: sql`count(*)` }).from(submissions)
+      totalCount = Number(countResult[0].count)
+    } else if (conditions.length === 1) {
+      // Single condition
+      const countResult = await db.select({ count: sql`count(*)` }).from(submissions)
+        .where(conditions[0])
+      totalCount = Number(countResult[0].count)
+    } else {
+      // Multiple conditions
+      const countResult = await db.select({ count: sql`count(*)` }).from(submissions)
+        .where(and(...conditions))
+      totalCount = Number(countResult[0].count)
+    }
+
     // Execute query - handle different condition scenarios
     let result
     if (conditions.length === 0) {
@@ -378,8 +398,20 @@ export async function GET(request: NextRequest) {
         .offset(offset)
     }
 
+    const totalPages = Math.ceil(totalCount / pageSize)
+    const hasNextPage = page < totalPages
+    const hasPreviousPage = page > 1
+
     return NextResponse.json({
       submissions: result,
+      pagination: {
+        page,
+        pageSize,
+        total: totalCount,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage
+      },
       meta: {
         limit,
         offset,

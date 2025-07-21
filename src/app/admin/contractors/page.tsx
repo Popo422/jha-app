@@ -396,9 +396,17 @@ export default function ContractorsPage() {
       ),
       cell: ({ getValue }) => {
         const language = getValue() as string | null;
+        const getLanguageDisplay = (lang: string | null) => {
+          switch (lang) {
+            case 'es': return 'Español';
+            case 'pl': return 'Polski';
+            case 'zh': return '中文';
+            default: return 'English';
+          }
+        };
         return (
           <div className="text-sm">
-            {language === 'es' ? 'Español' : 'English'}
+            {getLanguageDisplay(language)}
           </div>
         );
       },
@@ -597,7 +605,10 @@ export default function ContractorsPage() {
                     disabled={isFormLoading}
                     className="w-full justify-between"
                   >
-                    {formData.language === 'en' ? 'English' : 'Español'}
+                    {formData.language === 'en' ? 'English' : 
+                     formData.language === 'es' ? 'Español' :
+                     formData.language === 'pl' ? 'Polski' :
+                     formData.language === 'zh' ? '中文' : 'English'}
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -611,6 +622,16 @@ export default function ContractorsPage() {
                     onClick={() => setFormData(prev => ({ ...prev, language: 'es' }))}
                   >
                     Español
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, language: 'pl' }))}
+                  >
+                    Polski
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, language: 'zh' }))}
+                  >
+                    中文
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -696,7 +717,9 @@ export default function ContractorsPage() {
           contractor.code,
           `$${(contractor.rate ? parseFloat(contractor.rate) : 0).toFixed(2)}${t('contractors.perHour')}`,
           contractor.companyName || "",
-          contractor.language === 'es' ? 'Español' : 'English',
+          contractor.language === 'es' ? 'Español' :
+          contractor.language === 'pl' ? 'Polski' :
+          contractor.language === 'zh' ? '中文' : 'English',
           new Date(contractor.createdAt).toLocaleDateString()
         ]}
         searchValue={search}

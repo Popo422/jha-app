@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetSubcontractorsQuery, useDeleteSubcontractorMutation, useCreateSubcontractorMutation, useUpdateSubcontractorMutation, type Subcontractor } from "@/lib/features/subcontractors/subcontractorsApi";
+import { useGetSubcontractorsQuery, useDeleteSubcontractorMutation, useCreateSubcontractorMutation, useUpdateSubcontractorMutation, type Subcontractor, type PaginationInfo } from "@/lib/features/subcontractors/subcontractorsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,11 +25,21 @@ export function SubcontractorsManagement() {
     name: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [clientPagination, setClientPagination] = useState({
+    currentPage: 1,
+    pageSize: 10
+  });
+  const [serverPagination, setServerPagination] = useState({
+    page: 1,
+    pageSize: 50
+  });
   
   const { showToast } = useToast();
   
-  const { data: subcontractorsData, isLoading, error, refetch } = useGetSubcontractorsQuery({
+  const { data: subcontractorsData, isLoading, isFetching, refetch } = useGetSubcontractorsQuery({
     search: debouncedSearch || undefined,
+    page: serverPagination.page,
+    pageSize: serverPagination.pageSize
   });
   
   const [deleteSubcontractor, { isLoading: isDeleting }] = useDeleteSubcontractorMutation();
@@ -38,6 +48,60 @@ export function SubcontractorsManagement() {
 
   const isFormLoading = isCreating || isUpdating;
   const formError = createError || updateError;
+
+  const allSubcontractors = subcontractorsData?.subcontractors || [];
+  const serverPaginationInfo = subcontractorsData?.pagination;
+
+  // Client-side pagination logic
+  const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
+  const endIndex = startIndex + clientPagination.pageSize;
+  const data = allSubcontractors.slice(startIndex, endIndex);
+  
+  // Create client pagination info
+  const totalClientPages = Math.ceil(allSubcontractors.length / clientPagination.pageSize);
+  
+  // Calculate total pages considering both client view and server data
+  const estimatedTotalRecords = serverPaginationInfo?.total || allSubcontractors.length;
+  const estimatedTotalPages = Math.ceil(estimatedTotalRecords / clientPagination.pageSize);
+  
+  const paginationInfo = {
+    page: clientPagination.currentPage,
+    pageSize: clientPagination.pageSize,
+    total: estimatedTotalRecords,
+    totalPages: estimatedTotalPages,
+    hasNextPage: clientPagination.currentPage < totalClientPages || (serverPaginationInfo?.hasNextPage || false),
+    hasPreviousPage: clientPagination.currentPage > 1
+  };
+
+  // Check if we need to prefetch next batch
+  const shouldPrefetch = clientPagination.currentPage >= totalClientPages - 2 && serverPaginationInfo?.hasNextPage;
+
+  const handlePageChange = useCallback((page: number) => {
+    const totalClientPages = Math.ceil(allSubcontractors.length / clientPagination.pageSize);
+    
+    if (page <= totalClientPages) {
+      // Navigate within current batch
+      setClientPagination(prev => ({ ...prev, currentPage: page }));
+    } else {
+      // Need to fetch next batch
+      const nextServerPage = serverPagination.page + 1;
+      setServerPagination(prev => ({ ...prev, page: nextServerPage }));
+      setClientPagination({ currentPage: 1, pageSize: clientPagination.pageSize });
+    }
+  }, [allSubcontractors.length, clientPagination.pageSize, serverPagination.page]);
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setClientPagination({ currentPage: 1, pageSize });
+  }, []);
+
+  // Prefetch next batch when near end
+  const { data: prefetchData } = useGetSubcontractorsQuery({
+    search: debouncedSearch || undefined,
+    page: serverPagination.page + 1,
+    pageSize: serverPagination.pageSize
+  }, {
+    skip: !shouldPrefetch
+  });
 
   const handleEdit = (subcontractor: Subcontractor) => {
     setEditingSubcontractor(subcontractor);
@@ -102,7 +166,7 @@ export function SubcontractorsManagement() {
   };
 
   const handleDelete = async (subcontractorId: string) => {
-    const subcontractor = subcontractors.find(s => s.id === subcontractorId);
+    const subcontractor = allSubcontractors.find(s => s.id === subcontractorId);
     if (!subcontractor) return;
 
     if (!confirm(`Are you sure you want to delete "${subcontractor.name}"?`)) {
@@ -117,8 +181,6 @@ export function SubcontractorsManagement() {
       showToast(error.data?.error || 'Failed to delete subcontractor', 'error');
     }
   };
-
-  const subcontractors = subcontractorsData?.subcontractors || [];
 
   // Define table columns
   const columns: ColumnDef<Subcontractor>[] = [
@@ -256,10 +318,10 @@ export function SubcontractorsManagement() {
         </CardHeader>
         <CardContent>
           <AdminDataTable
-            data={subcontractors}
+            data={data}
             columns={columns}
             isLoading={isLoading}
-            isFetching={isLoading}
+            isFetching={isFetching}
             onEdit={handleEdit}
             onDelete={handleDelete}
             getRowId={(subcontractor) => subcontractor.id}
@@ -271,6 +333,10 @@ export function SubcontractorsManagement() {
             ]}
             searchValue={search}
             onSearchChange={setSearch}
+            serverSide={true}
+            pagination={paginationInfo}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
           />
         </CardContent>
       </Card>

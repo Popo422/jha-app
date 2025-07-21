@@ -24,6 +24,7 @@ import { useGetReportingDataQuery } from '@/lib/features/reporting/reportingApi'
 import { useGetTimesheetsQuery } from '@/lib/features/timesheets/timesheetsApi';
 import { useGetContractorsQuery } from '@/lib/features/contractors/contractorsApi';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
+import { CostForecasting } from '@/components/admin/CostForecasting';
 import type { Employee, ChartDataPoint, ReportingData } from '@/lib/features/reporting/reportingApi';
 import type { Timesheet } from '@/lib/features/timesheets/timesheetsApi';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -41,10 +42,18 @@ export default function ReportingPage() {
   const [projectNameSearch, setProjectNameSearch] = useState('');
   const [subcontractorSearch, setSubcontractorSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // Default to all statuses
-  const [activeTab, setActiveTab] = useState('hours'); // 'hours' or 'cost'
+  const [activeTab, setActiveTab] = useState('hours'); // 'hours', 'cost', or 'forecast'
   const [contractorCostSearch, setContractorCostSearch] = useState('');
   const [companyCostSearch, setCompanyCostSearch] = useState('');
   const [projectCostSearch, setProjectCostSearch] = useState('');
+  const [clientPagination, setClientPagination] = useState({
+    currentPage: 1,
+    pageSize: 10
+  });
+  const [serverPagination, setServerPagination] = useState({
+    page: 1,
+    pageSize: 50
+  });
   
   // Debounced search values to prevent excessive filtering
   const debouncedContractorCostSearch = useDebouncedValue(contractorCostSearch, 300);
@@ -113,12 +122,14 @@ export default function ReportingPage() {
     return selectedSubcontractors.join('|');
   }, [selectedSubcontractors]);
 
-  // Get timesheets data
+  // Get timesheets data with smart pagination
   const { 
-    data: timesheetData, 
+    data: timesheetResponse, 
     isLoading: timesheetLoading, 
     isFetching: timesheetFetching 
   } = useGetTimesheetsQuery({
+    page: serverPagination.page,
+    pageSize: serverPagination.pageSize,
     dateFrom: startDate || undefined,
     dateTo: endDate || undefined,
     search: search || undefined,
@@ -129,15 +140,37 @@ export default function ReportingPage() {
     authType: 'admin'
   });
 
-  // Get filtered timesheets from API (no frontend filtering needed)
-  const filteredTimesheets = timesheetData?.timesheets || [];
-  const contractorRates = timesheetData?.contractorRates || {};
+  const allTimesheets = timesheetResponse?.timesheets || [];
+  const contractorRates = timesheetResponse?.contractorRates || {};
+  const serverPaginationInfo = timesheetResponse?.pagination;
+
+  // Client-side pagination logic
+  const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
+  const endIndex = startIndex + clientPagination.pageSize;
+  const filteredTimesheets = allTimesheets.slice(startIndex, endIndex);
+  
+  // Create client pagination info for timesheet table
+  const totalClientPages = Math.ceil(allTimesheets.length / clientPagination.pageSize);
+  const estimatedTotalRecords = serverPaginationInfo?.total || allTimesheets.length;
+  const estimatedTotalPages = Math.ceil(estimatedTotalRecords / clientPagination.pageSize);
+  
+  const timesheetPaginationInfo = {
+    page: clientPagination.currentPage,
+    pageSize: clientPagination.pageSize,
+    total: estimatedTotalRecords,
+    totalPages: estimatedTotalPages,
+    hasNextPage: clientPagination.currentPage < totalClientPages || (serverPaginationInfo?.hasNextPage || false),
+    hasPreviousPage: clientPagination.currentPage > 1
+  };
+
+  // Check if we need to prefetch next batch
+  const shouldPrefetch = clientPagination.currentPage >= totalClientPages - 2 && serverPaginationInfo?.hasNextPage;
 
   // Calculate totals only from approved timesheets for summary cards
   const approvedTimesheets = useMemo(() => {
-    if (!timesheetData?.timesheets) return [];
-    return timesheetData.timesheets.filter(timesheet => timesheet.status === 'approved');
-  }, [timesheetData?.timesheets]);
+    if (!allTimesheets) return [];
+    return allTimesheets.filter(timesheet => timesheet.status === 'approved');
+  }, [allTimesheets]);
 
   // Create chart data from approved timesheets only
   const chartData = useMemo(() => {
@@ -345,13 +378,58 @@ export default function ReportingPage() {
     );
   };
 
+  // Pagination handlers
+  const handlePageChange = useCallback((page: number) => {
+    const totalClientPages = Math.ceil(allTimesheets.length / clientPagination.pageSize);
+    
+    if (page <= totalClientPages) {
+      // Navigate within current batch
+      setClientPagination(prev => ({ ...prev, currentPage: page }));
+    } else {
+      // Need to fetch next batch
+      const nextServerPage = serverPagination.page + 1;
+      setServerPagination(prev => ({ ...prev, page: nextServerPage }));
+      setClientPagination({ currentPage: 1, pageSize: clientPagination.pageSize });
+    }
+  }, [allTimesheets.length, clientPagination.pageSize, serverPagination.page]);
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setClientPagination({ currentPage: 1, pageSize });
+  }, []);
+
+  // Reset pagination when filters change
+  const resetPagination = useCallback(() => {
+    setClientPagination({ currentPage: 1, pageSize: 10 });
+    setServerPagination({ page: 1, pageSize: 50 });
+  }, []);
+
+  useEffect(() => {
+    resetPagination();
+  }, [startDate, endDate, selectedContractors, selectedProjectNames, selectedSubcontractors, statusFilter, resetPagination]);
+
+  // Prefetch next batch when near end
+  const { data: prefetchData } = useGetTimesheetsQuery({
+    page: serverPagination.page + 1,
+    pageSize: serverPagination.pageSize,
+    dateFrom: startDate || undefined,
+    dateTo: endDate || undefined,
+    search: search || undefined,
+    employees: employeesFilterString,
+    status: statusFilter || undefined,
+    jobName: projectNameFilterString,
+    company: subcontractorFilterString,
+    authType: 'admin'
+  }, {
+    skip: !shouldPrefetch
+  });
+
   // Auto-clear invalid selections when filters change
   useEffect(() => {
-    if (selectedContractors.length > 0 && selectedProjectNames.length > 0 && timesheetData?.timesheets && contractorsData?.contractors) {
+    if (selectedContractors.length > 0 && selectedProjectNames.length > 0 && allTimesheets && contractorsData?.contractors) {
       // Check if selected contractors worked on selected projects
       const validContractorIds = new Set<string>();
       
-      timesheetData.timesheets.forEach(timesheet => {
+      allTimesheets.forEach(timesheet => {
         if (selectedProjectNames.includes(timesheet.projectName)) {
           const contractor = contractorsData.contractors.find(c => 
             timesheet.employee.includes(`${c.firstName} ${c.lastName}`)
@@ -367,10 +445,10 @@ export default function ReportingPage() {
         setSelectedContractors(prev => prev.filter(id => validContractorIds.has(id)));
       }
     }
-  }, [selectedProjectNames, timesheetData?.timesheets, contractorsData?.contractors]);
+  }, [selectedProjectNames, allTimesheets, contractorsData?.contractors]);
 
   useEffect(() => {
-    if (selectedProjectNames.length > 0 && selectedContractors.length > 0 && timesheetData?.timesheets && contractorsData?.contractors) {
+    if (selectedProjectNames.length > 0 && selectedContractors.length > 0 && allTimesheets && contractorsData?.contractors) {
       // Check if selected projects have work from selected contractors
       const contractorNames = contractorsData.contractors
         .filter(contractor => selectedContractors.includes(contractor.id))
@@ -378,7 +456,7 @@ export default function ReportingPage() {
       
       const validProjects = new Set<string>();
       
-      timesheetData.timesheets.forEach(timesheet => {
+      allTimesheets.forEach(timesheet => {
         if (contractorNames.some(name => timesheet.employee.includes(name))) {
           if (timesheet.projectName && timesheet.projectName.trim()) {
             validProjects.add(timesheet.projectName.trim());
@@ -391,15 +469,15 @@ export default function ReportingPage() {
         setSelectedProjectNames(prev => prev.filter(name => validProjects.has(name)));
       }
     }
-  }, [selectedContractors, timesheetData?.timesheets, contractorsData?.contractors]);
+  }, [selectedContractors, allTimesheets, contractorsData?.contractors]);
 
   // Auto-clear invalid subcontractor selections when contractors or projects change
   useEffect(() => {
-    if (selectedSubcontractors.length > 0 && (selectedContractors.length > 0 || selectedProjectNames.length > 0) && timesheetData?.timesheets && contractorsData?.contractors) {
+    if (selectedSubcontractors.length > 0 && (selectedContractors.length > 0 || selectedProjectNames.length > 0) && allTimesheets && contractorsData?.contractors) {
       // Check if selected subcontractors have work from selected contractors/projects
       const validSubcontractors = new Set<string>();
       
-      timesheetData.timesheets.forEach(timesheet => {
+      allTimesheets.forEach(timesheet => {
         const matchesContractor = selectedContractors.length === 0 || 
           contractorsData.contractors.some(contractor => 
             selectedContractors.includes(contractor.id) && 
@@ -419,7 +497,7 @@ export default function ReportingPage() {
         setSelectedSubcontractors(prev => prev.filter(name => validSubcontractors.has(name)));
       }
     }
-  }, [selectedContractors, selectedProjectNames, timesheetData?.timesheets, contractorsData?.contractors]);
+  }, [selectedContractors, selectedProjectNames, allTimesheets, contractorsData?.contractors]);
 
   const exportToCSV = () => {
     if (!chartData.length) return;
@@ -470,9 +548,9 @@ export default function ReportingPage() {
 
   // Get unique project names from timesheet data, filtered by selected contractors and subcontractors
   const uniqueProjectNames = useMemo(() => {
-    if (!timesheetData?.timesheets) return [];
+    if (!allTimesheets) return [];
     
-    let filteredTimesheets = timesheetData.timesheets;
+    let filteredTimesheets = allTimesheets;
     
     // Filter by selected contractors
     if (selectedContractors.length > 0) {
@@ -502,13 +580,13 @@ export default function ReportingPage() {
       }
     });
     return Array.from(projectNames).sort();
-  }, [timesheetData?.timesheets, selectedContractors, selectedSubcontractors, contractorsData?.contractors]);
+  }, [allTimesheets, selectedContractors, selectedSubcontractors, contractorsData?.contractors]);
 
   // Get unique subcontractor names from timesheet data, filtered by selected contractors and projects
   const uniqueSubcontractors = useMemo(() => {
-    if (!timesheetData?.timesheets) return [];
+    if (!allTimesheets) return [];
     
-    let filteredTimesheets = timesheetData.timesheets;
+    let filteredTimesheets = allTimesheets;
     
     // Filter by selected contractors
     if (selectedContractors.length > 0) {
@@ -536,7 +614,7 @@ export default function ReportingPage() {
       }
     });
     return Array.from(subcontractorNames).sort();
-  }, [timesheetData?.timesheets, selectedContractors, selectedProjectNames, contractorsData?.contractors]);
+  }, [allTimesheets, selectedContractors, selectedProjectNames, contractorsData?.contractors]);
 
 
   // Filtered contractors for search, project, and subcontractor filtering
@@ -546,10 +624,10 @@ export default function ReportingPage() {
     let availableContractors = contractorsData.contractors;
     
     // If projects or subcontractors are selected, only show contractors who worked on those projects/subcontractors
-    if ((selectedProjectNames.length > 0 || selectedSubcontractors.length > 0) && timesheetData?.timesheets) {
+    if ((selectedProjectNames.length > 0 || selectedSubcontractors.length > 0) && allTimesheets) {
       const contractorsOnFilteredWork = new Set<string>();
       
-      timesheetData.timesheets.forEach(timesheet => {
+      allTimesheets.forEach(timesheet => {
         const matchesProject = selectedProjectNames.length === 0 || selectedProjectNames.includes(timesheet.projectName);
         const matchesSubcontractor = selectedSubcontractors.length === 0 || 
           selectedSubcontractors.some(sub => timesheet.company.toLowerCase().includes(sub.toLowerCase()));
@@ -575,7 +653,7 @@ export default function ReportingPage() {
     return availableContractors.filter(contractor => 
       `${contractor.firstName} ${contractor.lastName}`.toLowerCase().includes(contractorSearch.toLowerCase())
     );
-  }, [contractorsData?.contractors, contractorSearch, selectedProjectNames, selectedSubcontractors, timesheetData?.timesheets]);
+  }, [contractorsData?.contractors, contractorSearch, selectedProjectNames, selectedSubcontractors, allTimesheets]);
 
   // Filtered project names for search
   const filteredProjectNames = useMemo(() => {
@@ -717,7 +795,7 @@ export default function ReportingPage() {
   const timesheetFilters = useMemo(() => (
     <div className="flex flex-wrap gap-3 items-end">
       <div className="flex flex-col">
-        <label className="text-sm font-medium mb-1">From Date</label>
+        <label className="text-sm font-medium mb-1">{t("admin.startDate")}</label>
         <Input
           type="date"
           value={startDate}
@@ -726,7 +804,7 @@ export default function ReportingPage() {
         />
       </div>
       <div className="flex flex-col">
-        <label className="text-sm font-medium mb-1">To Date</label>
+        <label className="text-sm font-medium mb-1">{t("admin.endDate")}</label>
         <Input
           type="date"
           value={endDate}
@@ -735,7 +813,7 @@ export default function ReportingPage() {
         />
       </div>
       <div className="flex flex-col">
-        <label className="text-sm font-medium mb-1">Status</label>
+        <label className="text-sm font-medium mb-1">{t('tableHeaders.status')}</label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="h-9 justify-between min-w-[120px]">
@@ -748,7 +826,7 @@ export default function ReportingPage() {
                 onSelect={() => setStatusFilter('all')}
                 className="cursor-pointer"
               >
-                All Statuses
+                {t('admin.allStatuses')}
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onSelect={() => setStatusFilter('approved')}
@@ -775,16 +853,16 @@ export default function ReportingPage() {
           </DropdownMenu>
         </div>
         <div className="flex flex-col">
-          <label className="text-sm font-medium mb-1">Contractors</label>
+          <label className="text-sm font-medium mb-1">{t('admin.contractors')}</label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-9 justify-between min-w-[140px]">
                 <span className="truncate">
                   {selectedContractors.length === 0 
-                    ? "All Contractors" 
+                    ? t('admin.allContractors') 
                     : selectedContractors.length === 1
                       ? selectedContractorNames[0]
-                      : `${selectedContractors.length} contractors selected`
+                      : `${selectedContractors.length} ${t('admin.contractorsSelected')}`
                   }
                 </span>
                 <ChevronDown className="h-4 w-4 flex-shrink-0 ml-2" />
@@ -793,7 +871,7 @@ export default function ReportingPage() {
             <DropdownMenuContent className="w-64">
               <div className="p-2">
                 <Input
-                  placeholder="Search contractors..."
+                  placeholder={t('admin.searchContractors')}
                   className="w-full"
                   value={contractorSearch}
                   onChange={(e) => {
@@ -831,13 +909,13 @@ export default function ReportingPage() {
           </DropdownMenu>
         </div>
         <div className="flex flex-col">
-          <label className="text-sm font-medium mb-1">Projects</label>
+          <label className="text-sm font-medium mb-1">{t('admin.projects')}</label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-9 justify-between min-w-[140px]">
                 <span className="truncate">
                   {selectedProjectNames.length === 0 
-                    ? "All Projects" 
+                    ? t('admin.allProjects') 
                     : selectedProjectNames.length === 1
                       ? selectedProjectNames[0]
                       : `${selectedProjectNames.length} projects selected`
@@ -849,7 +927,7 @@ export default function ReportingPage() {
             <DropdownMenuContent className="w-64">
               <div className="p-2">
                 <Input
-                  placeholder="Search projects..."
+                  placeholder={t('admin.searchProjects')}
                   className="w-full"
                   value={projectNameSearch}
                   onChange={(e) => {
@@ -870,7 +948,7 @@ export default function ReportingPage() {
                 onClick={() => setSelectedProjectNames([])}
                 className="cursor-pointer"
               >
-                All Projects
+                {t('admin.allProjects')}
               </DropdownMenuItem>
               <div className="max-h-48 overflow-y-auto">
                 {filteredProjectNames.map((projectName) => (
@@ -893,10 +971,10 @@ export default function ReportingPage() {
               <Button variant="outline" className="h-9 justify-between min-w-[140px]">
                 <span className="truncate">
                   {selectedSubcontractors.length === 0 
-                    ? "All Subcontractors" 
+                    ? t('admin.allSubcontractors') 
                     : selectedSubcontractors.length === 1
                       ? selectedSubcontractors[0]
-                      : `${selectedSubcontractors.length} subcontractors selected`
+                      : `${selectedSubcontractors.length} ${t('admin.subcontractorsSelected')}`
                   }
                 </span>
                 <ChevronDown className="h-4 w-4 flex-shrink-0 ml-2" />
@@ -905,7 +983,7 @@ export default function ReportingPage() {
             <DropdownMenuContent className="w-64">
               <div className="p-2">
                 <Input
-                  placeholder="Search subcontractors..."
+                  placeholder={t('placeholders.searchSubcontractors')}
                   className="w-full"
                   value={subcontractorSearch}
                   onChange={(e) => {
@@ -926,7 +1004,7 @@ export default function ReportingPage() {
                 onClick={() => setSelectedSubcontractors([])}
                 className="cursor-pointer"
               >
-                All Subcontractors
+                {t('admin.allSubcontractors')}
               </DropdownMenuItem>
               <div className="max-h-48 overflow-y-auto">
                 {filteredSubcontractors.map((subcontractor) => (
@@ -992,7 +1070,7 @@ export default function ReportingPage() {
     <div className="p-3 md:p-6 space-y-4 md:space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-          {activeTab === 'hours' ? t('admin.timeReports') : t('admin.costReports')}
+          {activeTab === 'hours' ? t('admin.timeReports') : activeTab === 'cost' ? t('admin.costReports') : 'Cost Forecasting'}
         </h1>
       </div>
 
@@ -1019,6 +1097,18 @@ export default function ReportingPage() {
           >
             {t('admin.costReports')}
           </button>
+          {/* Temporarily hidden forecast tab
+          <button
+            onClick={() => setActiveTab('forecast')}
+            className={`px-4 py-3 rounded-md text-sm font-medium transition-colors min-w-0 flex-1 sm:flex-none whitespace-nowrap ${
+              activeTab === 'forecast'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+            }`}
+          >
+            Cost Forecasting
+          </button>
+          */}
         </div>
       </div>
 
@@ -1056,7 +1146,7 @@ export default function ReportingPage() {
                       ? t('admin.allContractors') 
                       : selectedContractors.length === 1
                         ? selectedContractorNames[0]
-                        : `${selectedContractors.length} contractors selected`
+                        : `${selectedContractors.length} ${t('admin.contractorsSelected')}`
                     }
                     <ChevronDown className="h-4 w-4" />
                   </Button>
@@ -1166,7 +1256,7 @@ export default function ReportingPage() {
                       ? t('admin.allSubcontractors') 
                       : selectedSubcontractors.length === 1
                         ? selectedSubcontractors[0]
-                        : `${selectedSubcontractors.length} subcontractors selected`
+                        : `${selectedSubcontractors.length} ${t('admin.subcontractorsSelected')}`
                     }
                     <ChevronDown className="h-4 w-4" />
                   </Button>
@@ -1663,6 +1753,17 @@ export default function ReportingPage() {
               </div>
             </>
           )}
+
+          {/* Temporarily hidden forecast content
+          {activeTab === 'forecast' && (
+            <CostForecasting
+              dailySpendData={dailySpendData}
+              projectAnalytics={projectAnalytics}
+              isLoading={timesheetLoading}
+              isFetching={timesheetFetching}
+            />
+          )}
+          */}
         </div>
       </div>
 
@@ -1691,6 +1792,10 @@ export default function ReportingPage() {
           onSearchChange={setSearch}
           renderMobileCard={renderMobileCard}
           filters={timesheetFilters}
+          serverSide={true}
+          pagination={timesheetPaginationInfo}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
         />
       </div>
     </div>

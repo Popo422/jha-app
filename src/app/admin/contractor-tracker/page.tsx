@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetContractorsQuery } from '@/lib/features/contractors/contractorsApi';
+import { useGetContractorsQuery, type PaginationInfo as ContractorPaginationInfo } from '@/lib/features/contractors/contractorsApi';
 import { useGetSubmissionsQuery } from '@/lib/features/submissions/submissionsApi';
 import { useGetTimesheetsQuery } from '@/lib/features/timesheets/timesheetsApi';
 import { useGetModulesQuery } from '@/lib/features/modules/modulesApi';
@@ -47,11 +47,20 @@ export default function ContractTrackerPage() {
   const [searchValue, setSearchValue] = useState('');
   const [contractorStatuses, setContractorStatuses] = useState<ContractorStatus[]>([]);
   const debouncedSearch = useDebouncedValue(searchValue, 300);
+  const [clientPagination, setClientPagination] = useState({
+    currentPage: 1,
+    pageSize: 10
+  });
+  const [serverPagination, setServerPagination] = useState({
+    page: 1,
+    pageSize: 50
+  });
 
   const { data: modulesData } = useGetModulesQuery();
   const { data: contractorsData, isLoading: contractorsLoading } = useGetContractorsQuery({
     search: debouncedSearch,
-    limit: 1000
+    page: serverPagination.page,
+    pageSize: serverPagination.pageSize
   });
 
   const { data: submissionsData, isLoading: submissionsLoading } = useGetSubmissionsQuery({
@@ -68,9 +77,12 @@ export default function ContractTrackerPage() {
     authType: 'admin'
   });
 
+  const allContractors = contractorsData?.contractors || [];
+  const serverPaginationInfo = contractorsData?.pagination;
+
   useEffect(() => {
-    if (contractorsData?.contractors) {
-      const statuses: ContractorStatus[] = contractorsData.contractors.map(contractor => {
+    if (allContractors.length > 0) {
+      const statuses: ContractorStatus[] = allContractors.map(contractor => {
         const contractorName = `${contractor.firstName} ${contractor.lastName}`;
         
         const userSubmissions = submissionsData?.submissions?.filter(
@@ -98,16 +110,69 @@ export default function ContractTrackerPage() {
       });
       setContractorStatuses(statuses);
     }
-  }, [contractorsData, submissionsData, timesheetsData]);
+  }, [allContractors, submissionsData, timesheetsData]);
+
+  // Client-side pagination logic
+  const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
+  const endIndex = startIndex + clientPagination.pageSize;
+  const data = contractorStatuses.slice(startIndex, endIndex);
+  
+  // Create client pagination info
+  const totalClientPages = Math.ceil(contractorStatuses.length / clientPagination.pageSize);
+  
+  // Calculate total pages considering both client view and server data
+  const estimatedTotalRecords = serverPaginationInfo?.total || contractorStatuses.length;
+  const estimatedTotalPages = Math.ceil(estimatedTotalRecords / clientPagination.pageSize);
+  
+  const paginationInfo = {
+    page: clientPagination.currentPage,
+    pageSize: clientPagination.pageSize,
+    total: estimatedTotalRecords,
+    totalPages: estimatedTotalPages,
+    hasNextPage: clientPagination.currentPage < totalClientPages || (serverPaginationInfo?.hasNextPage || false),
+    hasPreviousPage: clientPagination.currentPage > 1
+  };
+
+  // Check if we need to prefetch next batch
+  const shouldPrefetch = clientPagination.currentPage >= totalClientPages - 2 && serverPaginationInfo?.hasNextPage;
 
   const clearFilters = useCallback(() => {
     setFilters({
       date: format(new Date(), 'yyyy-MM-dd')
     });
     setSearchValue('');
+    setClientPagination({ currentPage: 1, pageSize: 10 });
+    setServerPagination({ page: 1, pageSize: 50 });
   }, []);
 
   const hasActiveFilters = filters.date !== format(new Date(), 'yyyy-MM-dd') || searchValue;
+
+  const handlePageChange = useCallback((page: number) => {
+    const totalClientPages = Math.ceil(contractorStatuses.length / clientPagination.pageSize);
+    
+    if (page <= totalClientPages) {
+      // Navigate within current batch
+      setClientPagination(prev => ({ ...prev, currentPage: page }));
+    } else {
+      // Need to fetch next batch
+      const nextServerPage = serverPagination.page + 1;
+      setServerPagination(prev => ({ ...prev, page: nextServerPage }));
+      setClientPagination({ currentPage: 1, pageSize: clientPagination.pageSize });
+    }
+  }, [contractorStatuses.length, clientPagination.pageSize, serverPagination.page]);
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setClientPagination({ currentPage: 1, pageSize });
+  }, []);
+
+  // Prefetch next batch when near end
+  const { data: prefetchData } = useGetContractorsQuery({
+    search: debouncedSearch,
+    page: serverPagination.page + 1,
+    pageSize: serverPagination.pageSize
+  }, {
+    skip: !shouldPrefetch
+  });
 
   const getStatusBadge = useCallback((status: 'completed' | 'pending' | 'missing') => {
     switch (status) {
@@ -294,7 +359,7 @@ export default function ContractTrackerPage() {
       </div>
       
       <AdminDataTable
-        data={contractorStatuses}
+        data={data}
         columns={columns}
         isLoading={contractorsLoading || submissionsLoading || timesheetsLoading}
         isFetching={contractorsLoading || submissionsLoading || timesheetsLoading}
@@ -316,6 +381,10 @@ export default function ContractTrackerPage() {
         renderMobileCard={renderMobileCard}
         searchValue={searchValue}
         onSearchChange={setSearchValue}
+        serverSide={true}
+        pagination={paginationInfo}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
       />
     </div>
   );
