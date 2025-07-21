@@ -210,8 +210,9 @@ export async function GET(request: NextRequest) {
     }
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '50');
-    const limit = pageSize;
-    const offset = (page - 1) * pageSize;
+    const fetchAll = searchParams.get('fetchAll') === 'true';
+    const limit = fetchAll ? undefined : pageSize;
+    const offset = fetchAll ? undefined : (page - 1) * pageSize;
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const company = searchParams.get('company');
@@ -316,39 +317,45 @@ export async function GET(request: NextRequest) {
     let results;
     if (conditions.length === 0) {
       // No conditions
-      results = await db.select({
+      const baseQuery = db.select({
         timesheet: timesheets,
         contractorRate: contractors.rate
       })
       .from(timesheets)
       .leftJoin(contractors, eq(sql`${timesheets.userId}::uuid`, contractors.id))
-      .orderBy(desc(timesheets.createdAt))
-      .limit(limit)
-      .offset(offset);
+      .orderBy(desc(timesheets.createdAt));
+      
+      results = fetchAll
+        ? await baseQuery
+        : await baseQuery.limit(limit!).offset(offset!);
     } else if (conditions.length === 1) {
       // Single condition
-      results = await db.select({
+      const baseQuery = db.select({
         timesheet: timesheets,
         contractorRate: contractors.rate
       })
       .from(timesheets)
       .leftJoin(contractors, eq(sql`${timesheets.userId}::uuid`, contractors.id))
       .where(conditions[0])
-      .orderBy(desc(timesheets.createdAt))
-      .limit(limit)
-      .offset(offset);
+      .orderBy(desc(timesheets.createdAt));
+      
+      results = fetchAll
+        ? await baseQuery
+        : await baseQuery.limit(limit!).offset(offset!);
     } else {
       // Multiple conditions
-      results = await db.select({
+      const baseQuery = db.select({
         timesheet: timesheets,
         contractorRate: contractors.rate
       })
       .from(timesheets)
       .leftJoin(contractors, eq(sql`${timesheets.userId}::uuid`, contractors.id))
       .where(and(...conditions))
-      .orderBy(desc(timesheets.createdAt))
-      .limit(limit)
-      .offset(offset);
+      .orderBy(desc(timesheets.createdAt));
+      
+      results = fetchAll
+        ? await baseQuery
+        : await baseQuery.limit(limit!).offset(offset!);
     }
 
     const total = parseInt(totalCount[0].count as string);
@@ -360,7 +367,7 @@ export async function GET(request: NextRequest) {
         acc[row.timesheet.userId] = row.contractorRate || '0.00';
         return acc;
       }, {} as Record<string, string>),
-      pagination: {
+      pagination: fetchAll ? null : {
         page,
         pageSize,
         total,
@@ -369,8 +376,9 @@ export async function GET(request: NextRequest) {
         hasPreviousPage: page > 1
       },
       meta: {
-        limit,
-        offset,
+        limit: fetchAll ? null : limit,
+        offset: fetchAll ? null : offset,
+        fetchAll,
         isAdmin: auth.isAdmin,
         userId: auth.userId || null
       }

@@ -308,6 +308,13 @@ export default function ContractTrackerPage() {
     return data;
   }, [modulesData]);
 
+  // Function to export all contractor status data
+  const handleExportAll = useCallback(async () => {
+    // Since this page composes data from multiple sources, we'll export the current data
+    // In a future enhancement, this could be improved to fetch all data from the underlying APIs
+    return contractorStatuses;
+  }, [contractorStatuses]);
+
   const renderMobileCard = useCallback((contractor: ContractorStatus, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => {
     const enabledModules = modulesData?.enabledModules || [];
     
@@ -385,6 +392,7 @@ export default function ContractTrackerPage() {
         pagination={paginationInfo}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
+        onExportAll={handleExportAll}
       />
     </div>
   );

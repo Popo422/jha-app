@@ -95,8 +95,9 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
-    const limit = pageSize
-    const offset = (page - 1) * pageSize
+    const fetchAll = searchParams.get('fetchAll') === 'true'
+    const limit = fetchAll ? undefined : pageSize
+    const offset = fetchAll ? undefined : (page - 1) * pageSize
 
     // Build query conditions - filter by admin's company
     const conditions = [eq(contractors.companyId, auth.admin.companyId)]
@@ -120,11 +121,13 @@ export async function GET(request: NextRequest) {
     const totalCount = Number(countResult[0].count)
 
     // Execute query
-    const result = await db.select().from(contractors)
+    const baseQuery = db.select().from(contractors)
       .where(and(...conditions))
       .orderBy(desc(contractors.createdAt))
-      .limit(limit)
-      .offset(offset)
+    
+    const result = fetchAll
+      ? await baseQuery
+      : await baseQuery.limit(limit!).offset(offset!)
 
     const totalPages = Math.ceil(totalCount / pageSize)
     const hasNextPage = page < totalPages
@@ -132,7 +135,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       contractors: result,
-      pagination: {
+      pagination: fetchAll ? null : {
         page,
         pageSize,
         total: totalCount,
@@ -141,8 +144,9 @@ export async function GET(request: NextRequest) {
         hasPreviousPage
       },
       meta: {
-        limit,
-        offset,
+        limit: fetchAll ? null : limit,
+        offset: fetchAll ? null : offset,
+        fetchAll,
         companyId: auth.admin.companyId
       }
     })

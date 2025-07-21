@@ -71,6 +71,8 @@ export interface AdminDataTableProps<T> {
   pagination?: PaginationInfo;
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
+  // Export all data props
+  onExportAll?: () => Promise<T[]>;
 }
 
 export function AdminDataTable<T>({
@@ -95,6 +97,7 @@ export function AdminDataTable<T>({
   pagination,
   onPageChange,
   onPageSizeChange,
+  onExportAll,
 }: AdminDataTableProps<T>) {
   const { t } = useTranslation('common');
   const [rowSelection, setRowSelection] = useState({});
@@ -263,8 +266,23 @@ export function AdminDataTable<T>({
     getRowId: (row) => getRowId(row),
   });
 
-  const exportToCSV = useCallback(() => {
-    const csvData = table.getFilteredRowModel().rows.map(row => getExportData(row.original));
+  const exportToCSV = useCallback(async () => {
+    let csvData: string[][];
+    
+    if (onExportAll) {
+      // Fetch all filtered data from the API
+      try {
+        const allData = await onExportAll();
+        csvData = allData.map(item => getExportData(item));
+      } catch (error) {
+        console.error('Failed to fetch all data for export:', error);
+        // Fallback to table data
+        csvData = table.getFilteredRowModel().rows.map(row => getExportData(row.original));
+      }
+    } else {
+      // Use current table view data (old behavior)
+      csvData = table.getFilteredRowModel().rows.map(row => getExportData(row.original));
+    }
 
     const csvContent = [exportHeaders, ...csvData]
       .map(row => row.map(field => `"${field}"`).join(','))
@@ -277,7 +295,7 @@ export function AdminDataTable<T>({
     link.download = `${exportFilename}_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     window.URL.revokeObjectURL(url);
-  }, [table, exportHeaders, exportFilename, getExportData]);
+  }, [table, exportHeaders, exportFilename, getExportData, onExportAll]);
 
   const TableSkeleton = () => (
     <div className="rounded-md border">

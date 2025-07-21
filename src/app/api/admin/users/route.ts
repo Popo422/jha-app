@@ -40,8 +40,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
-    const limit = pageSize
-    const offset = (page - 1) * pageSize
+    const fetchAll = searchParams.get('fetchAll') === 'true'
+    const limit = fetchAll ? undefined : pageSize
+    const offset = fetchAll ? undefined : (page - 1) * pageSize
 
     // Build conditions
     const conditions = and(
@@ -58,15 +59,17 @@ export async function GET(request: NextRequest) {
     const totalCount = Number(countResult[0].count)
 
     // Get admin users from the same company with pagination
-    const adminUsers = await db.select({
+    const baseQuery = db.select({
       user: users,
       company: companies
     })
     .from(users)
     .leftJoin(companies, eq(users.companyId, companies.id))
     .where(conditions)
-    .limit(limit)
-    .offset(offset)
+    
+    const adminUsers = fetchAll
+      ? await baseQuery
+      : await baseQuery.limit(limit!).offset(offset!)
 
     const admins = adminUsers.map(({ user, company }) => ({
       id: user.id,
@@ -82,8 +85,8 @@ export async function GET(request: NextRequest) {
     const hasPreviousPage = page > 1
 
     return NextResponse.json({ 
-      admins,
-      pagination: {
+      adminUsers: admins,
+      pagination: fetchAll ? null : {
         page,
         pageSize,
         total: totalCount,

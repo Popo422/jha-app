@@ -19,8 +19,8 @@ export interface PaginationInfo {
 }
 
 export interface AdminUsersResponse {
-  admins: AdminUser[]
-  pagination?: PaginationInfo
+  adminUsers: AdminUser[]
+  pagination?: PaginationInfo | null
 }
 
 export interface CreateAdminUserRequest {
@@ -64,12 +64,17 @@ export const adminUsersApi = createApi({
   }),
   tagTypes: ['AdminUser'],
   endpoints: (builder) => ({
-    getAdminUsers: builder.query<AdminUsersResponse, { page?: number; pageSize?: number }>({
-      query: ({ page = 1, pageSize = 50 } = {}) => {
-        const params = new URLSearchParams({
-          page: page.toString(),
-          pageSize: pageSize.toString(),
-        })
+    getAdminUsers: builder.query<AdminUsersResponse, { page?: number; pageSize?: number; fetchAll?: boolean }>({
+      query: ({ page = 1, pageSize = 50, fetchAll } = {}) => {
+        const params = new URLSearchParams()
+        
+        if (fetchAll) {
+          params.append('fetchAll', 'true')
+        } else {
+          params.append('page', page.toString())
+          params.append('pageSize', pageSize.toString())
+        }
+        
         return `?${params}`
       },
       providesTags: ['AdminUser'],
@@ -102,6 +107,7 @@ export const adminUsersApi = createApi({
 
 export const {
   useGetAdminUsersQuery,
+  useLazyGetAdminUsersQuery,
   useCreateAdminUserMutation,
   useUpdateAdminUserMutation,
   useDeleteAdminUserMutation,

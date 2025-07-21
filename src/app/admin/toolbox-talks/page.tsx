@@ -15,6 +15,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import { useGetToolboxTalksQuery, useCreateToolboxTalkMutation, useUpdateToolboxTalkMutation, useDeleteToolboxTalkMutation, type ToolboxTalk, type PaginationInfo } from '@/lib/features/toolbox-talks/toolboxTalksApi';
+import { useToolboxTalkExportAll } from '@/hooks/useExportAll';
 import StarterKit from '@tiptap/starter-kit';
 import { ImageResize } from 'tiptap-extension-resize-image';
 import TextStyle from '@tiptap/extension-text-style';
@@ -68,6 +69,12 @@ export default function ToolboxTalksPage() {
   const [createToolboxTalk, { isLoading: isCreating }] = useCreateToolboxTalkMutation();
   const [updateToolboxTalk, { isLoading: isUpdating }] = useUpdateToolboxTalkMutation();
   const [deleteToolboxTalk] = useDeleteToolboxTalkMutation();
+  const exportAllToolboxTalks = useToolboxTalkExportAll();
+
+  // Function to fetch all toolbox talks for export
+  const handleExportAll = useCallback(async () => {
+    return await exportAllToolboxTalks({});
+  }, [exportAllToolboxTalks]);
 
   const allToolboxTalks = toolboxTalksData?.toolboxTalks || [];
   const serverPaginationInfo = toolboxTalksData?.pagination;
@@ -808,6 +815,7 @@ export default function ToolboxTalksPage() {
             pagination={paginationInfo}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
+            onExportAll={handleExportAll}
           />
         </CardContent>
       </Card>

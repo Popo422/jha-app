@@ -306,8 +306,9 @@ export async function GET(request: NextRequest) {
     // Get remaining query parameters
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '50');
-    const limit = pageSize;
-    const offset = (page - 1) * pageSize;
+    const fetchAll = searchParams.get('fetchAll') === 'true';
+    const limit = fetchAll ? undefined : pageSize;
+    const offset = fetchAll ? undefined : (page - 1) * pageSize;
     const submissionType = searchParams.get('type')
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
@@ -378,24 +379,30 @@ export async function GET(request: NextRequest) {
     let result
     if (conditions.length === 0) {
       // No conditions - admin viewing all submissions
-      result = await db.select().from(submissions)
-        .orderBy(desc(submissions.createdAt))
-        .limit(limit)
-        .offset(offset)
+      const baseQuery = db.select().from(submissions)
+        .orderBy(desc(submissions.createdAt));
+      
+      result = fetchAll
+        ? await baseQuery
+        : await baseQuery.limit(limit!).offset(offset!);
     } else if (conditions.length === 1) {
       // Single condition
-      result = await db.select().from(submissions)
+      const baseQuery = db.select().from(submissions)
         .where(conditions[0])
-        .orderBy(desc(submissions.createdAt))
-        .limit(limit)
-        .offset(offset)
+        .orderBy(desc(submissions.createdAt));
+      
+      result = fetchAll
+        ? await baseQuery
+        : await baseQuery.limit(limit!).offset(offset!);
     } else {
       // Multiple conditions
-      result = await db.select().from(submissions)
+      const baseQuery = db.select().from(submissions)
         .where(and(...conditions))
-        .orderBy(desc(submissions.createdAt))
-        .limit(limit)
-        .offset(offset)
+        .orderBy(desc(submissions.createdAt));
+      
+      result = fetchAll
+        ? await baseQuery
+        : await baseQuery.limit(limit!).offset(offset!);
     }
 
     const totalPages = Math.ceil(totalCount / pageSize)
@@ -404,7 +411,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       submissions: result,
-      pagination: {
+      pagination: fetchAll ? null : {
         page,
         pageSize,
         total: totalCount,
@@ -413,8 +420,9 @@ export async function GET(request: NextRequest) {
         hasPreviousPage
       },
       meta: {
-        limit,
-        offset,
+        limit: fetchAll ? null : limit,
+        offset: fetchAll ? null : offset,
+        fetchAll,
         isAdmin: auth.isAdmin,
         userId: auth.userId || null
       }

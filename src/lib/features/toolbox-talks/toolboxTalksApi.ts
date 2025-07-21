@@ -22,7 +22,7 @@ export interface PaginationInfo {
 
 export interface ToolboxTalksResponse {
   toolboxTalks: ToolboxTalk[]
-  pagination?: PaginationInfo
+  pagination?: PaginationInfo | null
 }
 
 export interface CreateToolboxTalkRequest {
@@ -68,12 +68,17 @@ export const toolboxTalksApi = createApi({
   }),
   tagTypes: ['ToolboxTalk'],
   endpoints: (builder) => ({
-    getToolboxTalks: builder.query<ToolboxTalksResponse, { page?: number; pageSize?: number }>({
-      query: ({ page = 1, pageSize = 50 } = {}) => {
-        const params = new URLSearchParams({
-          page: page.toString(),
-          pageSize: pageSize.toString(),
-        })
+    getToolboxTalks: builder.query<ToolboxTalksResponse, { page?: number; pageSize?: number; fetchAll?: boolean }>({
+      query: ({ page = 1, pageSize = 50, fetchAll } = {}) => {
+        const params = new URLSearchParams()
+        
+        if (fetchAll) {
+          params.append('fetchAll', 'true')
+        } else {
+          params.append('page', page.toString())
+          params.append('pageSize', pageSize.toString())
+        }
+        
         return `?${params}`
       },
       providesTags: ['ToolboxTalk'],
@@ -107,6 +112,7 @@ export const toolboxTalksApi = createApi({
 
 export const {
   useGetToolboxTalksQuery,
+  useLazyGetToolboxTalksQuery,
   useCreateToolboxTalkMutation,
   useUpdateToolboxTalkMutation,
   useDeleteToolboxTalkMutation,

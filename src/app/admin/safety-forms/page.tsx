@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetSubmissionsQuery, useDeleteSubmissionMutation, type PaginationInfo } from "@/lib/features/submissions/submissionsApi";
+import { useSubmissionExportAll } from "@/hooks/useExportAll";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,6 +85,7 @@ export default function SafetyFormsPage() {
   });
 
   const [deleteSubmission] = useDeleteSubmissionMutation();
+  const exportAllSubmissions = useSubmissionExportAll();
 
   const allData = submissionsData?.submissions || [];
   const serverPaginationInfo = submissionsData?.pagination;
@@ -143,6 +145,25 @@ export default function SafetyFormsPage() {
   const handlePageSizeChange = useCallback((pageSize: number) => {
     setClientPagination({ currentPage: 1, pageSize });
   }, []);
+
+  // Function to fetch all submissions for export
+  const handleExportAll = useCallback(async () => {
+    return await exportAllSubmissions({
+      type: filters.type || undefined,
+      dateFrom: filters.dateFrom || undefined,
+      dateTo: filters.dateTo || undefined,
+      company: filters.company || undefined,
+      search: debouncedSearch || undefined,
+      authType: 'admin'
+    });
+  }, [
+    exportAllSubmissions,
+    filters.type,
+    filters.dateFrom,
+    filters.dateTo,
+    filters.company,
+    debouncedSearch
+  ]);
 
   // Prefetch next batch when near end
   const { data: prefetchData } = useGetSubmissionsQuery({
@@ -533,6 +554,7 @@ export default function SafetyFormsPage() {
         pagination={paginationInfo}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
+        onExportAll={handleExportAll}
       />
     </div>
   );

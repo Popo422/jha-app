@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, type Contractor } from "@/lib/features/contractors/contractorsApi";
+import { useContractorExportAll } from "@/hooks/useExportAll";
 import { useCreateSubcontractorMutation } from "@/lib/features/subcontractors/subcontractorsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
@@ -48,9 +49,17 @@ export default function ContractorsPage() {
   });
   
   const [deleteContractor, { isLoading: isDeleting }] = useDeleteContractorMutation();
+  const exportAllContractors = useContractorExportAll();
   const [createContractor, { isLoading: isCreating, error: createError }] = useCreateContractorMutation();
   const [updateContractor, { isLoading: isUpdating, error: updateError }] = useUpdateContractorMutation();
   const [createSubcontractor, { isLoading: isCreatingSubcontractor }] = useCreateSubcontractorMutation();
+
+  // Function to fetch all contractors for export
+  const handleExportAll = useCallback(async () => {
+    return await exportAllContractors({
+      search: debouncedSearch || undefined,
+    });
+  }, [exportAllContractors, debouncedSearch]);
 
   const isFormLoading = isCreating || isUpdating;
   const formError = createError || updateError;
@@ -724,6 +733,7 @@ export default function ContractorsPage() {
         ]}
         searchValue={search}
         onSearchChange={setSearch}
+        onExportAll={handleExportAll}
       />
     </div>
   );

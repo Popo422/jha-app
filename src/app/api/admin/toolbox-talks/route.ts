@@ -139,8 +139,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
-    const limit = pageSize
-    const offset = (page - 1) * pageSize
+    const fetchAll = searchParams.get('fetchAll') === 'true'
+    const limit = fetchAll ? undefined : pageSize
+    const offset = fetchAll ? undefined : (page - 1) * pageSize
 
     // Build conditions
     const conditions = eq(toolboxTalks.companyId, companyId)
@@ -151,10 +152,12 @@ export async function GET(request: NextRequest) {
     const totalCount = Number(countResult[0].count)
 
     // Get toolbox talks for the admin's company with pagination
-    const talks = await db.select().from(toolboxTalks).where(conditions)
+    const baseQuery = db.select().from(toolboxTalks).where(conditions)
       .orderBy(desc(toolboxTalks.createdAt))
-      .limit(limit)
-      .offset(offset)
+    
+    const talks = fetchAll
+      ? await baseQuery
+      : await baseQuery.limit(limit!).offset(offset!)
 
     const totalPages = Math.ceil(totalCount / pageSize)
     const hasNextPage = page < totalPages
@@ -162,7 +165,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       toolboxTalks: talks,
-      pagination: {
+      pagination: fetchAll ? null : {
         page,
         pageSize,
         total: totalCount,

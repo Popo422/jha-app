@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppSelector } from '@/lib/hooks'
 import { useGetAdminUsersQuery, useCreateAdminUserMutation, useUpdateAdminUserMutation, useDeleteAdminUserMutation, type AdminUser, type PaginationInfo } from '@/lib/features/admin-users/adminUsersApi'
+import { useAdminUserExportAll } from '@/hooks/useExportAll'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -48,8 +49,14 @@ export default function AdminEditorPage() {
   const [createAdminUser, { isLoading: isCreating }] = useCreateAdminUserMutation();
   const [updateAdminUser, { isLoading: isUpdating }] = useUpdateAdminUserMutation();
   const [deleteAdminUser] = useDeleteAdminUserMutation();
+  const exportAllAdminUsers = useAdminUserExportAll();
 
-  const allAdmins = adminUsersData?.admins || [];
+  // Function to fetch all admin users for export
+  const handleExportAll = useCallback(async () => {
+    return await exportAllAdminUsers({});
+  }, [exportAllAdminUsers]);
+
+  const allAdmins = adminUsersData?.adminUsers || [];
   const serverPaginationInfo = adminUsersData?.pagination;
 
   // Client-side pagination logic
@@ -565,6 +572,7 @@ export default function AdminEditorPage() {
             pagination={paginationInfo}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
+            onExportAll={handleExportAll}
           />
         </CardContent>
       </Card>

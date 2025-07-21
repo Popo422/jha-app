@@ -8,8 +8,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1');
     const pageSize = parseInt(searchParams.get('pageSize') || '50');
-    const limit = pageSize;
-    const offset = (page - 1) * pageSize;
+    const fetchAll = searchParams.get('fetchAll') === 'true';
+    const limit = fetchAll ? undefined : pageSize;
+    const offset = fetchAll ? undefined : (page - 1) * pageSize;
     const projectFilter = searchParams.get('project')
     const subcontractorFilter = searchParams.get('subcontractor')
     const companyId = searchParams.get('companyId')
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / pageSize);
 
     // Execute the query with all filters in WHERE clause
-    const results = await db
+    const baseQuery = db
       .select({
         projectName: timesheets.projectName,
         projectManager: projects.projectManager,
@@ -72,11 +73,13 @@ export async function GET(request: NextRequest) {
       ))
       .where(and(...whereConditions))
       .groupBy(timesheets.projectName, projects.projectManager)
-      .limit(limit)
-      .offset(offset)
+      
+    const finalResults = fetchAll
+      ? await baseQuery
+      : await baseQuery.limit(limit!).offset(offset!)
 
     // Format the results
-    const formattedResults = results.map(row => ({
+    const formattedResults = finalResults.map(row => ({
       projectId: row.projectName, // Use project name as unique ID
       projectName: row.projectName,
       projectManager: row.projectManager || '', // Empty string if not in projects table
@@ -87,7 +90,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       projects: formattedResults,
-      pagination: {
+      pagination: fetchAll ? null : {
         page,
         pageSize,
         total,

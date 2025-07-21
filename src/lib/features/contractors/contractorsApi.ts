@@ -46,10 +46,11 @@ export interface PaginationInfo {
 
 export interface ContractorsResponse {
   contractors: Contractor[]
-  pagination?: PaginationInfo
+  pagination?: PaginationInfo | null
   meta: {
-    limit: number
-    offset: number
+    limit: number | null
+    offset: number | null
+    fetchAll?: boolean
     companyId: string
   }
 }
@@ -85,17 +86,21 @@ export const contractorsApi = createApi({
   }),
   tagTypes: ['Contractor'],
   endpoints: (builder) => ({
-    getContractors: builder.query<ContractorsResponse, { search?: string; page?: number; pageSize?: number; limit?: number; offset?: number }>({
-      query: ({ search, page, pageSize, limit, offset } = {}) => {
+    getContractors: builder.query<ContractorsResponse, { search?: string; page?: number; pageSize?: number; limit?: number; offset?: number; fetchAll?: boolean }>({
+      query: ({ search, page, pageSize, limit, offset, fetchAll } = {}) => {
         const params = new URLSearchParams()
         
-        // Use page/pageSize if provided, otherwise fall back to limit/offset
-        if (page !== undefined && pageSize !== undefined) {
-          params.append('page', page.toString())
-          params.append('pageSize', pageSize.toString())
+        if (fetchAll) {
+          params.append('fetchAll', 'true')
         } else {
-          params.append('limit', (limit || 50).toString())
-          params.append('offset', (offset || 0).toString())
+          // Use page/pageSize if provided, otherwise fall back to limit/offset
+          if (page !== undefined && pageSize !== undefined) {
+            params.append('page', page.toString())
+            params.append('pageSize', pageSize.toString())
+          } else {
+            params.append('limit', (limit || 50).toString())
+            params.append('offset', (offset || 0).toString())
+          }
         }
         
         if (search) {
@@ -133,7 +138,10 @@ export const contractorsApi = createApi({
 
 export const {
   useGetContractorsQuery,
+  useLazyGetContractorsQuery,
   useCreateContractorMutation,
   useUpdateContractorMutation,
   useDeleteContractorMutation,
 } = contractorsApi
+
+export type GetContractorsResponse = ContractorsResponse;

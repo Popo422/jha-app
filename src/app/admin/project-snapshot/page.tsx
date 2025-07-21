@@ -11,6 +11,7 @@ import {
   type ProjectSnapshotData as ProjectSnapshotDataType,
   type PaginationInfo
 } from '@/lib/features/project-snapshot/projectSnapshotApi';
+import { useProjectSnapshotExportAll } from '@/hooks/useExportAll';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,6 +49,16 @@ export default function ProjectSnapshotPage() {
   const subcontractorDropdownRef = useRef<HTMLDivElement>(null);
   
   const { admin } = useSelector((state: RootState) => state.auth);
+  const exportAllProjectSnapshot = useProjectSnapshotExportAll();
+
+  // Function to fetch all project snapshot data for export
+  const handleExportAll = useCallback(async () => {
+    return await exportAllProjectSnapshot({
+      companyId: admin?.companyId || '',
+      project: projectFilter || undefined,
+      subcontractor: subcontractorFilter || undefined,
+    });
+  }, [exportAllProjectSnapshot, admin?.companyId, projectFilter, subcontractorFilter]);
 
   // Redux API hooks
   const { data: projectSnapshotResponse, isLoading, isFetching } = useGetProjectSnapshotQuery(
@@ -619,6 +630,7 @@ export default function ProjectSnapshotPage() {
           pagination={paginationInfo}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
+          onExportAll={handleExportAll}
         />
       </div>
     </div>

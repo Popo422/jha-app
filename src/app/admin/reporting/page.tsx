@@ -21,7 +21,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import { useGetReportingDataQuery } from '@/lib/features/reporting/reportingApi';
-import { useGetTimesheetsQuery } from '@/lib/features/timesheets/timesheetsApi';
+import { useGetTimesheetsQuery, useLazyGetTimesheetsQuery } from '@/lib/features/timesheets/timesheetsApi';
 import { useGetContractorsQuery } from '@/lib/features/contractors/contractorsApi';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import { CostForecasting } from '@/components/admin/CostForecasting';
@@ -139,6 +139,9 @@ export default function ReportingPage() {
     company: subcontractorFilterString,
     authType: 'admin'
   });
+
+  // Lazy query for fetching all data for export
+  const [fetchAllTimesheets] = useLazyGetTimesheetsQuery();
 
   const allTimesheets = timesheetResponse?.timesheets || [];
   const contractorRates = timesheetResponse?.contractorRates || {};
@@ -396,6 +399,45 @@ export default function ReportingPage() {
   const handlePageSizeChange = useCallback((pageSize: number) => {
     setClientPagination({ currentPage: 1, pageSize });
   }, []);
+
+  // Function to fetch all timesheets for export
+  const handleExportAll = useCallback(async () => {
+    const result = await fetchAllTimesheets({
+      fetchAll: true,
+      dateFrom: startDate || undefined,
+      dateTo: endDate || undefined,
+      search: search || undefined,
+      employees: employeesFilterString,
+      status: statusFilter || undefined,
+      jobName: projectNameFilterString,
+      company: subcontractorFilterString,
+      authType: 'admin'
+    });
+
+    if (result.data) {
+      return result.data.timesheets;
+    } else {
+      throw new Error('Failed to fetch all timesheets for export');
+    }
+  }, [
+    fetchAllTimesheets, 
+    startDate, 
+    endDate, 
+    search, 
+    employeesFilterString, 
+    statusFilter, 
+    projectNameFilterString, 
+    subcontractorFilterString
+  ]);
+
+  // Export functions for cost analytics data
+  const handleExportContractorCosts = useCallback(async () => {
+    return filteredContractorHours;
+  }, [filteredContractorHours]);
+
+  const handleExportProjectCosts = useCallback(async () => {
+    return filteredProjectAnalytics;
+  }, [filteredProjectAnalytics]);
 
   // Reset pagination when filters change
   const resetPagination = useCallback(() => {
@@ -1679,6 +1721,7 @@ export default function ReportingPage() {
                         ]}
                         searchValue={contractorCostSearch}
                         onSearchChange={setContractorCostSearch}
+                        onExportAll={handleExportContractorCosts}
                       />
                     </CardContent>
                   </Card>
@@ -1747,6 +1790,7 @@ export default function ReportingPage() {
                       ]}
                       searchValue={projectCostSearch}
                       onSearchChange={setProjectCostSearch}
+                      onExportAll={handleExportProjectCosts}
                     />
                   </CardContent>
                 </Card>
@@ -1796,6 +1840,7 @@ export default function ReportingPage() {
           pagination={timesheetPaginationInfo}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
+          onExportAll={handleExportAll}
         />
       </div>
     </div>

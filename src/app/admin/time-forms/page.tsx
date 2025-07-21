@@ -4,6 +4,7 @@ import { useMemo, useCallback, useState } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetTimesheetsQuery, useDeleteTimesheetMutation, type Timesheet, type PaginationInfo } from "@/lib/features/timesheets/timesheetsApi";
+import { useTimesheetExportAll } from "@/hooks/useExportAll";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import TimesheetEdit from "@/components/admin/TimesheetEdit";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ export default function TimeFormsPage() {
   const [deleteTimesheet] = useDeleteTimesheetMutation();
   const [approvalDialog, setApprovalDialog] = useState<{ timesheet: Timesheet; action: 'approve' | 'reject' | 'pending' } | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const exportAllTimesheets = useTimesheetExportAll();
 
   const allData = timesheetsData?.timesheets || [];
   const contractorRates = timesheetsData?.contractorRates || {};
@@ -117,6 +119,25 @@ export default function TimeFormsPage() {
   const handlePageSizeChange = useCallback((pageSize: number) => {
     setClientPagination({ currentPage: 1, pageSize });
   }, []);
+
+  // Function to fetch all timesheets for export
+  const handleExportAll = useCallback(async () => {
+    return await exportAllTimesheets({
+      dateFrom: filters.dateFrom || undefined,
+      dateTo: filters.dateTo || undefined,
+      company: filters.company || undefined,
+      search: debouncedSearch || undefined,
+      status: filters.status !== 'all' ? filters.status : undefined,
+      authType: 'admin'
+    });
+  }, [
+    exportAllTimesheets,
+    filters.dateFrom,
+    filters.dateTo,
+    filters.company,
+    filters.status,
+    debouncedSearch
+  ]);
 
   // Prefetch next batch when near end
   const { data: prefetchData } = useGetTimesheetsQuery({
@@ -645,6 +666,7 @@ export default function TimeFormsPage() {
             show: (timesheet) => timesheet.status === 'approved' || timesheet.status === 'rejected'
           }
         ]}
+        onExportAll={handleExportAll}
       />
 
       {/* Approval Dialog */}
