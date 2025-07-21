@@ -28,7 +28,11 @@ async function checkContractorLimit(companyId: string): Promise<{ canAdd: boolea
   const currentCount = contractorCountResult[0]?.count || 0
   let limit = 100 // Default limit for non-level 3 members
   if (membershipLevel === '3') {
-    limit = Number.MAX_SAFE_INTEGER // Unlimited for level 3
+    limit = 400
+  } else if  (membershipLevel === '2') {
+    limit = 200 // Limit for level 2 members
+  } else if (membershipLevel === '1') {
+    limit = 100
   }
 
   return {
