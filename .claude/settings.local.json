@@ -23,7 +23,12 @@
       "Bash(tar:*)",
       "Bash(ls:*)",
       "Bash(mkdir:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(for lang in en es pl zh)",
+      "Bash(do echo \"=== $lang locale ===\")",
+      "Bash(done)",
+      "Bash(do echo \"=== Checking $lang locale file ===\")",
+      "Bash(find:*)"
     ],
     "deny": []
   }

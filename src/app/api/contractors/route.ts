@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, desc, and, or, ilike, count } from 'drizzle-orm'
+import { eq, desc, and, or, ilike, count, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { contractors, companies } from '@/lib/db/schema'
 import { emailService } from '@/lib/email-service'
@@ -28,7 +28,11 @@ async function checkContractorLimit(companyId: string): Promise<{ canAdd: boolea
   const currentCount = contractorCountResult[0]?.count || 0
   let limit = 100 // Default limit for non-level 3 members
   if (membershipLevel === '3') {
-    limit = Number.MAX_SAFE_INTEGER // Unlimited for level 3
+    limit = 400
+  } else if  (membershipLevel === '2') {
+    limit = 200 // Limit for level 2 members
+  } else if (membershipLevel === '1') {
+    limit = 100
   }
 
   return {
@@ -89,8 +93,11 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const page = parseInt(searchParams.get('page') || '1')
+    const pageSize = parseInt(searchParams.get('pageSize') || '50')
+    const fetchAll = searchParams.get('fetchAll') === 'true'
+    const limit = fetchAll ? undefined : pageSize
+    const offset = fetchAll ? undefined : (page - 1) * pageSize
 
     // Build query conditions - filter by admin's company
     const conditions = [eq(contractors.companyId, auth.admin.companyId)]
@@ -108,18 +115,38 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Get total count for pagination
+    const countResult = await db.select({ count: sql`count(*)` }).from(contractors)
+      .where(and(...conditions))
+    const totalCount = Number(countResult[0].count)
+
     // Execute query
-    const result = await db.select().from(contractors)
+    const baseQuery = db.select().from(contractors)
       .where(and(...conditions))
       .orderBy(desc(contractors.createdAt))
-      .limit(limit)
-      .offset(offset)
+    
+    const result = fetchAll
+      ? await baseQuery
+      : await baseQuery.limit(limit!).offset(offset!)
+
+    const totalPages = Math.ceil(totalCount / pageSize)
+    const hasNextPage = page < totalPages
+    const hasPreviousPage = page > 1
 
     return NextResponse.json({
       contractors: result,
+      pagination: fetchAll ? null : {
+        page,
+        pageSize,
+        total: totalCount,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage
+      },
       meta: {
-        limit,
-        offset,
+        limit: fetchAll ? null : limit,
+        offset: fetchAll ? null : offset,
+        fetchAll,
         companyId: auth.admin.companyId
       }
     })

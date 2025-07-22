@@ -208,7 +208,9 @@
     "submissions": "envíos",
     "total": "total",
     "by": "por",
-    "cannotBeUndone": "Esta acción no se puede deshacer."
+    "cannotBeUndone": "Esta acción no se puede deshacer.",
+    "contractorsSelected": "contratistas seleccionados",
+    "subcontractorsSelected": "subcontratistas seleccionados"
   },
   "settings": {
     "title": "Configuración",
@@ -216,6 +218,8 @@
     "selectLanguage": "Seleccionar Idioma",
     "english": "Inglés",
     "spanish": "Español",
+    "polish": "Polaco",
+    "chinese": "Chino",
     "save": "Guardar",
     "saved": "Configuración guardada exitosamente",
     "managePreferences": "Gestione sus preferencias y configuraciones de la aplicación",
@@ -355,7 +359,8 @@
     "jobNamePlaceholder": "Nombre o título del trabajo",
     "hoursSpentOnSite": "Horas trabajadas en el sitio",
     "jobDescriptionPlaceholder": "Describe el trabajo realizado...",
-    "projectName": "Ingrese el nombre del proyecto."
+    "projectName": "Ingrese el nombre del proyecto.",
+    "searchSubcontractors": "Buscar subcontratistas..."
   },
   "safety": {
     "toolInspection": "Inspección de Herramientas",

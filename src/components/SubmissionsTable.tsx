@@ -21,6 +21,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -38,10 +39,24 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Submission, useDeleteSubmissionMutation } from "@/lib/features/submissions/submissionsApi";
 
+interface PaginationInfo {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 interface SubmissionsTableProps {
   data: Submission[];
   isLoading?: boolean;
+  isFetching?: boolean;
   onDelete?: (id: string) => void;
+  serverSide?: boolean;
+  pagination?: PaginationInfo;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 const getFormTypeLabel = (type: string, t: any) => {
@@ -81,7 +96,16 @@ const getFormTypeOptions = (t: any) => [
   { value: "incident-report", label: t('forms.incidentReport') },
 ];
 
-export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTableProps) {
+export function SubmissionsTable({ 
+  data, 
+  isLoading, 
+  isFetching = false,
+  onDelete, 
+  serverSide = false,
+  pagination,
+  onPageChange,
+  onPageSizeChange
+}: SubmissionsTableProps) {
   const { t } = useTranslation('common');
   const [selectedFormTypes, setSelectedFormTypes] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -295,15 +319,27 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
   );
 
   const table = useReactTable({
-    data: filteredData,
+    data: serverSide ? data : filteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: serverSide ? undefined : getFilteredRowModel(),
+    getPaginationRowModel: serverSide ? undefined : getPaginationRowModel(),
+    getSortedRowModel: serverSide ? undefined : getSortedRowModel(),
+    ...(serverSide && pagination ? {
+      manualPagination: true,
+      pageCount: pagination.totalPages,
+    } : {}),
+    state: {
+      ...(serverSide && pagination ? {
+        pagination: {
+          pageIndex: pagination.page - 1,
+          pageSize: pagination.pageSize,
+        },
+      } : {}),
+    },
     initialState: {
       pagination: {
-        pageSize: 10,
+        pageSize: serverSide ? (pagination?.pageSize || 10) : 10,
       },
     },
   });
@@ -469,34 +505,86 @@ export function SubmissionsTable({ data, isLoading, onDelete }: SubmissionsTable
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 sm:space-x-2 py-4">
               <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
-                <span className="hidden sm:inline">
-                  {t('admin.showing')} {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} {t('admin.to')}{" "}
-                  {Math.min(
-                    (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                    filteredData.length
-                  )}{" "}
-                  {t('admin.of')} {filteredData.length} {t('admin.submissions')}
-                </span>
-                <span className="sm:hidden">{filteredData.length} {t('admin.total')}</span>
+                {serverSide && pagination ? (
+                  <>
+                    <span className="hidden sm:inline">
+                      {t('admin.showing')} {((pagination.page - 1) * pagination.pageSize) + 1} {t('admin.to')}{" "}
+                      {Math.min(pagination.page * pagination.pageSize, pagination.total)} {t('admin.of')} {pagination.total} {t('admin.submissions')}
+                    </span>
+                    <span className="sm:hidden">{pagination.total} {t('admin.total')}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">
+                      {t('admin.showing')} {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} {t('admin.to')}{" "}
+                      {Math.min(
+                        (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                        filteredData.length
+                      )}{" "}
+                      {t('admin.of')} {filteredData.length} {t('admin.submissions')}
+                    </span>
+                    <span className="sm:hidden">{filteredData.length} {t('admin.total')}</span>
+                  </>
+                )}
               </div>
               <div className="flex items-center justify-center space-x-2">
+                {serverSide && pagination && onPageSizeChange && (
+                  <div className="flex items-center gap-2 mr-4">
+                    <span className="text-xs font-medium">Rows per page:</span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8">
+                          {pagination.pageSize}
+                          <ChevronDown className="h-4 w-4 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {[5, 10, 25, 50].map((pageSize) => (
+                          <DropdownMenuItem
+                            key={pageSize}
+                            onClick={() => onPageSizeChange(pageSize)}
+                            className={pagination.pageSize === pageSize ? "bg-accent" : ""}
+                          >
+                            {pageSize}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
+                  onClick={() => {
+                    if (serverSide && onPageChange) {
+                      onPageChange(pagination!.page - 1);
+                    } else {
+                      table.previousPage();
+                    }
+                  }}
+                  disabled={serverSide ? !pagination?.hasPreviousPage : !table.getCanPreviousPage()}
                   className="text-xs"
                 >
                   {t('common.previous')}
                 </Button>
                 <div className="text-xs text-muted-foreground px-2">
-                  {table.getState().pagination.pageIndex + 1} {t('admin.of')} {table.getPageCount()}
+                  {serverSide && pagination ? (
+                    <span>Page {pagination.page} of {pagination.totalPages}</span>
+                  ) : (
+                    <span>{table.getState().pagination.pageIndex + 1} {t('admin.of')} {table.getPageCount()}</span>
+                  )}
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
+                  onClick={() => {
+                    if (serverSide && onPageChange) {
+                      onPageChange(pagination!.page + 1);
+                    } else {
+                      table.nextPage();
+                    }
+                  }}
+                  disabled={serverSide ? !pagination?.hasNextPage : !table.getCanNextPage()}
                   className="text-xs"
                 >
                   {t('common.next')}

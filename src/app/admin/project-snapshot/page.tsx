@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
@@ -8,8 +8,10 @@ import {
   useGetProjectSnapshotQuery, 
   useGetProjectSnapshotProjectsQuery, 
   useGetProjectSnapshotSubcontractorsQuery,
-  type ProjectSnapshotData as ProjectSnapshotDataType
+  type ProjectSnapshotData as ProjectSnapshotDataType,
+  type PaginationInfo
 } from '@/lib/features/project-snapshot/projectSnapshotApi';
+import { useProjectSnapshotExportAll } from '@/hooks/useExportAll';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +29,14 @@ export default function ProjectSnapshotPage() {
   const [projectFilter, setProjectFilter] = useState('');
   const [subcontractorFilter, setSubcontractorFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [clientPagination, setClientPagination] = useState({
+    currentPage: 1,
+    pageSize: 10
+  });
+  const [serverPagination, setServerPagination] = useState({
+    page: 1,
+    pageSize: 50
+  });
   
   // Searchable select states
   const [projectSearchOpen, setProjectSearchOpen] = useState(false);
@@ -39,11 +49,23 @@ export default function ProjectSnapshotPage() {
   const subcontractorDropdownRef = useRef<HTMLDivElement>(null);
   
   const { admin } = useSelector((state: RootState) => state.auth);
+  const exportAllProjectSnapshot = useProjectSnapshotExportAll();
+
+  // Function to fetch all project snapshot data for export
+  const handleExportAll = useCallback(async () => {
+    return await exportAllProjectSnapshot({
+      companyId: admin?.companyId || '',
+      project: projectFilter || undefined,
+      subcontractor: subcontractorFilter || undefined,
+    });
+  }, [exportAllProjectSnapshot, admin?.companyId, projectFilter, subcontractorFilter]);
 
   // Redux API hooks
-  const { data: projectSnapshotData = [], isLoading } = useGetProjectSnapshotQuery(
+  const { data: projectSnapshotResponse, isLoading, isFetching } = useGetProjectSnapshotQuery(
     { 
       companyId: admin?.companyId || '',
+      page: serverPagination.page,
+      pageSize: serverPagination.pageSize,
       ...(projectFilter && { project: projectFilter }),
       ...(subcontractorFilter && { subcontractor: subcontractorFilter })
     },
@@ -51,6 +73,9 @@ export default function ProjectSnapshotPage() {
       skip: !admin?.companyId
     }
   );
+
+  const allData = projectSnapshotResponse?.projects || [];
+  const serverPaginationInfo = projectSnapshotResponse?.pagination;
 
   const { data: uniqueProjects = [], isLoading: projectsLoading } = useGetProjectSnapshotProjectsQuery(
     { 
@@ -72,22 +97,47 @@ export default function ProjectSnapshotPage() {
     }
   );
 
-  // Filter data based on search
-  const filteredData = useMemo(() => {
-    if (!search) return projectSnapshotData;
+  // Client-side pagination logic
+  const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
+  const endIndex = startIndex + clientPagination.pageSize;
+  
+  // Filter data based on search first, then paginate
+  const searchFilteredData = useMemo(() => {
+    if (!search) return allData;
     
     const searchLower = search.toLowerCase();
-    return projectSnapshotData.filter(item =>
+    return allData.filter(item =>
       item.projectName.toLowerCase().includes(searchLower) ||
       item.projectManager.toLowerCase().includes(searchLower) ||
       item.subcontractorCount.toString().includes(searchLower)
     );
-  }, [projectSnapshotData, search]);
+  }, [allData, search]);
 
-  // Calculate summary statistics
-  const totalProjects = filteredData.length;
-  const totalContractors = filteredData.reduce((sum, item) => sum + item.contractorCount, 0);
-  const totalSpend = filteredData.reduce((sum, item) => sum + item.totalSpend, 0);
+  const data = searchFilteredData.slice(startIndex, endIndex);
+  
+  // Create client pagination info
+  const totalClientPages = Math.ceil(searchFilteredData.length / clientPagination.pageSize);
+  
+  // Calculate total pages considering both client view and server data
+  const estimatedTotalRecords = serverPaginationInfo?.total || searchFilteredData.length;
+  const estimatedTotalPages = Math.ceil(estimatedTotalRecords / clientPagination.pageSize);
+  
+  const paginationInfo = {
+    page: clientPagination.currentPage,
+    pageSize: clientPagination.pageSize,
+    total: estimatedTotalRecords,
+    totalPages: estimatedTotalPages,
+    hasNextPage: clientPagination.currentPage < totalClientPages || (serverPaginationInfo?.hasNextPage || false),
+    hasPreviousPage: clientPagination.currentPage > 1
+  };
+
+  // Check if we need to prefetch next batch
+  const shouldPrefetch = clientPagination.currentPage >= totalClientPages - 2 && serverPaginationInfo?.hasNextPage;
+
+  // Calculate summary statistics from all filtered data
+  const totalProjects = searchFilteredData.length;
+  const totalContractors = searchFilteredData.reduce((sum, item) => sum + item.contractorCount, 0);
+  const totalSpend = searchFilteredData.reduce((sum, item) => sum + item.totalSpend, 0);
   const averageSpendPerProject = totalProjects > 0 ? totalSpend / totalProjects : 0;
 
 
@@ -133,6 +183,47 @@ export default function ProjectSnapshotPage() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Pagination handlers
+  const handlePageChange = useCallback((page: number) => {
+    const totalClientPages = Math.ceil(searchFilteredData.length / clientPagination.pageSize);
+    
+    if (page <= totalClientPages) {
+      // Navigate within current batch
+      setClientPagination(prev => ({ ...prev, currentPage: page }));
+    } else {
+      // Need to fetch next batch
+      const nextServerPage = serverPagination.page + 1;
+      setServerPagination(prev => ({ ...prev, page: nextServerPage }));
+      setClientPagination({ currentPage: 1, pageSize: clientPagination.pageSize });
+    }
+  }, [searchFilteredData.length, clientPagination.pageSize, serverPagination.page]);
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setClientPagination({ currentPage: 1, pageSize });
+  }, []);
+
+  // Clear pagination when filters change
+  const resetPagination = useCallback(() => {
+    setClientPagination({ currentPage: 1, pageSize: 10 });
+    setServerPagination({ page: 1, pageSize: 50 });
+  }, []);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    resetPagination();
+  }, [projectFilter, subcontractorFilter, resetPagination]);
+
+  // Prefetch next batch when near end
+  const { data: prefetchData } = useGetProjectSnapshotQuery({
+    companyId: admin?.companyId || '',
+    page: serverPagination.page + 1,
+    pageSize: serverPagination.pageSize,
+    ...(projectFilter && { project: projectFilter }),
+    ...(subcontractorFilter && { subcontractor: subcontractorFilter })
+  }, {
+    skip: !shouldPrefetch || !admin?.companyId
+  });
 
   const columns: ColumnDef<ProjectSnapshotData>[] = useMemo(() => [
     {
@@ -185,9 +276,9 @@ export default function ProjectSnapshotPage() {
   ], [t]);
 
   const exportToCSV = () => {
-    if (!filteredData.length) return;
+    if (!searchFilteredData.length) return;
     
-    const csvData = filteredData.map(item => [
+    const csvData = searchFilteredData.map(item => [
       item.projectName,
       item.projectManager,
       item.contractorCount.toString(),
@@ -506,7 +597,7 @@ export default function ProjectSnapshotPage() {
             <Button 
               variant="outline" 
               onClick={exportToCSV}
-              disabled={filteredData.length === 0 || isLoading}
+              disabled={searchFilteredData.length === 0 || isLoading}
               className="md:ml-auto"
             >
               <Download className="h-4 w-4 mr-2" />
@@ -519,10 +610,10 @@ export default function ProjectSnapshotPage() {
       {/* Data Table */}
       <div className="space-y-4">
         <AdminDataTable
-          data={filteredData}
+          data={data}
           columns={columns}
           isLoading={isLoading}
-          isFetching={isLoading}
+          isFetching={isFetching}
           getRowId={(item) => item.projectId}
           exportFilename="project_snapshot"
           exportHeaders={['Project Name', 'Project Manager', 'Contractor Count', 'Total Spend', 'Subcontractor Count']}
@@ -535,6 +626,11 @@ export default function ProjectSnapshotPage() {
           ]}
           searchValue={search}
           onSearchChange={setSearch}
+          serverSide={true}
+          pagination={paginationInfo}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          onExportAll={handleExportAll}
         />
       </div>
     </div>

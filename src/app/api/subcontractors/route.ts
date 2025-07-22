@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, desc, and, or, ilike } from 'drizzle-orm'
+import { eq, desc, and, or, ilike, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { subcontractors } from '@/lib/db/schema'
 
@@ -56,11 +56,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get query parameters
+    // Get query parameters for pagination
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const page = parseInt(searchParams.get('page') || '1')
+    const pageSize = parseInt(searchParams.get('pageSize') || '50')
+    const limit = pageSize
+    const offset = (page - 1) * pageSize
 
     // Build query conditions - filter by admin's company
     const conditions = [eq(subcontractors.companyId, auth.admin.companyId)]
@@ -71,19 +73,31 @@ export async function GET(request: NextRequest) {
       conditions.push(searchCondition)
     }
 
-    // Execute query
+    // Get total count for pagination
+    const countResult = await db.select({ count: sql`count(*)` }).from(subcontractors)
+      .where(and(...conditions))
+    const totalCount = Number(countResult[0].count)
+
+    // Execute query with pagination
     const result = await db.select().from(subcontractors)
       .where(and(...conditions))
       .orderBy(desc(subcontractors.createdAt))
       .limit(limit)
       .offset(offset)
 
+    const totalPages = Math.ceil(totalCount / pageSize)
+    const hasNextPage = page < totalPages
+    const hasPreviousPage = page > 1
+
     return NextResponse.json({
       subcontractors: result,
-      meta: {
-        limit,
-        offset,
-        companyId: auth.admin.companyId
+      pagination: {
+        page,
+        pageSize,
+        total: totalCount,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage
       }
     })
 

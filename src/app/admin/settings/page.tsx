@@ -312,7 +312,10 @@ export default function SettingsPage() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="w-32">
                     <Languages className="h-4 w-4 mr-2" />
-                    {i18n.language === 'es' ? t('settings.spanish') : t('settings.english')}
+                    {i18n.language === 'es' ? t('settings.spanish') : 
+                     i18n.language === 'pl' ? t('settings.polish') :
+                     i18n.language === 'zh' ? t('settings.chinese') :
+                     t('settings.english')}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -321,6 +324,12 @@ export default function SettingsPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleLanguageChange('es')}>
                     {t('settings.spanish')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleLanguageChange('pl')}>
+                    {t('settings.polish')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleLanguageChange('zh')}>
+                    {t('settings.chinese')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

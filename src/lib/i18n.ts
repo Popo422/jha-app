@@ -4,6 +4,8 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 import en from '../locales/en/common.json';
 import es from '../locales/es/common.json';
+import pl from '../locales/pl/common.json';
+import zh from '../locales/zh/common.json';
 
 const resources = {
   en: {
@@ -11,6 +13,12 @@ const resources = {
   },
   es: {
     common: es,
+  },
+  pl: {
+    common: pl,
+  },
+  zh: {
+    common: zh,
   },
 };
 

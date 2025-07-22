@@ -45,7 +45,8 @@ export default function ProjectSelect({
 
   const { data: projectsData, isLoading } = useGetProjectsQuery({
     search: searchTerm,
-    limit: 100
+    pageSize: 1000,
+    page: 1
   })
 
   const projects = projectsData?.projects || []

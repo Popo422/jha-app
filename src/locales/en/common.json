@@ -208,7 +208,9 @@
     "submissions": "submissions",
     "total": "total",
     "by": "by",
-    "cannotBeUndone": "This action cannot be undone."
+    "cannotBeUndone": "This action cannot be undone.",
+    "contractorsSelected": "contractors selected",
+    "subcontractorsSelected": "subcontractors selected"
   },
   "settings": {
     "title": "Settings",
@@ -216,6 +218,8 @@
     "selectLanguage": "Select Language",
     "english": "English",
     "spanish": "Spanish",
+    "polish": "Polish",
+    "chinese": "Chinese",
     "save": "Save",
     "saved": "Settings saved successfully",
     "managePreferences": "Manage your preferences and application settings",
@@ -355,7 +359,8 @@
     "jobNamePlaceholder": "Name or title of the job",
     "hoursSpentOnSite": "Hours spent on site",
     "jobDescriptionPlaceholder": "Describe the work performed...",
-    "projectName": "Name of project"
+    "projectName": "Name of project",
+    "searchSubcontractors": "Search subcontractors..."
   },
   "safety": {
     "toolInspection": "Tool Inspection",

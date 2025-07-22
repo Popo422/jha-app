@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, type Contractor } from "@/lib/features/contractors/contractorsApi";
+import { useContractorExportAll } from "@/hooks/useExportAll";
 import { useCreateSubcontractorMutation } from "@/lib/features/subcontractors/subcontractorsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
@@ -48,9 +49,17 @@ export default function ContractorsPage() {
   });
   
   const [deleteContractor, { isLoading: isDeleting }] = useDeleteContractorMutation();
+  const exportAllContractors = useContractorExportAll();
   const [createContractor, { isLoading: isCreating, error: createError }] = useCreateContractorMutation();
   const [updateContractor, { isLoading: isUpdating, error: updateError }] = useUpdateContractorMutation();
   const [createSubcontractor, { isLoading: isCreatingSubcontractor }] = useCreateSubcontractorMutation();
+
+  // Function to fetch all contractors for export
+  const handleExportAll = useCallback(async () => {
+    return await exportAllContractors({
+      search: debouncedSearch || undefined,
+    });
+  }, [exportAllContractors, debouncedSearch]);
 
   const isFormLoading = isCreating || isUpdating;
   const formError = createError || updateError;
@@ -396,9 +405,17 @@ export default function ContractorsPage() {
       ),
       cell: ({ getValue }) => {
         const language = getValue() as string | null;
+        const getLanguageDisplay = (lang: string | null) => {
+          switch (lang) {
+            case 'es': return 'Español';
+            case 'pl': return 'Polski';
+            case 'zh': return '中文';
+            default: return 'English';
+          }
+        };
         return (
           <div className="text-sm">
-            {language === 'es' ? 'Español' : 'English'}
+            {getLanguageDisplay(language)}
           </div>
         );
       },
@@ -597,7 +614,10 @@ export default function ContractorsPage() {
                     disabled={isFormLoading}
                     className="w-full justify-between"
                   >
-                    {formData.language === 'en' ? 'English' : 'Español'}
+                    {formData.language === 'en' ? 'English' : 
+                     formData.language === 'es' ? 'Español' :
+                     formData.language === 'pl' ? 'Polski' :
+                     formData.language === 'zh' ? '中文' : 'English'}
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -611,6 +631,16 @@ export default function ContractorsPage() {
                     onClick={() => setFormData(prev => ({ ...prev, language: 'es' }))}
                   >
                     Español
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, language: 'pl' }))}
+                  >
+                    Polski
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, language: 'zh' }))}
+                  >
+                    中文
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -696,11 +726,14 @@ export default function ContractorsPage() {
           contractor.code,
           `$${(contractor.rate ? parseFloat(contractor.rate) : 0).toFixed(2)}${t('contractors.perHour')}`,
           contractor.companyName || "",
-          contractor.language === 'es' ? 'Español' : 'English',
+          contractor.language === 'es' ? 'Español' :
+          contractor.language === 'pl' ? 'Polski' :
+          contractor.language === 'zh' ? '中文' : 'English',
           new Date(contractor.createdAt).toLocaleDateString()
         ]}
         searchValue={search}
         onSearchChange={setSearch}
+        onExportAll={handleExportAll}
       />
     </div>
   );

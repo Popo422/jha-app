@@ -31,11 +31,22 @@ export interface SubmissionResponse {
   error?: string
 }
 
+export interface PaginationInfo {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
 export interface GetSubmissionsResponse {
   submissions: Submission[]
+  pagination?: PaginationInfo | null
   meta: {
-    limit: number
-    offset: number
+    limit: number | null
+    offset: number | null
+    fetchAll?: boolean
     isAdmin: boolean
     userId: string | null
   }
@@ -138,15 +149,28 @@ export const submissionsApi = createApi({
       dateTo?: string
       company?: string
       search?: string
+      page?: number
+      pageSize?: number
       limit?: number
       offset?: number
+      fetchAll?: boolean
       authType?: 'contractor' | 'admin' | 'any'
     }>({
-      query: ({ type, dateFrom, dateTo, company, search, limit = 50, offset = 0, authType }) => {
-        const params = new URLSearchParams({
-          limit: limit.toString(),
-          offset: offset.toString(),
-        })
+      query: ({ type, dateFrom, dateTo, company, search, page, pageSize, limit, offset, fetchAll, authType }) => {
+        const params = new URLSearchParams()
+        
+        if (fetchAll) {
+          params.append('fetchAll', 'true')
+        } else {
+          // Use page/pageSize if provided, otherwise fall back to limit/offset
+          if (page !== undefined && pageSize !== undefined) {
+            params.append('page', page.toString())
+            params.append('pageSize', pageSize.toString())
+          } else {
+            params.append('limit', (limit || 50).toString())
+            params.append('offset', (offset || 0).toString())
+          }
+        }
         
         if (type) {
           params.append('type', type)

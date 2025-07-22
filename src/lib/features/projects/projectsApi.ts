@@ -23,13 +23,18 @@ export interface UpdateProjectRequest {
   location: string
 }
 
+export interface PaginationInfo {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
 export interface ProjectsResponse {
   projects: Project[]
-  meta: {
-    limit: number
-    offset: number
-    companyId: string
-  }
+  pagination?: PaginationInfo
 }
 
 export interface ProjectResponse {
@@ -63,11 +68,11 @@ export const projectsApi = createApi({
   }),
   tagTypes: ['Project'],
   endpoints: (builder) => ({
-    getProjects: builder.query<ProjectsResponse, { search?: string; limit?: number; offset?: number }>({
-      query: ({ search, limit = 50, offset = 0 } = {}) => {
+    getProjects: builder.query<ProjectsResponse, { search?: string; page?: number; pageSize?: number }>({
+      query: ({ search, page = 1, pageSize = 50 } = {}) => {
         const params = new URLSearchParams({
-          limit: limit.toString(),
-          offset: offset.toString(),
+          page: page.toString(),
+          pageSize: pageSize.toString(),
         })
         if (search) {
           params.append('search', search)

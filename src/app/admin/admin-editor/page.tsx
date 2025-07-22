@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppSelector } from '@/lib/hooks'
+import { useGetAdminUsersQuery, useCreateAdminUserMutation, useUpdateAdminUserMutation, useDeleteAdminUserMutation, type AdminUser, type PaginationInfo } from '@/lib/features/admin-users/adminUsersApi'
+import { useAdminUserExportAll } from '@/hooks/useExportAll'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,23 +14,13 @@ import { Separator } from '@/components/ui/separator'
 import { AdminDataTable } from '@/components/admin/AdminDataTable'
 import { Plus, UserCheck, Shield, Lock, ArrowLeft, Eye, EyeOff, Save, X } from 'lucide-react'
 
-interface AdminUser {
-  id: string
-  email: string
-  name: string
-  role: 'admin' | 'super-admin'
-  companyName: string
-  createdAt: string
-}
+// AdminUser interface is now imported from the API
 
 export default function AdminEditorPage() {
   const { t } = useTranslation('common')
   const { admin } = useAppSelector((state) => state.auth)
-  const [admins, setAdmins] = useState<AdminUser[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [currentView, setCurrentView] = useState<'list' | 'add' | 'edit'>('list')
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -39,31 +31,95 @@ export default function AdminEditorPage() {
     confirmPassword: '',
     role: 'admin' as 'admin' | 'super-admin'
   })
+  const [clientPagination, setClientPagination] = useState({
+    currentPage: 1,
+    pageSize: 10
+  });
+  const [serverPagination, setServerPagination] = useState({
+    page: 1,
+    pageSize: 50
+  });
+
+  // RTK Query hooks
+  const { data: adminUsersData, isLoading, isFetching, refetch } = useGetAdminUsersQuery({
+    page: serverPagination.page,
+    pageSize: serverPagination.pageSize
+  });
+  
+  const [createAdminUser, { isLoading: isCreating }] = useCreateAdminUserMutation();
+  const [updateAdminUser, { isLoading: isUpdating }] = useUpdateAdminUserMutation();
+  const [deleteAdminUser] = useDeleteAdminUserMutation();
+  const exportAllAdminUsers = useAdminUserExportAll();
+
+  // Function to fetch all admin users for export
+  const handleExportAll = useCallback(async () => {
+    return await exportAllAdminUsers({});
+  }, [exportAllAdminUsers]);
+
+  const allAdmins = adminUsersData?.adminUsers || [];
+  const serverPaginationInfo = adminUsersData?.pagination;
+
+  // Client-side pagination logic
+  const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
+  const endIndex = startIndex + clientPagination.pageSize;
+  const data = allAdmins.slice(startIndex, endIndex);
+  
+  // Create client pagination info
+  const totalClientPages = Math.ceil(allAdmins.length / clientPagination.pageSize);
+  
+  // Calculate total pages considering both client view and server data
+  const estimatedTotalRecords = serverPaginationInfo?.total || allAdmins.length;
+  const estimatedTotalPages = Math.ceil(estimatedTotalRecords / clientPagination.pageSize);
+  
+  const paginationInfo = {
+    page: clientPagination.currentPage,
+    pageSize: clientPagination.pageSize,
+    total: estimatedTotalRecords,
+    totalPages: estimatedTotalPages,
+    hasNextPage: clientPagination.currentPage < totalClientPages || (serverPaginationInfo?.hasNextPage || false),
+    hasPreviousPage: clientPagination.currentPage > 1
+  };
+
+  // Check if we need to prefetch next batch
+  const shouldPrefetch = clientPagination.currentPage >= totalClientPages - 2 && serverPaginationInfo?.hasNextPage;
 
   useEffect(() => {
     // Check if current user is at least admin
     if (!admin || !['admin', 'super-admin'].includes(admin.role)) {
-      alert(t('admin.accessDenied'))
-      window.location.href = '/admin'
+      // Use a timeout to avoid setState during render
+      setTimeout(() => {
+        alert(t('admin.accessDenied'))
+        window.location.href = '/admin'
+      }, 0)
       return
     }
-    
-    fetchAdmins()
-  }, [admin])
+  }, [admin, t])
 
-  const fetchAdmins = async () => {
-    try {
-      const response = await fetch('/api/admin/users')
-      if (response.ok) {
-        const data = await response.json()
-        setAdmins(data.admins)
-      }
-    } catch (error) {
-      console.error('Error fetching admins:', error)
-    } finally {
-      setIsLoading(false)
+  const handlePageChange = useCallback((page: number) => {
+    const totalClientPages = Math.ceil(allAdmins.length / clientPagination.pageSize);
+    
+    if (page <= totalClientPages) {
+      // Navigate within current batch
+      setClientPagination(prev => ({ ...prev, currentPage: page }));
+    } else {
+      // Need to fetch next batch
+      const nextServerPage = serverPagination.page + 1;
+      setServerPagination(prev => ({ ...prev, page: nextServerPage }));
+      setClientPagination({ currentPage: 1, pageSize: clientPagination.pageSize });
     }
-  }
+  }, [allAdmins.length, clientPagination.pageSize, serverPagination.page]);
+
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setClientPagination({ currentPage: 1, pageSize });
+  }, []);
+
+  // Prefetch next batch when near end
+  const { data: prefetchData } = useGetAdminUsersQuery({
+    page: serverPagination.page + 1,
+    pageSize: serverPagination.pageSize
+  }, {
+    skip: !shouldPrefetch
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -124,13 +180,12 @@ export default function AdminEditorPage() {
       setErrors(newErrors)
       return
     }
-    
-    setIsSubmitting(true)
 
     try {
       if (currentView === 'edit' && editingAdmin) {
         // Update existing admin
         const updateData: any = {
+          id: editingAdmin.id,
           name: formData.name,
           email: formData.email,
           role: formData.role
@@ -141,78 +196,36 @@ export default function AdminEditorPage() {
           updateData.password = formData.password
         }
         
-        const response = await fetch(`/api/admin/users/${editingAdmin.id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(updateData)
-        })
-
-        if (response.ok) {
-          // Success - reset form and go back to list
-          setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin' })
-          setEditingAdmin(null)
-          setErrors({})
-          setCurrentView('list')
-          fetchAdmins()
-        } else {
-          const error = await response.json()
-          setErrors({ submit: error.message || 'Failed to update admin user' })
-        }
+        await updateAdminUser(updateData).unwrap()
+        
+        // Success - reset form and go back to list
+        setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin' })
+        setEditingAdmin(null)
+        setErrors({})
+        setCurrentView('list')
       } else {
         // Create new admin
-        const response = await fetch('/api/admin/users', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        })
+        await createAdminUser({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role
+        }).unwrap()
 
-        if (response.ok) {
-          // Success - reset form and go back to list
-          setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin' })
-          setErrors({})
-          setCurrentView('list')
-          fetchAdmins()
-        } else {
-          const error = await response.json()
-          setErrors({ submit: error.message || 'Failed to create admin user' })
-        }
+        // Success - reset form and go back to list
+        setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin' })
+        setErrors({})
+        setCurrentView('list')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving admin:', error)
-      setErrors({ submit: 'An error occurred while saving the admin user' })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleEdit = async (adminId: string, updates: Partial<AdminUser>) => {
-    try {
-      const response = await fetch(`/api/admin/users/${adminId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updates)
-      })
-
-      if (response.ok) {
-        fetchAdmins()
-      } else {
-        const error = await response.json()
-        console.error('Update error:', error.message)
-      }
-    } catch (error) {
-      console.error('Error updating admin:', error)
+      setErrors({ submit: error.data?.message || 'An error occurred while saving the admin user' })
     }
   }
 
   const handleDelete = async (adminId: string) => {
     // Find the admin to delete
-    const adminToDelete = admins.find(a => a.id === adminId)
+    const adminToDelete = allAdmins.find(a => a.id === adminId)
     
     if (!adminToDelete) {
       return
@@ -229,17 +242,8 @@ export default function AdminEditorPage() {
     }
 
     try {
-      const response = await fetch(`/api/admin/users/${adminId}`, {
-        method: 'DELETE'
-      })
-
-      if (response.ok) {
-        fetchAdmins()
-      } else {
-        const error = await response.json()
-        console.error('Delete error:', error.message)
-      }
-    } catch (error) {
+      await deleteAdminUser(adminId).unwrap()
+    } catch (error: any) {
       console.error('Error deleting admin:', error)
     }
   }
@@ -341,7 +345,7 @@ export default function AdminEditorPage() {
                   onChange={handleInputChange}
                   placeholder={t('admin.enterFullName')}
                   className={errors.name ? 'border-red-500' : ''}
-                  disabled={isSubmitting}
+                  disabled={isCreating || isUpdating}
                 />
                 {errors.name && (
                   <p className="text-sm text-red-500">{errors.name}</p>
@@ -359,7 +363,7 @@ export default function AdminEditorPage() {
                   onChange={handleInputChange}
                   placeholder={t('admin.adminEmailPlaceholder')}
                   className={errors.email ? 'border-red-500' : ''}
-                  disabled={isSubmitting}
+                  disabled={isCreating || isUpdating}
                 />
                 {errors.email && (
                   <p className="text-sm text-red-500">{errors.email}</p>
@@ -374,7 +378,7 @@ export default function AdminEditorPage() {
                 name="role"
                 value={formData.role}
                 onChange={handleInputChange}
-                disabled={isSubmitting}
+                disabled={isCreating || isUpdating}
                 className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.role ? 'border-red-500' : ''}`}
               >
                 <option value="admin">{t('admin.admin')}</option>
@@ -405,7 +409,7 @@ export default function AdminEditorPage() {
                       : t('admin.enterSecurePassword')
                     }
                     className={errors.password ? 'border-red-500' : ''}
-                    disabled={isSubmitting}
+                    disabled={isCreating || isUpdating}
                     minLength={8}
                   />
                   <Button
@@ -414,7 +418,7 @@ export default function AdminEditorPage() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
-                    disabled={isSubmitting}
+                    disabled={isCreating || isUpdating}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
@@ -441,7 +445,7 @@ export default function AdminEditorPage() {
                       : t('admin.confirmPassword')
                     }
                     className={errors.confirmPassword ? 'border-red-500' : ''}
-                    disabled={isSubmitting}
+                    disabled={isCreating || isUpdating}
                     minLength={8}
                   />
                   <Button
@@ -450,7 +454,7 @@ export default function AdminEditorPage() {
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    disabled={isSubmitting}
+                    disabled={isCreating || isUpdating}
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
@@ -470,11 +474,11 @@ export default function AdminEditorPage() {
             <div className="flex space-x-4 pt-4">
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isCreating || isUpdating}
                 className="flex items-center space-x-2"
               >
                 <Save className="h-4 w-4" />
-                <span>{isSubmitting 
+                <span>{(isCreating || isUpdating)
                   ? (currentView === 'edit' ? t('admin.updating') : t('admin.creating')) 
                   : (currentView === 'edit' ? t('admin.updateAdmin') : t('admin.addAdmin'))
                 }</span>
@@ -488,7 +492,7 @@ export default function AdminEditorPage() {
                   setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin' })
                   setErrors({})
                 }}
-                disabled={isSubmitting}
+                disabled={isCreating || isUpdating}
                 className="flex items-center space-x-2"
               >
                 <X className="h-4 w-4" />
@@ -538,9 +542,9 @@ export default function AdminEditorPage() {
         <CardContent>
           <AdminDataTable
             columns={columns}
-            data={admins}
+            data={data}
             isLoading={isLoading}
-            isFetching={false}
+            isFetching={isFetching}
             onEdit={admin?.role === 'super-admin' ? (adminUser) => {
               setEditingAdmin(adminUser)
               setFormData({
@@ -564,6 +568,11 @@ export default function AdminEditorPage() {
               admin.companyName || '',
               new Date(admin.createdAt).toLocaleDateString()
             ]}
+            serverSide={true}
+            pagination={paginationInfo}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            onExportAll={handleExportAll}
           />
         </CardContent>
       </Card>

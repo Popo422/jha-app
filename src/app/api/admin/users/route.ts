@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { users, companies } from '@/lib/db/schema'
-import { eq, and, or } from 'drizzle-orm'
+import { eq, and, or, sql } from 'drizzle-orm'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 
@@ -36,22 +36,40 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get all admin users from the same company
-    const adminUsers = await db.select({
+    // Get query parameters for pagination
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const pageSize = parseInt(searchParams.get('pageSize') || '50')
+    const fetchAll = searchParams.get('fetchAll') === 'true'
+    const limit = fetchAll ? undefined : pageSize
+    const offset = fetchAll ? undefined : (page - 1) * pageSize
+
+    // Build conditions
+    const conditions = and(
+      eq(users.companyId, admin.companyId),
+      or(
+        eq(users.role, 'admin'),
+        eq(users.role, 'super-admin')
+      )
+    )
+
+    // Get total count for pagination
+    const countResult = await db.select({ count: sql`count(*)` }).from(users)
+      .where(conditions)
+    const totalCount = Number(countResult[0].count)
+
+    // Get admin users from the same company with pagination
+    const baseQuery = db.select({
       user: users,
       company: companies
     })
     .from(users)
     .leftJoin(companies, eq(users.companyId, companies.id))
-    .where(
-      and(
-        eq(users.companyId, admin.companyId),
-        or(
-          eq(users.role, 'admin'),
-          eq(users.role, 'super-admin')
-        )
-      )
-    )
+    .where(conditions)
+    
+    const adminUsers = fetchAll
+      ? await baseQuery
+      : await baseQuery.limit(limit!).offset(offset!)
 
     const admins = adminUsers.map(({ user, company }) => ({
       id: user.id,
@@ -62,7 +80,21 @@ export async function GET(request: NextRequest) {
       createdAt: user.createdAt
     }))
 
-    return NextResponse.json({ admins })
+    const totalPages = Math.ceil(totalCount / pageSize)
+    const hasNextPage = page < totalPages
+    const hasPreviousPage = page > 1
+
+    return NextResponse.json({ 
+      adminUsers: admins,
+      pagination: fetchAll ? null : {
+        page,
+        pageSize,
+        total: totalCount,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage
+      }
+    })
   } catch (error) {
     console.error('Error fetching admin users:', error)
     return NextResponse.json(

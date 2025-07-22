@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { toolboxTalks } from '@/lib/db/schema'
 
@@ -119,7 +119,7 @@ interface AdminTokenPayload {
   exp: number
 }
 
-// GET - Fetch all toolbox talks for admin (drafts and published)
+// GET - Fetch toolbox talks for admin with pagination (drafts and published)
 export async function GET(request: NextRequest) {
   try {
     // Only admins can access this endpoint
@@ -135,12 +135,45 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Company ID required' }, { status: 400 })
     }
 
-    // Get all toolbox talks for the admin's company
-    const talks = await db.select().from(toolboxTalks).where(
-      eq(toolboxTalks.companyId, companyId)
-    ).orderBy(desc(toolboxTalks.createdAt))
+    // Get query parameters for pagination
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const pageSize = parseInt(searchParams.get('pageSize') || '50')
+    const fetchAll = searchParams.get('fetchAll') === 'true'
+    const limit = fetchAll ? undefined : pageSize
+    const offset = fetchAll ? undefined : (page - 1) * pageSize
 
-    return NextResponse.json({ toolboxTalks: talks })
+    // Build conditions
+    const conditions = eq(toolboxTalks.companyId, companyId)
+
+    // Get total count for pagination
+    const countResult = await db.select({ count: sql`count(*)` }).from(toolboxTalks)
+      .where(conditions)
+    const totalCount = Number(countResult[0].count)
+
+    // Get toolbox talks for the admin's company with pagination
+    const baseQuery = db.select().from(toolboxTalks).where(conditions)
+      .orderBy(desc(toolboxTalks.createdAt))
+    
+    const talks = fetchAll
+      ? await baseQuery
+      : await baseQuery.limit(limit!).offset(offset!)
+
+    const totalPages = Math.ceil(totalCount / pageSize)
+    const hasNextPage = page < totalPages
+    const hasPreviousPage = page > 1
+
+    return NextResponse.json({ 
+      toolboxTalks: talks,
+      pagination: fetchAll ? null : {
+        page,
+        pageSize,
+        total: totalCount,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage
+      }
+    })
 
   } catch (error) {
     console.error('Get admin toolbox talks error:', error)
