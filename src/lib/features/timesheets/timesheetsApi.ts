@@ -62,6 +62,25 @@ export interface DeleteTimesheetResponse {
   error?: string
 }
 
+export interface TimesheetAggregate {
+  employee: string
+  company: string
+  totalHours: number
+  totalCost: number
+  entriesCount: number
+  projectNames: string
+  latestDate: string
+}
+
+export interface GetTimesheetAggregatesResponse {
+  aggregates: TimesheetAggregate[]
+  meta: {
+    isAdmin: boolean
+    userId: string | null
+    approvedOnly: boolean
+  }
+}
+
 export interface UpdateTimesheetData {
   id: string
   date: string
@@ -206,6 +225,44 @@ export const timesheetsApi = createApi({
       },
       invalidatesTags: ['Timesheet'],
     }),
+    getTimesheetAggregates: builder.query<GetTimesheetAggregatesResponse, { 
+      dateFrom?: string
+      dateTo?: string
+      company?: string
+      search?: string
+      jobName?: string
+      employees?: string
+      authType?: 'contractor' | 'admin' | 'any'
+    }>({
+      query: ({ dateFrom, dateTo, company, search, jobName, employees, authType }) => {
+        const params = new URLSearchParams()
+        
+        if (dateFrom) {
+          params.append('dateFrom', dateFrom)
+        }
+        if (dateTo) {
+          params.append('dateTo', dateTo)
+        }
+        if (company) {
+          params.append('company', company)
+        }
+        if (search) {
+          params.append('search', search)
+        }
+        if (jobName) {
+          params.append('jobName', jobName)
+        }
+        if (employees) {
+          params.append('employees', employees)
+        }
+        if (authType) {
+          params.append('authType', authType)
+        }
+        
+        return `aggregates?${params}`
+      },
+      providesTags: ['Timesheet'],
+    }),
   }),
 })
 
@@ -214,5 +271,7 @@ export const {
   useGetTimesheetsQuery,
   useLazyGetTimesheetsQuery,
   useDeleteTimesheetMutation,
-  useUpdateTimesheetMutation
+  useUpdateTimesheetMutation,
+  useGetTimesheetAggregatesQuery,
+  useLazyGetTimesheetAggregatesQuery
 } = timesheetsApi

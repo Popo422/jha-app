@@ -124,3 +124,17 @@ export const toolboxTalks = pgTable('toolbox_talks', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 
+export const toolboxTalkReadEntries = pgTable('toolbox_talk_read_entries', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  toolboxTalkId: uuid('toolbox_talk_id').notNull(),
+  companyId: uuid('company_id').notNull(),
+  readBy: text('read_by').notNull(), // Name of the person who read it
+  dateRead: text('date_read').notNull(), // Date when read (YYYY-MM-DD format)
+  signature: text('signature').notNull(), // Digital signature
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: prevent duplicate readings by same person for same talk
+  talkReadByUnique: unique().on(table.toolboxTalkId, table.readBy, table.companyId),
+}))
+

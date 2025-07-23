@@ -65,6 +65,13 @@ export interface DeleteContractorResponse {
   message: string
 }
 
+export interface ContractorLimitResponse {
+  canAdd: boolean
+  currentCount: number
+  limit: number
+  membershipLevel: string | null
+}
+
 export const contractorsApi = createApi({
   reducerPath: 'contractorsApi',
   baseQuery: fetchBaseQuery({
@@ -133,6 +140,10 @@ export const contractorsApi = createApi({
       }),
       invalidatesTags: ['Contractor'],
     }),
+    getContractorLimit: builder.query<ContractorLimitResponse, void>({
+      query: () => 'limit',
+      providesTags: ['Contractor'],
+    }),
   }),
 })
 
@@ -142,6 +153,7 @@ export const {
   useCreateContractorMutation,
   useUpdateContractorMutation,
   useDeleteContractorMutation,
+  useGetContractorLimitQuery,
 } = contractorsApi
 
 export type GetContractorsResponse = ContractorsResponse;

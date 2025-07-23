@@ -2,12 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSelector } from 'react-redux'
+import { RootState } from '@/lib/store'
 import Header from '@/components/Header'
 import AppSidebar from '@/components/AppSidebar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CalendarDays, Clock, User, Eye, RefreshCw } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import SignatureCanvas from '@/components/SignatureCanvas'
+import { useCreateReadEntryMutation, useLazyGetReadEntriesQuery } from '@/lib/features/toolbox-talks/toolboxTalksApi'
+import ContractorSelect from '@/components/ContractorSelect'
+import { CalendarDays, Clock, User, Eye, RefreshCw, CheckCircle, Send } from 'lucide-react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { ImageResize } from 'tiptap-extension-resize-image'
@@ -39,10 +46,27 @@ type ToolboxTalk = {
 
 export default function ToolboxTalksPage() {
   const { t } = useTranslation('common');
+  const { contractor } = useSelector((state: RootState) => state.auth);
   const [toolboxTalks, setToolboxTalks] = useState<ToolboxTalk[]>([]);
   const [selectedTalk, setSelectedTalk] = useState<ToolboxTalk | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasAlreadyRead, setHasAlreadyRead] = useState(false);
+  const [checkingReadStatus, setCheckingReadStatus] = useState(false);
+  
+  // Read form state
+  const [showReadForm, setShowReadForm] = useState(false);
+  const [readFormData, setReadFormData] = useState({
+    readBy: contractor?.name || '',
+    dateRead: new Date().toISOString().split('T')[0], // Today's date
+    signature: '',
+  });
+  const [readFormErrors, setReadFormErrors] = useState<Record<string, string>>({});
+  const [isSubmittingRead, setIsSubmittingRead] = useState(false);
+  const [readSuccess, setReadSuccess] = useState(false);
+  
+  const [createReadEntry] = useCreateReadEntryMutation();
+  const [getReadEntries] = useLazyGetReadEntriesQuery();
 
   // Read-only TipTap editor for displaying content
   const contentEditor = useEditor({
@@ -109,10 +133,35 @@ export default function ToolboxTalksPage() {
     }
   };
 
+  // Check if user has already read the selected toolbox talk using RTK Query
+  const checkIfAlreadyRead = async (toolboxTalkId: string) => {
+    if (!contractor?.companyId || !contractor?.name) return;
+    
+    setCheckingReadStatus(true);
+    try {
+      const result = await getReadEntries({
+        companyId: contractor.companyId,
+        toolboxTalkId: toolboxTalkId
+      }).unwrap();
+      
+      // Check if current user has already read this talk
+      const userHasRead = result.readEntries?.some((entry) => 
+        entry.readBy === contractor.name
+      );
+      setHasAlreadyRead(userHasRead);
+    } catch (error) {
+      console.error('Error checking read status:', error);
+      setHasAlreadyRead(false);
+    } finally {
+      setCheckingReadStatus(false);
+    }
+  };
+
   // Load data on component mount
   useEffect(() => {
     loadToolboxTalks();
   }, []);
+
 
 
   const formatDate = (dateString: string) => {
@@ -134,6 +183,76 @@ export default function ToolboxTalksPage() {
     if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
     return `${Math.floor(diffInDays / 30)} months ago`;
   };
+
+  // Validate read form
+  const validateReadForm = () => {
+    const errors: Record<string, string> = {};
+    if (readFormData.readBy && !readFormData.readBy.trim()) {
+      errors.readBy = t('contractors.firstNameRequired'); // Reuse existing translation
+    }
+    
+    if (!readFormData.dateRead) {
+      errors.dateRead = 'Date is required';
+    }
+    
+    if (!readFormData.signature) {
+      errors.signature = t('toolbox.signatureRequired');
+    }
+    
+    setReadFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handle read form submission
+  const handleReadFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedTalk || !contractor?.companyId) return;
+    
+    if (!validateReadForm()) return;
+    
+    setIsSubmittingRead(true);
+    
+    try {
+      await createReadEntry({
+        toolboxTalkId: selectedTalk.id,
+        companyId: contractor.companyId,
+        readBy: readFormData.readBy.trim(),
+        dateRead: readFormData.dateRead,
+        signature: readFormData.signature,
+      }).unwrap();
+      
+      setReadSuccess(true);
+      setShowReadForm(false);
+      // Reset form
+      setReadFormData({
+        readBy: '',
+        dateRead: new Date().toISOString().split('T')[0],
+        signature: '',
+      });
+    } catch (error: any) {
+      console.error('Error submitting read entry:', error);
+      setReadFormErrors({
+        submit: error?.data?.error || 'Failed to submit read entry'
+      });
+    } finally {
+      setIsSubmittingRead(false);
+    }
+  };
+
+  // Handle contractor selection
+  const handleContractorSelect = (contractor: { firstName: string; lastName: string; code?: string }) => {
+    setReadFormData(prev => ({
+      ...prev,
+      readBy: `${contractor.firstName} ${contractor.lastName}`
+    }));
+  };
+
+  // Reset success state when selecting new talk
+  useEffect(() => {
+    setReadSuccess(false);
+    setShowReadForm(false);
+  }, [selectedTalk]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -169,8 +288,134 @@ export default function ToolboxTalksPage() {
                   </div>
                 </header>
 
-                <div className="readonly-editor">
+                <div className="readonly-editor mb-8">
                   <EditorContent editor={contentEditor} />
+                </div>
+
+                {/* Read Confirmation Section */}
+                <div className="border-t pt-8">
+                  {checkingReadStatus ? (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-3 text-gray-600">
+                          <div className="h-4 w-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                          <span>Checking read status...</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : hasAlreadyRead ? (
+                    <Card className="bg-green-50 border-green-200">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-3 text-green-800">
+                          <CheckCircle className="h-5 w-5" />
+                          <span className="font-medium">You have already read this toolbox talk</span>
+                        </div>
+                        <p className="text-green-700 mt-2">Your read confirmation has been recorded.</p>
+                      </CardContent>
+                    </Card>
+                  ) : readSuccess ? (
+                    <Card className="bg-green-50 border-green-200">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-3 text-green-800">
+                          <CheckCircle className="h-5 w-5" />
+                          <span className="font-medium">{t('toolbox.thankYouForReading')}</span>
+                        </div>
+                        <p className="text-green-700 mt-2">{t('toolbox.readConfirmationRecorded')}</p>
+                      </CardContent>
+                    </Card>
+                  ) : !showReadForm ? (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{t('toolbox.markAsRead')}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                          {t('toolbox.confirmReadAndUnderstood')}
+                        </p>
+                        <Button onClick={() => setShowReadForm(true)} className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          {t('toolbox.iHaveReadThisToolboxTalk')}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{t('toolbox.readConfirmation')}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={handleReadFormSubmit} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="readBy">{t('toolbox.readBy')} *</Label>
+                            <ContractorSelect
+                              id="readBy"
+                              name='readBy'
+                              value={readFormData.readBy}
+                              onChange={(value) => setReadFormData(prev => ({ ...prev, readBy: value }))}
+                              placeholder="Select your name or enter manually"
+                              className={readFormErrors.readBy ? 'border-red-500' : ''}
+                            />
+                            {readFormErrors.readBy && (
+                              <p className="text-sm text-red-500">{readFormErrors.readBy}</p>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="dateRead">{t('toolbox.dateRead')} *</Label>
+                            <Input
+                              id="dateRead"
+                              type="date"
+                              value={readFormData.dateRead}
+                              onChange={(e) => setReadFormData(prev => ({ ...prev, dateRead: e.target.value }))}
+                              className={readFormErrors.dateRead ? 'border-red-500' : ''}
+                            />
+                            {readFormErrors.dateRead && (
+                              <p className="text-sm text-red-500">{readFormErrors.dateRead}</p>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <SignatureCanvas
+                              onSignatureChange={(signature) => setReadFormData(prev => ({ ...prev, signature }))}
+                              className={readFormErrors.signature ? 'border-red-500' : ''}
+                            />
+                            {readFormErrors.signature && (
+                              <p className="text-sm text-red-500">{readFormErrors.signature}</p>
+                            )}
+                          </div>
+
+                          {readFormErrors.submit && (
+                            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
+                              {readFormErrors.submit}
+                            </div>
+                          )}
+
+                          <div className="flex gap-3">
+                            <Button
+                              type="submit"
+                              disabled={isSubmittingRead}
+                              className="flex items-center gap-2"
+                            >
+                              {isSubmittingRead ? (
+                                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Send className="h-4 w-4" />
+                              )}
+                              {isSubmittingRead ? t('toolbox.submitting') : t('toolbox.submitReadConfirmation')}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setShowReadForm(false)}
+                              disabled={isSubmittingRead}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </article>
             </div>
@@ -220,7 +465,10 @@ export default function ToolboxTalksPage() {
               ) : (
                 <div className="grid gap-6">
                   {toolboxTalks.map((talk) => (
-                    <Card key={talk.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedTalk(talk)}>
+                    <Card key={talk.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => {
+                      setSelectedTalk(talk);
+                      checkIfAlreadyRead(talk.id);
+                    }}>
                       <CardHeader>
                         <div className="flex justify-between items-start">
                           <div className="flex-1">

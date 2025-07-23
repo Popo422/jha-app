@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, type Contractor } from "@/lib/features/contractors/contractorsApi";
+import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, useGetContractorLimitQuery, type Contractor } from "@/lib/features/contractors/contractorsApi";
 import { useContractorExportAll } from "@/hooks/useExportAll";
 import { useCreateSubcontractorMutation } from "@/lib/features/subcontractors/subcontractorsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
@@ -47,6 +47,8 @@ export default function ContractorsPage() {
   const { data: contractorsData, isLoading, error, refetch } = useGetContractorsQuery({
     search: debouncedSearch || undefined,
   });
+
+  const { data: limitData } = useGetContractorLimitQuery();
   
   const [deleteContractor, { isLoading: isDeleting }] = useDeleteContractorMutation();
   const exportAllContractors = useContractorExportAll();
@@ -702,10 +704,17 @@ export default function ContractorsPage() {
 {t('contractors.manageContractorAccounts')}
             </p>
           </div>
-          <Button onClick={handleAdd} className="flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
-            <span>{t('contractors.addContractor')}</span>
-          </Button>
+          <div className="flex items-center space-x-4">
+            {limitData && (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {`${t('contractors.contractorsLimitRemaining')} ${limitData.limit - limitData.currentCount}`}
+              </div>
+            )}
+            <Button onClick={handleAdd} className="flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>{t('contractors.addContractor')}</span>
+            </Button>
+          </div>
         </div>
       </div>
 

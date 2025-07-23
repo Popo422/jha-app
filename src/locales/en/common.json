@@ -106,6 +106,9 @@
     "costPerProject": "Cost per Project",
     "jobSite": "Job Site",
     "timesheetDetails": "Timesheet Details",
+    "employeeAggregates": "Employee Aggregates",
+    "entries": "Entries",
+    "latestEntry": "Latest Entry",
     "projectName": "Project Name",
     "timeSpent": "Time Spent",
     "safetyFormsTitle": "Safety Forms",
@@ -604,7 +607,8 @@
     "languagePreferenceHelp": "Select the contractor's preferred language for forms and interfaces",
     "contractorLimitExceeded": "Contractor Limit Exceeded",
     "contractorLimitMessage": "You have reached the maximum number of contractors ({limit}) for your membership level. Please upgrade to add more contractors.",
-    "upgradeToAddMore": "Upgrade to add unlimited contractors"
+    "upgradeToAddMore": "Upgrade to add unlimited contractors",
+    "contractorsLimitRemaining": "Contractor Limit Remaining:"
   },
   "safetyQuestions": {
     "ladderAltered": "Has the ladder been altered in any way?",
@@ -672,7 +676,24 @@
     "tableTips": "Table tips",
     "tableTipsDesc": "Click inside a table cell to edit. Right-click for table options.",
     "addToolboxTalk": "Add Toolbox Talk",
-    "manageToolboxTalks": "Manage safety toolbox talks and training materials"
+    "manageToolboxTalks": "Manage safety toolbox talks and training materials",
+    "markAsRead": "Mark as Read",
+    "readConfirmation": "Read Confirmation",
+    "readBy": "Read By",
+    "dateRead": "Date Read",
+    "signature": "Digital Signature",
+    "submitReadConfirmation": "Submit Read Confirmation",
+    "thankYouForReading": "Thank you for reading this toolbox talk!",
+    "readConfirmationRecorded": "Your read confirmation has been recorded.",
+    "confirmReadAndUnderstood": "Confirm that you have read and understood this toolbox talk by completing the form below.",
+    "iHaveReadThisToolboxTalk": "I have read this toolbox talk",
+    "readSubmissions": "Read Submissions",
+    "readingStatistics": "Reading Statistics",
+    "reads": "reads",
+    "lastRead": "last",
+    "signatureRequired": "Signature is required",
+    "submitting": "Submitting...",
+    "allToolboxTalks": "All Toolbox Talks"
   },
   "incidentReport": {
     "reportDate": "Report Date",

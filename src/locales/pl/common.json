@@ -106,6 +106,9 @@
     "costPerProject": "Koszt na Projekt",
     "jobSite": "Miejsce Pracy",
     "timesheetDetails": "Szczegóły Karty Czasu Pracy",
+    "employeeAggregates": "Agregaty Pracowników",
+    "entries": "Wpisy",
+    "latestEntry": "Najnowszy Wpis",
     "projectName": "Nazwa Projektu",
     "timeSpent": "Czas Spędzony",
     "safetyFormsTitle": "Formularze Bezpieczeństwa",
@@ -604,7 +607,8 @@
     "languagePreferenceHelp": "Wybierz preferowany język kontraktora dla formularzy i interfejsów",
     "contractorLimitExceeded": "Przekroczono Limit Kontraktorów",
     "contractorLimitMessage": "Osiągnąłeś maksymalną liczbę kontraktorów ({limit}) dla swojego poziomu członkostwa. Proszę uaktualnić, aby dodać więcej kontraktorów.",
-    "upgradeToAddMore": "Uaktualnij, aby dodać nieograniczoną liczbę kontraktorów"
+    "upgradeToAddMore": "Uaktualnij, aby dodać nieograniczoną liczbę kontraktorów",
+    "contractorsLimitRemaining": "Pozostały Limit Kontraktorów:"
   },
   "safetyQuestions": {
     "ladderAltered": "Czy drabina została w jakikolwiek sposób przerobiona?",

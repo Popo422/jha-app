@@ -106,6 +106,9 @@
     "costPerProject": "Costo por Proyecto",
     "jobSite": "Sitio de Trabajo",
     "timesheetDetails": "Detalles de la Hoja de Tiempo",
+    "employeeAggregates": "Agregados de Empleados",
+    "entries": "Entradas",
+    "latestEntry": "Última Entrada",
     "projectName": "Nombre del Proyecto",
     "timeSpent": "Tiempo Trabajado",
     "safetyFormsTitle": "Formularios de Seguridad",
@@ -604,7 +607,8 @@
     "languagePreferenceHelp": "Selecciona el idioma preferido del contratista para formularios e interfaces",
     "contractorLimitExceeded": "Límite de Contratistas Excedido",
     "contractorLimitMessage": "Has alcanzado el número máximo de contratistas ({limit}) para tu nivel de membresía. Por favor actualiza tu membresía para agregar más contratistas.",
-    "upgradeToAddMore": "Actualizar para agregar contratistas ilimitados"
+    "upgradeToAddMore": "Actualizar para agregar contratistas ilimitados",
+    "contractorsLimitRemaining": "Límite de Contratistas Restante:"
   },
   "safetyQuestions": {
     "ladderAltered": "¿Ha sido alterada la escalera de alguna manera?",

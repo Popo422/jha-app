@@ -21,12 +21,12 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import { useGetReportingDataQuery } from '@/lib/features/reporting/reportingApi';
-import { useGetTimesheetsQuery, useLazyGetTimesheetsQuery } from '@/lib/features/timesheets/timesheetsApi';
+import { useGetTimesheetsQuery, useLazyGetTimesheetsQuery, useGetTimesheetAggregatesQuery, useLazyGetTimesheetAggregatesQuery } from '@/lib/features/timesheets/timesheetsApi';
 import { useGetContractorsQuery } from '@/lib/features/contractors/contractorsApi';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import { CostForecasting } from '@/components/admin/CostForecasting';
 import type { Employee, ChartDataPoint, ReportingData } from '@/lib/features/reporting/reportingApi';
-import type { Timesheet } from '@/lib/features/timesheets/timesheetsApi';
+import type { Timesheet, TimesheetAggregate } from '@/lib/features/timesheets/timesheetsApi';
 import type { ColumnDef } from '@tanstack/react-table';
 
 export default function ReportingPage() {
@@ -140,12 +140,29 @@ export default function ReportingPage() {
     authType: 'admin'
   });
 
+  // Get employee aggregates data
+  const { 
+    data: aggregatesResponse, 
+    isLoading: aggregatesLoading, 
+    isFetching: aggregatesFetching 
+  } = useGetTimesheetAggregatesQuery({
+    dateFrom: startDate || undefined,
+    dateTo: endDate || undefined,
+    search: search || undefined,
+    employees: employeesFilterString,
+    jobName: projectNameFilterString,
+    company: subcontractorFilterString,
+    authType: 'admin'
+  });
+
   // Lazy query for fetching all data for export
   const [fetchAllTimesheets] = useLazyGetTimesheetsQuery();
+  const [fetchAllAggregates] = useLazyGetTimesheetAggregatesQuery();
 
   const allTimesheets = timesheetResponse?.timesheets || [];
   const contractorRates = timesheetResponse?.contractorRates || {};
   const serverPaginationInfo = timesheetResponse?.pagination;
+  const employeeAggregates = aggregatesResponse?.aggregates || [];
 
   // Client-side pagination logic
   const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
@@ -204,14 +221,21 @@ export default function ReportingPage() {
 
   // Hours worked by contractor
   const contractorHours = useMemo(() => {
-    const hoursMap = new Map<string, { name: string; hours: number; cost: number }>();
+    const hoursMap = new Map<string, { name: string; company: string; hours: number; cost: number }>();
     
     approvedTimesheets.forEach(timesheet => {
       const hours = parseFloat(timesheet.timeSpent || '0');
       const cost = getCost(timesheet);
-      const existing = hoursMap.get(timesheet.employee) || { name: timesheet.employee, hours: 0, cost: 0 };
-      hoursMap.set(timesheet.employee, {
+      const key = `${timesheet.employee}-${timesheet.company}`;
+      const existing = hoursMap.get(key) || { 
+        name: timesheet.employee, 
+        company: timesheet.company,
+        hours: 0, 
+        cost: 0 
+      };
+      hoursMap.set(key, {
         name: timesheet.employee,
+        company: timesheet.company,
         hours: existing.hours + hours,
         cost: existing.cost + cost
       });
@@ -320,6 +344,7 @@ export default function ReportingPage() {
     const searchTerm = debouncedContractorCostSearch.toLowerCase();
     return contractorHours.filter(contractor =>
       contractor.name.toLowerCase().includes(searchTerm) ||
+      contractor.company.toLowerCase().includes(searchTerm) ||
       contractor.hours.toFixed(1).includes(searchTerm) ||
       contractor.cost.toFixed(2).includes(searchTerm)
     );
@@ -426,6 +451,33 @@ export default function ReportingPage() {
     search, 
     employeesFilterString, 
     statusFilter, 
+    projectNameFilterString, 
+    subcontractorFilterString
+  ]);
+
+  // Function to fetch all aggregates for export
+  const handleExportAllAggregates = useCallback(async () => {
+    const result = await fetchAllAggregates({
+      dateFrom: startDate || undefined,
+      dateTo: endDate || undefined,
+      search: search || undefined,
+      employees: employeesFilterString,
+      jobName: projectNameFilterString,
+      company: subcontractorFilterString,
+      authType: 'admin'
+    });
+
+    if (result.data) {
+      return result.data.aggregates;
+    } else {
+      throw new Error('Failed to fetch all aggregates for export');
+    }
+  }, [
+    fetchAllAggregates, 
+    startDate, 
+    endDate, 
+    search, 
+    employeesFilterString, 
     projectNameFilterString, 
     subcontractorFilterString
   ]);
@@ -724,28 +776,12 @@ export default function ReportingPage() {
   // Color palette for charts
   const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
-  const timesheetColumns: ColumnDef<Timesheet>[] = useMemo(() => [
+  const timesheetColumns: ColumnDef<TimesheetAggregate>[] = useMemo(() => [
     {
       accessorKey: "employee",
       header: t('admin.name'),
       cell: ({ row }) => (
         <div className="font-medium">{row.getValue("employee")}</div>
-      ),
-    },
-    {
-      accessorKey: "projectName",
-      header: t('admin.projectName'),
-      cell: ({ row }) => (
-        <div className="max-w-32 truncate">{row.getValue("projectName") || "N/A"}</div>
-      ),
-    },
-    {
-      accessorKey: "timeSpent",
-      header: t('admin.timeSpent'),
-      cell: ({ row }) => (
-        <div className="text-center">
-          {formatTimeSpent(row.getValue("timeSpent"))}
-        </div>
       ),
     },
     {
@@ -756,27 +792,63 @@ export default function ReportingPage() {
       ),
     },
     {
-      accessorKey: "date",
-      header: t('tableHeaders.date'),
+      accessorKey: "totalHours",
+      header: t('admin.totalHours'),
       cell: ({ row }) => (
-        <div className="text-sm">
-          {new Date(row.getValue("date")).toLocaleDateString()}
+        <div className="text-center font-semibold">
+          {(row.getValue("totalHours") as number).toFixed(1)} hrs
         </div>
       ),
     },
     {
-      accessorKey: "status",
-      header: t('tableHeaders.status'),
-      cell: ({ row }) => getStatusBadge(row.getValue("status")),
+      accessorKey: "totalCost",
+      header: t('admin.totalCost'),
+      cell: ({ row }) => (
+        <div className="text-center font-semibold text-green-600">
+          ${(row.getValue("totalCost") as number).toFixed(2)}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "entriesCount",
+      header: t('admin.entries'),
+      cell: ({ row }) => (
+        <div className="text-center">
+          {row.getValue("entriesCount")} entries
+        </div>
+      ),
+    },
+    {
+      accessorKey: "projectNames",
+      header: t('admin.projectName'),
+      cell: ({ row }) => (
+        <div className="max-w-48 truncate" title={row.getValue("projectNames") as string}>
+          {row.getValue("projectNames") || "N/A"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "latestDate",
+      header: t('admin.latestEntry'),
+      cell: ({ row }) => (
+        <div className="text-sm">
+          {new Date(row.getValue("latestDate") as string).toLocaleDateString()}
+        </div>
+      ),
     },
   ], [t]);
 
   // Memoized column definitions to prevent re-renders
-  const contractorCostColumns = useMemo<ColumnDef<{name: string; hours: number; cost: number}>[]>(() => [
+  const contractorCostColumns = useMemo<ColumnDef<{name: string; company: string; hours: number; cost: number}>[]>(() => [
     {
       accessorKey: "name",
       header: t('admin.contractorName'),
       cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+    },
+    {
+      accessorKey: "company",
+      header: t('admin.companyName'),
+      cell: ({ row }) => <div className="max-w-32 truncate">{row.getValue("company")}</div>,
     },
     {
       accessorKey: "hours",
@@ -1065,7 +1137,7 @@ export default function ReportingPage() {
       </div>
   ), [startDate, endDate, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch, selectedProjectNames, filteredProjectNames, projectNameSearch, selectedSubcontractors, filteredSubcontractors, subcontractorSearch, statusFilterText, t]);
 
-  const renderMobileCard = useCallback((timesheet: Timesheet, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
+  const renderMobileCard = useCallback((aggregate: TimesheetAggregate, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
     <Card className="mb-4">
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
@@ -1080,26 +1152,39 @@ export default function ReportingPage() {
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start mb-3">
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-lg truncate">{timesheet.employee}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 truncate">{timesheet.company}</div>
+                <div className="font-semibold text-lg truncate">{aggregate.employee}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 truncate">{aggregate.company}</div>
               </div>
-              <Badge variant="secondary" className="ml-2 flex-shrink-0">
-                {formatTimeSpent(timesheet.timeSpent)}
-              </Badge>
+              <div className="ml-2 flex flex-col items-end space-y-1">
+                <Badge variant="secondary" className="flex-shrink-0">
+                  {aggregate.totalHours.toFixed(1)} hrs
+                </Badge>
+                <Badge variant="outline" className="text-green-600 flex-shrink-0">
+                  ${aggregate.totalCost.toFixed(2)}
+                </Badge>
+              </div>
             </div>
             
             <div className="space-y-2">
               <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('admin.entries')}:</span>
+                <span className="text-sm text-right ml-2">{aggregate.entriesCount} entries</span>
+              </div>
+              <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('admin.projectName')}:</span>
-                <span className="text-sm text-right ml-2 truncate">{timesheet.projectName || "N/A"}</span>
+                <span className="text-sm text-right ml-2 truncate" title={aggregate.projectNames}>{aggregate.projectNames || "N/A"}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('tableHeaders.date')}:</span>
-                <span className="text-sm text-right ml-2">{new Date(timesheet.date).toLocaleDateString()}</span>
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('admin.latestEntry')}:</span>
+                <span className="text-sm text-right ml-2">{new Date(aggregate.latestDate).toLocaleDateString()}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('tableHeaders.status')}:</span>
-                <div className="ml-2">{getStatusBadge(timesheet.status)}</div>
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Status:</span>
+                <div className="ml-2">
+                  <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    <Check className="w-3 h-3 mr-1" />Approved Only
+                  </Badge>
+                </div>
               </div>
             </div>
           </div>
@@ -1540,6 +1625,12 @@ export default function ReportingPage() {
                                 formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Total Hours']} 
                                 contentStyle={{ fontSize: '12px' }}
                               />
+                              {isMobile && (
+                                <Legend 
+                                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
+                                  iconSize={8}
+                                />
+                              )}
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
@@ -1711,11 +1802,12 @@ export default function ReportingPage() {
                         columns={contractorCostColumns}
                         isLoading={timesheetLoading}
                         isFetching={timesheetFetching}
-                        getRowId={(item) => item.name}
+                        getRowId={(item) => `${item.name}-${item.company}`}
                         exportFilename="contractor_costs"
-                        exportHeaders={[t('admin.contractorName'), t('admin.totalHours'), t('admin.totalCost')]}
+                        exportHeaders={[t('admin.contractorName'), t('admin.companyName'), t('admin.totalHours'), t('admin.totalCost')]}
                         getExportData={(item) => [
                           item.name,
+                          item.company,
                           `${item.hours.toFixed(1)} hrs`,
                           `$${item.cost.toFixed(2)}`
                         ]}
@@ -1761,6 +1853,12 @@ export default function ReportingPage() {
                                 formatter={(value: number) => [`$${value.toFixed(2)}`, 'Total Cost']} 
                                 contentStyle={{ fontSize: '12px' }}
                               />
+                              {isMobile && (
+                                <Legend 
+                                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
+                                  iconSize={8}
+                                />
+                              )}
                             </PieChart>
                           </ResponsiveContainer>
                         </div>
@@ -1812,35 +1910,32 @@ export default function ReportingPage() {
       </div>
 
 
-      {/* Timesheet Table */}
+      {/* Employee Aggregate Table */}
       <div className="space-y-4">
         <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.timesheetDetails')}</h2>
         <AdminDataTable
-          data={filteredTimesheets}
+          data={employeeAggregates}
           columns={timesheetColumns}
-          isLoading={timesheetLoading}
-          isFetching={timesheetFetching}
-          getRowId={(timesheet) => timesheet.id}
-          exportFilename="approved_timesheets"
-          exportHeaders={[t('admin.name'), t('admin.projectName'), t('admin.timeSpent'), t('admin.companyName'), t('tableHeaders.date'), t('admin.projectLocation'), t('tableHeaders.status')]}
-          getExportData={(timesheet) => [
-            timesheet.employee,
-            timesheet.projectName || "N/A",
-            formatTimeSpent(timesheet.timeSpent),
-            timesheet.company,
-            new Date(timesheet.date).toLocaleDateString(),
-            timesheet.projectName,
-            timesheet.status
+          isLoading={aggregatesLoading}
+          isFetching={aggregatesFetching}
+          getRowId={(aggregate) => `${aggregate.employee}-${aggregate.company}`}
+          exportFilename="employee_aggregates_approved"
+          exportHeaders={[t('admin.name'), t('admin.companyName'), t('admin.totalHours'), t('admin.totalCost'), t('admin.entries'), t('admin.projectName'), t('admin.latestEntry')]}
+          getExportData={(aggregate) => [
+            aggregate.employee,
+            aggregate.company,
+            `${aggregate.totalHours.toFixed(1)} hrs`,
+            `$${aggregate.totalCost.toFixed(2)}`,
+            `${aggregate.entriesCount} entries`,
+            aggregate.projectNames || "N/A",
+            new Date(aggregate.latestDate).toLocaleDateString()
           ]}
           searchValue={search}
           onSearchChange={setSearch}
           renderMobileCard={renderMobileCard}
           filters={timesheetFilters}
-          serverSide={true}
-          pagination={timesheetPaginationInfo}
-          onPageChange={handlePageChange}
-          onPageSizeChange={handlePageSizeChange}
-          onExportAll={handleExportAll}
+          serverSide={false}
+          onExportAll={handleExportAllAggregates}
         />
       </div>
     </div>
