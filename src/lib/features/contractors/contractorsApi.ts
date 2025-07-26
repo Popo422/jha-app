@@ -93,8 +93,8 @@ export const contractorsApi = createApi({
   }),
   tagTypes: ['Contractor'],
   endpoints: (builder) => ({
-    getContractors: builder.query<ContractorsResponse, { search?: string; page?: number; pageSize?: number; limit?: number; offset?: number; fetchAll?: boolean }>({
-      query: ({ search, page, pageSize, limit, offset, fetchAll } = {}) => {
+    getContractors: builder.query<ContractorsResponse, { search?: string; company?: string; page?: number; pageSize?: number; limit?: number; offset?: number; fetchAll?: boolean }>({
+      query: ({ search, company, page, pageSize, limit, offset, fetchAll } = {}) => {
         const params = new URLSearchParams()
         
         if (fetchAll) {
@@ -113,6 +113,11 @@ export const contractorsApi = createApi({
         if (search) {
           params.append('search', search)
         }
+        
+        if (company) {
+          params.append('company', company)
+        }
+        
         return `?${params}`
       },
       providesTags: ['Contractor'],

@@ -7,9 +7,11 @@ import { useGetContractorsQuery, type PaginationInfo as ContractorPaginationInfo
 import { useGetSubmissionsQuery } from '@/lib/features/submissions/submissionsApi';
 import { useGetTimesheetsQuery } from '@/lib/features/timesheets/timesheetsApi';
 import { useGetModulesQuery } from '@/lib/features/modules/modulesApi';
+import { useGetSubcontractorsQuery } from '@/lib/features/subcontractors/subcontractorsApi';
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -32,6 +34,7 @@ interface ContractorStatus {
   id: string;
   name: string;
   email: string;
+  companyName: string;
   timesheetStatus: 'completed' | 'pending' | 'missing';
   jhaStatus: 'completed' | 'pending' | 'missing';
   eodStatus: 'completed' | 'pending' | 'missing';
@@ -42,7 +45,9 @@ interface ContractorStatus {
 export default function ContractTrackerPage() {
   const { t } = useTranslation('common');
   const [filters, setFilters] = useState({
-    date: format(new Date(), 'yyyy-MM-dd')
+    date: format(new Date(), 'yyyy-MM-dd'),
+    company: '',
+    contractor: ''
   });
   const [searchValue, setSearchValue] = useState('');
   const [contractorStatuses, setContractorStatuses] = useState<ContractorStatus[]>([]);
@@ -51,16 +56,13 @@ export default function ContractTrackerPage() {
     currentPage: 1,
     pageSize: 10
   });
-  const [serverPagination, setServerPagination] = useState({
-    page: 1,
-    pageSize: 50
-  });
 
   const { data: modulesData } = useGetModulesQuery();
+  const { data: subcontractorsData } = useGetSubcontractorsQuery({ pageSize: 1000 });
+  
   const { data: contractorsData, isLoading: contractorsLoading } = useGetContractorsQuery({
     search: debouncedSearch,
-    page: serverPagination.page,
-    pageSize: serverPagination.pageSize
+    fetchAll: true
   });
 
   const { data: submissionsData, isLoading: submissionsLoading } = useGetSubmissionsQuery({
@@ -78,7 +80,6 @@ export default function ContractTrackerPage() {
   });
 
   const allContractors = contractorsData?.contractors || [];
-  const serverPaginationInfo = contractorsData?.pagination;
 
   useEffect(() => {
     if (allContractors.length > 0) {
@@ -102,6 +103,7 @@ export default function ContractTrackerPage() {
           id: contractor.id,
           name: contractorName,
           email: contractor.email,
+          companyName: contractor.companyName || '',
           timesheetStatus: timesheetSubmission ? 'completed' : 'missing',
           jhaStatus: jhaSubmission ? 'completed' : 'missing',
           eodStatus: eodSubmission ? 'completed' : 'missing',
@@ -112,16 +114,33 @@ export default function ContractTrackerPage() {
     }
   }, [allContractors, submissionsData, timesheetsData]);
 
-  // Client-side pagination logic
+  // Apply local filtering to contractor statuses
+  const filteredContractorStatuses = useMemo(() => {
+    return contractorStatuses.filter(contractor => {
+      // Company filter
+      if (filters.company && !contractor.companyName?.toLowerCase().includes(filters.company.toLowerCase())) {
+        return false;
+      }
+      
+      // Contractor name filter
+      if (filters.contractor && !contractor.name.toLowerCase().includes(filters.contractor.toLowerCase())) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [contractorStatuses, filters.company, filters.contractor]);
+
+  // Client-side pagination logic (using filtered data)
   const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
   const endIndex = startIndex + clientPagination.pageSize;
-  const data = contractorStatuses.slice(startIndex, endIndex);
+  const data = filteredContractorStatuses.slice(startIndex, endIndex);
   
-  // Create client pagination info
-  const totalClientPages = Math.ceil(contractorStatuses.length / clientPagination.pageSize);
+  // Create client pagination info (using filtered data)
+  const totalClientPages = Math.ceil(filteredContractorStatuses.length / clientPagination.pageSize);
   
-  // Calculate total pages considering both client view and server data
-  const estimatedTotalRecords = serverPaginationInfo?.total || contractorStatuses.length;
+  // Calculate total pages considering filtered data
+  const estimatedTotalRecords = filteredContractorStatuses.length;
   const estimatedTotalPages = Math.ceil(estimatedTotalRecords / clientPagination.pageSize);
   
   const paginationInfo = {
@@ -129,50 +148,31 @@ export default function ContractTrackerPage() {
     pageSize: clientPagination.pageSize,
     total: estimatedTotalRecords,
     totalPages: estimatedTotalPages,
-    hasNextPage: clientPagination.currentPage < totalClientPages || (serverPaginationInfo?.hasNextPage || false),
+    hasNextPage: clientPagination.currentPage < totalClientPages,
     hasPreviousPage: clientPagination.currentPage > 1
   };
 
-  // Check if we need to prefetch next batch
-  const shouldPrefetch = clientPagination.currentPage >= totalClientPages - 2 && serverPaginationInfo?.hasNextPage;
 
   const clearFilters = useCallback(() => {
     setFilters({
-      date: format(new Date(), 'yyyy-MM-dd')
+      date: format(new Date(), 'yyyy-MM-dd'),
+      company: '',
+      contractor: ''
     });
     setSearchValue('');
     setClientPagination({ currentPage: 1, pageSize: 10 });
-    setServerPagination({ page: 1, pageSize: 50 });
   }, []);
 
-  const hasActiveFilters = filters.date !== format(new Date(), 'yyyy-MM-dd') || searchValue;
+  const hasActiveFilters = filters.date !== format(new Date(), 'yyyy-MM-dd') || filters.company || filters.contractor || searchValue;
 
   const handlePageChange = useCallback((page: number) => {
-    const totalClientPages = Math.ceil(contractorStatuses.length / clientPagination.pageSize);
-    
-    if (page <= totalClientPages) {
-      // Navigate within current batch
-      setClientPagination(prev => ({ ...prev, currentPage: page }));
-    } else {
-      // Need to fetch next batch
-      const nextServerPage = serverPagination.page + 1;
-      setServerPagination(prev => ({ ...prev, page: nextServerPage }));
-      setClientPagination({ currentPage: 1, pageSize: clientPagination.pageSize });
-    }
-  }, [contractorStatuses.length, clientPagination.pageSize, serverPagination.page]);
+    setClientPagination(prev => ({ ...prev, currentPage: page }));
+  }, []);
 
   const handlePageSizeChange = useCallback((pageSize: number) => {
     setClientPagination({ currentPage: 1, pageSize });
   }, []);
 
-  // Prefetch next batch when near end
-  const { data: prefetchData } = useGetContractorsQuery({
-    search: debouncedSearch,
-    page: serverPagination.page + 1,
-    pageSize: serverPagination.pageSize
-  }, {
-    skip: !shouldPrefetch
-  });
 
   const getStatusBadge = useCallback((status: 'completed' | 'pending' | 'missing') => {
     switch (status) {
@@ -197,11 +197,25 @@ export default function ContractTrackerPage() {
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="h-auto p-0 font-medium text-sm"
           >
-{t('admin.contractor')}
+            {t('admin.contractor')}
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
         cell: ({ row }: { row: any }) => <div className="text-sm font-medium">{row.getValue('name')}</div>,
+      },
+      {
+        accessorKey: 'companyName',
+        header: ({ column }: { column: any }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="h-auto p-0 font-medium text-sm"
+          >
+            {t('admin.company')}
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ row }: { row: any }) => <div className="text-sm">{row.getValue('companyName') || '-'}</div>,
       },
       {
         accessorKey: 'email',
@@ -211,7 +225,7 @@ export default function ContractTrackerPage() {
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="h-auto p-0 font-medium text-sm"
           >
-{t('auth.email')}
+            {t('auth.email')}
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
@@ -270,35 +284,85 @@ export default function ContractTrackerPage() {
   }, [getStatusBadge, modulesData]);
 
   const filterComponents = useMemo(() => (
-    <>
+    <div className="flex flex-wrap gap-3 items-end">
       <div className="space-y-1">
-        <div className="text-sm font-medium">{t('formFields.date')}</div>
-        <Input 
-          type="date" 
-          className="w-full md:w-40" 
+        <div className="text-xs font-medium">{t('formFields.date')}</div>
+        <DateInput 
           value={filters.date}
-          onChange={(e) => setFilters(prev => ({ ...prev, date: e.target.value }))}
+          onChange={(value) => setFilters(prev => ({ ...prev, date: value }))}
         />
       </div>
+      
+      <div className="space-y-1">
+        <div className="text-xs font-medium">{t('admin.company')}</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
+              {filters.company || t('admin.allCompanies')}
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-h-48 overflow-y-auto">
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, company: '' }))}>
+              {t('admin.allCompanies')}
+            </DropdownMenuItem>
+            {subcontractorsData?.subcontractors?.map((subcontractor) => (
+              <DropdownMenuItem 
+                key={subcontractor.id}
+                onClick={() => setFilters(prev => ({ ...prev, company: subcontractor.name }))}
+              >
+                {subcontractor.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      
+      <div className="space-y-1">
+        <div className="text-xs font-medium">{t('admin.contractor')}</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
+              {filters.contractor || t('admin.allContractors')}
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-h-48 overflow-y-auto">
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, contractor: '' }))}>
+              {t('admin.allContractors')}
+            </DropdownMenuItem>
+            {allContractors?.map((contractor) => (
+              <DropdownMenuItem 
+                key={contractor.id}
+                onClick={() => setFilters(prev => ({ ...prev, contractor: `${contractor.firstName} ${contractor.lastName}` }))}
+              >
+                {contractor.firstName} {contractor.lastName}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      
       {hasActiveFilters && (
         <div className="space-y-1">
-          <div className="text-sm font-medium">&nbsp;</div>
+          <div className="text-xs font-medium">&nbsp;</div>
           <Button
             variant="outline"
+            size="sm"
             onClick={clearFilters}
-            className="w-full md:w-auto"
+            className="text-xs"
           >
-            <X className="h-4 w-4 mr-2" />
-{t('admin.clearFilters')}
+            <X className="h-3 w-3 mr-1" />
+            {t('admin.clearFilters')}
           </Button>
         </div>
       )}
-    </>
-  ), [filters.date, hasActiveFilters, clearFilters]);
+    </div>
+  ), [filters.date, filters.company, filters.contractor, hasActiveFilters, clearFilters, subcontractorsData?.subcontractors, allContractors, t]);
 
   const getExportData = useCallback((contractor: ContractorStatus) => {
     const enabledModules = modulesData?.enabledModules || [];
-    const data = [contractor.name, contractor.email];
+    const data = [contractor.name, contractor.companyName || '-', contractor.email];
     
     if (enabledModules.includes('timesheet')) data.push(contractor.timesheetStatus);
     if (enabledModules.includes('job-hazard-analysis')) data.push(contractor.jhaStatus);
@@ -310,10 +374,9 @@ export default function ContractTrackerPage() {
 
   // Function to export all contractor status data
   const handleExportAll = useCallback(async () => {
-    // Since this page composes data from multiple sources, we'll export the current data
-    // In a future enhancement, this could be improved to fetch all data from the underlying APIs
-    return contractorStatuses;
-  }, [contractorStatuses]);
+    // Export the filtered data
+    return filteredContractorStatuses;
+  }, [filteredContractorStatuses]);
 
   const renderMobileCard = useCallback((contractor: ContractorStatus, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => {
     const enabledModules = modulesData?.enabledModules || [];
@@ -334,6 +397,9 @@ export default function ContractTrackerPage() {
               <div className="mb-2">
                 <h3 className="font-medium text-sm">{contractor.name}</h3>
                 <p className="text-xs text-muted-foreground">{contractor.email}</p>
+                {contractor.companyName && (
+                  <p className="text-xs text-muted-foreground">{contractor.companyName}</p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 {enabledModules.includes('timesheet') && (
@@ -374,7 +440,7 @@ export default function ContractTrackerPage() {
         exportFilename="contractor_tracker"
         exportHeaders={useMemo(() => {
           const enabledModules = modulesData?.enabledModules || [];
-          const headers = [t('admin.contractor'), t('auth.email')];
+          const headers = [t('admin.contractor'), t('admin.company'), t('auth.email')];
           
           if (enabledModules.includes('timesheet')) headers.push(t('nav.timesheet'));
           if (enabledModules.includes('job-hazard-analysis')) headers.push(t('forms.jobHazardAnalysis'));

@@ -5,10 +5,14 @@ import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetTimesheetsQuery, useDeleteTimesheetMutation, type Timesheet, type PaginationInfo } from "@/lib/features/timesheets/timesheetsApi";
 import { useTimesheetExportAll } from "@/hooks/useExportAll";
+import { useGetContractorsQuery } from "@/lib/features/contractors/contractorsApi";
+import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
+import { useGetSubcontractorsQuery } from "@/lib/features/subcontractors/subcontractorsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import TimesheetEdit from "@/components/admin/TimesheetEdit";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   DropdownMenu, 
@@ -31,6 +35,8 @@ export default function TimeFormsPage() {
     dateFrom: '',
     dateTo: '',
     company: '',
+    contractor: '',
+    project: '',
     status: 'all'
   });
   const [searchValue, setSearchValue] = useState('');
@@ -44,13 +50,27 @@ export default function TimeFormsPage() {
     pageSize: 50
   });
 
+  // Fetch dropdown data
+  const { data: contractorsData } = useGetContractorsQuery({ fetchAll: true });
+  const { data: projectsData } = useGetProjectsQuery({ pageSize: 1000 });
+  const { data: subcontractorsData } = useGetSubcontractorsQuery({ pageSize: 1000 });
+
+  // Build combined search query for contractor and project filters
+  const buildSearchQuery = useCallback(() => {
+    const searchTerms = [];
+    if (debouncedSearch) searchTerms.push(debouncedSearch);
+    if (filters.contractor) searchTerms.push(filters.contractor);
+    if (filters.project) searchTerms.push(filters.project);
+    return searchTerms.join(' ');
+  }, [debouncedSearch, filters.contractor, filters.project]);
+
   const { data: timesheetsData, refetch, isLoading, isFetching } = useGetTimesheetsQuery({
     page: serverPagination.page,
     pageSize: serverPagination.pageSize,
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
     company: filters.company || undefined,
-    search: debouncedSearch || undefined,
+    search: buildSearchQuery() || undefined,
     status: filters.status !== 'all' ? filters.status : undefined,
     authType: 'admin'
   }, {
@@ -95,6 +115,8 @@ export default function TimeFormsPage() {
       dateFrom: '',
       dateTo: '',
       company: '',
+      contractor: '',
+      project: '',
       status: 'all'
     });
     setSearchValue('');
@@ -126,7 +148,7 @@ export default function TimeFormsPage() {
       dateFrom: filters.dateFrom || undefined,
       dateTo: filters.dateTo || undefined,
       company: filters.company || undefined,
-      search: debouncedSearch || undefined,
+      search: buildSearchQuery() || undefined,
       status: filters.status !== 'all' ? filters.status : undefined,
       authType: 'admin'
     });
@@ -136,7 +158,7 @@ export default function TimeFormsPage() {
     filters.dateTo,
     filters.company,
     filters.status,
-    debouncedSearch
+    buildSearchQuery
   ]);
 
   // Prefetch next batch when near end
@@ -146,14 +168,14 @@ export default function TimeFormsPage() {
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
     company: filters.company || undefined,
-    search: debouncedSearch || undefined,
+    search: buildSearchQuery() || undefined,
     status: filters.status !== 'all' ? filters.status : undefined,
     authType: 'admin'
   }, {
     skip: !shouldPrefetch
   });
 
-  const hasActiveFilters = filters.dateFrom || filters.dateTo || filters.company || filters.status !== 'all' || searchValue;
+  const hasActiveFilters = filters.dateFrom || filters.dateTo || filters.company || filters.contractor || filters.project || filters.status !== 'all' || searchValue;
 
   const handleEdit = useCallback((timesheet: Timesheet) => {
     setSelectedTimesheet(timesheet);
@@ -353,45 +375,108 @@ export default function TimeFormsPage() {
   ], [contractorRates]);
 
   const filterComponents = useMemo(() => (
-    <>
+    <div className="flex flex-wrap gap-3 items-end">
       <div className="space-y-1">
-        <div className="text-sm font-medium">{t('admin.dateFrom')}</div>
-        <Input
-          type="date"
-          className="w-full md:w-40"
+        <div className="text-xs font-medium">{t('admin.dateFrom')}</div>
+        <DateInput
           value={filters.dateFrom}
-          onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
+          onChange={(value) => setFilters(prev => ({ ...prev, dateFrom: value }))}
         />
       </div>
+
       <div className="space-y-1">
-        <div className="text-sm font-medium">{t('admin.dateTo')}</div>
-        <Input
-          type="date"
-          className="w-full md:w-40"
+        <div className="text-xs font-medium">{t('admin.dateTo')}</div>
+        <DateInput
           value={filters.dateTo}
-          onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
+          onChange={(value) => setFilters(prev => ({ ...prev, dateTo: value }))}
         />
       </div>
+
       <div className="space-y-1">
-        <div className="text-sm font-medium">{t('admin.company')}</div>
-        <Input
-          type="text"
-          placeholder={t('admin.filterByCompany')}
-          className="w-full md:w-48"
-          value={filters.company}
-          onChange={(e) => setFilters(prev => ({ ...prev, company: e.target.value }))}
-        />
-      </div>
-      <div className="space-y-1">
-        <div className="text-sm font-medium">{t('tableHeaders.status')}</div>
+        <div className="text-xs font-medium">{t('admin.company')}</div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full md:w-48 justify-between">
+            <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
+              {filters.company || t('admin.allCompanies')}
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-h-48 overflow-y-auto">
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, company: '' }))}>
+              {t('admin.allCompanies')}
+            </DropdownMenuItem>
+            {subcontractorsData?.subcontractors?.map((subcontractor) => (
+              <DropdownMenuItem 
+                key={subcontractor.id}
+                onClick={() => setFilters(prev => ({ ...prev, company: subcontractor.name }))}
+              >
+                {subcontractor.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="space-y-1">
+        <div className="text-xs font-medium">{t('admin.contractor')}</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
+              {filters.contractor || t('admin.allContractors')}
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-h-48 overflow-y-auto">
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, contractor: '' }))}>
+              {t('admin.allContractors')}
+            </DropdownMenuItem>
+            {contractorsData?.contractors?.map((contractor) => (
+              <DropdownMenuItem 
+                key={contractor.id}
+                onClick={() => setFilters(prev => ({ ...prev, contractor: `${contractor.firstName} ${contractor.lastName}` }))}
+              >
+                {contractor.firstName} {contractor.lastName}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="space-y-1">
+        <div className="text-xs font-medium">{t('admin.projectName')}</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
+              {filters.project || t('admin.allProjects')}
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-h-48 overflow-y-auto">
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, project: '' }))}>
+              {t('admin.allProjects')}
+            </DropdownMenuItem>
+            {projectsData?.projects?.map((project) => (
+              <DropdownMenuItem 
+                key={project.id}
+                onClick={() => setFilters(prev => ({ ...prev, project: project.name }))}
+              >
+                {project.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="space-y-1">
+        <div className="text-xs font-medium">{t('tableHeaders.status')}</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
               {filters.status === 'all' ? t('admin.allStatuses') : 
                filters.status === 'approved' ? t('admin.approvedOnly') :
                filters.status === 'pending' ? t('admin.pendingOnly') :
                filters.status === 'rejected' ? t('admin.rejectedOnly') : t('admin.allStatuses')}
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -405,41 +490,56 @@ export default function TimeFormsPage() {
               onSelect={() => setFilters(prev => ({ ...prev, status: 'approved' }))}
               className="cursor-pointer"
             >
-              <Check className="w-4 h-4 mr-2 text-green-600" />
+              <Check className="w-3 h-3 mr-2 text-green-600" />
               {t('admin.approvedOnly')}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onSelect={() => setFilters(prev => ({ ...prev, status: 'pending' }))}
               className="cursor-pointer"
             >
-              <Clock className="w-4 h-4 mr-2 text-gray-600" />
+              <Clock className="w-3 h-3 mr-2 text-gray-600" />
               {t('admin.pendingOnly')}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onSelect={() => setFilters(prev => ({ ...prev, status: 'rejected' }))}
               className="cursor-pointer"
             >
-              <XCircle className="w-4 h-4 mr-2 text-red-600" />
+              <XCircle className="w-3 h-3 mr-2 text-red-600" />
               {t('admin.rejectedOnly')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
       {hasActiveFilters && (
         <div className="space-y-1">
-          <div className="text-sm font-medium">&nbsp;</div>
+          <div className="text-xs font-medium">&nbsp;</div>
           <Button
             variant="outline"
+            size="sm"
             onClick={clearFilters}
-            className="w-full md:w-auto"
+            className="text-xs"
           >
-            <X className="h-4 w-4 mr-2" />
+            <X className="h-3 w-3 mr-1" />
             {t('admin.clearFilters')}
           </Button>
         </div>
       )}
-    </>
-  ), [filters.dateFrom, filters.dateTo, filters.company, filters.status, hasActiveFilters, clearFilters]);
+    </div>
+  ), [
+    filters.dateFrom, 
+    filters.dateTo, 
+    filters.company, 
+    filters.contractor, 
+    filters.project,
+    filters.status, 
+    hasActiveFilters, 
+    clearFilters,
+    contractorsData?.contractors,
+    projectsData?.projects,
+    subcontractorsData?.subcontractors,
+    t
+  ]);
 
   const getExportData = useCallback((timesheet: Timesheet) => {
     const timeSpent = parseFloat(timesheet.timeSpent || '0');

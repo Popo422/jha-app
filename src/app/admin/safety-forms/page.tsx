@@ -5,10 +5,14 @@ import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetSubmissionsQuery, useDeleteSubmissionMutation, type PaginationInfo } from "@/lib/features/submissions/submissionsApi";
 import { useSubmissionExportAll } from "@/hooks/useExportAll";
+import { useGetContractorsQuery } from "@/lib/features/contractors/contractorsApi";
+import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
+import { useGetSubcontractorsQuery } from "@/lib/features/subcontractors/subcontractorsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { DateInput } from "@/components/ui/date-input";
 import { Card, CardContent } from "@/components/ui/card";
 import JobHazardAnalysisEdit from "@/components/admin/JobHazardAnalysisEdit";
 import StartOfDayEdit from "@/components/admin/StartOfDayEdit";
@@ -29,6 +33,7 @@ import {
   Edit,
   Trash2,
   X,
+  Search,
 } from "lucide-react";
 import {
   createColumnHelper,
@@ -58,7 +63,9 @@ export default function SafetyFormsPage() {
     type: '',
     dateFrom: '',
     dateTo: '',
-    company: ''
+    company: '',
+    contractor: '',
+    project: ''
   });
   const [searchValue, setSearchValue] = useState('');
   const debouncedSearch = useDebouncedValue(searchValue, 300);
@@ -71,6 +78,20 @@ export default function SafetyFormsPage() {
     pageSize: 50
   });
 
+  // Fetch dropdown data
+  const { data: contractorsData } = useGetContractorsQuery({ fetchAll: true });
+  const { data: projectsData } = useGetProjectsQuery({ pageSize: 1000 });
+  const { data: subcontractorsData } = useGetSubcontractorsQuery({ pageSize: 1000 });
+
+  // Build combined search query for contractor and project filters
+  const buildSearchQuery = useCallback(() => {
+    const searchTerms = [];
+    if (debouncedSearch) searchTerms.push(debouncedSearch);
+    if (filters.contractor) searchTerms.push(filters.contractor);
+    if (filters.project) searchTerms.push(filters.project);
+    return searchTerms.join(' ');
+  }, [debouncedSearch, filters.contractor, filters.project]);
+
   const { data: submissionsData, refetch, isLoading, isFetching } = useGetSubmissionsQuery({
     page: serverPagination.page,
     pageSize: serverPagination.pageSize,
@@ -78,7 +99,7 @@ export default function SafetyFormsPage() {
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
     company: filters.company || undefined,
-    search: debouncedSearch || undefined,
+    search: buildSearchQuery() || undefined,
     authType: 'admin'
   }, {
     refetchOnMountOrArgChange: true
@@ -119,14 +140,16 @@ export default function SafetyFormsPage() {
       type: '',
       dateFrom: '',
       dateTo: '',
-      company: ''
+      company: '',
+      contractor: '',
+      project: ''
     });
     setSearchValue('');
     setClientPagination({ currentPage: 1, pageSize: 10 });
     setServerPagination({ page: 1, pageSize: 50 });
   }, []);
 
-  const hasActiveFilters = filters.type || filters.dateFrom || filters.dateTo || filters.company || searchValue;
+  const hasActiveFilters = filters.type || filters.dateFrom || filters.dateTo || filters.company || filters.contractor || filters.project || searchValue;
 
   const handlePageChange = useCallback((page: number) => {
     const totalClientPages = Math.ceil(allData.length / clientPagination.pageSize);
@@ -153,7 +176,7 @@ export default function SafetyFormsPage() {
       dateFrom: filters.dateFrom || undefined,
       dateTo: filters.dateTo || undefined,
       company: filters.company || undefined,
-      search: debouncedSearch || undefined,
+      search: buildSearchQuery() || undefined,
       authType: 'admin'
     });
   }, [
@@ -162,7 +185,7 @@ export default function SafetyFormsPage() {
     filters.dateFrom,
     filters.dateTo,
     filters.company,
-    debouncedSearch
+    buildSearchQuery
   ]);
 
   // Prefetch next batch when near end
@@ -173,7 +196,7 @@ export default function SafetyFormsPage() {
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
     company: filters.company || undefined,
-    search: debouncedSearch || undefined,
+    search: buildSearchQuery() || undefined,
     authType: 'admin'
   }, {
     skip: !shouldPrefetch
@@ -313,54 +336,72 @@ export default function SafetyFormsPage() {
         return row.getValue(id) === value;
       },
     },
+    {
+      id: 'injuredPerson',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('forms.injuredPerson')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const submission = row.original;
+        const isIncidentReport = submission.submissionType === 'incident-report' || submission.submissionType === 'quick-incident-report';
+        
+        if (!isIncidentReport) {
+          return <div className="text-sm text-gray-400">-</div>;
+        }
+        
+        // For full incident report, use injuredParty field
+        const injuredPerson = submission.submissionType === 'incident-report' 
+          ? submission.formData?.injuredParty 
+          : submission.formData?.injuredPerson;
+        
+        return <div className="text-sm">{injuredPerson || '-'}</div>;
+      },
+      accessorFn: (row) => {
+        const isIncidentReport = row.submissionType === 'incident-report' || row.submissionType === 'quick-incident-report';
+        if (!isIncidentReport) return '';
+        
+        return row.submissionType === 'incident-report' 
+          ? row.formData?.injuredParty || ''
+          : row.formData?.injuredPerson || '';
+      },
+    },
   ], [getSubmissionTypeLabel, getSubmissionTypeBadgeColor]);
 
   const filterComponents = useMemo(() => (
-    <>
+    <div className="flex flex-wrap gap-3 items-end">
       <div className="space-y-1">
-        <div className="text-sm font-medium">{t('admin.type')}</div>
+        <div className="text-xs font-medium">{t('admin.type')}</div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full md:w-48 justify-between">
+            <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
               {filters.type ? getSubmissionTypeLabel(filters.type) : t('admin.allTypes')}
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => {
-              console.log('Setting type filter to: ""');
-              setFilters(prev => ({ ...prev, type: '' }));
-            }}>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: '' }))}>
               {t('admin.allTypes')}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              console.log('Setting type filter to: job-hazard-analysis');
-              setFilters(prev => ({ ...prev, type: 'job-hazard-analysis' }));
-            }}>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'job-hazard-analysis' }))}>
               {t('admin.jobHazardAnalysisJHA')}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              console.log('Setting type filter to: start-of-day');
-              setFilters(prev => ({ ...prev, type: 'start-of-day' }));
-            }}>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'start-of-day' }))}>
               {t('admin.startOfDay')}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              console.log('Setting type filter to: end-of-day');
-              setFilters(prev => ({ ...prev, type: 'end-of-day' }));
-            }}>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'end-of-day' }))}>
               {t('admin.endOfDay')}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              console.log('Setting type filter to: incident-report');
-              setFilters(prev => ({ ...prev, type: 'incident-report' }));
-            }}>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'incident-report' }))}>
               {t('forms.incidentReport')}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              console.log('Setting type filter to: quick-incident-report');
-              setFilters(prev => ({ ...prev, type: 'quick-incident-report' }));
-            }}>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'quick-incident-report' }))}>
               {t('forms.quickIncidentReport')}
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -368,46 +409,144 @@ export default function SafetyFormsPage() {
       </div>
 
       <div className="space-y-1">
-        <div className="text-sm font-medium">{t('admin.dateFrom')}</div>
-        <Input 
-          type="date" 
-          className="w-full md:w-40" 
+        <div className="text-xs font-medium">{t('admin.dateFrom')}</div>
+        <DateInput 
           value={filters.dateFrom}
-          onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
+          onChange={(value) => setFilters(prev => ({ ...prev, dateFrom: value }))}
         />
       </div>
+
       <div className="space-y-1">
-        <div className="text-sm font-medium">{t('admin.dateTo')}</div>
-        <Input 
-          type="date" 
-          className="w-full md:w-40" 
+        <div className="text-xs font-medium">{t('admin.dateTo')}</div>
+        <DateInput 
           value={filters.dateTo}
-          onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
+          onChange={(value) => setFilters(prev => ({ ...prev, dateTo: value }))}
         />
       </div>
+
+      <div className="space-y-1">
+        <div className="text-xs font-medium">{t('admin.company')}</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
+              {filters.company || t('admin.allCompanies')}
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-h-48 overflow-y-auto">
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, company: '' }))}>
+              {t('admin.allCompanies')}
+            </DropdownMenuItem>
+            {subcontractorsData?.subcontractors?.map((subcontractor) => (
+              <DropdownMenuItem 
+                key={subcontractor.id}
+                onClick={() => setFilters(prev => ({ ...prev, company: subcontractor.name }))}
+              >
+                {subcontractor.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="space-y-1">
+        <div className="text-xs font-medium">{t('admin.contractor')}</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
+              {filters.contractor || t('admin.allContractors')}
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-h-48 overflow-y-auto">
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, contractor: '' }))}>
+              {t('admin.allContractors')}
+            </DropdownMenuItem>
+            {contractorsData?.contractors?.map((contractor) => (
+              <DropdownMenuItem 
+                key={contractor.id}
+                onClick={() => setFilters(prev => ({ ...prev, contractor: `${contractor.firstName} ${contractor.lastName}` }))}
+              >
+                {contractor.firstName} {contractor.lastName}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="space-y-1">
+        <div className="text-xs font-medium">{t('admin.projectName')}</div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
+              {filters.project || t('admin.allProjects')}
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="max-h-48 overflow-y-auto">
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, project: '' }))}>
+              {t('admin.allProjects')}
+            </DropdownMenuItem>
+            {projectsData?.projects?.map((project) => (
+              <DropdownMenuItem 
+                key={project.id}
+                onClick={() => setFilters(prev => ({ ...prev, project: project.name }))}
+              >
+                {project.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {hasActiveFilters && (
         <div className="space-y-1">
-          <div className="text-sm font-medium">&nbsp;</div>
+          <div className="text-xs font-medium">&nbsp;</div>
           <Button
             variant="outline"
+            size="sm"
             onClick={clearFilters}
-            className="w-full md:w-auto"
+            className="text-xs"
           >
-            <X className="h-4 w-4 mr-2" />
+            <X className="h-3 w-3 mr-1" />
             {t('admin.clearFilters')}
           </Button>
         </div>
       )}
-    </>
-  ), [filters.type, filters.dateFrom, filters.dateTo, getSubmissionTypeLabel, hasActiveFilters, clearFilters]);
+    </div>
+  ), [
+    filters.type, 
+    filters.dateFrom, 
+    filters.dateTo, 
+    filters.company, 
+    filters.contractor, 
+    filters.project,
+    getSubmissionTypeLabel, 
+    hasActiveFilters, 
+    clearFilters,
+    contractorsData?.contractors,
+    projectsData?.projects,
+    subcontractorsData?.subcontractors,
+    t
+  ]);
 
-  const getExportData = useCallback((submission: Submission) => [
-    submission.completedBy,
-    submission.company,
-    submission.date,
-    submission.projectName,
-    submission.submissionType
-  ], []);
+  const getExportData = useCallback((submission: Submission) => {
+    const isIncidentReport = submission.submissionType === 'incident-report' || submission.submissionType === 'quick-incident-report';
+    const injuredPerson = isIncidentReport 
+      ? (submission.submissionType === 'incident-report' 
+          ? submission.formData?.injuredParty 
+          : submission.formData?.injuredPerson) || '-'
+      : '-';
+    
+    return [
+      submission.completedBy,
+      submission.company,
+      submission.date,
+      submission.projectName,
+      submission.submissionType,
+      injuredPerson
+    ];
+  }, []);
 
   const renderMobileCard = useCallback((submission: Submission, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
     <Card className="p-4">
@@ -432,6 +571,15 @@ export default function SafetyFormsPage() {
               <div><span className="font-medium">{t('admin.company')}:</span> {submission.company}</div>
               <div><span className="font-medium">{t('tableHeaders.date')}:</span> {new Date(submission.date).toLocaleDateString()}</div>
               <div><span className="font-medium">{t('admin.projectName')}:</span> {submission.projectName}</div>
+              {(submission.submissionType === 'incident-report' || submission.submissionType === 'quick-incident-report') && (
+                <div>
+                  <span className="font-medium">{t('forms.injuredPerson')}:</span> {
+                    submission.submissionType === 'incident-report' 
+                      ? submission.formData?.injuredParty || '-'
+                      : submission.formData?.injuredPerson || '-'
+                  }
+                </div>
+              )}
             </div>
           </div>
           <DropdownMenu>
@@ -544,7 +692,7 @@ export default function SafetyFormsPage() {
         onBulkDelete={handleBulkDelete}
         getRowId={(submission) => submission.id}
         exportFilename="safety_forms"
-        exportHeaders={[t('admin.contractor'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.type')]}
+        exportHeaders={[t('admin.contractor'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.type'), t('forms.injuredPerson')]}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}
