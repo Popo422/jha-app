@@ -149,6 +149,17 @@ export const contractorsApi = createApi({
       query: () => 'limit',
       providesTags: ['Contractor'],
     }),
+    bulkCreateContractors: builder.mutation<
+      { success: boolean; message: string; contractors: Contractor[] },
+      { contractors: Array<{ firstName: string; lastName: string; email: string; rate?: string; companyName?: string }> }
+    >({
+      query: (body) => ({
+        url: '/bulk',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Contractor'],
+    }),
   }),
 })
 
@@ -159,6 +170,7 @@ export const {
   useUpdateContractorMutation,
   useDeleteContractorMutation,
   useGetContractorLimitQuery,
+  useBulkCreateContractorsMutation,
 } = contractorsApi
 
 export type GetContractorsResponse = ContractorsResponse;
