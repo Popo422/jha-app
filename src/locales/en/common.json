@@ -368,7 +368,8 @@
     "jobDescriptionPlaceholder": "Describe the work performed...",
     "projectName": "Name of project",
     "searchSubcontractors": "Search subcontractors...",
-    "companySubcontractorName": "Enter company or subcontractor name"
+    "companySubcontractorName": "Enter company or subcontractor name",
+    "searchSupervisors": "Search supervisors..."
   },
   "safety": {
     "toolInspection": "Tool Inspection",

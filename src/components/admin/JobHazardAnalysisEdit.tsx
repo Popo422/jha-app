@@ -17,6 +17,7 @@ import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
+import SupervisorSelect from "@/components/SupervisorSelect";
 
 interface Submission {
   id: string;
@@ -233,12 +234,12 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="supervisor">{t('formFields.supervisor')}</Label>
-              <Input
+              <SupervisorSelect
                 id="supervisor"
                 name="supervisor"
+                label={t('formFields.supervisor')}
                 value={formData.supervisor || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
               />
             </div>
             <div className="space-y-2">

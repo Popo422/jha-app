@@ -19,6 +19,7 @@ import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
+import SupervisorSelect from "@/components/SupervisorSelect";
 
 interface IncidentReportFormData {
   // Basic Information
@@ -277,7 +278,7 @@ export default function IncidentReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <ContractorSelect
+                    <SupervisorSelect
                       id="supervisor"
                       name="supervisor"
                       label={t('forms.supervisor')}

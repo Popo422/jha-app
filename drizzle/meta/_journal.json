@@ -71,6 +71,13 @@
       "when": 1753670004371,
       "tag": "0009_bent_vulture",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1753673007560,
+      "tag": "0010_neat_black_knight",
+      "breakpoints": true
     }
   ]
 }

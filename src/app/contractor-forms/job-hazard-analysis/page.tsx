@@ -22,6 +22,7 @@ import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
+import SupervisorSelect from "@/components/SupervisorSelect";
 
 interface JobHazardAnalysisFormData {
   completedBy: string;
@@ -534,13 +535,12 @@ export default function JobHazardReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="supervisor">{t('formFields.supervisor')}</Label>
-                    <Input
+                    <SupervisorSelect
                       id="supervisor"
                       name="supervisor"
-                      className="w-full"
                       value={formData.supervisor}
-                      onChange={handleInputChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
+                      label={t('formFields.supervisor')}
                       required
                     />
                   </div>
