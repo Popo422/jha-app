@@ -9,12 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
-import { Plus, Edit, Save, ArrowLeft, RefreshCw, Trash2, Eye, Image as ImageIcon, Bold, Italic, Underline as UnderlineIcon, Palette, Highlighter, AlignLeft, AlignCenter, AlignRight, AlignJustify, Subscript as SubscriptIcon, Superscript as SuperscriptIcon, Table as TableIcon, Type } from "lucide-react";
+import { Plus, Edit, Save, ArrowLeft, RefreshCw, Trash2, Eye, Image as ImageIcon, Bold, Italic, Underline as UnderlineIcon, Palette, Highlighter, AlignLeft, AlignCenter, AlignRight, AlignJustify, Subscript as SubscriptIcon, Superscript as SuperscriptIcon, Table as TableIcon, Type, User } from "lucide-react";
 import { Toast, useToast } from "@/components/ui/toast";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { useEditor, EditorContent } from '@tiptap/react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
-import { useGetToolboxTalksQuery, useCreateToolboxTalkMutation, useUpdateToolboxTalkMutation, useDeleteToolboxTalkMutation, type ToolboxTalk, type PaginationInfo } from '@/lib/features/toolbox-talks/toolboxTalksApi';
+import { useGetToolboxTalksQuery, useCreateToolboxTalkMutation, useUpdateToolboxTalkMutation, useDeleteToolboxTalkMutation, useGetReadEntriesQuery, type ToolboxTalk, type PaginationInfo, type ToolboxTalkReadEntry } from '@/lib/features/toolbox-talks/toolboxTalksApi';
 import { useToolboxTalkExportAll } from '@/hooks/useExportAll';
 import StarterKit from '@tiptap/starter-kit';
 import { ImageResize } from 'tiptap-extension-resize-image';
@@ -34,14 +35,16 @@ import FontSize from 'tiptap-extension-font-size';
 import { CustomImageExtension } from '@/components/editor/CustomImageExtension';
 
 type ViewMode = 'list' | 'add' | 'edit';
-// ToolboxTalk type is now imported from the API
-
 export default function ToolboxTalksPage() {
   const { t } = useTranslation('common');
   const { toast, showToast, hideToast } = useToast();
   const { admin } = useSelector((state: RootState) => state.auth);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [editingTalk, setEditingTalk] = useState<ToolboxTalk | null>(null);
+  
+  // Readers modal state
+  const [showReadersModal, setShowReadersModal] = useState(false);
+  const [selectedTalkForReaders, setSelectedTalkForReaders] = useState<ToolboxTalk | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -70,6 +73,16 @@ export default function ToolboxTalksPage() {
   const [updateToolboxTalk, { isLoading: isUpdating }] = useUpdateToolboxTalkMutation();
   const [deleteToolboxTalk] = useDeleteToolboxTalkMutation();
   const exportAllToolboxTalks = useToolboxTalkExportAll();
+  
+  // Read entries query for specific toolbox talk
+  const { data: readEntriesData, isLoading: readEntriesLoading } = useGetReadEntriesQuery({
+    companyId: admin?.companyId || '',
+    toolboxTalkId: selectedTalkForReaders?.id || '',
+    page: 1,
+    pageSize: 100,
+  }, {
+    skip: !admin?.companyId || !selectedTalkForReaders?.id
+  });
 
   // Function to fetch all toolbox talks for export
   const handleExportAll = useCallback(async () => {
@@ -452,9 +465,132 @@ export default function ToolboxTalksPage() {
       accessorKey: 'createdAt',
       header: t('admin.created'),
       cell: ({ row }: any) => new Date(row.original.createdAt).toLocaleDateString()
+    },
+    {
+      id: 'readers',
+      header: 'Readers',
+      cell: ({ row }: any) => (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedTalkForReaders(row.original);
+            setShowReadersModal(true);
+          }}
+          className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 dark:hover:bg-blue-900/20"
+        >
+          <User className="h-4 w-4" />
+          View Readers
+        </Button>
+      )
     }
   ];
 
+  // Render readers modal
+  const renderReadersModal = () => (
+    <AlertDialog open={showReadersModal} onOpenChange={setShowReadersModal}>
+      <AlertDialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            Readers: {selectedTalkForReaders?.title}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            People who have confirmed reading this toolbox talk
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        
+        <div className="py-4">
+          {readEntriesLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              <span className="ml-2">Loading readers...</span>
+            </div>
+          ) : readEntriesData?.readEntries && readEntriesData.readEntries.length > 0 ? (
+            <div className="space-y-4">
+              {/* Statistics */}
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+                <h4 className="font-semibold text-lg mb-2">Reading Statistics</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{readEntriesData.readEntries.length}</div>
+                    <div className="text-sm text-gray-600">Total Reads</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {new Set(readEntriesData.readEntries.map(entry => entry.readBy)).size}
+                    </div>
+                    <div className="text-sm text-gray-600">Unique Readers</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-orange-600">
+                      {readEntriesData.readEntries.length > 0 
+                        ? new Date(Math.max(...readEntriesData.readEntries.map(entry => new Date(entry.createdAt).getTime()))).toLocaleDateString()
+                        : 'N/A'
+                      }
+                    </div>
+                    <div className="text-sm text-gray-600">Latest Read</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Readers List */}
+              <div className="space-y-3">
+                <h4 className="font-semibold">Readers List</h4>
+                <div className="grid gap-3">
+                  {readEntriesData.readEntries.map((entry) => (
+                    <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <div className="flex-1">
+                        <div className="font-medium">{entry.readBy}</div>
+                        <div className="text-sm text-gray-500">
+                          Read on {new Date(entry.dateRead).toLocaleDateString()} 
+                          • Submitted {new Date(entry.createdAt).toLocaleString()}
+                        </div>
+                      </div>
+                      {entry.signature && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newWindow = window.open('', '_blank', 'width=600,height=400');
+                            if (newWindow) {
+                              newWindow.document.write(`
+                                <html>
+                                  <head><title>Signature - ${entry.readBy}</title></head>
+                                  <body style="margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: #f5f5f5; font-family: Arial, sans-serif;">
+                                    <h3 style="margin-bottom: 20px;">Signature: ${entry.readBy}</h3>
+                                    <img src="${entry.signature}" alt="Signature" style="max-width: 90%; max-height: 70%; border: 1px solid #ddd; background: white; border-radius: 4px;" />
+                                  </body>
+                                </html>
+                              `);
+                            }
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <Eye className="h-4 w-4" />
+                          View Signature
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Readers Yet</h3>
+              <p className="text-gray-500">No one has confirmed reading this toolbox talk yet.</p>
+            </div>
+          )}
+        </div>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel>Close</AlertDialogCancel>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 
   // Render form view (add/edit)
   const renderFormView = () => (
@@ -803,13 +939,14 @@ export default function ToolboxTalksPage() {
             getRowId={(talk) => talk.id}
             canDelete={() => true}
             exportFilename="toolbox_talks"
-            exportHeaders={[t('toolbox.title'), t('tableHeaders.status'), t('toolbox.author'), t('toolbox.published'), t('admin.created')]}
+            exportHeaders={[t('toolbox.title'), t('tableHeaders.status'), t('toolbox.author'), t('toolbox.published'), t('admin.created'), 'Readers']}
             getExportData={(talk) => [
               talk.title || '',
               talk.status || '',
               talk.authorName || '',
               talk.publishedAt ? new Date(talk.publishedAt).toLocaleDateString() : '',
-              new Date(talk.createdAt).toLocaleDateString()
+              new Date(talk.createdAt).toLocaleDateString(),
+              'View in app'
             ]}
             serverSide={true}
             pagination={paginationInfo}
@@ -819,6 +956,10 @@ export default function ToolboxTalksPage() {
           />
         </CardContent>
       </Card>
+
+      {/* Readers Modal */}
+      {renderReadersModal()}
+      
       <Toast
         message={toast.message}
         type={toast.type}

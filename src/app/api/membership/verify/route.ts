@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyMembershipAccess } from '@/lib/membership-helper'
+import { verifyMembershipAccess, UserData, MembershipData } from '@/lib/membership-helper'
 import { db } from '@/lib/db'
 import { companies, users } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
@@ -33,7 +33,11 @@ export async function GET(request: NextRequest) {
         error: result.error
       })
     }
-
+    const highestMembership = result && result.memberships && result.memberships.sort((a, b) => {
+      const aLevelId = parseInt(a.level_id)
+      const bLevelId = parseInt(b.level_id)
+      return bLevelId - aLevelId
+      })[0].level_id || '1'
     // Check if company already exists for this WordPress user
     const wordpressUserId = result.user?.id?.toString()
     let hasExistingCompany = false
@@ -46,7 +50,35 @@ export async function GET(request: NextRequest) {
         .where(eq(companies.wordpressUserId, wordpressUserId))
         .limit(1)
       
+      
       hasExistingCompany = existingCompany.length > 0
+      
+      if (hasExistingCompany) {
+        const currentMembershipInfo = existingCompany[0].membershipInfo as {
+          membershipLevel: string;
+          user: UserData | null;
+          memberships: MembershipData[];
+          tokenVerifiedAt: string;
+        };
+        
+        if (currentMembershipInfo.membershipLevel !== highestMembership) {
+          // Update the membership info with the new membership level
+          const updatedMembershipInfo = {
+            ...currentMembershipInfo,
+            membershipLevel: highestMembership,
+            user: result.user,
+            memberships: result.memberships,
+            tokenVerifiedAt: new Date().toISOString()
+          }
+        
+          await db
+            .update(companies)
+            .set({
+              membershipInfo: updatedMembershipInfo
+            })
+            .where(eq(companies.id, existingCompany[0].id))
+        }
+      }
       
       // If company exists and has a super admin, generate auto-login
       if (hasExistingCompany && existingCompany[0].createdBy) {

@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
+    const company = searchParams.get('company')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const fetchAll = searchParams.get('fetchAll') === 'true'
@@ -108,11 +109,17 @@ export async function GET(request: NextRequest) {
         ilike(contractors.firstName, `%${search}%`),
         ilike(contractors.lastName, `%${search}%`),
         ilike(contractors.email, `%${search}%`),
-        ilike(contractors.code, `%${search}%`)
+        ilike(contractors.code, `%${search}%`),
+        ilike(contractors.companyName, `%${search}%`)
       )
       if (searchCondition) {
         conditions.push(searchCondition)
       }
+    }
+    
+    // Add company filter if specified
+    if (company) {
+      conditions.push(ilike(contractors.companyName, `%${company}%`))
     }
 
     // Get total count for pagination

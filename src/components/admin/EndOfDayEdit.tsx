@@ -13,6 +13,7 @@ import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
+import SupervisorSelect from "@/components/SupervisorSelect";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/lib/store";
 
@@ -216,12 +217,12 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="supervisor">{t('formFields.supervisor')}:</Label>
-              <Input
+              <SupervisorSelect
                 id="supervisor"
                 name="supervisor"
+                label={t('formFields.supervisor')}
                 value={formData.supervisor || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
               />
             </div>
             <div className="space-y-2">

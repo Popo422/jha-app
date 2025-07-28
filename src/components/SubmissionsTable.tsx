@@ -17,6 +17,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
+import { useGetContractorsQuery } from "@/lib/features/contractors/contractorsApi";
+import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
+import { useGetSubcontractorsQuery } from "@/lib/features/subcontractors/subcontractorsApi";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +61,9 @@ interface SubmissionsTableProps {
   pagination?: PaginationInfo;
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
+  filters?: React.ReactNode;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 const getFormTypeLabel = (type: string, t: any) => {
@@ -104,13 +111,20 @@ export function SubmissionsTable({
   serverSide = false,
   pagination,
   onPageChange,
-  onPageSizeChange
+  onPageSizeChange,
+  filters,
+  searchValue = "",
+  onSearchChange
 }: SubmissionsTableProps) {
   const { t } = useTranslation('common');
   const [selectedFormTypes, setSelectedFormTypes] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteSubmission, { isLoading: isDeleting }] = useDeleteSubmissionMutation();
   const formTypeOptions = getFormTypeOptions(t);
+  
+  // Use external search if provided, otherwise use internal
+  const currentSearchValue = onSearchChange ? searchValue : searchQuery;
+  const handleSearchChange = onSearchChange || setSearchQuery;
 
   // Filter data based on selected form types and search query
   const filteredData = useMemo(() => {
@@ -121,9 +135,9 @@ export function SubmissionsTable({
       filtered = filtered.filter((item) => selectedFormTypes.includes(item.submissionType));
     }
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    // Filter by search query (only if not using external filters)
+    if (!filters && currentSearchValue.trim()) {
+      const query = currentSearchValue.toLowerCase();
       filtered = filtered.filter(
         (item) =>
           item.projectName.toLowerCase().includes(query) ||
@@ -134,7 +148,7 @@ export function SubmissionsTable({
     }
 
     return filtered;
-  }, [data, selectedFormTypes, searchQuery]);
+  }, [data, selectedFormTypes, currentSearchValue, filters]);
 
   const handleFormTypeToggle = (formType: string) => {
     setSelectedFormTypes((prev) =>
@@ -144,7 +158,9 @@ export function SubmissionsTable({
 
   const clearFilters = () => {
     setSelectedFormTypes([]);
-    setSearchQuery("");
+    if (!onSearchChange) {
+      setSearchQuery("");
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -404,53 +420,106 @@ export function SubmissionsTable({
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center space-x-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Filter className="h-4 w-4" />
-                  {t('common.filter')}
-                  {selectedFormTypes.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 text-xs">
-                      {selectedFormTypes.length}
-                    </Badge>
-                  )}
+        {filters ? (
+          <div className="space-y-4">
+            {filters}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1">
+                      <Filter className="h-4 w-4" />
+                      {t('common.filter')}
+                      {selectedFormTypes.length > 0 && (
+                        <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 text-xs">
+                          {selectedFormTypes.length}
+                        </Badge>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-48">
+                    <DropdownMenuLabel>{t('admin.formTypes')}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {formTypeOptions.map((option) => (
+                      <DropdownMenuCheckboxItem
+                        key={option.value}
+                        checked={selectedFormTypes.includes(option.value)}
+                        onCheckedChange={() => handleFormTypeToggle(option.value)}
+                      >
+                        {option.label}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {selectedFormTypes.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-xs">
+                    <X className="h-3 w-3" />
+                    {t('admin.clearFilters')}
+                  </Button>
+                )}
+              </div>
+              
+              <div className="relative max-w-sm w-full sm:w-auto">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+                <Input
+                  placeholder={t('admin.searchSubmissions')}
+                  value={currentSearchValue}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-9 text-sm"
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center space-x-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1">
+                    <Filter className="h-4 w-4" />
+                    {t('common.filter')}
+                    {selectedFormTypes.length > 0 && (
+                      <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 text-xs">
+                        {selectedFormTypes.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  <DropdownMenuLabel>{t('admin.formTypes')}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {formTypeOptions.map((option) => (
+                    <DropdownMenuCheckboxItem
+                      key={option.value}
+                      checked={selectedFormTypes.includes(option.value)}
+                      onCheckedChange={() => handleFormTypeToggle(option.value)}
+                    >
+                      {option.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {(selectedFormTypes.length > 0 || currentSearchValue.trim()) && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-xs">
+                  <X className="h-3 w-3" />
+                  {t('admin.clearFilters')}
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuLabel>{t('admin.formTypes')}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {formTypeOptions.map((option) => (
-                  <DropdownMenuCheckboxItem
-                    key={option.value}
-                    checked={selectedFormTypes.includes(option.value)}
-                    onCheckedChange={() => handleFormTypeToggle(option.value)}
-                  >
-                    {option.label}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              )}
+            </div>
 
-            {(selectedFormTypes.length > 0 || searchQuery.trim()) && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-xs">
-                <X className="h-3 w-3" />
-                {t('admin.clearFilters')}
-              </Button>
-            )}
+            <div className="relative max-w-sm w-full sm:w-auto">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+              <Input
+                placeholder={t('admin.searchSubmissions')}
+                value={currentSearchValue}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-9 text-sm"
+              />
+            </div>
           </div>
-
-          <div className="relative max-w-sm w-full sm:w-auto">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
-            <Input
-              placeholder={t('admin.searchSubmissions')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 text-sm"
-            />
-          </div>
-        </div>
+        )}
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (

@@ -76,7 +76,8 @@ export async function GET(request: NextRequest) {
       email: user.email,
       name: user.name,
       role: user.role,
-      companyName: company?.name || 'Unknown Company',
+      companyName: user.companyName || '',
+      organizationName: company?.name || 'Unknown Company',
       createdAt: user.createdAt
     }))
 
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, email, password, role } = await request.json()
+    const { name, email, password, role, companyName } = await request.json()
 
     if (!name || !email || !password || !role) {
       return NextResponse.json(
@@ -157,7 +158,8 @@ export async function POST(request: NextRequest) {
         name,
         password: hashedPassword,
         role,
-        companyId: admin.companyId
+        companyId: admin.companyId,
+        companyName: companyName || null
       })
       .returning()
 

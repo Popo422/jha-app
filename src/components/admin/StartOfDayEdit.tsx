@@ -15,6 +15,7 @@ import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
+import SupervisorSelect from "@/components/SupervisorSelect";
 
 interface Submission {
   id: string;
@@ -214,12 +215,12 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="supervisor">{t('formFields.supervisor')}:</Label>
-              <Input
+              <SupervisorSelect
                 id="supervisor"
                 name="supervisor"
+                label={t('formFields.supervisor')}
                 value={formData.supervisor || ''}
-                onChange={handleInputChange}
+                onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
               />
             </div>
             <div className="space-y-2">
@@ -228,7 +229,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 name="company"
                 value={formData.company || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
-                label="Company/Subcontractor"
+                label={t('admin.companySubcontractor')}
               />
             </div>
             <div className="space-y-2">

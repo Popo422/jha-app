@@ -32,6 +32,7 @@ export const users = pgTable('users', {
   password: text('password').notNull(),
   role: text('role').notNull().default('contractor'), // 'contractor', 'admin', 'super-admin'
   companyId: uuid('company_id'),
+  companyName: text('company_name'), // Optional: admin/contractor's own company name
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -111,6 +112,17 @@ export const subcontractors = pgTable('subcontractors', {
   companySubcontractorUnique: unique().on(table.companyId, table.name),
 }))
 
+export const supervisors = pgTable('supervisors', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  companyId: uuid('company_id').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: same supervisor name can exist across companies but not within same company
+  companySupervisorUnique: unique().on(table.companyId, table.name),
+}))
+
 export const toolboxTalks = pgTable('toolbox_talks', {
   id: uuid('id').primaryKey().defaultRandom(),
   title: text('title').notNull(),
@@ -123,4 +135,18 @@ export const toolboxTalks = pgTable('toolbox_talks', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
+
+export const toolboxTalkReadEntries = pgTable('toolbox_talk_read_entries', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  toolboxTalkId: uuid('toolbox_talk_id').notNull(),
+  companyId: uuid('company_id').notNull(),
+  readBy: text('read_by').notNull(), // Name of the person who read it
+  dateRead: text('date_read').notNull(), // Date when read (YYYY-MM-DD format)
+  signature: text('signature').notNull(), // Digital signature
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: prevent duplicate readings by same person for same talk
+  talkReadByUnique: unique().on(table.toolboxTalkId, table.readBy, table.companyId),
+}))
 

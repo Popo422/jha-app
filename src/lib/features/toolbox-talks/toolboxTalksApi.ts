@@ -47,6 +47,42 @@ export interface ToolboxTalkResponse {
   error?: string
 }
 
+export interface ToolboxTalkReadEntry {
+  id: string
+  toolboxTalkId: string
+  toolboxTalkTitle?: string
+  companyId: string
+  readBy: string
+  dateRead: string
+  signature: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateReadEntryRequest {
+  toolboxTalkId: string
+  companyId: string
+  readBy: string
+  dateRead: string
+  signature: string
+}
+
+export interface ReadEntriesResponse {
+  readEntries: ToolboxTalkReadEntry[]
+  stats?: {
+    toolboxTalkId: string
+    toolboxTalkTitle?: string
+    readCount: number
+    latestRead: string
+  }[]
+  pagination?: PaginationInfo
+}
+
+export interface CreateReadEntryResponse {
+  message: string
+  readEntry: ToolboxTalkReadEntry
+}
+
 export const toolboxTalksApi = createApi({
   reducerPath: 'toolboxTalksApi',
   baseQuery: fetchBaseQuery({
@@ -107,6 +143,62 @@ export const toolboxTalksApi = createApi({
       }),
       invalidatesTags: ['ToolboxTalk'],
     }),
+    // Toolbox Talk Read Entry endpoints
+    createReadEntry: builder.mutation<CreateReadEntryResponse, CreateReadEntryRequest>({
+      queryFn: async (readEntry) => {
+        try {
+          const response = await fetch('/api/toolbox-talk-read-entries', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(readEntry),
+          })
+          
+          const data = await response.json()
+          
+          if (!response.ok) {
+            return { error: data }
+          }
+          
+          return { data }
+        } catch (error) {
+          return { error: { error: 'Network error' } }
+        }
+      },
+      invalidatesTags: ['ToolboxTalk'],
+    }),
+    getReadEntries: builder.query<ReadEntriesResponse, { 
+      companyId: string
+      toolboxTalkId?: string
+      search?: string
+      page?: number
+      pageSize?: number 
+    }>({
+      queryFn: async ({ companyId, toolboxTalkId, search, page = 1, pageSize = 50 }) => {
+        try {
+          const params = new URLSearchParams()
+          params.append('companyId', companyId)
+          if (toolboxTalkId) params.append('toolboxTalkId', toolboxTalkId)
+          if (search) params.append('search', search)
+          params.append('page', page.toString())
+          params.append('pageSize', pageSize.toString())
+          
+          const response = await fetch(`/api/toolbox-talk-read-entries?${params}`)
+          
+          const data = await response.json()
+          
+          if (!response.ok) {
+            return { error: data }
+          }
+          
+          return { data }
+        } catch (error) {
+          return { error: { error: 'Network error' } }
+        }
+      },
+      providesTags: ['ToolboxTalk'],
+    }),
   }),
 })
 
@@ -116,4 +208,7 @@ export const {
   useCreateToolboxTalkMutation,
   useUpdateToolboxTalkMutation,
   useDeleteToolboxTalkMutation,
+  useCreateReadEntryMutation,
+  useGetReadEntriesQuery,
+  useLazyGetReadEntriesQuery,
 } = toolboxTalksApi

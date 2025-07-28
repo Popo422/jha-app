@@ -1,0 +1,2 @@
+ALTER TABLE "companies" ALTER COLUMN "membership_info" SET DEFAULT '{"membershipLevel":"3","user":null,"memberships":[],"tokenVerifiedAt":"2025-07-28T02:33:24.351Z"}'::jsonb;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN "company_name" text;

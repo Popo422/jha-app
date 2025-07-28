@@ -65,6 +65,13 @@ export interface DeleteContractorResponse {
   message: string
 }
 
+export interface ContractorLimitResponse {
+  canAdd: boolean
+  currentCount: number
+  limit: number
+  membershipLevel: string | null
+}
+
 export const contractorsApi = createApi({
   reducerPath: 'contractorsApi',
   baseQuery: fetchBaseQuery({
@@ -86,8 +93,8 @@ export const contractorsApi = createApi({
   }),
   tagTypes: ['Contractor'],
   endpoints: (builder) => ({
-    getContractors: builder.query<ContractorsResponse, { search?: string; page?: number; pageSize?: number; limit?: number; offset?: number; fetchAll?: boolean }>({
-      query: ({ search, page, pageSize, limit, offset, fetchAll } = {}) => {
+    getContractors: builder.query<ContractorsResponse, { search?: string; company?: string; page?: number; pageSize?: number; limit?: number; offset?: number; fetchAll?: boolean }>({
+      query: ({ search, company, page, pageSize, limit, offset, fetchAll } = {}) => {
         const params = new URLSearchParams()
         
         if (fetchAll) {
@@ -106,6 +113,11 @@ export const contractorsApi = createApi({
         if (search) {
           params.append('search', search)
         }
+        
+        if (company) {
+          params.append('company', company)
+        }
+        
         return `?${params}`
       },
       providesTags: ['Contractor'],
@@ -133,6 +145,21 @@ export const contractorsApi = createApi({
       }),
       invalidatesTags: ['Contractor'],
     }),
+    getContractorLimit: builder.query<ContractorLimitResponse, void>({
+      query: () => 'limit',
+      providesTags: ['Contractor'],
+    }),
+    bulkCreateContractors: builder.mutation<
+      { success: boolean; message: string; contractors: Contractor[] },
+      { contractors: Array<{ firstName: string; lastName: string; email: string; rate?: string; companyName?: string }> }
+    >({
+      query: (body) => ({
+        url: '/bulk',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Contractor'],
+    }),
   }),
 })
 
@@ -142,6 +169,8 @@ export const {
   useCreateContractorMutation,
   useUpdateContractorMutation,
   useDeleteContractorMutation,
+  useGetContractorLimitQuery,
+  useBulkCreateContractorsMutation,
 } = contractorsApi
 
 export type GetContractorsResponse = ContractorsResponse;

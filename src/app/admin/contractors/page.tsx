@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, type Contractor } from "@/lib/features/contractors/contractorsApi";
+import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, useGetContractorLimitQuery, type Contractor } from "@/lib/features/contractors/contractorsApi";
 import { useContractorExportAll } from "@/hooks/useExportAll";
 import { useCreateSubcontractorMutation } from "@/lib/features/subcontractors/subcontractorsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
@@ -16,7 +16,8 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
-import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy } from "lucide-react";
+import { ContractorBulkUploadModal } from "@/components/admin/ContractorBulkUploadModal";
+import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy, Upload } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 type ViewMode = 'list' | 'add' | 'edit';
@@ -41,12 +42,15 @@ export default function ContractorsPage() {
   const [emailMessage, setEmailMessage] = useState<string>("");
   const [isSubcontractorModalOpen, setIsSubcontractorModalOpen] = useState(false);
   const [newSubcontractorName, setNewSubcontractorName] = useState("");
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   
   const { toast, showToast, hideToast } = useToast();
   
   const { data: contractorsData, isLoading, error, refetch } = useGetContractorsQuery({
     search: debouncedSearch || undefined,
   });
+
+  const { data: limitData } = useGetContractorLimitQuery();
   
   const [deleteContractor, { isLoading: isDeleting }] = useDeleteContractorMutation();
   const exportAllContractors = useContractorExportAll();
@@ -281,6 +285,7 @@ export default function ContractorsPage() {
       showToast(error.data?.error || 'Failed to create company/subcontractor', 'error');
     }
   };
+
 
   const contractors = contractorsData?.contractors || [];
 
@@ -702,10 +707,34 @@ export default function ContractorsPage() {
 {t('contractors.manageContractorAccounts')}
             </p>
           </div>
-          <Button onClick={handleAdd} className="flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
-            <span>{t('contractors.addContractor')}</span>
-          </Button>
+          <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
+            {limitData && (
+              <div className="text-sm text-gray-600 dark:text-gray-400 order-3 sm:order-1">
+                {`${t('contractors.contractorsLimitRemaining')} ${limitData.limit - limitData.currentCount}`}
+              </div>
+            )}
+            <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2 order-1 sm:order-2">
+              <Button 
+                onClick={() => setIsBulkUploadModalOpen(true)} 
+                variant="outline" 
+                className="flex items-center justify-center space-x-2 w-full sm:w-auto"
+                size="sm"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline">Bulk Upload</span>
+                <span className="sm:hidden">Bulk</span>
+              </Button>
+              <Button 
+                onClick={handleAdd} 
+                className="flex items-center justify-center space-x-2 w-full sm:w-auto"
+                size="sm"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('contractors.addContractor')}</span>
+                <span className="sm:hidden">Add</span>
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -784,6 +813,12 @@ export default function ContractorsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Upload Modal */}
+      <ContractorBulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+      />
     </div>
   );
 }

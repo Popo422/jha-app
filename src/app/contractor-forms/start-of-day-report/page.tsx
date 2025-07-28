@@ -18,6 +18,7 @@ import SignatureCanvas from "react-signature-canvas";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
+import SupervisorSelect from "@/components/SupervisorSelect";
 
 interface StartOfDayReportFormData {
   completedBy: string;
@@ -209,13 +210,12 @@ export default function StartOfDayReportPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="supervisor">{t('formFields.supervisor')}</Label>
-                    <Input
+                    <SupervisorSelect
                       id="supervisor"
                       name="supervisor"
-                      className="w-full"
                       value={formData.supervisor}
-                      onChange={handleInputChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
+                      label={t('formFields.supervisor')}
                       required
                     />
                   </div>
@@ -236,7 +236,7 @@ export default function StartOfDayReportPage() {
                       name="company"
                       value={formData.company}
                       onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
-                      label="Company/Subcontractor"
+                      label={t('admin.companySubcontractor')}
                       required
                     />
                   </div>

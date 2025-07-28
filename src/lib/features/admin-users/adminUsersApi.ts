@@ -6,6 +6,7 @@ export interface AdminUser {
   name: string
   role: 'admin' | 'super-admin'
   companyName: string
+  organizationName: string
   createdAt: string
 }
 
@@ -28,6 +29,7 @@ export interface CreateAdminUserRequest {
   email: string
   password: string
   role: 'admin' | 'super-admin'
+  companyName?: string
 }
 
 export interface UpdateAdminUserRequest {
@@ -36,6 +38,7 @@ export interface UpdateAdminUserRequest {
   email: string
   password?: string
   role: 'admin' | 'super-admin'
+  companyName?: string
 }
 
 export interface AdminUserResponse {
