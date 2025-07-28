@@ -60,6 +60,8 @@
     "protected": "Protected",
     "protectedAccountTooltip": "Protected account - cannot be deleted",
     "company": "Company",
+    "organization": "Organization",
+    "optional": "optional",
     "created": "Created",
     "name": "Name",
     "timeReports": "Time Reports",
@@ -365,7 +367,8 @@
     "hoursSpentOnSite": "Hours spent on site",
     "jobDescriptionPlaceholder": "Describe the work performed...",
     "projectName": "Name of project",
-    "searchSubcontractors": "Search subcontractors..."
+    "searchSubcontractors": "Search subcontractors...",
+    "companySubcontractorName": "Enter company or subcontractor name"
   },
   "safety": {
     "toolInspection": "Tool Inspection",

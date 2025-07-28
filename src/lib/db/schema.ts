@@ -32,6 +32,7 @@ export const users = pgTable('users', {
   password: text('password').notNull(),
   role: text('role').notNull().default('contractor'), // 'contractor', 'admin', 'super-admin'
   companyId: uuid('company_id'),
+  companyName: text('company_name'), // Optional: admin/contractor's own company name
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })

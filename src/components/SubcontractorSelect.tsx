@@ -35,7 +35,7 @@ export default function SubcontractorSelect({
   const { t } = useTranslation("common");
 
   // Use translations as defaults if not provided
-  const finalLabel = label || "Company/Subcontractor";
+  const finalLabel = label || t('admin.companySubcontractor');
   const finalPlaceholder = placeholder || "Select or search company/subcontractor...";
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

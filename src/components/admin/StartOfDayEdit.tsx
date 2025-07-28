@@ -228,7 +228,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 name="company"
                 value={formData.company || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
-                label="Company/Subcontractor"
+                label={t('admin.companySubcontractor')}
               />
             </div>
             <div className="space-y-2">

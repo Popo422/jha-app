@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { AdminDataTable } from '@/components/admin/AdminDataTable'
 import { Plus, UserCheck, Shield, Lock, ArrowLeft, Eye, EyeOff, Save, X } from 'lucide-react'
+import SubcontractorSelect from '@/components/SubcontractorSelect'
 
 // AdminUser interface is now imported from the API
 
@@ -29,7 +30,8 @@ export default function AdminEditorPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'admin' as 'admin' | 'super-admin'
+    role: 'admin' as 'admin' | 'super-admin',
+    companyName: ''
   })
   const [clientPagination, setClientPagination] = useState({
     currentPage: 1,
@@ -188,7 +190,8 @@ export default function AdminEditorPage() {
           id: editingAdmin.id,
           name: formData.name,
           email: formData.email,
-          role: formData.role
+          role: formData.role,
+          companyName: formData.companyName
         }
         
         // Only include password if it's provided
@@ -199,7 +202,7 @@ export default function AdminEditorPage() {
         await updateAdminUser(updateData).unwrap()
         
         // Success - reset form and go back to list
-        setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin' })
+        setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin', companyName: '' })
         setEditingAdmin(null)
         setErrors({})
         setCurrentView('list')
@@ -209,11 +212,12 @@ export default function AdminEditorPage() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          role: formData.role
+          role: formData.role,
+          companyName: formData.companyName
         }).unwrap()
 
         // Success - reset form and go back to list
-        setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin' })
+        setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin', companyName: '' })
         setErrors({})
         setCurrentView('list')
       }
@@ -292,7 +296,12 @@ export default function AdminEditorPage() {
     },
     {
       accessorKey: 'companyName',
-      header: t('admin.company')
+      header: t('admin.companySubcontractor'),
+      cell: ({ row }: any) => (
+        <div className="max-w-32 truncate">
+          {row.original.companyName || row.original.organizationName || 'N/A'}
+        </div>
+      )
     },
     {
       accessorKey: 'createdAt',
@@ -309,7 +318,7 @@ export default function AdminEditorPage() {
           <Button variant="ghost" onClick={() => {
             setCurrentView('list')
             setEditingAdmin(null)
-            setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin' })
+            setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin', companyName: '' })
             setErrors({})
           }} className="flex items-center space-x-2">
             <ArrowLeft className="h-4 w-4" />
@@ -388,6 +397,22 @@ export default function AdminEditorPage() {
               </select>
               {errors.role && (
                 <p className="text-sm text-red-500">{errors.role}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <SubcontractorSelect
+                id="companyName"
+                name="companyName"
+                value={formData.companyName}
+                onChange={(value) => setFormData(prev => ({ ...prev, companyName: value }))}
+                label={`${t('admin.companySubcontractor')} (${t('admin.optional')})`}
+                placeholder={t('placeholders.companySubcontractorName')}
+                disabled={isCreating || isUpdating}
+                className={errors.companyName ? 'border-red-500' : ''}
+              />
+              {errors.companyName && (
+                <p className="text-sm text-red-500">{errors.companyName}</p>
               )}
             </div>
 
@@ -489,7 +514,7 @@ export default function AdminEditorPage() {
                 onClick={() => {
                   setCurrentView('list')
                   setEditingAdmin(null)
-                  setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin' })
+                  setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'admin', companyName: '' })
                   setErrors({})
                 }}
                 disabled={isCreating || isUpdating}
@@ -552,7 +577,8 @@ export default function AdminEditorPage() {
                 email: adminUser.email,
                 password: '',
                 confirmPassword: '',
-                role: adminUser.role
+                role: adminUser.role,
+                companyName: adminUser.companyName || ''
               })
               setCurrentView('edit')
             } : undefined}
@@ -560,12 +586,12 @@ export default function AdminEditorPage() {
             getRowId={(admin) => admin.id}
             canDelete={(adminUser) => admin?.role === 'super-admin' && adminUser.role !== 'super-admin' && adminUser.id !== admin?.id}
             exportFilename="admin_users"
-            exportHeaders={[t('admin.name'), t('auth.email'), t('admin.role'), t('admin.company'), t('admin.created')]}
+            exportHeaders={[t('admin.name'), t('auth.email'), t('admin.role'), t('admin.companySubcontractor'), t('admin.created')]}
             getExportData={(admin) => [
               admin.name || '',
               admin.email || '',
               admin.role || '',
-              admin.companyName || '',
+              admin.companyName || admin.organizationName || 'N/A',
               new Date(admin.createdAt).toLocaleDateString()
             ]}
             serverSide={true}

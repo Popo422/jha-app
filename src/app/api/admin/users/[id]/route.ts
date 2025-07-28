@@ -40,7 +40,7 @@ export async function PATCH(
       )
     }
 
-    const { name, email, password, role } = await request.json()
+    const { name, email, password, role, companyName } = await request.json()
     const resolvedParams = await params
     const userId = resolvedParams.id
 
@@ -77,6 +77,7 @@ export async function PATCH(
       email: string
       role: string
       password: string
+      companyName: string | null
     }> = {}
     if (name) updateData.name = name
     if (email) updateData.email = email
@@ -86,6 +87,9 @@ export async function PATCH(
     if (password) {
       const saltRounds = 12
       updateData.password = await bcrypt.hash(password, saltRounds)
+    }
+    if (companyName !== undefined) {
+      updateData.companyName = companyName || null
     }
 
     // Update user

@@ -236,7 +236,7 @@ export default function StartOfDayReportPage() {
                       name="company"
                       value={formData.company}
                       onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
-                      label="Company/Subcontractor"
+                      label={t('admin.companySubcontractor')}
                       required
                     />
                   </div>

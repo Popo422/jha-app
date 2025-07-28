@@ -64,6 +64,13 @@
       "when": 1753195264658,
       "tag": "0008_early_rage",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1753670004371,
+      "tag": "0009_bent_vulture",
+      "breakpoints": true
     }
   ]
 }

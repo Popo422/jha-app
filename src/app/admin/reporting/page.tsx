@@ -44,6 +44,7 @@ export default function ReportingPage() {
   const [statusFilter, setStatusFilter] = useState('all'); // Default to all statuses
   const [activeTab, setActiveTab] = useState('hours'); // 'hours', 'cost', or 'forecast'
   const [contractorCostSearch, setContractorCostSearch] = useState('');
+  const [contractorHoursSearch, setContractorHoursSearch] = useState('');
   const [companyCostSearch, setCompanyCostSearch] = useState('');
   const [projectCostSearch, setProjectCostSearch] = useState('');
   const [clientPagination, setClientPagination] = useState({
@@ -57,6 +58,7 @@ export default function ReportingPage() {
   
   // Debounced search values to prevent excessive filtering
   const debouncedContractorCostSearch = useDebouncedValue(contractorCostSearch, 300);
+  const debouncedContractorHoursSearch = useDebouncedValue(contractorHoursSearch, 300);
   const debouncedCompanyCostSearch = useDebouncedValue(companyCostSearch, 300);
   const debouncedProjectCostSearch = useDebouncedValue(projectCostSearch, 300);
 
@@ -340,6 +342,16 @@ export default function ReportingPage() {
 
   // Filtered analytics data for search - using debounced values for better performance
   const filteredContractorHours = useMemo(() => {
+    if (!debouncedContractorHoursSearch) return contractorHours;
+    const searchTerm = debouncedContractorHoursSearch.toLowerCase();
+    return contractorHours.filter(contractor =>
+      contractor.name.toLowerCase().includes(searchTerm) ||
+      contractor.company.toLowerCase().includes(searchTerm) ||
+      contractor.hours.toFixed(1).includes(searchTerm)
+    );
+  }, [contractorHours, debouncedContractorHoursSearch]);
+
+  const filteredContractorCosts = useMemo(() => {
     if (!debouncedContractorCostSearch) return contractorHours;
     const searchTerm = debouncedContractorCostSearch.toLowerCase();
     return contractorHours.filter(contractor =>
@@ -483,9 +495,13 @@ export default function ReportingPage() {
   ]);
 
   // Export functions for cost analytics data
-  const handleExportContractorCosts = useCallback(async () => {
+  const handleExportContractorHours = useCallback(async () => {
     return filteredContractorHours;
   }, [filteredContractorHours]);
+
+  const handleExportContractorCosts = useCallback(async () => {
+    return filteredContractorCosts;
+  }, [filteredContractorCosts]);
 
   const handleExportProjectCosts = useCallback(async () => {
     return filteredProjectAnalytics;
@@ -839,6 +855,24 @@ export default function ReportingPage() {
   ], [t]);
 
   // Memoized column definitions to prevent re-renders
+  const contractorHoursColumns = useMemo<ColumnDef<{name: string; company: string; hours: number; cost: number}>[]>(() => [
+    {
+      accessorKey: "name",
+      header: t('admin.contractorName'),
+      cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+    },
+    {
+      accessorKey: "company",
+      header: t('admin.companyName'),
+      cell: ({ row }) => <div className="max-w-32 truncate">{row.getValue("company")}</div>,
+    },
+    {
+      accessorKey: "hours",
+      header: t('admin.totalHours'),
+      cell: ({ row }) => <div className="font-semibold">{(row.getValue("hours") as number).toFixed(1)} hrs</div>,
+    },
+  ], [t]);
+
   const contractorCostColumns = useMemo<ColumnDef<{name: string; company: string; hours: number; cost: number}>[]>(() => [
     {
       accessorKey: "name",
@@ -1536,57 +1570,29 @@ export default function ReportingPage() {
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.hoursAnalytics')}</h2>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-                  {/* Hours by Contractor Chart */}
+                  {/* Hours by Contractor Table */}
                   <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">{t('admin.hoursWorkedByContractor')}</CardTitle>
+                    <CardHeader>
+                      <CardTitle>{t('admin.hoursWorkedByContractor')}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {timesheetLoading || timesheetFetching ? (
-                        <div className="h-64 md:h-80 flex items-center justify-center">
-                          <Skeleton className="h-64 md:h-80 w-full" />
-                        </div>
-                      ) : contractorHours.length === 0 ? (
-                        <div className="h-64 md:h-80 flex items-center justify-center text-gray-500">
-                          {t('admin.noContractorData')}
-                        </div>
-                      ) : (
-                        <div className="h-64 md:h-80 w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart 
-                              data={contractorHours.slice(0, 10)} 
-                              margin={{ top: 10, right: 10, left: 10, bottom: 60 }}
-                            >
-                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                            <XAxis 
-                              dataKey="name" 
-                              tick={{ fontSize: 9 }}
-                              angle={-45}
-                              textAnchor="end"
-                              height={80}
-                              interval={0}
-                            />
-                            <YAxis 
-                              tick={{ fontSize: 10 }} 
-                              domain={[0, 'dataMax']}
-                              tickFormatter={(value) => `${value}h`}
-                              width={35}
-                            />
-                            <Tooltip 
-                              formatter={(value: number) => [`${value.toFixed(1)} hours`, 'Hours Worked']}
-                              labelFormatter={(label) => `Contractor: ${label}`}
-                              contentStyle={{ fontSize: '11px' }}
-                            />
-                            <Bar 
-                              dataKey="hours" 
-                              fill="#3b82f6" 
-                              radius={[4, 4, 0, 0]}
-                              maxBarSize={60}
-                            />
-                          </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      )}
+                      <AdminDataTable
+                        data={filteredContractorHours}
+                        columns={contractorHoursColumns}
+                        isLoading={timesheetLoading}
+                        isFetching={timesheetFetching}
+                        getRowId={(item) => `${item.name}-${item.company}`}
+                        exportFilename="contractor_hours"
+                        exportHeaders={[t('admin.contractorName'), t('admin.companyName'), t('admin.totalHours')]}
+                        getExportData={(item) => [
+                          item.name,
+                          item.company,
+                          `${item.hours.toFixed(1)} hrs`
+                        ]}
+                        searchValue={contractorHoursSearch}
+                        onSearchChange={setContractorHoursSearch}
+                        onExportAll={handleExportContractorHours}
+                      />
                     </CardContent>
                   </Card>
 
@@ -1798,7 +1804,7 @@ export default function ReportingPage() {
                     </CardHeader>
                     <CardContent>
                       <AdminDataTable
-                        data={filteredContractorHours}
+                        data={filteredContractorCosts}
                         columns={contractorCostColumns}
                         isLoading={timesheetLoading}
                         isFetching={timesheetFetching}
@@ -1910,34 +1916,6 @@ export default function ReportingPage() {
       </div>
 
 
-      {/* Employee Aggregate Table */}
-      <div className="space-y-4">
-        <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{t('admin.timesheetDetails')}</h2>
-        <AdminDataTable
-          data={employeeAggregates}
-          columns={timesheetColumns}
-          isLoading={aggregatesLoading}
-          isFetching={aggregatesFetching}
-          getRowId={(aggregate) => `${aggregate.employee}-${aggregate.company}`}
-          exportFilename="employee_aggregates_approved"
-          exportHeaders={[t('admin.name'), t('admin.companyName'), t('admin.totalHours'), t('admin.totalCost'), t('admin.entries'), t('admin.projectName'), t('admin.latestEntry')]}
-          getExportData={(aggregate) => [
-            aggregate.employee,
-            aggregate.company,
-            `${aggregate.totalHours.toFixed(1)} hrs`,
-            `$${aggregate.totalCost.toFixed(2)}`,
-            `${aggregate.entriesCount} entries`,
-            aggregate.projectNames || "N/A",
-            new Date(aggregate.latestDate).toLocaleDateString()
-          ]}
-          searchValue={search}
-          onSearchChange={setSearch}
-          renderMobileCard={renderMobileCard}
-          filters={timesheetFilters}
-          serverSide={false}
-          onExportAll={handleExportAllAggregates}
-        />
-      </div>
     </div>
   );
 }
