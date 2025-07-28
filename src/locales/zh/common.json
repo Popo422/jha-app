@@ -678,6 +678,26 @@
     "addToolboxTalk": "添加工具箱谈话",
     "manageToolboxTalks": "管理安全工具箱谈话和培训材料"
   },
+  "supervisors": {
+    "supervisorsManagement": "监督员管理",
+    "addSupervisor": "添加监督员",
+    "supervisors": "监督员",
+    "supervisorName": "监督员姓名",
+    "addNewSupervisor": "添加新监督员",
+    "editSupervisor": "编辑监督员",
+    "createSupervisor": "创建监督员",
+    "updateSupervisor": "更新监督员",
+    "enterSupervisorInfo": "请在下方输入监督员信息。",
+    "updateSupervisorInfo": "请在下方更新监督员信息。",
+    "enterSupervisorName": "输入监督员姓名",
+    "nameRequired": "监督员姓名是必需的",
+    "createdSuccessfully": "监督员创建成功",
+    "updatedSuccessfully": "监督员更新成功",
+    "deletedSuccessfully": "监督员删除成功",
+    "failedToCreate": "创建监督员失败",
+    "failedToUpdate": "更新监督员失败",
+    "failedToDelete": "删除监督员失败"
+  },
   "incidentReport": {
     "reportDate": "报告日期",
     "companySubcontractor": "公司/分包商",

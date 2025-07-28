@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Upload, Download, X, Check, AlertCircle, CheckCircle2, Loader2, Trash2 } from "lucide-react";
+import * as XLSX from 'xlsx';
 
 interface ContractorRow {
   firstName: string;
@@ -53,20 +54,42 @@ export function ContractorBulkUploadModal({
     { field: 'companyName', label: 'Company/Subcontractor', required: false, example: 'ABC Construction' },
   ];
 
-  const downloadTemplate = () => {
-    const headers = csvSchema.map(field => field.label).join(',');
-    const example = csvSchema.map(field => field.example).join(',');
-    const csvContent = `${headers}\n${example}`;
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'contractors-template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+  const downloadTemplate = (format: 'csv' | 'excel' = 'csv') => {
+    if (format === 'csv') {
+      const headers = csvSchema.map(field => field.label).join(',');
+      const example = csvSchema.map(field => field.example).join(',');
+      const csvContent = `${headers}\n${example}`;
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'contractors-template.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } else {
+      // Create Excel template
+      const headers = csvSchema.map(field => field.label);
+      const example = csvSchema.map(field => field.example);
+      
+      const worksheet = XLSX.utils.aoa_to_sheet([headers, example]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Contractors');
+      
+      // Generate buffer and download
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'contractors-template.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }
   };
 
   const parseCSV = (csvText: string): ContractorRow[] => {
@@ -84,6 +107,60 @@ export function ContractorBulkUploadModal({
 
       headers.forEach((header, index) => {
         const value = values[index] || '';
+        switch (header.toLowerCase()) {
+          case 'first name':
+            row.firstName = value;
+            break;
+          case 'last name':
+            row.lastName = value;
+            break;
+          case 'email':
+            row.email = value;
+            break;
+          case 'hourly rate':
+          case 'rate':
+            row.rate = value;
+            break;
+          case 'company/subcontractor':
+          case 'company':
+          case 'companyname':
+            row.companyName = value;
+            break;
+        }
+      });
+
+      if (row.firstName || row.lastName || row.email) {
+        rows.push(row as ContractorRow);
+      }
+    }
+
+    return rows;
+  };
+
+  const parseExcel = (buffer: ArrayBuffer): ContractorRow[] => {
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    const worksheetName = workbook.SheetNames[0];
+    
+    if (!worksheetName) {
+      throw new Error('Excel file must contain at least one worksheet');
+    }
+
+    const worksheet = workbook.Sheets[worksheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+    
+    if (jsonData.length < 2) {
+      throw new Error('Excel file must have at least a header row and one data row');
+    }
+
+    const headers = jsonData[0].map((h: any) => String(h || '').trim());
+    const rows: ContractorRow[] = [];
+
+    for (let i = 1; i < jsonData.length; i++) {
+      const values = jsonData[i] || [];
+      const row: Partial<ContractorRow> = {};
+
+      headers.forEach((header, index) => {
+        const value = String(values[index] || '').trim();
         switch (header.toLowerCase()) {
           case 'first name':
             row.firstName = value;
@@ -166,9 +243,17 @@ export function ContractorBulkUploadModal({
     const allContractors: ContractorRow[] = [];
     let processedFiles = 0;
 
+    const isExcelFile = (fileName: string) => {
+      return fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+    };
+
+    const isCsvFile = (fileName: string) => {
+      return fileName.endsWith('.csv');
+    };
+
     Array.from(files).forEach((file, fileIndex) => {
-      if (!file.name.endsWith('.csv')) {
-        newErrors.push(`File "${file.name}": Please upload only CSV files`);
+      if (!isCsvFile(file.name) && !isExcelFile(file.name)) {
+        newErrors.push(`File "${file.name}": Please upload only CSV or Excel files`);
         processedFiles++;
         return;
       }
@@ -176,8 +261,15 @@ export function ContractorBulkUploadModal({
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const csvText = e.target?.result as string;
-          const contractors = parseCSV(csvText);
+          let contractors: ContractorRow[] = [];
+          
+          if (isCsvFile(file.name)) {
+            const csvText = e.target?.result as string;
+            contractors = parseCSV(csvText);
+          } else if (isExcelFile(file.name)) {
+            const buffer = e.target?.result as ArrayBuffer;
+            contractors = parseExcel(buffer);
+          }
           
           // Add file name to contractors for tracking
           const contractorsWithFile = contractors.map(contractor => ({
@@ -188,7 +280,7 @@ export function ContractorBulkUploadModal({
           allContractors.push(...contractorsWithFile);
           setUploadedFiles(prev => new Set([...prev, file.name]));
         } catch (error) {
-          newErrors.push(`File "${file.name}": ${error instanceof Error ? error.message : 'Error parsing CSV file'}`);
+          newErrors.push(`File "${file.name}": ${error instanceof Error ? error.message : 'Error parsing file'}`);
         }
 
         processedFiles++;
@@ -207,7 +299,11 @@ export function ContractorBulkUploadModal({
         }
       };
 
-      reader.readAsText(file);
+      if (isCsvFile(file.name)) {
+        reader.readAsText(file);
+      } else if (isExcelFile(file.name)) {
+        reader.readAsArrayBuffer(file);
+      }
     });
   };
 
@@ -267,16 +363,27 @@ export function ContractorBulkUploadModal({
     <div className="space-y-6">
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <Label className="text-base font-medium">Upload CSV File</Label>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={downloadTemplate}
-            className="flex items-center justify-center space-x-2 w-full sm:w-auto"
-          >
-            <Download className="h-4 w-4" />
-            <span>Download Template</span>
-          </Button>
+          <Label className="text-base font-medium">Upload CSV or Excel File</Label>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => downloadTemplate('csv')}
+              className="flex items-center justify-center space-x-2 flex-1 sm:flex-none"
+            >
+              <Download className="h-4 w-4" />
+              <span>CSV Template</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => downloadTemplate('excel')}
+              className="flex items-center justify-center space-x-2 flex-1 sm:flex-none"
+            >
+              <Download className="h-4 w-4" />
+              <span>Excel Template</span>
+            </Button>
+          </div>
         </div>
         
         <div 
@@ -286,7 +393,7 @@ export function ContractorBulkUploadModal({
           <Input
             ref={fileInputRef}
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx,.xls"
             multiple
             onChange={handleFileUpload}
             className="hidden"
@@ -297,10 +404,10 @@ export function ContractorBulkUploadModal({
             </div>
             <div className="space-y-2">
               <p className="text-base font-medium text-gray-900 dark:text-gray-100">
-                Click to upload CSV files
+                Click to upload CSV or Excel files
               </p>
               <p className="text-sm text-muted-foreground">
-                You can select multiple CSV files at once
+                You can select multiple files at once (.csv, .xlsx, .xls)
               </p>
               <p className="text-sm text-muted-foreground">
                 Required: First Name, Last Name, Email
@@ -599,7 +706,7 @@ export function ContractorBulkUploadModal({
       case 'error':
         return 'There was an error uploading your contractors.';
       default:
-        return 'Upload multiple contractors at once using a CSV file. Follow the schema requirements below.';
+        return 'Upload multiple contractors at once using CSV or Excel files. Follow the schema requirements below.';
     }
   };
 

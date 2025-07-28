@@ -678,6 +678,26 @@
     "addToolboxTalk": "Dodaj Rozmowę Bezpieczeństwa",
     "manageToolboxTalks": "Zarządzaj rozmowami bezpieczeństwa i materiałami szkoleniowymi"
   },
+  "supervisors": {
+    "supervisorsManagement": "Zarządzanie Nadzorcami",
+    "addSupervisor": "Dodaj Nadzorcę",
+    "supervisors": "nadzorcy",
+    "supervisorName": "Nazwa Nadzorcy",
+    "addNewSupervisor": "Dodaj Nowego Nadzorcę",
+    "editSupervisor": "Edytuj Nadzorcę",
+    "createSupervisor": "Utwórz Nadzorcę",
+    "updateSupervisor": "Aktualizuj Nadzorcę",
+    "enterSupervisorInfo": "Wprowadź informacje o nadzorcy poniżej.",
+    "updateSupervisorInfo": "Aktualizuj informacje o nadzorcy poniżej.",
+    "enterSupervisorName": "Wprowadź nazwę nadzorcy",
+    "nameRequired": "Nazwa nadzorcy jest wymagana",
+    "createdSuccessfully": "Nadzorca utworzony pomyślnie",
+    "updatedSuccessfully": "Nadzorca zaktualizowany pomyślnie",
+    "deletedSuccessfully": "Nadzorca usunięty pomyślnie",
+    "failedToCreate": "Nie udało się utworzyć nadzorcy",
+    "failedToUpdate": "Nie udało się zaktualizować nadzorcy",
+    "failedToDelete": "Nie udało się usunąć nadzorcy"
+  },
   "incidentReport": {
     "reportDate": "Data Raportu",
     "companySubcontractor": "Firma/Podwykonawca",

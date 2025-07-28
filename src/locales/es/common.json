@@ -680,6 +680,26 @@
     "addToolboxTalk": "Agregar Charla de Seguridad",
     "manageToolboxTalks": "Gestionar charlas de seguridad y materiales de capacitación"
   },
+  "supervisors": {
+    "supervisorsManagement": "Gestión de Supervisores",
+    "addSupervisor": "Agregar Supervisor",
+    "supervisors": "supervisores",
+    "supervisorName": "Nombre del Supervisor",
+    "addNewSupervisor": "Agregar Nuevo Supervisor",
+    "editSupervisor": "Editar Supervisor",
+    "createSupervisor": "Crear Supervisor",
+    "updateSupervisor": "Actualizar Supervisor",
+    "enterSupervisorInfo": "Ingrese la información del supervisor a continuación.",
+    "updateSupervisorInfo": "Actualice la información del supervisor a continuación.",
+    "enterSupervisorName": "Ingrese nombre del supervisor",
+    "nameRequired": "El nombre del supervisor es obligatorio",
+    "createdSuccessfully": "Supervisor creado exitosamente",
+    "updatedSuccessfully": "Supervisor actualizado exitosamente",
+    "deletedSuccessfully": "Supervisor eliminado exitosamente",
+    "failedToCreate": "Error al crear supervisor",
+    "failedToUpdate": "Error al actualizar supervisor",
+    "failedToDelete": "Error al eliminar supervisor"
+  },
   "incidentReport": {
     "reportDate": "Fecha del Reporte",
     "companySubcontractor": "Empresa/Subcontratista",
