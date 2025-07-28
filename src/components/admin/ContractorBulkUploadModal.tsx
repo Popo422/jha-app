@@ -664,7 +664,11 @@ export function ContractorBulkUploadModal({
             
             {getCurrentStep() === 'error' && (
               <Button 
-                onClick={() => setStep('upload')} 
+                onClick={() => {
+                  reset(); 
+                  setStep('upload')
+                  setErrors([]);
+                }} 
                 className="flex items-center justify-center space-x-2 w-full sm:w-auto order-1 sm:order-2"
               >
                 <Upload className="h-4 w-4" />

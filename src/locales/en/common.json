@@ -449,7 +449,8 @@
     "attachmentDeletedSuccessfully": "Attachment deleted successfully!",
     "failedToDeleteAttachment": "Failed to delete attachment",
     "changesSavedSuccessfully": "Changes saved successfully!",
-    "failedToSaveChanges": "Failed to save changes"
+    "failedToSaveChanges": "Failed to save changes",
+    "errorOccurred": "An error occurred"
   },
   "auth": {
     "login": "Login",
@@ -750,5 +751,25 @@
     "investigatorTitle": "Title",
     "investigatorSignature": "Signature",
     "addInvestigator": "Add Investigator"
+  },
+  "supervisors": {
+    "supervisorsManagement": "Supervisors Management",
+    "addSupervisor": "Add Supervisor",
+    "supervisors": "supervisors",
+    "supervisorName": "Supervisor Name",
+    "addNewSupervisor": "Add New Supervisor",
+    "editSupervisor": "Edit Supervisor",
+    "createSupervisor": "Create Supervisor",
+    "updateSupervisor": "Update Supervisor",
+    "enterSupervisorInfo": "Enter the supervisor's information below.",
+    "updateSupervisorInfo": "Update the supervisor's information below.",
+    "enterSupervisorName": "Enter supervisor name",
+    "nameRequired": "Supervisor name is required",
+    "createdSuccessfully": "Supervisor created successfully",
+    "updatedSuccessfully": "Supervisor updated successfully",
+    "deletedSuccessfully": "Supervisor deleted successfully",
+    "failedToCreate": "Failed to create supervisor",
+    "failedToUpdate": "Failed to update supervisor",
+    "failedToDelete": "Failed to delete supervisor"
   }
 }

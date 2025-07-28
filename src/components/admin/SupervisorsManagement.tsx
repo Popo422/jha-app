@@ -125,7 +125,7 @@ export function SupervisorsManagement() {
     const errors: Record<string, string> = {};
     
     if (!formData.name.trim()) {
-      errors.name = "Supervisor name is required";
+      errors.name = t('supervisors.nameRequired');
     }
     
     setFormErrors(errors);
@@ -145,12 +145,12 @@ export function SupervisorsManagement() {
         name: formData.name.trim(),
       }).unwrap();
       
-      showToast('Supervisor created successfully', 'success');
+      showToast(t('supervisors.createdSuccessfully'), 'success');
       setIsCreateDialogOpen(false);
       resetForm();
     } catch (error: any) {
       console.error('Error creating supervisor:', error);
-      showToast(error.data?.message || 'Failed to create supervisor', 'error');
+      showToast(error.data?.message || t('supervisors.failedToCreate'), 'error');
     }
   }, [formData, validateForm, createSupervisor, showToast, resetForm]);
 
@@ -171,23 +171,23 @@ export function SupervisorsManagement() {
         name: formData.name.trim(),
       }).unwrap();
       
-      showToast('Supervisor updated successfully', 'success');
+      showToast(t('supervisors.updatedSuccessfully'), 'success');
       setIsEditDialogOpen(false);
       setEditingSupervisor(null);
       resetForm();
     } catch (error: any) {
       console.error('Error updating supervisor:', error);
-      showToast(error.data?.message || 'Failed to update supervisor', 'error');
+      showToast(error.data?.message || t('supervisors.failedToUpdate'), 'error');
     }
   }, [editingSupervisor, formData, validateForm, updateSupervisor, showToast, resetForm]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
       await deleteSupervisor(id).unwrap();
-      showToast('Supervisor deleted successfully', 'success');
+      showToast(t('supervisors.deletedSuccessfully'), 'success');
     } catch (error: any) {
       console.error('Error deleting supervisor:', error);
-      showToast(error.data?.message || 'Failed to delete supervisor', 'error');
+      showToast(error.data?.message || t('supervisors.failedToDelete'), 'error');
     }
   }, [deleteSupervisor, showToast]);
 
@@ -210,7 +210,7 @@ export function SupervisorsManagement() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="p-0 h-auto font-medium hover:bg-transparent"
         >
-          Supervisor Name
+          {t('supervisors.supervisorName')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -220,7 +220,7 @@ export function SupervisorsManagement() {
     },
     {
       accessorKey: "createdAt",
-      header: "Created",
+      header: t('admin.created'),
       cell: ({ row }) => (
         <div className="text-sm text-muted-foreground">
           {new Date(row.original.createdAt).toLocaleDateString()}
@@ -235,7 +235,7 @@ export function SupervisorsManagement() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <UserCheck className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">Supervisors Management</CardTitle>
+            <CardTitle className="text-lg">{t('supervisors.supervisorsManagement')}</CardTitle>
           </div>
           <Button 
             onClick={() => setIsCreateDialogOpen(true)}
@@ -243,7 +243,7 @@ export function SupervisorsManagement() {
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            Add Supervisor
+            {t('supervisors.addSupervisor')}
           </Button>
         </div>
       </CardHeader>
@@ -256,8 +256,8 @@ export function SupervisorsManagement() {
           onEdit={handleEdit}
           onDelete={handleDelete}
           getRowId={(supervisor) => supervisor.id}
-          exportFilename="supervisors"
-          exportHeaders={["Supervisor Name", "Created"]}
+          exportFilename={t('supervisors.supervisors')}
+          exportHeaders={[t('supervisors.supervisorName'), t('admin.created')]}
           getExportData={(supervisor) => [
             supervisor.name,
             new Date(supervisor.createdAt).toLocaleDateString()
@@ -275,21 +275,21 @@ export function SupervisorsManagement() {
         <AlertDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Add New Supervisor</AlertDialogTitle>
+              <AlertDialogTitle>{t('supervisors.addNewSupervisor')}</AlertDialogTitle>
               <AlertDialogDescription>
-                Enter the supervisor's information below.
+                {t('supervisors.enterSupervisorInfo')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="create-name">Supervisor Name</Label>
+                <Label htmlFor="create-name">{t('supervisors.supervisorName')}</Label>
                 <Input
                   id="create-name"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="Enter supervisor name"
+                  placeholder={t('supervisors.enterSupervisorName')}
                   disabled={isFormLoading}
                   className={formErrors.name ? "border-red-500" : ""}
                 />
@@ -303,7 +303,7 @@ export function SupervisorsManagement() {
               <div className="text-sm text-red-500 mb-4">
                 {'data' in formError && typeof formError.data === 'object' && formError.data && 'message' in formError.data
                   ? (formError.data as any).message
-                  : 'An error occurred'}
+                  : t('common.errorOccurred')}
               </div>
             )}
 
@@ -315,13 +315,13 @@ export function SupervisorsManagement() {
                 }}
                 disabled={isFormLoading}
               >
-                Cancel
+                {t('common.cancel')}
               </AlertDialogCancel>
               <AlertDialogAction 
                 onClick={handleCreate}
                 disabled={isFormLoading}
               >
-                {isFormLoading ? "Creating..." : "Create Supervisor"}
+                {isFormLoading ? t('common.saving') : t('supervisors.createSupervisor')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -331,21 +331,21 @@ export function SupervisorsManagement() {
         <AlertDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Edit Supervisor</AlertDialogTitle>
+              <AlertDialogTitle>{t('supervisors.editSupervisor')}</AlertDialogTitle>
               <AlertDialogDescription>
-                Update the supervisor's information below.
+                {t('supervisors.updateSupervisorInfo')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-name">Supervisor Name</Label>
+                <Label htmlFor="edit-name">{t('supervisors.supervisorName')}</Label>
                 <Input
                   id="edit-name"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="Enter supervisor name"
+                  placeholder={t('supervisors.enterSupervisorName')}
                   disabled={isFormLoading}
                   className={formErrors.name ? "border-red-500" : ""}
                 />
@@ -359,7 +359,7 @@ export function SupervisorsManagement() {
               <div className="text-sm text-red-500 mb-4">
                 {'data' in formError && typeof formError.data === 'object' && formError.data && 'message' in formError.data
                   ? (formError.data as any).message
-                  : 'An error occurred'}
+                  : t('common.errorOccurred')}
               </div>
             )}
 
@@ -372,13 +372,13 @@ export function SupervisorsManagement() {
                 }}
                 disabled={isFormLoading}
               >
-                Cancel
+                {t('common.cancel')}
               </AlertDialogCancel>
               <AlertDialogAction 
                 onClick={handleUpdate}
                 disabled={isFormLoading}
               >
-                {isFormLoading ? "Updating..." : "Update Supervisor"}
+                {isFormLoading ? t('common.updating') : t('supervisors.updateSupervisor')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
