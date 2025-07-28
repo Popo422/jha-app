@@ -188,56 +188,28 @@ export default function ContractTrackerPage() {
   }, []);
 
   const columns = useMemo<ColumnDef<ContractorStatus>[]>(() => {
-    const baseColumns: ColumnDef<ContractorStatus>[] = [
-      {
-        accessorKey: 'name',
-        header: ({ column }: { column: any }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-medium text-sm"
-          >
-            {t('admin.contractor')}
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        ),
-        cell: ({ row }: { row: any }) => <div className="text-sm font-medium">{row.getValue('name')}</div>,
-      },
-      {
-        accessorKey: 'companyName',
-        header: ({ column }: { column: any }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-medium text-sm"
-          >
-            {t('admin.company')}
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        ),
-        cell: ({ row }: { row: any }) => <div className="text-sm">{row.getValue('companyName') || '-'}</div>,
-      },
-      {
-        accessorKey: 'email',
-        header: ({ column }: { column: any }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-auto p-0 font-medium text-sm"
-          >
-            {t('auth.email')}
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        ),
-        cell: ({ row }: { row: any }) => <div className="text-sm text-muted-foreground">{row.getValue('email')}</div>,
-      },
-    ];
-
     const enabledModules = modulesData?.enabledModules || [];
+    const columns: ColumnDef<ContractorStatus>[] = [];
 
-    // Add module-specific columns based on enabled modules
+    // Add contractor name first (leftmost column)
+    columns.push({
+      accessorKey: 'name',
+      header: ({ column }: { column: any }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('admin.contractor')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }: { row: any }) => <div className="text-sm font-medium">{row.getValue('name')}</div>,
+    });
+
+    // Then add form type columns (in the middle)
     if (enabledModules.includes('timesheet')) {
-      baseColumns.push({
+      columns.push({
         accessorKey: 'timesheetStatus',
         header: t('nav.timesheet'),
         cell: ({ row }: { row: any }) => {
@@ -248,7 +220,7 @@ export default function ContractTrackerPage() {
     }
 
     if (enabledModules.includes('job-hazard-analysis')) {
-      baseColumns.push({
+      columns.push({
         accessorKey: 'jhaStatus',
         header: t('forms.jobHazardAnalysis'),
         cell: ({ row }: { row: any }) => {
@@ -258,19 +230,8 @@ export default function ContractTrackerPage() {
       });
     }
 
-    if (enabledModules.includes('end-of-day')) {
-      baseColumns.push({
-        accessorKey: 'eodStatus',
-        header: t('admin.endOfDay'),
-        cell: ({ row }: { row: any }) => {
-          const status = row.getValue('eodStatus') as 'completed' | 'pending' | 'missing';
-          return <div className="text-left">{getStatusBadge(status)}</div>;
-        },
-      });
-    }
-
     if (enabledModules.includes('start-of-day')) {
-      baseColumns.push({
+      columns.push({
         accessorKey: 'sodStatus',
         header: t('admin.startOfDay'),
         cell: ({ row }: { row: any }) => {
@@ -280,7 +241,49 @@ export default function ContractTrackerPage() {
       });
     }
 
-    return baseColumns;
+    if (enabledModules.includes('end-of-day')) {
+      columns.push({
+        accessorKey: 'eodStatus',
+        header: t('admin.endOfDay'),
+        cell: ({ row }: { row: any }) => {
+          const status = row.getValue('eodStatus') as 'completed' | 'pending' | 'missing';
+          return <div className="text-left">{getStatusBadge(status)}</div>;
+        },
+      });
+    }
+
+    // Finally add company and email columns (rightmost)
+    columns.push({
+      accessorKey: 'companyName',
+      header: ({ column }: { column: any }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('admin.company')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }: { row: any }) => <div className="text-sm">{row.getValue('companyName') || '-'}</div>,
+    });
+
+    columns.push({
+      accessorKey: 'email',
+      header: ({ column }: { column: any }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('auth.email')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }: { row: any }) => <div className="text-sm text-muted-foreground">{row.getValue('email')}</div>,
+    });
+
+    return columns;
   }, [getStatusBadge, modulesData]);
 
   const filterComponents = useMemo(() => (
@@ -362,12 +365,19 @@ export default function ContractTrackerPage() {
 
   const getExportData = useCallback((contractor: ContractorStatus) => {
     const enabledModules = modulesData?.enabledModules || [];
-    const data = [contractor.name, contractor.companyName || '-', contractor.email];
+    const data = [];
     
+    // Add contractor name first (leftmost)
+    data.push(contractor.name);
+    
+    // Then add form type data (in the middle)
     if (enabledModules.includes('timesheet')) data.push(contractor.timesheetStatus);
     if (enabledModules.includes('job-hazard-analysis')) data.push(contractor.jhaStatus);
-    if (enabledModules.includes('end-of-day')) data.push(contractor.eodStatus);
     if (enabledModules.includes('start-of-day')) data.push(contractor.sodStatus);
+    if (enabledModules.includes('end-of-day')) data.push(contractor.eodStatus);
+    
+    // Finally add company and email (rightmost)
+    data.push(contractor.companyName || '-', contractor.email);
     
     return data;
   }, [modulesData]);
@@ -440,12 +450,19 @@ export default function ContractTrackerPage() {
         exportFilename="contractor_tracker"
         exportHeaders={useMemo(() => {
           const enabledModules = modulesData?.enabledModules || [];
-          const headers = [t('admin.contractor'), t('admin.company'), t('auth.email')];
+          const headers = [];
           
+          // Add contractor name first (leftmost)
+          headers.push(t('admin.contractor'));
+          
+          // Then add form type headers (in the middle)
           if (enabledModules.includes('timesheet')) headers.push(t('nav.timesheet'));
           if (enabledModules.includes('job-hazard-analysis')) headers.push(t('forms.jobHazardAnalysis'));
-          if (enabledModules.includes('end-of-day')) headers.push(t('admin.endOfDay'));
           if (enabledModules.includes('start-of-day')) headers.push(t('admin.startOfDay'));
+          if (enabledModules.includes('end-of-day')) headers.push(t('admin.endOfDay'));
+          
+          // Finally add company and email (rightmost)
+          headers.push(t('admin.company'), t('auth.email'));
           
           return headers;
         }, [modulesData, t])}
