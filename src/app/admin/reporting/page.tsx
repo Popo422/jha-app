@@ -1635,6 +1635,11 @@ export default function ReportingPage() {
                                 <Legend 
                                   wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
                                   iconSize={8}
+                                  formatter={(value, entry) => (
+                                    <span style={{ color: entry.color }}>
+                                      {entry.payload.name}: {entry.payload.hours.toFixed(1)}h
+                                    </span>
+                                  )}
                                 />
                               )}
                             </PieChart>
@@ -1863,6 +1868,11 @@ export default function ReportingPage() {
                                 <Legend 
                                   wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
                                   iconSize={8}
+                                  formatter={(value, entry) => (
+                                    <span style={{ color: entry.color }}>
+                                      {entry.payload.name}: ${entry.payload.cost.toFixed(0)}
+                                    </span>
+                                  )}
                                 />
                               )}
                             </PieChart>
