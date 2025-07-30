@@ -1635,11 +1635,14 @@ export default function ReportingPage() {
                                 <Legend 
                                   wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
                                   iconSize={8}
-                                  formatter={(value, entry) => (
-                                    <span style={{ color: entry.color }}>
-                                      {entry.payload.name}: {entry.payload.hours.toFixed(1)}h
-                                    </span>
-                                  )}
+                                  formatter={(value, entry) => {
+                                    const payload = entry.payload as { name: string; hours: number; cost: number };
+                                    return (
+                                      <span style={{ color: entry.color }}>
+                                        {payload?.name}: {payload?.hours?.toFixed(1)}h
+                                      </span>
+                                    );
+                                  }}
                                 />
                               )}
                             </PieChart>
@@ -1868,11 +1871,14 @@ export default function ReportingPage() {
                                 <Legend 
                                   wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
                                   iconSize={8}
-                                  formatter={(value, entry) => (
-                                    <span style={{ color: entry.color }}>
-                                      {entry.payload.name}: ${entry.payload.cost.toFixed(0)}
-                                    </span>
-                                  )}
+                                  formatter={(value, entry) => {
+                                    const payload = entry.payload as { name: string; hours: number; cost: number };
+                                    return (
+                                      <span style={{ color: entry.color }}>
+                                        {payload?.name}: ${payload?.cost?.toFixed(0)}
+                                      </span>
+                                    );
+                                  }}
                                 />
                               )}
                             </PieChart>
