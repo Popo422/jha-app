@@ -28,7 +28,8 @@
       "Bash(do echo \"=== $lang locale ===\")",
       "Bash(done)",
       "Bash(do echo \"=== Checking $lang locale file ===\")",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": []
   }

@@ -254,7 +254,7 @@ export default function OnboardingPage() {
           dispatch(adminLoginSuccess(result.authData))
           
           // Redirect to admin dashboard
-          router.push('/admin')
+          router.push('/admin/onboarding')
           return
         }
         

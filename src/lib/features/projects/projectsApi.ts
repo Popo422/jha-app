@@ -47,6 +47,25 @@ export interface DeleteProjectResponse {
   message: string
 }
 
+export interface BulkProjectData {
+  name: string
+  location: string
+  projectManager?: string
+}
+
+export interface BulkCreateProjectsRequest {
+  projects: BulkProjectData[]
+}
+
+export interface BulkCreateProjectsResponse {
+  success: boolean
+  projects: Project[]
+  created: number
+  skipped: number
+  errors?: string[]
+  warnings?: string[]
+}
+
 export const projectsApi = createApi({
   reducerPath: 'projectsApi',
   baseQuery: fetchBaseQuery({
@@ -104,6 +123,14 @@ export const projectsApi = createApi({
       }),
       invalidatesTags: ['Project'],
     }),
+    bulkCreateProjects: builder.mutation<BulkCreateProjectsResponse, BulkCreateProjectsRequest>({
+      query: (data) => ({
+        url: '',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Project'],
+    }),
   }),
 })
 
@@ -112,4 +139,5 @@ export const {
   useCreateProjectMutation,
   useUpdateProjectMutation,
   useDeleteProjectMutation,
+  useBulkCreateProjectsMutation,
 } = projectsApi

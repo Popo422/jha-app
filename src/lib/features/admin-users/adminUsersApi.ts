@@ -41,6 +41,26 @@ export interface UpdateAdminUserRequest {
   companyName?: string
 }
 
+export interface BulkCreateAdminUsersRequest {
+  adminUsers: Array<{
+    name: string
+    email: string
+    password?: string
+    role?: 'admin' | 'super-admin'
+    companyName?: string
+  }>
+}
+
+export interface BulkCreateAdminUsersResponse {
+  success: boolean
+  adminUsers: AdminUser[]
+  message: string
+  created: number
+  skipped?: number
+  warnings?: string[]
+  errors?: string[]
+}
+
 export interface AdminUserResponse {
   message: string
   admin?: AdminUser
@@ -90,6 +110,14 @@ export const adminUsersApi = createApi({
       }),
       invalidatesTags: ['AdminUser'],
     }),
+    bulkCreateAdminUsers: builder.mutation<BulkCreateAdminUsersResponse, BulkCreateAdminUsersRequest>({
+      query: (data) => ({
+        url: '',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['AdminUser'],
+    }),
     updateAdminUser: builder.mutation<AdminUserResponse, UpdateAdminUserRequest>({
       query: ({ id, ...adminUser }) => ({
         url: `/${id}`,
@@ -112,6 +140,7 @@ export const {
   useGetAdminUsersQuery,
   useLazyGetAdminUsersQuery,
   useCreateAdminUserMutation,
+  useBulkCreateAdminUsersMutation,
   useUpdateAdminUserMutation,
   useDeleteAdminUserMutation,
 } = adminUsersApi

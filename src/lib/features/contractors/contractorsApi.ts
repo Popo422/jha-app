@@ -150,11 +150,11 @@ export const contractorsApi = createApi({
       providesTags: ['Contractor'],
     }),
     bulkCreateContractors: builder.mutation<
-      { success: boolean; message: string; contractors: Contractor[] },
+      { success: boolean; contractors: Contractor[]; created: number; skipped: number; errors?: string[]; warnings?: string[] },
       { contractors: Array<{ firstName: string; lastName: string; email: string; rate?: string; companyName?: string }> }
     >({
       query: (body) => ({
-        url: '/bulk',
+        url: '',
         method: 'POST',
         body,
       }),

@@ -623,7 +623,7 @@ export function ContractorBulkUploadModal({
           Upload Successful!
         </h3>
         <p className="text-sm text-muted-foreground">
-          {uploadResult?.message || `Successfully created ${csvData.length} contractors`}
+          {`Successfully created ${uploadResult?.created || csvData.length} contractors`}
         </p>
         <p className="text-xs text-muted-foreground mt-4">
           This modal will close automatically...

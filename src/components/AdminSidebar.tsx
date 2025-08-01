@@ -22,6 +22,7 @@ import {
   Shield,
   Home,
   Camera,
+  Sparkles,
 } from 'lucide-react'
 
 interface SidebarItem {
@@ -53,6 +54,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       label: t('admin.dashboard'),
       href: '/admin',
       icon: Home
+    },
+    {
+      label: t('admin.onboarding'),
+      href: '/admin/onboarding',
+      icon: Sparkles
     },
     {
       label: t('admin.submissionTracker'),

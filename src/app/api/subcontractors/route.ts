@@ -124,6 +124,99 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    
+    // Check if this is a bulk operation
+    if (Array.isArray(body.subcontractors)) {
+      // Bulk create subcontractors
+      const { subcontractors: subcontractorsData } = body
+      
+      if (!subcontractorsData || subcontractorsData.length === 0) {
+        return NextResponse.json(
+          { error: 'No subcontractors provided' },
+          { status: 400 }
+        )
+      }
+
+      // Validate each subcontractor
+      for (const subcontractor of subcontractorsData) {
+        if (!subcontractor.name) {
+          return NextResponse.json(
+            { error: 'Missing required field in subcontractor data: name' },
+            { status: 400 }
+          )
+        }
+      }
+
+      // Get existing subcontractor names to avoid duplicates
+      const existingSubcontractors = await db
+        .select({ name: subcontractors.name })
+        .from(subcontractors)
+        .where(eq(subcontractors.companyId, auth.admin.companyId))
+
+      const existingNames = new Set(existingSubcontractors.map(s => s.name.toLowerCase()))
+
+      // Filter out duplicates and prepare data
+      const uniqueSubcontractors = subcontractorsData.filter((subcontractor: any) => 
+        !existingNames.has(subcontractor.name.trim().toLowerCase())
+      )
+
+      if (uniqueSubcontractors.length === 0) {
+        return NextResponse.json(
+          { error: 'All subcontractors already exist in your company' },
+          { status: 409 }
+        )
+      }
+
+      // Prepare subcontractor data
+      const preparedSubcontractors = uniqueSubcontractors.map((subcontractor: any) => ({
+        name: subcontractor.name.trim(),
+        companyId: auth.admin.companyId,
+      }))
+
+      // Create subcontractors with enhanced error handling
+      const createdSubcontractors = []
+      const errors = []
+      
+      for (const subcontractorData of preparedSubcontractors) {
+        try {
+          const [createdSubcontractor] = await db.insert(subcontractors).values(subcontractorData).returning()
+          createdSubcontractors.push(createdSubcontractor)
+        } catch (insertError: any) {
+          if (insertError.code === '23505') {
+            if (insertError.constraint?.includes('company_subcontractor_unique')) {
+              errors.push(`Subcontractor '${subcontractorData.name}' already exists in your company`)
+            } else {
+              errors.push(`Duplicate entry detected for subcontractor '${subcontractorData.name}'`)
+            }
+          } else {
+            errors.push(`Failed to create subcontractor '${subcontractorData.name}': ${insertError.message}`)
+          }
+        }
+      }
+
+      const totalSkipped = (subcontractorsData.length - uniqueSubcontractors.length) + errors.length
+
+      if (errors.length > 0 && createdSubcontractors.length === 0) {
+        return NextResponse.json(
+          { 
+            success: false,
+            message: 'Failed to create any subcontractors',
+            errors: errors 
+          },
+          { status: 409 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        subcontractors: createdSubcontractors,
+        created: createdSubcontractors.length,
+        skipped: totalSkipped,
+        ...(errors.length > 0 && { warnings: errors })
+      })
+    }
+
+    // Single subcontractor creation (existing logic)
     const { name } = body
 
     // Validate required fields
@@ -172,16 +265,24 @@ export async function POST(request: NextRequest) {
     
     // Handle unique constraint violations
     if (error.code === PG_UNIQUE_VIOLATION) {
-      if (error.constraint?.includes('company_id_name_unique')) {
+      if (error.constraint?.includes('company_subcontractor_unique')) {
         return NextResponse.json(
-          { error: 'Subcontractor name already exists in your company' },
+          { 
+            success: false,
+            error: 'Subcontractor name already exists in your company',
+            message: 'A subcontractor with this name already exists in your company. Subcontractor names must be unique within your organization.' 
+          },
           { status: 409 }
         )
       }
     }
     
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false,
+        error: 'Internal server error',
+        message: 'Failed to create subcontractor due to an unexpected error' 
+      },
       { status: 500 }
     )
   }
@@ -255,16 +356,24 @@ export async function PUT(request: NextRequest) {
     
     // Handle unique constraint violations
     if (error.code === PG_UNIQUE_VIOLATION) {
-      if (error.constraint?.includes('company_id_name_unique')) {
+      if (error.constraint?.includes('company_subcontractor_unique')) {
         return NextResponse.json(
-          { error: 'Subcontractor name already exists in your company' },
+          { 
+            success: false,
+            error: 'Subcontractor name already exists in your company',
+            message: 'Another subcontractor with this name already exists in your company. Subcontractor names must be unique within your organization.' 
+          },
           { status: 409 }
         )
       }
     }
     
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false,
+        error: 'Internal server error',
+        message: 'Failed to update subcontractor due to an unexpected error' 
+      },
       { status: 500 }
     )
   }

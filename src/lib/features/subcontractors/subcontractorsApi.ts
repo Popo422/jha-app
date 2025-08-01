@@ -41,6 +41,23 @@ export interface DeleteSubcontractorResponse {
   message: string
 }
 
+export interface BulkSubcontractorData {
+  name: string
+}
+
+export interface BulkCreateSubcontractorsRequest {
+  subcontractors: BulkSubcontractorData[]
+}
+
+export interface BulkCreateSubcontractorsResponse {
+  success: boolean
+  subcontractors: Subcontractor[]
+  created: number
+  skipped: number
+  errors?: string[]
+  warnings?: string[]
+}
+
 export const subcontractorsApi = createApi({
   reducerPath: 'subcontractorsApi',
   baseQuery: fetchBaseQuery({
@@ -98,6 +115,14 @@ export const subcontractorsApi = createApi({
       }),
       invalidatesTags: ['Subcontractor'],
     }),
+    bulkCreateSubcontractors: builder.mutation<BulkCreateSubcontractorsResponse, BulkCreateSubcontractorsRequest>({
+      query: (data) => ({
+        url: '',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Subcontractor'],
+    }),
   }),
 })
 
@@ -106,4 +131,5 @@ export const {
   useCreateSubcontractorMutation,
   useUpdateSubcontractorMutation,
   useDeleteSubcontractorMutation,
+  useBulkCreateSubcontractorsMutation,
 } = subcontractorsApi
