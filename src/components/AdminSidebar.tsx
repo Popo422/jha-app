@@ -326,8 +326,10 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                   : ""
               )}
               onClick={() => {
-                router.push(item.href)
-                onClose()
+                if(item.href){
+                  router.push(item.href)
+                  onClose()
+                }
               }}
             >
               <Icon className="mr-3 h-4 w-4" />
