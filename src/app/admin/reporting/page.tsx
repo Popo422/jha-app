@@ -96,7 +96,8 @@ export default function ReportingPage() {
     data: contractorsData, 
     isLoading: contractorsLoading 
   } = useGetContractorsQuery({
-    limit: 1000 // Get all contractors
+    limit: 1000, // Get all contractors
+    authType: 'admin'
   });
 
   // Create employees filter string for contractor filtering

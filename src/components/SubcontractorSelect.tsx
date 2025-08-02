@@ -47,6 +47,7 @@ export default function SubcontractorSelect({
     search: searchTerm,
     pageSize: 1000,
     page: 1,
+    authType: 'contractor',
   });
 
   const subcontractors = subcontractorsData?.subcontractors || [];

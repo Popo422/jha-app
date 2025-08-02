@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import { eq, desc, and, or, ilike, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { subcontractors } from '@/lib/db/schema'
+import { authenticateRequest } from '@/lib/auth-utils'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -45,27 +46,39 @@ interface AdminTokenPayload {
 
 export async function GET(request: NextRequest) {
   try {
-    // Authenticate admin
-    let auth: { admin: any }
+    // Get authType from query parameters or default to 'any'
+    const { searchParams } = new URL(request.url)
+    const authType = (searchParams.get('authType') as 'contractor' | 'admin') || 'contractor'
+    
+    // Authenticate request
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: any; admin?: any }
     try {
-      auth = authenticateAdmin(request)
+      auth = authenticateRequest(request, authType)
     } catch (error) {
       return NextResponse.json(
-        { error: 'Admin authentication required' },
+        { error: 'Authentication required' },
         { status: 401 }
       )
     }
 
-    // Get query parameters for pagination
-    const { searchParams } = new URL(request.url)
+    const companyId = auth.isAdmin ? auth.admin.companyId : auth.contractor?.companyId
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Get remaining query parameters for pagination
     const search = searchParams.get('search')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const limit = pageSize
     const offset = (page - 1) * pageSize
 
-    // Build query conditions - filter by admin's company
-    const conditions = [eq(subcontractors.companyId, auth.admin.companyId)]
+    // Build query conditions - filter by user's company
+    const conditions = [eq(subcontractors.companyId, companyId)]
     
     // Add search filter if specified
     if (search) {

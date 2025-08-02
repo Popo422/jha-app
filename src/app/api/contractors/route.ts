@@ -4,6 +4,7 @@ import { eq, desc, and, or, ilike, count, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { contractors, companies } from '@/lib/db/schema'
 import { emailService } from '@/lib/email-service'
+import { authenticateRequest } from '@/lib/auth-utils'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -79,19 +80,31 @@ interface AdminTokenPayload {
 
 export async function GET(request: NextRequest) {
   try {
-    // Authenticate admin
-    let auth: { admin: any }
+    // Get authType from query parameters or default to 'any'
+    const { searchParams } = new URL(request.url)
+    const authType = (searchParams.get('authType') as 'contractor' | 'admin') || 'contractor'
+    
+    // Authenticate request
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: any; admin?: any }
     try {
-      auth = authenticateAdmin(request)
+      auth = authenticateRequest(request, authType)
     } catch (error) {
       return NextResponse.json(
-        { error: 'Admin authentication required' },
+        { error: 'Authentication required' },
         { status: 401 }
       )
     }
 
-    // Get query parameters
-    const { searchParams } = new URL(request.url)
+    const companyId = auth.isAdmin ? auth.admin.companyId : auth.contractor?.companyId
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Get remaining query parameters
     const search = searchParams.get('search')
     const company = searchParams.get('company')
     const page = parseInt(searchParams.get('page') || '1')
@@ -100,8 +113,8 @@ export async function GET(request: NextRequest) {
     const limit = fetchAll ? undefined : pageSize
     const offset = fetchAll ? undefined : (page - 1) * pageSize
 
-    // Build query conditions - filter by admin's company
-    const conditions = [eq(contractors.companyId, auth.admin.companyId)]
+    // Build query conditions - filter by user's company
+    const conditions = [eq(contractors.companyId, companyId)]
     
     // Add search filter if specified
     if (search) {

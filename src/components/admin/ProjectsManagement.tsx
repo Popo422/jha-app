@@ -41,7 +41,8 @@ export function ProjectsManagement() {
   const { data: projectsData, isLoading, isFetching, refetch } = useGetProjectsQuery({
     search: debouncedSearch || undefined,
     page: serverPagination.page,
-    pageSize: serverPagination.pageSize
+    pageSize: serverPagination.pageSize,
+    authType: 'admin'
   });
   
   const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation();
@@ -100,7 +101,8 @@ export function ProjectsManagement() {
   const { data: prefetchData } = useGetProjectsQuery({
     search: debouncedSearch || undefined,
     page: serverPagination.page + 1,
-    pageSize: serverPagination.pageSize
+    pageSize: serverPagination.pageSize,
+    authType: 'admin'
   }, {
     skip: !shouldPrefetch
   });

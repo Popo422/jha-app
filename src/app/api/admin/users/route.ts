@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { users, companies } from '@/lib/db/schema'
-import { eq, and, or, sql } from 'drizzle-orm'
+import { eq, and, or, sql, ilike } from 'drizzle-orm'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
+import { authenticateRequest } from '@/lib/auth-utils'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -124,31 +125,56 @@ async function handleBulkCreateAdmins(admin: any, adminUsersData: any[]) {
 
 export async function GET(request: NextRequest) {
   try {
-    const admin = await getAdminFromToken(request)
+    // Get authType from query parameters or default to 'any'
+    const { searchParams } = new URL(request.url)
+    const authType = (searchParams.get('authType') as 'contractor' | 'admin') || 'admin'
     
-    if (!admin || admin.role !== 'super-admin') {
+    // Authenticate request
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: any; admin?: any }
+    try {
+      auth = authenticateRequest(request, authType)
+    } catch (error) {
       return NextResponse.json(
-        { message: 'Access denied. Super-admin privileges required.' },
-        { status: 403 }
+        { message: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+    
+    const companyId = auth.isAdmin ? auth.admin.companyId : auth.contractor?.companyId
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 }
       )
     }
 
-    // Get query parameters for pagination
-    const { searchParams } = new URL(request.url)
+    // Get remaining query parameters for pagination
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const fetchAll = searchParams.get('fetchAll') === 'true'
+    const search = searchParams.get('search')
     const limit = fetchAll ? undefined : pageSize
     const offset = fetchAll ? undefined : (page - 1) * pageSize
 
     // Build conditions
-    const conditions = and(
-      eq(users.companyId, admin.companyId),
+    let conditions = and(
+      eq(users.companyId, companyId),
       or(
         eq(users.role, 'admin'),
         eq(users.role, 'super-admin')
       )
     )
+
+    if (search) {
+      conditions = and(
+        conditions,
+        or(
+          ilike(users.name, `%${search}%`),
+          ilike(users.email, `%${search}%`)
+        )
+      )
+    }
 
     // Get total count for pagination
     const countResult = await db.select({ count: sql`count(*)` }).from(users)

@@ -93,9 +93,9 @@ export default function AdminOnboarding() {
   const [bulkCreateProjects, { isLoading: isSavingProjects }] = useBulkCreateProjectsMutation();
   const [bulkCreateSubcontractors, { isLoading: isSavingSubcontractors }] = useBulkCreateSubcontractorsMutation();
   const [bulkCreateContractors, { isLoading: isSavingEmployees }] = useBulkCreateContractorsMutation();
-  const { data: savedAdminUsersData } = useGetAdminUsersQuery({ fetchAll: true });
+  const { data: savedAdminUsersData } = useGetAdminUsersQuery({ fetchAll: true, authType: 'admin' });
   const savedProjectManagers = savedAdminUsersData?.adminUsers.filter(user => user.role === 'admin') || [];
-  const { data: savedSubcontractorsData } = useGetSubcontractorsQuery({});
+  const { data: savedSubcontractorsData } = useGetSubcontractorsQuery({ authType: 'admin' });
   const savedSubcontractors = savedSubcontractorsData?.subcontractors || [];
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   const [isManualAddModalOpen, setIsManualAddModalOpen] = useState(false);

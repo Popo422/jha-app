@@ -58,11 +58,12 @@ export default function ContractTrackerPage() {
   });
 
   const { data: modulesData } = useGetModulesQuery();
-  const { data: subcontractorsData } = useGetSubcontractorsQuery({ pageSize: 1000 });
+  const { data: subcontractorsData } = useGetSubcontractorsQuery({ pageSize: 1000, authType: 'admin' });
   
   const { data: contractorsData, isLoading: contractorsLoading } = useGetContractorsQuery({
     search: debouncedSearch,
-    fetchAll: true
+    fetchAll: true,
+    authType: 'admin'
   });
 
   const { data: submissionsData, isLoading: submissionsLoading } = useGetSubmissionsQuery({

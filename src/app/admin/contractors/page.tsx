@@ -48,6 +48,7 @@ export default function ContractorsPage() {
   
   const { data: contractorsData, isLoading, error, refetch } = useGetContractorsQuery({
     search: debouncedSearch || undefined,
+    authType: 'admin'
   });
 
   const { data: limitData } = useGetContractorLimitQuery();
@@ -62,6 +63,7 @@ export default function ContractorsPage() {
   const handleExportAll = useCallback(async () => {
     return await exportAllContractors({
       search: debouncedSearch || undefined,
+      authType: 'admin'
     });
   }, [exportAllContractors, debouncedSearch]);
 

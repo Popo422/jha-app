@@ -45,7 +45,8 @@ export default function ContractorSelect({
 
   const { data: contractorsData, isLoading } = useGetContractorsQuery({
     search: searchTerm,
-    limit: 100
+    limit: 100,
+    authType: 'contractor'
   })
 
   const contractors = contractorsData?.contractors || []

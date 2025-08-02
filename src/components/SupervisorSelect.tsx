@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useGetSupervisorsQuery } from "@/lib/features/supervisors/supervisorsApi";
+import { useGetAdminUsersQuery } from "@/lib/features/admin-users/adminUsersApi";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -43,13 +43,13 @@ export default function SupervisorSelect({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { data: supervisorsData, isLoading } = useGetSupervisorsQuery({
-    search: searchTerm,
-    pageSize: 1000,
-    page: 1,
+  const { data: adminUsersData, isLoading } = useGetAdminUsersQuery({
+    fetchAll: true,
+    search: searchTerm || undefined,
+    authType: 'contractor',
   });
 
-  const supervisors = supervisorsData?.supervisors || [];
+  const supervisors = adminUsersData?.adminUsers || [];
 
   // Update input value when prop value changes
   useEffect(() => {
@@ -108,13 +108,8 @@ export default function SupervisorSelect({
     setIsOpen(false);
   };
 
-  // Filter supervisors based on search term
-  const filteredSupervisors = supervisors.filter((supervisor) => {
-    const supervisorName = supervisor.name.toLowerCase();
-    const search = searchTerm.toLowerCase();
-
-    return supervisorName.includes(search);
-  });
+  // Server-side search is now handled by the API, so we use all returned supervisors
+  const filteredSupervisors = supervisors;
 
   return (
     <div className={cn("relative", className)}>
@@ -186,6 +181,7 @@ export default function SupervisorSelect({
                   >
                     <div className="flex-1">
                       <div className="font-medium">{supervisor.name}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{supervisor.email}</div>
                     </div>
                     {isSelected && <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
                   </div>

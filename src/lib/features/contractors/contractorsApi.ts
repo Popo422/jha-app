@@ -76,25 +76,25 @@ export const contractorsApi = createApi({
   reducerPath: 'contractorsApi',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api/contractors',
-    prepareHeaders: (headers) => {
-      // Get admin token from cookie
-      if (typeof window !== 'undefined') {
-        const token = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('adminAuthToken='))
-          ?.split('=')[1]
-        
-        if (token) {
-          headers.set('Authorization', `AdminBearer ${token}`)
-        }
+    prepareHeaders: (headers, { getState }) => {
+      const state = getState() as any
+      
+      // Check for admin token first (admin has priority)
+      if (state.auth?.adminToken && state.auth?.isAdminAuthenticated) {
+        headers.set('Authorization', `AdminBearer ${state.auth.adminToken}`)
       }
+      // Otherwise use regular user token
+      else if (state.auth?.token && state.auth?.isAuthenticated) {
+        headers.set('Authorization', `Bearer ${state.auth.token}`)
+      }
+      
       return headers
     },
   }),
   tagTypes: ['Contractor'],
   endpoints: (builder) => ({
-    getContractors: builder.query<ContractorsResponse, { search?: string; company?: string; page?: number; pageSize?: number; limit?: number; offset?: number; fetchAll?: boolean }>({
-      query: ({ search, company, page, pageSize, limit, offset, fetchAll } = {}) => {
+    getContractors: builder.query<ContractorsResponse, { search?: string; company?: string; page?: number; pageSize?: number; limit?: number; offset?: number; fetchAll?: boolean; authType: 'contractor' | 'admin' }>({
+      query: ({ search, company, page, pageSize, limit, offset, fetchAll, authType } = {} as any) => {
         const params = new URLSearchParams()
         
         if (fetchAll) {
@@ -117,6 +117,8 @@ export const contractorsApi = createApi({
         if (company) {
           params.append('company', company)
         }
+        
+        params.append('authType', authType)
         
         return `?${params}`
       },

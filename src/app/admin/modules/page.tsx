@@ -7,7 +7,6 @@ import { ModuleInfo } from "@/components/admin/ModuleInfo";
 import { ModuleConfiguration } from "@/components/admin/ModuleConfiguration";
 import { ProjectsManagement } from "@/components/admin/ProjectsManagement";
 import { SubcontractorsManagement } from "@/components/admin/SubcontractorsManagement";
-import { SupervisorsManagement } from "@/components/admin/SupervisorsManagement";
 
 export default function ModulesPage() {
   const { t } = useTranslation('common');
@@ -51,10 +50,6 @@ export default function ModulesPage() {
         <SubcontractorsManagement />
       </div>
 
-      {/* Supervisors Management Section */}
-      <div className="mt-8">
-        <SupervisorsManagement />
-      </div>
     </div>
   );
 }

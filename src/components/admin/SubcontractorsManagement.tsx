@@ -39,7 +39,8 @@ export function SubcontractorsManagement() {
   const { data: subcontractorsData, isLoading, isFetching, refetch } = useGetSubcontractorsQuery({
     search: debouncedSearch || undefined,
     page: serverPagination.page,
-    pageSize: serverPagination.pageSize
+    pageSize: serverPagination.pageSize,
+    authType: 'admin'
   });
   
   const [deleteSubcontractor, { isLoading: isDeleting }] = useDeleteSubcontractorMutation();
@@ -98,7 +99,8 @@ export function SubcontractorsManagement() {
   const { data: prefetchData } = useGetSubcontractorsQuery({
     search: debouncedSearch || undefined,
     page: serverPagination.page + 1,
-    pageSize: serverPagination.pageSize
+    pageSize: serverPagination.pageSize,
+    authType: 'admin'
   }, {
     skip: !shouldPrefetch
   });
