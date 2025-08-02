@@ -3,6 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { useAppSelector } from '@/lib/hooks'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
@@ -23,13 +24,23 @@ import {
   Home,
   Camera,
   Sparkles,
+  ChevronDown,
+  ChevronRight,
+  FolderOpen,
+  Heart,
 } from 'lucide-react'
 
 interface SidebarItem {
   label: string
-  href: string
+  href?: string
   icon: React.ComponentType<{ className?: string }>
   action?: () => void
+  children?: SidebarItem[]
+  isAccordion?: boolean
+}
+
+interface AccordionState {
+  [key: string]: boolean
 }
 
 interface AdminSidebarProps {
@@ -56,44 +67,26 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       icon: Home
     },
     {
-      label: t('admin.onboarding'),
-      href: '/admin/onboarding',
-      icon: Sparkles
-    },
-    {
-      label: t('admin.submissionTracker'),
-      href: '/admin/contractor-tracker',
-      icon: FileText
-    },
-    {
-      label: t('admin.reviewSafetyForms'),
-      href: '/admin/safety-forms',
-      icon: ClipboardCheck
-    },
-    {
-      label: t('admin.reviewTimeForms'),
-      href: '/admin/time-forms',
-      icon: Clock
-    },
-    {
-      label: t('admin.contractorsEditor'),
-      href: '/admin/contractors',
-      icon: Users
-    },
-    {
-      label: t('admin.moduleConfiguration'),
-      href: '/admin/modules',
-      icon: Puzzle
-    },
-    {
-      label: t('admin.adminEditor'),
-      href: '/admin/admin-editor',
-      icon: Shield
-    },
-    {
-      label: t('admin.toolboxTalks'),
-      href: '/admin/toolbox-talks',
-      icon: MessageSquare
+      label: 'Forms',
+      icon: FolderOpen,
+      isAccordion: true,
+      children: [
+        {
+          label: t('admin.submissionTracker'),
+          href: '/admin/contractor-tracker',
+          icon: FileText
+        },
+        {
+          label: t('admin.reviewSafetyForms'),
+          href: '/admin/safety-forms',
+          icon: ClipboardCheck
+        },
+        {
+          label: t('admin.reviewTimeForms'),
+          href: '/admin/time-forms',
+          icon: Clock
+        }
+      ]
     },
     {
       label: t('admin.reporting'),
@@ -101,15 +94,78 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       icon: BarChart3
     },
     {
-      label: t('admin.projectSnapshot'),
-      href: '/admin/project-snapshot',
-      icon: Camera
+      label: 'Worker Comp',
+      href: '/admin/worker-comp',
+      icon: Heart
+    },
+    {
+      label: t('admin.toolboxTalks'),
+      href: '/admin/toolbox-talks',
+      icon: MessageSquare
+    },
+    {
+      label: t('admin.onboarding'),
+      href: '/admin/onboarding',
+      icon: Sparkles
+    },
+    {
+      label: 'Settings',
+      icon: Settings,
+      isAccordion: true,
+      children: [
+        {
+          label: t('admin.moduleConfiguration'),
+          href: '/admin/modules',
+          icon: Puzzle
+        },
+        {
+          label: t('admin.adminEditor'),
+          href: '/admin/admin-editor',
+          icon: Shield
+        },
+        {
+          label: t('admin.contractorsEditor'),
+          href: '/admin/contractors',
+          icon: Users
+        }
+      ]
     }
   ]
 
+  // Function to check if current path is within accordion children
+  const isPathInAccordion = (children: SidebarItem[]) => {
+    return children.some(child => pathname === child.href)
+  }
+
+  // Initialize accordion state based on current path
+  const getInitialAccordionState = () => {
+    const state: AccordionState = {}
+    mainItems.forEach(item => {
+      if (item.isAccordion && item.children) {
+        const accordionKey = item.label.toLowerCase().replace(/\s+/g, '')
+        state[accordionKey] = isPathInAccordion(item.children)
+      }
+    })
+    return state
+  }
+
+  const [accordionState, setAccordionState] = useState<AccordionState>(getInitialAccordionState)
+
+  // Update accordion state when pathname changes
+  useEffect(() => {
+    const newState: AccordionState = {}
+    mainItems.forEach(item => {
+      if (item.isAccordion && item.children) {
+        const accordionKey = item.label.toLowerCase().replace(/\s+/g, '')
+        newState[accordionKey] = isPathInAccordion(item.children)
+      }
+    })
+    setAccordionState(newState)
+  }, [pathname])
+
   const bottomItems: SidebarItem[] = [
     {
-      label: t('admin.settings'),
+      label: 'Account Settings',
       href: '/admin/settings',
       icon: Settings
     },
@@ -164,9 +220,66 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
       {/* Main Navigation */}
       <nav className="flex-1 p-4 space-y-2">
-        {mainItems.map((item) => {
+        {mainItems.map((item, index) => {
           const Icon = item.icon
           const isActive = pathname === item.href
+          const accordionKey = item.label.toLowerCase().replace(/\s+/g, '')
+          const isExpanded = accordionState[accordionKey]
+          
+          if (item.isAccordion && item.children) {
+            return (
+              <div key={index} className="space-y-1">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start h-11 px-4 text-left font-normal text-white hover:text-white hover:bg-white/10 text-wrap"
+                  onClick={() => {
+                    setAccordionState(prev => ({
+                      ...prev,
+                      [accordionKey]: !prev[accordionKey]
+                    }))
+                  }}
+                >
+                  <Icon className="mr-3 h-5 w-5" />
+                  {item.label}
+                  {isExpanded ? (
+                    <ChevronDown className="ml-auto h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="ml-auto h-4 w-4" />
+                  )}
+                </Button>
+                {isExpanded && (
+                  <div className="ml-4 space-y-1">
+                    {item.children.map((child) => {
+                      const ChildIcon = child.icon
+                      const isChildActive = pathname === child.href
+                      
+                      return (
+                        <Button
+                          key={child.href}
+                          variant="ghost"
+                          className={cn(
+                            "w-full justify-start h-10 px-4 text-left font-normal text-gray-300 hover:text-white hover:bg-white/10 text-sm",
+                            isChildActive 
+                              ? "bg-blue-600 text-white hover:bg-blue-600" 
+                              : ""
+                          )}
+                          onClick={() => {
+                            if (child.href) {
+                              router.push(child.href)
+                              onClose()
+                            }
+                          }}
+                        >
+                          <ChildIcon className="mr-3 h-4 w-4" />
+                          {child.label}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          }
           
           return (
             <Button
@@ -179,8 +292,10 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                   : ""
               )}
               onClick={() => {
-                router.push(item.href)
-                onClose()
+                if (item.href) {
+                  router.push(item.href)
+                  onClose()
+                }
               }}
             >
               <Icon className="mr-3 h-5 w-5" />
