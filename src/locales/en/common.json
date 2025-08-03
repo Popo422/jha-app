@@ -684,7 +684,14 @@
     "contractorLimitExceeded": "Contractor Limit Exceeded",
     "contractorLimitMessage": "You have reached the maximum number of contractors ({limit}) for your membership level. Please upgrade to add more contractors.",
     "upgradeToAddMore": "Upgrade to add unlimited contractors",
-    "contractorsLimitRemaining": "Contractor Limit Remaining:"
+    "contractorsLimitRemaining": "Contractor Limit Remaining:",
+    "addEmployees": "Add Employees",
+    "addEmployeesOneByOne": "Add employees one by one using the form below",
+    "enterFirstName": "Enter first name",
+    "enterLastName": "Enter last name", 
+    "enterRate": "Enter hourly rate",
+    "selectSubcontractor": "Select subcontractor",
+    "employeesAdded": "employees added"
   },
   "safetyQuestions": {
     "ladderAltered": "Has the ladder been altered in any way?",

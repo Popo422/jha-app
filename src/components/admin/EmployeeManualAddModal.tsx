@@ -146,7 +146,7 @@ export function EmployeeManualAddModal({
                     <span className="text-white text-xs font-bold">{tempEmployees.length}</span>
                   </div>
                   <span className="font-medium">
-                    {t('admin.employeesAddedCount', { count: tempEmployees.length })}
+                    {`${tempEmployees.length} ${t('admin.employeesAdded')}`}
                   </span>
                 </div>
               </div>

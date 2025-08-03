@@ -679,7 +679,14 @@
     "contractorLimitExceeded": "Límite de Contratistas Excedido",
     "contractorLimitMessage": "Has alcanzado el número máximo de contratistas ({limit}) para tu nivel de membresía. Por favor actualiza tu membresía para agregar más contratistas.",
     "upgradeToAddMore": "Actualizar para agregar contratistas ilimitados",
-    "contractorsLimitRemaining": "Límite de Contratistas Restante:"
+    "contractorsLimitRemaining": "Límite de Contratistas Restante:",
+    "addEmployees": "Agregar Empleados",
+    "addEmployeesOneByOne": "Agregar empleados uno por uno usando el formulario a continuación",
+    "enterFirstName": "Ingrese el nombre",
+    "enterLastName": "Ingrese el apellido",
+    "enterRate": "Ingrese la tarifa por hora",
+    "selectSubcontractor": "Seleccionar subcontratista",
+    "employeesAdded": "empleados agregados"
   },
   "safetyQuestions": {
     "ladderAltered": "¿Ha sido alterada la escalera de alguna manera?",

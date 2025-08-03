@@ -578,7 +578,14 @@
     "companyName": "公司名称",
     "contactEmail": "联系邮箱",
     "contactPhone": "联系电话",
-    "createAccount": "创建账户"
+    "createAccount": "创建账户",
+    "addEmployees": "添加员工",
+    "addEmployeesOneByOne": "使用下面的表单逐个添加员工",
+    "enterFirstName": "输入名字",
+    "enterLastName": "输入姓氏",
+    "enterRate": "输入小时费率",
+    "selectSubcontractor": "选择分包商",
+    "employeesAdded": "员工已添加"
   },
   "adminEdit": {
     "reportDetails": "报告详情",

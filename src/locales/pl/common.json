@@ -578,7 +578,14 @@
     "companyName": "Nazwa Firmy",
     "contactEmail": "E-mail Kontaktowy",
     "contactPhone": "Telefon Kontaktowy",
-    "createAccount": "Utwórz Konto"
+    "createAccount": "Utwórz Konto",
+    "addEmployees": "Dodaj Pracowników",
+    "addEmployeesOneByOne": "Dodawaj pracowników jeden po drugim używając formularza poniżej",
+    "enterFirstName": "Wprowadź imię",
+    "enterLastName": "Wprowadź nazwisko",
+    "enterRate": "Wprowadź stawkę godzinową",
+    "selectSubcontractor": "Wybierz podwykonawcę",
+    "employeesAdded": "pracownicy dodani"
   },
   "adminEdit": {
     "reportDetails": "Szczegóły Raportu",

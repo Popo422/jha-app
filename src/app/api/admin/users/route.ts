@@ -232,9 +232,9 @@ export async function POST(request: NextRequest) {
   try {
     const admin = await getAdminFromToken(request)
     
-    if (!admin || admin.role !== 'super-admin') {
+    if (!admin || !['admin', 'super-admin'].includes(admin.role)) {
       return NextResponse.json(
-        { message: 'Access denied. Super-admin privileges required.' },
+        { message: 'Access denied. Admin privileges required.' },
         { status: 403 }
       )
     }
