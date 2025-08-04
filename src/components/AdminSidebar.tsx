@@ -193,13 +193,13 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       
       {/* Sidebar */}
       <div className={cn(
-        "w-64 bg-[#242736] h-full flex flex-col text-white transition-transform duration-300 ease-in-out",
+        "w-64 bg-[#242736] h-full text-white transition-transform duration-300 ease-in-out overflow-y-auto scrollbar-none",
         "lg:translate-x-0 lg:static lg:z-auto",
         "fixed left-0 top-0 z-50",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Header with close button */}
-        <div className="p-6 border-b border-slate-700">
+        <div className="p-6 border-b border-slate-700 sticky top-0 bg-[#242736] z-10">
           <div className="flex items-center justify-between">
             <img 
               src={admin?.companyLogoUrl || "/logo.png"} 
@@ -224,7 +224,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         </div>
 
       {/* Main Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="p-4 space-y-2">
         {mainItems.map((item, index) => {
           const Icon = item.icon
           const isActive = pathname === item.href
