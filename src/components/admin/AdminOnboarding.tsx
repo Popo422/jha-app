@@ -738,9 +738,10 @@ export default function AdminOnboarding() {
     setShowTable("projects");
   };
 
-  const handleSubcontractorBulkUploadSuccess = (subcontractors: { name: string }[]) => {
+  const handleSubcontractorBulkUploadSuccess = (subcontractors: { name: string; contractAmount?: string }[]) => {
     const convertedSubcontractors: SubcontractorData[] = subcontractors.map(sub => ({
-      name: sub.name
+      name: sub.name,
+      contractAmount: sub.contractAmount
     }));
     setOnboardingData((prev) => ({
       ...prev,
@@ -1859,6 +1860,9 @@ export default function AdminOnboarding() {
                   <thead className="bg-gray-100 dark:bg-gray-800 sticky top-0 z-10">
                     <tr>
                       <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
+                        Subcontractor
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         First Name
                       </th>
                       <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
@@ -1869,9 +1873,6 @@ export default function AdminOnboarding() {
                       </th>
                       <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         Rate
-                      </th>
-                      <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
-                        Subcontractor
                       </th>
                       <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         Actions
@@ -1889,6 +1890,22 @@ export default function AdminOnboarding() {
                       }`}>
                         {editingEmployeeIndex === index ? (
                           <>
+                            <td className="p-4">
+                              <select
+                                value={editingEmployee?.companyName || ""}
+                                onChange={(e) =>
+                                  setEditingEmployee((prev) => (prev ? { ...prev, companyName: e.target.value } : null))
+                                }
+                                className="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:border-gray-600"
+                              >
+                                <option value="">{t('admin.selectASubcontractor')}</option>
+                                {[...savedSubcontractors, ...onboardingData.subcontractors].map((subcontractor, index) => (
+                                  <option key={`${subcontractor.name}-${index}`} value={subcontractor.name}>
+                                    {subcontractor.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
                             <td className="p-4">
                               <Input
                                 value={editingEmployee?.firstName || ""}
@@ -1931,22 +1948,6 @@ export default function AdminOnboarding() {
                               />
                             </td>
                             <td className="p-4">
-                              <select
-                                value={editingEmployee?.companyName || ""}
-                                onChange={(e) =>
-                                  setEditingEmployee((prev) => (prev ? { ...prev, companyName: e.target.value } : null))
-                                }
-                                className="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:border-gray-600"
-                              >
-                                <option value="">{t('admin.selectASubcontractor')}</option>
-                                {[...savedSubcontractors, ...onboardingData.subcontractors].map((subcontractor, index) => (
-                                  <option key={`${subcontractor.name}-${index}`} value={subcontractor.name}>
-                                    {subcontractor.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="p-4">
                               <div className="flex gap-2">
                                 <Button
                                   variant="ghost"
@@ -1969,6 +1970,7 @@ export default function AdminOnboarding() {
                           </>
                         ) : (
                           <>
+                            <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{employee.companyName || "-"}</td>
                             <td className="p-4">
                               <div className="flex items-center gap-2">
                                 <span className="font-medium">{employee.firstName}</span>
@@ -1987,7 +1989,6 @@ export default function AdminOnboarding() {
                             <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{employee.lastName}</td>
                             <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{employee.email}</td>
                             <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{employee.rate || "-"}</td>
-                            <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{employee.companyName || "-"}</td>
                             <td className="p-4">
                               <div className="flex gap-2">
                                 <Button

@@ -90,13 +90,20 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     },
     {
       label: t('admin.reporting'),
-      href: '/admin/reporting',
-      icon: BarChart3
-    },
-    {
-      label: t('admin.projectSnapshot'),
-      href: '/admin/project-snapshot',
-      icon: Camera
+      icon: BarChart3,
+      isAccordion: true,
+      children: [
+        {
+          label: t('admin.projectSnapshot'),
+          href: '/admin/project-snapshot',
+          icon: Camera
+        },
+        {
+          label: 'Time and Cost Reports',
+          href: '/admin/reporting',
+          icon: Clock
+        }
+      ]
     },
     {
       label: 'Worker Comp',

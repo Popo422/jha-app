@@ -21,6 +21,7 @@ import * as XLSX from "xlsx";
 
 interface SubcontractorRow {
   name: string;
+  contractAmount?: string;
   _fileName?: string;
 }
 
@@ -39,7 +40,10 @@ export function SubcontractorBulkUploadModal({ isOpen, onClose, onUploadSuccess 
   const [uploadedFiles, setUploadedFiles] = useState<Set<string>>(new Set());
   const [isUploading, setIsUploading] = useState(false);
 
-  const csvSchema = [{ field: "name", label: "Company Name", required: true, example: "ABC Construction Co." }];
+  const csvSchema = [
+    { field: "name", label: "Company Name", required: true, example: "ABC Construction Co." },
+    { field: "contractAmount", label: "Contract Amount", required: false, example: "50000.00" }
+  ];
 
   const downloadTemplate = (format: "csv" | "excel" = "csv") => {
     if (format === "csv") {
@@ -101,6 +105,10 @@ export function SubcontractorBulkUploadModal({ isOpen, onClose, onUploadSuccess 
           case "company":
             row.name = value;
             break;
+          case "contract amount":
+          case "contractamount":
+            row.contractAmount = value;
+            break;
         }
       });
 
@@ -140,6 +148,10 @@ export function SubcontractorBulkUploadModal({ isOpen, onClose, onUploadSuccess 
           case "company name":
           case "company":
             row.name = value;
+            break;
+          case "contract amount":
+          case "contractamount":
+            row.contractAmount = value;
             break;
         }
       });
@@ -481,13 +493,7 @@ export function SubcontractorBulkUploadModal({ isOpen, onClose, onUploadSuccess 
                     Company Name
                   </th>
                   <th className="text-left p-4 border-b border-gray-200 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-100">
-                    Contact Name
-                  </th>
-                  <th className="text-left p-4 border-b border-gray-200 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-100">
-                    Email
-                  </th>
-                  <th className="text-left p-4 border-b border-gray-200 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-100">
-                    Phone
+                    Contract Amount
                   </th>
                 </tr>
               </thead>
@@ -498,6 +504,7 @@ export function SubcontractorBulkUploadModal({ isOpen, onClose, onUploadSuccess 
                     className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
                     <td className="p-4 text-gray-900 dark:text-gray-100">{subcontractor.name}</td>
+                    <td className="p-4 text-gray-900 dark:text-gray-100">{subcontractor.contractAmount ? `$${subcontractor.contractAmount}` : '-'}</td>
                   </tr>
                 ))}
               </tbody>

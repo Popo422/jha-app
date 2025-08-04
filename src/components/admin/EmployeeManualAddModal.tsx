@@ -156,6 +156,30 @@ export function EmployeeManualAddModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="space-y-2">
+                  <Label htmlFor="employeeSubcontractor" className="text-sm font-medium">
+                    {t('admin.subcontractor')} <span className="text-muted-foreground">{t('admin.optional')}</span>
+                  </Label>
+                  <div className="relative">
+                    <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <select
+                      id="employeeSubcontractor"
+                      value={currentEmployee.companyName}
+                      onChange={(e) =>
+                        setCurrentEmployee((prev) => ({ ...prev, companyName: e.target.value }))
+                      }
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-10 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="">{t('admin.selectSubcontractor') || 'Select subcontractor'}</option>
+                      {[...savedSubcontractors, ...availableSubcontractors].map((sub, index) => (
+                        <option key={`${sub.name}-${index}`} value={sub.name}>
+                          {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="employeeFirstName" className="text-sm font-medium">
                     {t('admin.firstName')} *
                   </Label>
@@ -198,31 +222,6 @@ export function EmployeeManualAddModal({
                     </p>
                   )}
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="employeeRate" className="text-sm font-medium">
-                    {t('admin.rate')} <span className="text-muted-foreground">{t('admin.optional')}</span>
-                  </Label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      id="employeeRate"
-                      value={currentEmployee.rate}
-                      onChange={(e) => {
-                        setCurrentEmployee((prev) => ({ ...prev, rate: e.target.value }));
-                        if (errors.rate) setErrors((prev) => ({ ...prev, rate: '' }));
-                      }}
-                      placeholder={t('admin.enterRate') || 'Enter hourly rate'}
-                      className={`pl-8 ${errors.rate ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
-                    />
-                  </div>
-                  {errors.rate && (
-                    <p className="text-red-500 text-sm flex items-center gap-1">
-                      <span className="w-1 h-1 bg-red-500 rounded-full"></span>
-                      {errors.rate}
-                    </p>
-                  )}
-                </div>
               </div>
 
               <div className="space-y-4">
@@ -253,27 +252,28 @@ export function EmployeeManualAddModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="employeeSubcontractor" className="text-sm font-medium">
-                    {t('admin.subcontractor')} <span className="text-muted-foreground">{t('admin.optional')}</span>
+                  <Label htmlFor="employeeRate" className="text-sm font-medium">
+                    {t('admin.rate')} <span className="text-muted-foreground">{t('admin.optional')}</span>
                   </Label>
                   <div className="relative">
-                    <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <select
-                      id="employeeSubcontractor"
-                      value={currentEmployee.companyName}
-                      onChange={(e) =>
-                        setCurrentEmployee((prev) => ({ ...prev, companyName: e.target.value }))
-                      }
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-10 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <option value="">{t('admin.selectSubcontractor') || 'Select subcontractor'}</option>
-                      {[...savedSubcontractors, ...availableSubcontractors].map((sub, index) => (
-                        <option key={`${sub.name}-${index}`} value={sub.name}>
-                          {sub.name}
-                        </option>
-                      ))}
-                    </select>
+                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="employeeRate"
+                      value={currentEmployee.rate}
+                      onChange={(e) => {
+                        setCurrentEmployee((prev) => ({ ...prev, rate: e.target.value }));
+                        if (errors.rate) setErrors((prev) => ({ ...prev, rate: '' }));
+                      }}
+                      placeholder={t('admin.enterRate') || 'Enter hourly rate'}
+                      className={`pl-8 ${errors.rate ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                    />
                   </div>
+                  {errors.rate && (
+                    <p className="text-red-500 text-sm flex items-center gap-1">
+                      <span className="w-1 h-1 bg-red-500 rounded-full"></span>
+                      {errors.rate}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
