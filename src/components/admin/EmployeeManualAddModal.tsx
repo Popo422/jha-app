@@ -91,8 +91,9 @@ export function EmployeeManualAddModal({
     setTempEmployees((prev) => [...prev, newEmployee]);
     onSaveAndAddMore(newEmployee);
 
-    // Reset form
-    setCurrentEmployee({ firstName: '', lastName: '', email: '', rate: '', companyName: '' });
+    // Reset form but keep companyName (subcontractor)
+    const savedCompanyName = currentEmployee.companyName;
+    setCurrentEmployee({ firstName: '', lastName: '', email: '', rate: '', companyName: savedCompanyName });
     setErrors({});
   };
 

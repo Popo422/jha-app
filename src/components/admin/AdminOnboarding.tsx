@@ -51,6 +51,7 @@ interface ProjectData {
 
 interface SubcontractorData {
   name: string; // This maps to the database 'name' field
+  contractAmount?: string; // Optional contract amount
 }
 
 interface EmployeeData {
@@ -1575,6 +1576,9 @@ export default function AdminOnboarding() {
                         Subcontractor Name
                       </th>
                       <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
+                        Contract Amount
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         Actions
                       </th>
                     </tr>
@@ -1598,6 +1602,17 @@ export default function AdminOnboarding() {
                                 }
                                 className="w-full"
                                 placeholder={t('admin.subcontractorNamePlaceholder')}
+                              />
+                            </td>
+                            <td className="p-4">
+                              <Input
+                                value={editingSubcontractor?.contractAmount || ""}
+                                onChange={(e) =>
+                                  setEditingSubcontractor((prev) => (prev ? { ...prev, contractAmount: e.target.value } : null))
+                                }
+                                className="w-full"
+                                placeholder="Contract Amount (optional)"
+                                type="text"
                               />
                             </td>
                             <td className="p-4">
@@ -1637,6 +1652,11 @@ export default function AdminOnboarding() {
                                   </span>
                                 )}
                               </div>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {subcontractor.contractAmount || "-"}
+                              </span>
                             </td>
                             <td className="p-4">
                               <div className="flex gap-2">

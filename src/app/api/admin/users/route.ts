@@ -12,7 +12,10 @@ async function getAdminFromToken(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
   const cookieToken = request.cookies.get('adminAuthToken')?.value
   
-  const token = authHeader?.replace('Bearer ', '') || cookieToken
+  // Handle both AdminBearer and Bearer tokens
+  const token = authHeader?.startsWith('AdminBearer ') 
+    ? authHeader.replace('AdminBearer ', '')
+    : authHeader?.replace('Bearer ', '') || cookieToken
 
   if (!token) {
     return null
@@ -125,11 +128,11 @@ async function handleBulkCreateAdmins(admin: any, adminUsersData: any[]) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Get authType from query parameters or default to 'any'
+    // Get authType from query parameters or default to 'admin'
     const { searchParams } = new URL(request.url)
     const authType = (searchParams.get('authType') as 'contractor' | 'admin') || 'admin'
     
-    // Authenticate request
+    // Authenticate request - allow both contractors and admins
     let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: any; admin?: any }
     try {
       auth = authenticateRequest(request, authType)
@@ -230,11 +233,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await getAdminFromToken(request)
-    
+    // Authenticate admin
+    let auth: { isAdmin: boolean; admin?: any }
+    try {
+      auth = authenticateRequest(request, 'admin')
+    } catch (error) {
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    const admin = auth.admin
     if (!admin || !['admin', 'super-admin'].includes(admin.role)) {
       return NextResponse.json(
-        { message: 'Access denied. Admin privileges required.' },
+        { message: 'Access denied. Admin privileges required.'},
         { status: 403 }
       )
     }

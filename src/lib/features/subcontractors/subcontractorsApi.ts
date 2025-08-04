@@ -3,6 +3,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 export interface Subcontractor {
   id: string
   name: string
+  contractAmount?: string
   companyId: string
   createdAt: string
   updatedAt: string
@@ -10,11 +11,13 @@ export interface Subcontractor {
 
 export interface CreateSubcontractorRequest {
   name: string
+  contractAmount?: string
 }
 
 export interface UpdateSubcontractorRequest {
   id: string
   name: string
+  contractAmount?: string
 }
 
 export interface PaginationInfo {
@@ -43,6 +46,7 @@ export interface DeleteSubcontractorResponse {
 
 export interface BulkSubcontractorData {
   name: string
+  contractAmount?: string
 }
 
 export interface BulkCreateSubcontractorsRequest {

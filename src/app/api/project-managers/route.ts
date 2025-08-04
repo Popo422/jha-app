@@ -2,44 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { projectManagers } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
-import jwt from 'jsonwebtoken'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
-
-async function getUserFromToken(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  const adminCookieToken = request.cookies.get('adminAuthToken')?.value
-  const contractorCookieToken = request.cookies.get('contractorAuthToken')?.value
-  
-  const token = authHeader?.replace('Bearer ', '') || adminCookieToken || contractorCookieToken
-
-  if (!token) {
-    return null
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any
-    return decoded.admin || decoded.contractor
-  } catch {
-    return null
-  }
-}
+import { authenticateRequest } from '@/lib/auth-utils'
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getUserFromToken(request)
-    
-    if (!user || !user.companyId) {
+    // Authenticate admin
+    let auth: { isAdmin: boolean; admin?: any }
+    try {
+      auth = authenticateRequest(request, 'admin')
+    } catch (error) {
       return NextResponse.json(
         { message: 'Authentication required' },
         { status: 401 }
       )
     }
 
-    // Only admins can create project managers
-    if (!user.role || !['admin', 'super-admin'].includes(user.role)) {
+    const admin = auth.admin
+    if (!admin || !['admin', 'super-admin'].includes(admin.role)) {
       return NextResponse.json(
-        { message: 'Admin privileges required' },
+        { message: 'Access denied. Admin privileges required.' },
         { status: 403 }
       )
     }
@@ -71,7 +52,7 @@ export async function POST(request: NextRequest) {
         .from(projectManagers)
         .where(
           and(
-            eq(projectManagers.companyId, user.companyId),
+            eq(projectManagers.companyId, admin.companyId),
             eq(projectManagers.email, manager.email.trim())
           )
         )
@@ -95,7 +76,7 @@ export async function POST(request: NextRequest) {
           name: manager.name.trim(),
           email: manager.email.trim(),
           phone: manager.phone?.trim() || null,
-          companyId: user.companyId,
+          companyId: admin.companyId,
         }).returning()
         
         insertedManagers.push(insertedManager)

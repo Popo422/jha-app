@@ -3,36 +3,25 @@ import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import * as bcrypt from 'bcrypt'
-import * as jwt from 'jsonwebtoken'
-import { AdminJWTPayload } from '@/types/auth'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
-
-async function getAdminFromToken(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  const cookieToken = request.cookies.get('adminAuthToken')?.value
-  
-  const token = authHeader?.replace('Bearer ', '') || cookieToken
-
-  if (!token) {
-    return null
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as AdminJWTPayload
-    return decoded.admin
-  } catch {
-    return null
-  }
-}
+import { authenticateRequest } from '@/lib/auth-utils'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await getAdminFromToken(request)
-    
+    // Authenticate admin
+    let auth: { isAdmin: boolean; admin?: any }
+    try {
+      auth = authenticateRequest(request, 'admin')
+    } catch (error) {
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    const admin = auth.admin
     if (!admin || admin.role !== 'super-admin') {
       return NextResponse.json(
         { message: 'Access denied. Super-admin privileges required.' },
@@ -125,8 +114,18 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const admin = await getAdminFromToken(request)
-    
+    // Authenticate admin
+    let auth: { isAdmin: boolean; admin?: any }
+    try {
+      auth = authenticateRequest(request, 'admin')
+    } catch (error) {
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    const admin = auth.admin
     if (!admin || admin.role !== 'super-admin') {
       return NextResponse.json(
         { message: 'Access denied. Super-admin privileges required.' },

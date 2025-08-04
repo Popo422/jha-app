@@ -17,6 +17,7 @@ import { Users, User, Mail, Phone, Plus, ArrowRight } from "lucide-react";
 
 interface SubcontractorData {
   name: string;
+  contractAmount?: string;
 }
 
 interface SubcontractorManualAddModalProps {
@@ -36,7 +37,8 @@ export function SubcontractorManualAddModal({
 
   const [tempSubcontractors, setTempSubcontractors] = useState<SubcontractorData[]>([]);
   const [currentSubcontractor, setCurrentSubcontractor] = useState<SubcontractorData>({
-    name :"",
+    name: "",
+    contractAmount: "",
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -62,7 +64,7 @@ export function SubcontractorManualAddModal({
     onSaveAndAddMore(newSubcontractor);
 
     // Reset form
-    setCurrentSubcontractor({ name: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "" });
     setErrors({});
   };
 
@@ -79,12 +81,12 @@ export function SubcontractorManualAddModal({
 
     // Reset state
     setTempSubcontractors([]);
-    setCurrentSubcontractor({ name: ""  });
+    setCurrentSubcontractor({ name: "", contractAmount: "" });
     setErrors({});
   };
 
   const handleClose = () => {
-    setCurrentSubcontractor({ name: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "" });
     setTempSubcontractors([]);
     setErrors({});
     onClose();
@@ -142,6 +144,22 @@ export function SubcontractorManualAddModal({
                       {errors.name}
                     </p>
                   )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contractAmount" className="text-sm font-medium">
+                    Contract Amount (Optional)
+                  </Label>
+                  <Input
+                    id="contractAmount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={currentSubcontractor.contractAmount}
+                    onChange={(e) => {
+                      setCurrentSubcontractor((prev) => ({ ...prev, contractAmount: e.target.value }));
+                    }}
+                    placeholder="Enter contract amount"
+                  />
                 </div>
               </div>
             </div>

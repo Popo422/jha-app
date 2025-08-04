@@ -104,6 +104,7 @@ export const projects = pgTable('projects', {
 export const subcontractors = pgTable('subcontractors', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
+  contractAmount: numeric('contract_amount', { precision: 12, scale: 2 }), // Optional budget/contract amount
   companyId: uuid('company_id').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

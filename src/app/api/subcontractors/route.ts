@@ -183,6 +183,7 @@ export async function POST(request: NextRequest) {
       // Prepare subcontractor data
       const preparedSubcontractors = uniqueSubcontractors.map((subcontractor: any) => ({
         name: subcontractor.name.trim(),
+        contractAmount: subcontractor.contractAmount ? subcontractor.contractAmount.toString() : null,
         companyId: auth.admin.companyId,
       }))
 
@@ -230,7 +231,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single subcontractor creation (existing logic)
-    const { name } = body
+    const { name, contractAmount } = body
 
     // Validate required fields
     if (!name) {
@@ -262,6 +263,7 @@ export async function POST(request: NextRequest) {
     // Prepare subcontractor data
     const subcontractorData = {
       name: name.trim(),
+      contractAmount: contractAmount ? contractAmount.toString() : null,
       companyId: auth.admin.companyId,
     }
 
@@ -315,7 +317,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, name } = body
+    const { id, name, contractAmount } = body
 
     if (!id) {
       return NextResponse.json(
@@ -348,9 +350,13 @@ export async function PUT(request: NextRequest) {
     }
 
     // Prepare update data
-    const updateData = {
+    const updateData: any = {
       name: name.trim(),
       updatedAt: new Date()
+    }
+    
+    if (contractAmount !== undefined) {
+      updateData.contractAmount = contractAmount ? contractAmount.toString() : null
     }
 
     // Update subcontractor
