@@ -167,7 +167,7 @@ export async function GET(request: NextRequest) {
         limit: fetchAll ? null : limit,
         offset: fetchAll ? null : offset,
         fetchAll,
-        companyId: auth.admin.companyId
+        companyId: companyId
       }
     })
 

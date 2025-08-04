@@ -141,9 +141,24 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getUserFromToken(request)
+    // Get authType from query parameters or default to 'contractor'
+    const { searchParams } = new URL(request.url)
+    const authType = (searchParams.get('authType') as 'contractor' | 'admin') || 'contractor'
     
-    if (!user || !user.companyId) {
+    // Authenticate request - allow both contractors and admins
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: any; admin?: any }
+    try {
+      auth = authenticateRequest(request, authType)
+    } catch (error) {
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    const companyId = auth.isAdmin ? auth.admin.companyId : auth.contractor?.companyId
+    
+    if (!companyId) {
       return NextResponse.json(
         { message: 'Authentication required' },
         { status: 401 }
@@ -154,7 +169,7 @@ export async function GET(request: NextRequest) {
     const managersData = await db
       .select()
       .from(projectManagers)
-      .where(eq(projectManagers.companyId, user.companyId))
+      .where(eq(projectManagers.companyId, companyId))
 
     return NextResponse.json(managersData)
   } catch (error) {

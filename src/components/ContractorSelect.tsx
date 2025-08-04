@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useGetContractorsQuery } from '@/lib/features/contractors/contractorsApi'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -44,9 +45,11 @@ export default function ContractorSelect({
   const [inputValue, setInputValue] = useState(value)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300)
 
   const { data: contractorsData, isLoading } = useGetContractorsQuery({
-    search: searchTerm,
+    search: debouncedSearchTerm || undefined,
     limit: 100,
     authType: authType
   })
