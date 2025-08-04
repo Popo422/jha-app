@@ -19,6 +19,7 @@ interface SupervisorSelectProps {
   className?: string;
   id?: string;
   name?: string;
+  authType?: 'contractor' | 'admin';
 }
 
 export default function SupervisorSelect({
@@ -31,6 +32,7 @@ export default function SupervisorSelect({
   className,
   id,
   name,
+  authType = 'contractor',
 }: SupervisorSelectProps) {
   const { t } = useTranslation("common");
 
@@ -46,7 +48,7 @@ export default function SupervisorSelect({
   const { data: adminUsersData, isLoading } = useGetAdminUsersQuery({
     fetchAll: true,
     search: searchTerm || undefined,
-    authType: 'contractor',
+    authType: authType,
   });
 
   const supervisors = adminUsersData?.adminUsers || [];

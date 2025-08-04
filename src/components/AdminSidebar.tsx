@@ -94,6 +94,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       icon: BarChart3
     },
     {
+      label: t('admin.projectSnapshot'),
+      href: '/admin/project-snapshot',
+      icon: Camera
+    },
+    {
       label: 'Worker Comp',
       href: '/admin/worker-comp',
       icon: Heart

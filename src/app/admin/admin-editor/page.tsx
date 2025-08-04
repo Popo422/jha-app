@@ -412,6 +412,7 @@ export default function AdminEditorPage() {
                 placeholder={t('placeholders.companySubcontractorName')}
                 disabled={isCreating || isUpdating}
                 className={errors.companyName ? 'border-red-500' : ''}
+                authType="admin"
               />
               {errors.companyName && (
                 <p className="text-sm text-red-500">{errors.companyName}</p>

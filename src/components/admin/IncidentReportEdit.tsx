@@ -190,6 +190,7 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
                 label={t('forms.completedBy')}
                 value={formData.completedBy || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
+                authType="admin"
               />
             </div>
             <div className="space-y-2">
@@ -209,6 +210,7 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
                 label={t('forms.supervisor')}
                 value={formData.supervisor || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
+                authType="admin"
               />
             </div>
             <div className="space-y-2">
@@ -218,6 +220,7 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
                 label={t('forms.projectName')}
                 value={formData.projectName || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
+                authType="admin"
               />
             </div>
             <div className="space-y-2">
@@ -227,6 +230,7 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
                 label={t('forms.companySubcontractor')}
                 value={formData.companySubcontractor || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, companySubcontractor: value }))}
+                authType="admin"
               />
             </div>
             <div className="space-y-2">
@@ -236,6 +240,7 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
                 label={t('forms.injuredParty')}
                 value={formData.injuredParty || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, injuredParty: value }))}
+                authType="admin"
               />
             </div>
           </div>
@@ -740,6 +745,7 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
                     label={t('forms.reportReviewedBy')}
                     value={formData.adminReportReviewedBy || ''}
                     onChange={(value) => setFormData(prev => ({ ...prev, adminReportReviewedBy: value }))}
+                    authType="admin"
                   />
                 </div>
                 <div className="space-y-2">

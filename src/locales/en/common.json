@@ -197,7 +197,6 @@
     "exportCSV": "Export CSV",
     "contractorCount": "Contractor Count",
     "totalSpend": "Total Spend",
-    "subcontractor": "Subcontractor",
     "totalProjects": "Total Projects",
     "totalContractors": "Total Contractors",
     "avgSpendPerProject": "Avg Spend Per Project",
@@ -267,7 +266,6 @@
     "projectManagersAdded": "Project Managers added",
     "projectsAdded": "Projects added",
     "subcontractorsAdded": "Subcontractors added",
-    "employeesAdded": "Employees added",
     "savingEmployees": "Saving Employees...",
     "completingSetup": "Completing Setup...",
     "completeSetup": "Complete Setup",
@@ -286,7 +284,25 @@
     "subcontractorsAddedSoFar": "subcontractors added so far",
     "cancel": "Cancel",
     "saveAndAddMore": "Save & Add More",
-    "saveAndContinue": "Save & Continue"
+    "saveAndContinue": "Save & Continue",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "rate": "Rate",
+    "email": "Email",
+    "enterFirstName": "Enter first name",
+    "enterLastName": "Enter last name",
+    "enterRate": "Enter hourly rate",
+    "enterEmail": "Enter email address",
+    "subcontractor": "Subcontractor",
+    "selectSubcontractor": "Select subcontractor", 
+    "employeesAdded": "employees added",
+    "errors": {
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "emailRequired": "Email is required",
+      "invalidEmail": "Invalid email format",
+      "invalidRate": "Rate must be a valid number"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -676,6 +692,7 @@
     "companyNameHelp": "Optional company name for this contractor. If not provided, will use the parent company name.",
     "saving": "Saving...",
     "addContractor": "Add Contractor",
+    "saveAndFinish": "Save and Finish",
     "updateContractor": "Update Contractor",
     "cancel": "Cancel",
     "contractors": "Contractors",
@@ -685,13 +702,23 @@
     "contractorLimitMessage": "You have reached the maximum number of contractors ({limit}) for your membership level. Please upgrade to add more contractors.",
     "upgradeToAddMore": "Upgrade to add unlimited contractors",
     "contractorsLimitRemaining": "Contractor Limit Remaining:",
+    "email": "Email",
     "addEmployees": "Add Employees",
     "addEmployeesOneByOne": "Add employees one by one using the form below",
     "enterFirstName": "Enter first name",
     "enterLastName": "Enter last name", 
     "enterRate": "Enter hourly rate",
+    "enterEmail": "Enter email address",
+    "subcontractor": "Subcontractor",
     "selectSubcontractor": "Select subcontractor",
-    "employeesAdded": "employees added"
+    "employeesAdded": "employees added",
+    "errors": {
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "emailRequired": "Email is required",
+      "invalidEmail": "Invalid email format",
+      "invalidRate": "Rate must be a valid number"
+    }
   },
   "safetyQuestions": {
     "ladderAltered": "Has the ladder been altered in any way?",

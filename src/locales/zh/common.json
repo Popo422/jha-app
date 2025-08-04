@@ -261,7 +261,22 @@
     "subcontractorsAddedSoFar": "目前已添加的分包商",
     "cancel": "取消",
     "saveAndAddMore": "保存并添加更多",
-    "saveAndContinue": "保存并继续"
+    "saveAndContinue": "保存并继续",
+    "firstName": "名字",
+    "lastName": "姓氏",
+    "rate": "费率",
+    "email": "电子邮件",
+    "enterFirstName": "输入名字",
+    "enterLastName": "输入姓氏",
+    "enterRate": "输入小时费率",
+    "enterEmail": "输入电子邮件地址",
+    "errors": {
+      "firstNameRequired": "名字是必填项",
+      "lastNameRequired": "姓氏是必填项",
+      "emailRequired": "电子邮件是必填项",
+      "invalidEmail": "电子邮件格式无效",
+      "invalidRate": "费率必须是有效数字"
+    }
   },
   "settings": {
     "title": "设置",
@@ -663,7 +678,10 @@
     "contractorLimitExceeded": "承包商限制已超出",
     "contractorLimitMessage": "您已达到您的会员级别的最大承包商数量（{limit}）。请升级以添加更多承包商。",
     "upgradeToAddMore": "升级以添加无限承包商",
-    "contractorsLimitRemaining": "剩余承包商限制："
+    "contractorsLimitRemaining": "剩余承包商限制：",
+    "addContractor": "添加承包商",
+    "saveAndFinish": "保存并完成",
+    "updateContractor": "更新承包商"
   },
   "safetyQuestions": {
     "ladderAltered": "梯子是否以任何方式被改动？",

@@ -284,7 +284,22 @@
     "subcontractorsAddedSoFar": "subcontratistas agregados hasta ahora",
     "cancel": "Cancelar",
     "saveAndAddMore": "Guardar y Agregar Más",
-    "saveAndContinue": "Guardar y Continuar"
+    "saveAndContinue": "Guardar y Continuar",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "rate": "Tarifa",
+    "email": "Correo Electrónico",
+    "enterFirstName": "Ingrese el nombre",
+    "enterLastName": "Ingrese el apellido",
+    "enterRate": "Ingrese la tarifa por hora",
+    "enterEmail": "Ingrese el correo electrónico",
+    "errors": {
+      "firstNameRequired": "El nombre es obligatorio",
+      "lastNameRequired": "El apellido es obligatorio",
+      "emailRequired": "El correo electrónico es obligatorio",
+      "invalidEmail": "Formato de correo electrónico inválido",
+      "invalidRate": "La tarifa debe ser un número válido"
+    }
   },
   "settings": {
     "title": "Configuración",
@@ -671,6 +686,7 @@
     "companyNameHelp": "Nombre de empresa opcional para este contratista. Si no se proporciona, se usará el nombre de la empresa principal.",
     "saving": "Guardando...",
     "addContractor": "Agregar Contratista",
+    "saveAndFinish": "Guardar y Finalizar",
     "updateContractor": "Actualizar Contratista",
     "cancel": "Cancelar",
     "contractors": "Contratistas",

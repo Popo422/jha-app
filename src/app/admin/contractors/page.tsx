@@ -153,7 +153,7 @@ export default function ContractorsPage() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, saveAndAddMore = false) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -169,9 +169,25 @@ export default function ContractorsPage() {
       } else {
         await createContractor(formData).unwrap();
       }
-      setViewMode('list');
-      setEditingContractor(null);
-      setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en" });
+      
+      if (saveAndAddMore) {
+        // Keep company name and reset other fields
+        const savedCompanyName = formData.companyName;
+        setFormData({ 
+          firstName: "", 
+          lastName: "", 
+          email: "", 
+          code: "", 
+          rate: "", 
+          companyName: savedCompanyName, 
+          language: "en" 
+        });
+        setFormErrors({});
+      } else {
+        setViewMode('list');
+        setEditingContractor(null);
+        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en" });
+      }
     } catch (error: any) {
       console.error('Failed to save contractor:', error);
       
@@ -466,7 +482,42 @@ export default function ContractorsPage() {
           <CardTitle>{t('contractors.contractorInformation')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
+            {/* Company/Subcontractor field first */}
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <SubcontractorSelect
+                    id="companyName"
+                    name="companyName"
+                    label={t('contractors.companySubcontractor')}
+                    value={formData.companyName}
+                    onChange={(value) => setFormData(prev => ({ ...prev, companyName: value }))}
+                    placeholder={t('contractors.companyNamePlaceholder')}
+                    disabled={isFormLoading}
+                    authType="admin"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="default"
+                    onClick={() => setIsSubcontractorModalOpen(true)}
+                    disabled={isFormLoading}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              {formErrors.companyName && (
+                <p className="text-sm text-red-500">{formErrors.companyName}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Optional: Select or enter a company/subcontractor name
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">{t('contractors.firstName')}</Label>
@@ -580,39 +631,6 @@ export default function ContractorsPage() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <SubcontractorSelect
-                    id="companyName"
-                    name="companyName"
-                    label={t('contractors.companySubcontractor')}
-                    value={formData.companyName}
-                    onChange={(value) => setFormData(prev => ({ ...prev, companyName: value }))}
-                    placeholder={t('contractors.companyNamePlaceholder')}
-                    disabled={isFormLoading}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="default"
-                    onClick={() => setIsSubcontractorModalOpen(true)}
-                    disabled={isFormLoading}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              {formErrors.companyName && (
-                <p className="text-sm text-red-500">{formErrors.companyName}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Optional: Select or enter a company/subcontractor name
-              </p>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="language">Language Preference</Label>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -673,13 +691,25 @@ export default function ContractorsPage() {
             )}
 
             <div className="flex space-x-4 pt-4">
+              {viewMode === 'add' && (
+                <Button
+                  type="button"
+                  onClick={(e) => handleSubmit(e, true)}
+                  disabled={isFormLoading}
+                  variant="outline"
+                  className="flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>{isFormLoading ? t('contractors.saving') : t('admin.saveAndAddMore')}</span>
+                </Button>
+              )}
               <Button
                 type="submit"
                 disabled={isFormLoading}
                 className="flex items-center space-x-2"
               >
                 <Save className="h-4 w-4" />
-                <span>{isFormLoading ? t('contractors.saving') : (viewMode === 'add' ? t('contractors.addContractor') : t('contractors.updateContractor'))}</span>
+                <span>{isFormLoading ? t('contractors.saving') : (viewMode === 'add' ? t('contractors.saveAndFinish') : t('contractors.updateContractor'))}</span>
               </Button>
               <Button
                 type="button"

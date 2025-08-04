@@ -204,6 +204,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                 name="completedBy"
                 value={formData.completedBy || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
+                authType="admin"
               />
             </div>
             <div className="space-y-2">
@@ -223,6 +224,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                 label={t('formFields.supervisor')}
                 value={formData.supervisor || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
+                authType="admin"
               />
             </div>
             <div className="space-y-2">
@@ -243,6 +245,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                 label={t('formFields.projectName')}
                 placeholder="Name or title of the project"
                 required
+                authType="admin"
               />
             </div>
             <div className="space-y-2">

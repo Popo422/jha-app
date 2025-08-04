@@ -19,6 +19,7 @@ interface ContractorSelectProps {
   className?: string
   id?: string
   name?: string
+  authType?: 'contractor' | 'admin'
 }
 
 export default function ContractorSelect({
@@ -30,7 +31,8 @@ export default function ContractorSelect({
   placeholder,
   className,
   id,
-  name
+  name,
+  authType = 'contractor'
 }: ContractorSelectProps) {
   const { t } = useTranslation('common')
   
@@ -46,7 +48,7 @@ export default function ContractorSelect({
   const { data: contractorsData, isLoading } = useGetContractorsQuery({
     search: searchTerm,
     limit: 100,
-    authType: 'contractor'
+    authType: authType
   })
 
   const contractors = contractorsData?.contractors || []

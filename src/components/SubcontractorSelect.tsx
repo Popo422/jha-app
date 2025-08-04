@@ -19,6 +19,7 @@ interface SubcontractorSelectProps {
   className?: string;
   id?: string;
   name?: string;
+  authType?: 'contractor' | 'admin';
 }
 
 export default function SubcontractorSelect({
@@ -31,6 +32,7 @@ export default function SubcontractorSelect({
   className,
   id,
   name,
+  authType = 'contractor',
 }: SubcontractorSelectProps) {
   const { t } = useTranslation("common");
 
@@ -47,7 +49,7 @@ export default function SubcontractorSelect({
     search: searchTerm,
     pageSize: 1000,
     page: 1,
-    authType: 'contractor',
+    authType: authType,
   });
 
   const subcontractors = subcontractorsData?.subcontractors || [];

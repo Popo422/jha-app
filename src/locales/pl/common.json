@@ -261,7 +261,22 @@
     "subcontractorsAddedSoFar": "podwykonawców dodanych do tej pory",
     "cancel": "Anuluj",
     "saveAndAddMore": "Zapisz i Dodaj Więcej",
-    "saveAndContinue": "Zapisz i Kontynuuj"
+    "saveAndContinue": "Zapisz i Kontynuuj",
+    "firstName": "Imię",
+    "lastName": "Nazwisko",
+    "rate": "Stawka",
+    "email": "Email",
+    "enterFirstName": "Wprowadź imię",
+    "enterLastName": "Wprowadź nazwisko",
+    "enterRate": "Wprowadź stawkę godzinową",
+    "enterEmail": "Wprowadź adres email",
+    "errors": {
+      "firstNameRequired": "Imię jest wymagane",
+      "lastNameRequired": "Nazwisko jest wymagane",
+      "emailRequired": "Email jest wymagany",
+      "invalidEmail": "Nieprawidłowy format email",
+      "invalidRate": "Stawka musi być prawidłową liczbą"
+    }
   },
   "settings": {
     "title": "Ustawienia",
@@ -663,7 +678,10 @@
     "contractorLimitExceeded": "Przekroczono Limit Kontraktorów",
     "contractorLimitMessage": "Osiągnąłeś maksymalną liczbę kontraktorów ({limit}) dla swojego poziomu członkostwa. Proszę uaktualnić, aby dodać więcej kontraktorów.",
     "upgradeToAddMore": "Uaktualnij, aby dodać nieograniczoną liczbę kontraktorów",
-    "contractorsLimitRemaining": "Pozostały Limit Kontraktorów:"
+    "contractorsLimitRemaining": "Pozostały Limit Kontraktorów:",
+    "addContractor": "Dodaj Wykonawcę",
+    "saveAndFinish": "Zapisz i Zakończ",
+    "updateContractor": "Zaktualizuj Wykonawcę"
   },
   "safetyQuestions": {
     "ladderAltered": "Czy drabina została w jakikolwiek sposób przerobiona?",
