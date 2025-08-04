@@ -45,7 +45,8 @@ export default function AdminEditorPage() {
   // RTK Query hooks
   const { data: adminUsersData, isLoading, isFetching, refetch } = useGetAdminUsersQuery({
     page: serverPagination.page,
-    pageSize: serverPagination.pageSize
+    pageSize: serverPagination.pageSize,
+    authType: 'admin'
   });
   
   const [createAdminUser, { isLoading: isCreating }] = useCreateAdminUserMutation();
@@ -118,7 +119,8 @@ export default function AdminEditorPage() {
   // Prefetch next batch when near end
   const { data: prefetchData } = useGetAdminUsersQuery({
     page: serverPagination.page + 1,
-    pageSize: serverPagination.pageSize
+    pageSize: serverPagination.pageSize,
+    authType: 'admin'
   }, {
     skip: !shouldPrefetch
   });
@@ -410,6 +412,7 @@ export default function AdminEditorPage() {
                 placeholder={t('placeholders.companySubcontractorName')}
                 disabled={isCreating || isUpdating}
                 className={errors.companyName ? 'border-red-500' : ''}
+                authType="admin"
               />
               {errors.companyName && (
                 <p className="text-sm text-red-500">{errors.companyName}</p>

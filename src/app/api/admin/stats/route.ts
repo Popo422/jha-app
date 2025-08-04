@@ -2,33 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { contractors, submissions, timesheets } from '@/lib/db/schema'
 import { eq, and, gte, sql } from 'drizzle-orm'
-import jwt from 'jsonwebtoken'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
-
-async function getAdminFromToken(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  const cookieToken = request.cookies.get('adminAuthToken')?.value
-  
-  const token = authHeader?.replace('Bearer ', '') || cookieToken
-
-  if (!token) {
-    return null
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any
-    return decoded.admin
-  } catch {
-    return null
-  }
-}
+import { authenticateRequest } from '@/lib/auth-utils'
 
 export async function GET(request: NextRequest) {
   try {
-    const admin = await getAdminFromToken(request)
-    
-    if (!admin || (admin.role !== 'admin' && admin.role !== 'super-admin')) {
+    // Authenticate admin
+    let auth: { isAdmin: boolean; admin?: any }
+    try {
+      auth = authenticateRequest(request, 'admin')
+    } catch (error) {
+      return NextResponse.json(
+        { message: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    const admin = auth.admin
+    if (!admin || !['admin', 'super-admin'].includes(admin.role)) {
       return NextResponse.json(
         { message: 'Access denied. Admin privileges required.' },
         { status: 403 }

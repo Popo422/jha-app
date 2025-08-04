@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useGetContractorsQuery } from '@/lib/features/contractors/contractorsApi'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ interface ContractorSelectProps {
   className?: string
   id?: string
   name?: string
+  authType?: 'contractor' | 'admin'
 }
 
 export default function ContractorSelect({
@@ -30,7 +32,8 @@ export default function ContractorSelect({
   placeholder,
   className,
   id,
-  name
+  name,
+  authType = 'contractor'
 }: ContractorSelectProps) {
   const { t } = useTranslation('common')
   
@@ -42,10 +45,13 @@ export default function ContractorSelect({
   const [inputValue, setInputValue] = useState(value)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300)
 
   const { data: contractorsData, isLoading } = useGetContractorsQuery({
-    search: searchTerm,
-    limit: 100
+    search: debouncedSearchTerm || undefined,
+    limit: 100,
+    authType: authType
   })
 
   const contractors = contractorsData?.contractors || []

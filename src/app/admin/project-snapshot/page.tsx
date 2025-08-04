@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
@@ -18,6 +19,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronDown, Download, Building, Users, DollarSign, User, Check, X } from "lucide-react";
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
+import ProjectSelect from '@/components/ProjectSelect';
+import SubcontractorSelect from '@/components/SubcontractorSelect';
 import type { ColumnDef } from '@tanstack/react-table';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +32,7 @@ export default function ProjectSnapshotPage() {
   const [projectFilter, setProjectFilter] = useState('');
   const [subcontractorFilter, setSubcontractorFilter] = useState('');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [clientPagination, setClientPagination] = useState({
     currentPage: 1,
     pageSize: 10
@@ -38,15 +42,6 @@ export default function ProjectSnapshotPage() {
     pageSize: 50
   });
   
-  // Searchable select states
-  const [projectSearchOpen, setProjectSearchOpen] = useState(false);
-  const [projectSearchTerm, setProjectSearchTerm] = useState('');
-  const [subcontractorSearchOpen, setSubcontractorSearchOpen] = useState(false);
-  const [subcontractorSearchTerm, setSubcontractorSearchTerm] = useState('');
-  
-  // Refs for dropdown management
-  const projectDropdownRef = useRef<HTMLDivElement>(null);
-  const subcontractorDropdownRef = useRef<HTMLDivElement>(null);
   
   const { admin } = useSelector((state: RootState) => state.auth);
   const exportAllProjectSnapshot = useProjectSnapshotExportAll();
@@ -57,8 +52,9 @@ export default function ProjectSnapshotPage() {
       companyId: admin?.companyId || '',
       project: projectFilter || undefined,
       subcontractor: subcontractorFilter || undefined,
+      search: debouncedSearch || undefined,
     });
-  }, [exportAllProjectSnapshot, admin?.companyId, projectFilter, subcontractorFilter]);
+  }, [exportAllProjectSnapshot, admin?.companyId, projectFilter, subcontractorFilter, debouncedSearch]);
 
   // Redux API hooks
   const { data: projectSnapshotResponse, isLoading, isFetching } = useGetProjectSnapshotQuery(
@@ -67,7 +63,8 @@ export default function ProjectSnapshotPage() {
       page: serverPagination.page,
       pageSize: serverPagination.pageSize,
       ...(projectFilter && { project: projectFilter }),
-      ...(subcontractorFilter && { subcontractor: subcontractorFilter })
+      ...(subcontractorFilter && { subcontractor: subcontractorFilter }),
+      ...(debouncedSearch && { search: debouncedSearch })
     },
     {
       skip: !admin?.companyId
@@ -77,49 +74,19 @@ export default function ProjectSnapshotPage() {
   const allData = projectSnapshotResponse?.projects || [];
   const serverPaginationInfo = projectSnapshotResponse?.pagination;
 
-  const { data: uniqueProjects = [], isLoading: projectsLoading } = useGetProjectSnapshotProjectsQuery(
-    { 
-      companyId: admin?.companyId || '',
-      ...(subcontractorFilter && { subcontractor: subcontractorFilter })
-    },
-    {
-      skip: !admin?.companyId
-    }
-  );
-
-  const { data: uniqueSubcontractors = [], isLoading: subcontractorsLoading } = useGetProjectSnapshotSubcontractorsQuery(
-    { 
-      companyId: admin?.companyId || '',
-      ...(projectFilter && { project: projectFilter })
-    },
-    {
-      skip: !admin?.companyId
-    }
-  );
 
   // Client-side pagination logic
   const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
   const endIndex = startIndex + clientPagination.pageSize;
   
-  // Filter data based on search first, then paginate
-  const searchFilteredData = useMemo(() => {
-    if (!search) return allData;
-    
-    const searchLower = search.toLowerCase();
-    return allData.filter(item =>
-      item.projectName.toLowerCase().includes(searchLower) ||
-      item.projectManager.toLowerCase().includes(searchLower) ||
-      item.subcontractorCount.toString().includes(searchLower)
-    );
-  }, [allData, search]);
-
-  const data = searchFilteredData.slice(startIndex, endIndex);
+  // Use server-filtered data directly
+  const data = allData.slice(startIndex, endIndex);
   
   // Create client pagination info
-  const totalClientPages = Math.ceil(searchFilteredData.length / clientPagination.pageSize);
+  const totalClientPages = Math.ceil(allData.length / clientPagination.pageSize);
   
   // Calculate total pages considering both client view and server data
-  const estimatedTotalRecords = serverPaginationInfo?.total || searchFilteredData.length;
+  const estimatedTotalRecords = serverPaginationInfo?.total || allData.length;
   const estimatedTotalPages = Math.ceil(estimatedTotalRecords / clientPagination.pageSize);
   
   const paginationInfo = {
@@ -135,58 +102,16 @@ export default function ProjectSnapshotPage() {
   const shouldPrefetch = clientPagination.currentPage >= totalClientPages - 2 && serverPaginationInfo?.hasNextPage;
 
   // Calculate summary statistics from all filtered data
-  const totalProjects = searchFilteredData.length;
-  const totalContractors = searchFilteredData.reduce((sum, item) => sum + item.contractorCount, 0);
-  const totalSpend = searchFilteredData.reduce((sum, item) => sum + item.totalSpend, 0);
+  const totalProjects = allData.length;
+  const totalContractors = allData.reduce((sum, item) => sum + item.contractorCount, 0);
+  const totalSpend = allData.reduce((sum, item) => sum + item.totalSpend, 0);
   const averageSpendPerProject = totalProjects > 0 ? totalSpend / totalProjects : 0;
 
 
-  // Filtered lists for searchable selects
-  const filteredProjects = useMemo(() => {
-    if (!projectSearchTerm) return uniqueProjects;
-    return uniqueProjects.filter(project => 
-      project.toLowerCase().includes(projectSearchTerm.toLowerCase())
-    );
-  }, [uniqueProjects, projectSearchTerm]);
-
-  const filteredSubcontractors = useMemo(() => {
-    if (!subcontractorSearchTerm) return uniqueSubcontractors;
-    return uniqueSubcontractors.filter(subcontractor => 
-      subcontractor.toLowerCase().includes(subcontractorSearchTerm.toLowerCase())
-    );
-  }, [uniqueSubcontractors, subcontractorSearchTerm]);
-
-  // Clear invalid filters when the lists change
-  useEffect(() => {
-    if (projectFilter && uniqueProjects.length > 0 && !uniqueProjects.includes(projectFilter)) {
-      setProjectFilter('');
-    }
-  }, [uniqueProjects, projectFilter]);
-
-  useEffect(() => {
-    if (subcontractorFilter && uniqueSubcontractors.length > 0 && !uniqueSubcontractors.includes(subcontractorFilter)) {
-      setSubcontractorFilter('');
-    }
-  }, [uniqueSubcontractors, subcontractorFilter]);
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (projectDropdownRef.current && !projectDropdownRef.current.contains(event.target as Node)) {
-        setProjectSearchOpen(false);
-      }
-      if (subcontractorDropdownRef.current && !subcontractorDropdownRef.current.contains(event.target as Node)) {
-        setSubcontractorSearchOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // Pagination handlers
   const handlePageChange = useCallback((page: number) => {
-    const totalClientPages = Math.ceil(searchFilteredData.length / clientPagination.pageSize);
+    const totalClientPages = Math.ceil(allData.length / clientPagination.pageSize);
     
     if (page <= totalClientPages) {
       // Navigate within current batch
@@ -197,7 +122,7 @@ export default function ProjectSnapshotPage() {
       setServerPagination(prev => ({ ...prev, page: nextServerPage }));
       setClientPagination({ currentPage: 1, pageSize: clientPagination.pageSize });
     }
-  }, [searchFilteredData.length, clientPagination.pageSize, serverPagination.page]);
+  }, [allData.length, clientPagination.pageSize, serverPagination.page]);
 
   const handlePageSizeChange = useCallback((pageSize: number) => {
     setClientPagination({ currentPage: 1, pageSize });
@@ -212,7 +137,7 @@ export default function ProjectSnapshotPage() {
   // Reset pagination when filters change
   useEffect(() => {
     resetPagination();
-  }, [projectFilter, subcontractorFilter, resetPagination]);
+  }, [projectFilter, subcontractorFilter, debouncedSearch, resetPagination]);
 
   // Prefetch next batch when near end
   const { data: prefetchData } = useGetProjectSnapshotQuery({
@@ -276,9 +201,9 @@ export default function ProjectSnapshotPage() {
   ], [t]);
 
   const exportToCSV = () => {
-    if (!searchFilteredData.length) return;
+    if (!allData.length) return;
     
-    const csvData = searchFilteredData.map(item => [
+    const csvData = allData.map(item => [
       item.projectName,
       item.projectManager,
       item.contractorCount.toString(),
@@ -302,215 +227,6 @@ export default function ProjectSnapshotPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Searchable Project Select Component
-  const ProjectSearchSelect = () => (
-    <div className="space-y-1">
-      <div className="text-sm font-medium">{t('admin.projectFilter')}</div>
-      <div className="relative" ref={projectDropdownRef}>
-        <div className="relative">
-          <Input
-            value={projectFilter}
-            onChange={(e) => {
-              setProjectFilter(e.target.value);
-              setProjectSearchTerm(e.target.value);
-              if (!projectSearchOpen) setProjectSearchOpen(true);
-            }}
-            onFocus={() => {
-              setProjectSearchOpen(true);
-              setProjectSearchTerm(projectFilter);
-            }}
-            placeholder={projectsLoading ? "Loading projects..." : "Search projects..."}
-            className="w-full md:w-64 pr-20"
-            disabled={projectsLoading}
-          />
-          
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            {projectFilter && !projectsLoading && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setProjectFilter('');
-                  setProjectSearchTerm('');
-                  setProjectSearchOpen(false);
-                }}
-                className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            )}
-            
-            {projectsLoading && (
-              <div className="h-6 w-6 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-900 dark:border-gray-100"></div>
-              </div>
-            )}
-            
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setProjectSearchOpen(!projectSearchOpen)}
-              className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-              disabled={projectsLoading}
-            >
-              <ChevronDown className={cn("h-3 w-3 transition-transform", projectSearchOpen && "rotate-180")} />
-            </Button>
-          </div>
-        </div>
-
-        {projectSearchOpen && (
-          <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
-            <div
-              className="p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-              onClick={() => {
-                setProjectFilter('');
-                setProjectSearchTerm('');
-                setProjectSearchOpen(false);
-              }}
-            >
-              {t('admin.allProjects')}
-            </div>
-            {projectsLoading ? (
-              <div className="p-2 text-sm text-gray-500 dark:text-gray-400">
-                Loading projects...
-              </div>
-            ) : filteredProjects.length > 0 ? (
-              filteredProjects.map((project) => (
-                <div
-                  key={project}
-                  className={cn(
-                    "p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between",
-                    project === projectFilter && "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                  )}
-                  onClick={() => {
-                    setProjectFilter(project);
-                    setProjectSearchTerm('');
-                    setProjectSearchOpen(false);
-                  }}
-                >
-                  <span className="text-sm">{project}</span>
-                  {project === projectFilter && (
-                    <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  )}
-                </div>
-              ))
-            ) : (
-              <div className="p-2 text-sm text-gray-500 dark:text-gray-400">
-                No projects found
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // Searchable Subcontractor Select Component
-  const SubcontractorSearchSelect = () => (
-    <div className="space-y-1">
-      <div className="text-sm font-medium">{t('admin.subcontractorFilter')}</div>
-      <div className="relative" ref={subcontractorDropdownRef}>
-        <div className="relative">
-          <Input
-            value={subcontractorFilter}
-            onChange={(e) => {
-              setSubcontractorFilter(e.target.value);
-              setSubcontractorSearchTerm(e.target.value);
-              if (!subcontractorSearchOpen) setSubcontractorSearchOpen(true);
-            }}
-            onFocus={() => {
-              setSubcontractorSearchOpen(true);
-              setSubcontractorSearchTerm(subcontractorFilter);
-            }}
-            placeholder={subcontractorsLoading ? "Loading subcontractors..." : "Search subcontractors..."}
-            className="w-full md:w-64 pr-20"
-            disabled={subcontractorsLoading}
-          />
-          
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            {subcontractorFilter && !subcontractorsLoading && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSubcontractorFilter('');
-                  setSubcontractorSearchTerm('');
-                  setSubcontractorSearchOpen(false);
-                }}
-                className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            )}
-            
-            {subcontractorsLoading && (
-              <div className="h-6 w-6 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-900 dark:border-gray-100"></div>
-              </div>
-            )}
-            
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setSubcontractorSearchOpen(!subcontractorSearchOpen)}
-              className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-              disabled={subcontractorsLoading}
-            >
-              <ChevronDown className={cn("h-3 w-3 transition-transform", subcontractorSearchOpen && "rotate-180")} />
-            </Button>
-          </div>
-        </div>
-
-        {subcontractorSearchOpen && (
-          <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
-            <div
-              className="p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-              onClick={() => {
-                setSubcontractorFilter('');
-                setSubcontractorSearchTerm('');
-                setSubcontractorSearchOpen(false);
-              }}
-            >
-              {t('admin.allSubcontractors')}
-            </div>
-            {subcontractorsLoading ? (
-              <div className="p-2 text-sm text-gray-500 dark:text-gray-400">
-                Loading subcontractors...
-              </div>
-            ) : filteredSubcontractors.length > 0 ? (
-              filteredSubcontractors.map((subcontractor) => (
-                <div
-                  key={subcontractor}
-                  className={cn(
-                    "p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between",
-                    subcontractor === subcontractorFilter && "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                  )}
-                  onClick={() => {
-                    setSubcontractorFilter(subcontractor);
-                    setSubcontractorSearchTerm('');
-                    setSubcontractorSearchOpen(false);
-                  }}
-                >
-                  <span className="text-sm">{subcontractor}</span>
-                  {subcontractor === subcontractorFilter && (
-                    <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  )}
-                </div>
-              ))
-            ) : (
-              <div className="p-2 text-sm text-gray-500 dark:text-gray-400">
-                No subcontractors found
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
 
   return (
     <div className="p-3 md:p-6 space-y-4 md:space-y-6">
@@ -591,13 +307,28 @@ export default function ProjectSnapshotPage() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-6 space-y-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
-            <ProjectSearchSelect />
-            <SubcontractorSearchSelect />
+            <ProjectSelect
+              label={t('admin.projectFilter')}
+              value={projectFilter}
+              onChange={setProjectFilter}
+              placeholder="All projects"
+              authType="admin"
+              className="w-full md:w-64"
+            />
+            
+            <SubcontractorSelect
+              label={t('admin.subcontractorFilter')}
+              value={subcontractorFilter}
+              onChange={setSubcontractorFilter}
+              placeholder="All subcontractors"
+              authType="admin"
+              className="w-full md:w-64"
+            />
 
             <Button 
               variant="outline" 
               onClick={exportToCSV}
-              disabled={searchFilteredData.length === 0 || isLoading}
+              disabled={allData.length === 0 || isLoading}
               className="md:ml-auto"
             >
               <Download className="h-4 w-4 mr-2" />

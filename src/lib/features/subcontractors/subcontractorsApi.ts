@@ -3,6 +3,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 export interface Subcontractor {
   id: string
   name: string
+  contractAmount?: string
   companyId: string
   createdAt: string
   updatedAt: string
@@ -10,11 +11,13 @@ export interface Subcontractor {
 
 export interface CreateSubcontractorRequest {
   name: string
+  contractAmount?: string
 }
 
 export interface UpdateSubcontractorRequest {
   id: string
   name: string
+  contractAmount?: string
 }
 
 export interface PaginationInfo {
@@ -41,29 +44,47 @@ export interface DeleteSubcontractorResponse {
   message: string
 }
 
+export interface BulkSubcontractorData {
+  name: string
+  contractAmount?: string
+}
+
+export interface BulkCreateSubcontractorsRequest {
+  subcontractors: BulkSubcontractorData[]
+}
+
+export interface BulkCreateSubcontractorsResponse {
+  success: boolean
+  subcontractors: Subcontractor[]
+  created: number
+  skipped: number
+  errors?: string[]
+  warnings?: string[]
+}
+
 export const subcontractorsApi = createApi({
   reducerPath: 'subcontractorsApi',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api/subcontractors',
-    prepareHeaders: (headers) => {
-      // Get admin token from cookie
-      if (typeof window !== 'undefined') {
-        const token = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('adminAuthToken='))
-          ?.split('=')[1]
-        
-        if (token) {
-          headers.set('Authorization', `AdminBearer ${token}`)
-        }
+    prepareHeaders: (headers, { getState }) => {
+      const state = getState() as any
+      
+      // Check for admin token first (admin has priority)
+      if (state.auth?.adminToken && state.auth?.isAdminAuthenticated) {
+        headers.set('Authorization', `AdminBearer ${state.auth.adminToken}`)
       }
+      // Otherwise use regular user token
+      else if (state.auth?.token && state.auth?.isAuthenticated) {
+        headers.set('Authorization', `Bearer ${state.auth.token}`)
+      }
+      
       return headers
     },
   }),
   tagTypes: ['Subcontractor'],
   endpoints: (builder) => ({
-    getSubcontractors: builder.query<SubcontractorsResponse, { search?: string; page?: number; pageSize?: number }>({
-      query: ({ search, page = 1, pageSize = 50 } = {}) => {
+    getSubcontractors: builder.query<SubcontractorsResponse, { search?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin' }>({
+      query: ({ search, page = 1, pageSize = 50, authType } = {} as any) => {
         const params = new URLSearchParams({
           page: page.toString(),
           pageSize: pageSize.toString(),
@@ -71,6 +92,7 @@ export const subcontractorsApi = createApi({
         if (search) {
           params.append('search', search)
         }
+        params.append('authType', authType)
         return `?${params}`
       },
       providesTags: ['Subcontractor'],
@@ -98,6 +120,14 @@ export const subcontractorsApi = createApi({
       }),
       invalidatesTags: ['Subcontractor'],
     }),
+    bulkCreateSubcontractors: builder.mutation<BulkCreateSubcontractorsResponse, BulkCreateSubcontractorsRequest>({
+      query: (data) => ({
+        url: '',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Subcontractor'],
+    }),
   }),
 })
 
@@ -106,4 +136,5 @@ export const {
   useCreateSubcontractorMutation,
   useUpdateSubcontractorMutation,
   useDeleteSubcontractorMutation,
+  useBulkCreateSubcontractorsMutation,
 } = subcontractorsApi

@@ -3,13 +3,14 @@ import jwt from 'jsonwebtoken'
 import { eq, desc, and, or, ilike, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { projects } from '@/lib/db/schema'
+import { authenticateRequest } from '@/lib/auth-utils'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
 // PostgreSQL error codes
 const PG_UNIQUE_VIOLATION = '23505'
 
-// Helper function to authenticate admin requests
+// Helper function to authenticate admin requests (legacy - keeping for backwards compatibility)
 function authenticateAdmin(request: NextRequest): { admin: any } {
   const adminToken = request.cookies.get('adminAuthToken')?.value || 
                     (request.headers.get('Authorization')?.startsWith('AdminBearer ') ? 
@@ -46,27 +47,39 @@ interface AdminTokenPayload {
 
 export async function GET(request: NextRequest) {
   try {
-    // Authenticate admin
-    let auth: { admin: any }
+    // Get authType from query parameters or default to 'any'
+    const { searchParams } = new URL(request.url)
+    const authType = (searchParams.get('authType') as 'contractor' | 'admin') || 'contractor'
+    
+    // Authenticate request
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: any; admin?: any }
     try {
-      auth = authenticateAdmin(request)
+      auth = authenticateRequest(request, authType)
     } catch (error) {
       return NextResponse.json(
-        { error: 'Admin authentication required' },
+        { error: 'Authentication required' },
         { status: 401 }
       )
     }
 
-    // Get query parameters for pagination
-    const { searchParams } = new URL(request.url)
+    const companyId = auth.isAdmin ? auth.admin.companyId : auth.contractor?.companyId
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Get remaining query parameters for pagination
     const search = searchParams.get('search')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const limit = pageSize
     const offset = (page - 1) * pageSize
 
-    // Build query conditions - filter by admin's company
-    const conditions = [eq(projects.companyId, auth.admin.companyId)]
+    // Build query conditions - filter by user's company
+    const conditions = [eq(projects.companyId, companyId)]
     
     // Add search filter if specified
     if (search) {
@@ -130,8 +143,70 @@ export async function POST(request: NextRequest) {
       )
     }
 
-
     const body = await request.json()
+    
+    // Check if this is a bulk operation
+    if (Array.isArray(body.projects)) {
+      // Bulk create projects
+      const { projects: projectsData } = body
+      
+      if (!projectsData || projectsData.length === 0) {
+        return NextResponse.json(
+          { error: 'No projects provided' },
+          { status: 400 }
+        )
+      }
+
+      // Validate each project
+      for (const project of projectsData) {
+        if (!project.name || !project.location) {
+          return NextResponse.json(
+            { error: 'Missing required fields in project data: name, location' },
+            { status: 400 }
+          )
+        }
+      }
+
+      // Get existing project names to avoid duplicates
+      const existingProjects = await db
+        .select({ name: projects.name })
+        .from(projects)
+        .where(eq(projects.companyId, auth.admin.companyId))
+
+      const existingNames = new Set(existingProjects.map(p => p.name.toLowerCase()))
+
+      // Filter out duplicates and prepare data
+      const uniqueProjects = projectsData.filter((project: any) => 
+        !existingNames.has(project.name.trim().toLowerCase())
+      )
+
+      if (uniqueProjects.length === 0) {
+        return NextResponse.json(
+          { error: 'All projects already exist in your company' },
+          { status: 409 }
+        )
+      }
+
+      // Prepare project data with projectManager from first project manager in company or default
+      const preparedProjects = uniqueProjects.map((project: any) => ({
+        name: project.name.trim(),
+        projectManager: 'Project Manager', // Default for onboarding, can be updated later
+        location: project.location.trim(),
+        companyId: auth.admin.companyId,
+      }))
+
+      // Create projects
+      const createdProjects = await db.insert(projects).values(preparedProjects).returning()
+
+      return NextResponse.json({
+        success: true,
+        projects: createdProjects,
+        created: createdProjects.length,
+        skipped: projectsData.length - uniqueProjects.length
+      })
+    }
+
+    // Single project creation (existing logic)
     const { name, projectManager, location } = body
 
     // Validate required fields
@@ -182,16 +257,24 @@ export async function POST(request: NextRequest) {
     
     // Handle unique constraint violations
     if (error.code === PG_UNIQUE_VIOLATION) {
-      if (error.constraint?.includes('company_id_name_unique')) {
+      if (error.constraint?.includes('company_project_unique')) {
         return NextResponse.json(
-          { error: 'Project name already exists in your company' },
+          { 
+            success: false,
+            error: 'Project name already exists in your company',
+            message: 'A project with this name already exists in your company. Project names must be unique within your organization.' 
+          },
           { status: 409 }
         )
       }
     }
     
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false,
+        error: 'Internal server error',
+        message: 'Failed to create project due to an unexpected error' 
+      },
       { status: 500 }
     )
   }
@@ -268,16 +351,24 @@ export async function PUT(request: NextRequest) {
     
     // Handle unique constraint violations
     if (error.code === PG_UNIQUE_VIOLATION) {
-      if (error.constraint?.includes('company_id_name_unique')) {
+      if (error.constraint?.includes('company_project_unique')) {
         return NextResponse.json(
-          { error: 'Project name already exists in your company' },
+          { 
+            success: false,
+            error: 'Project name already exists in your company',
+            message: 'Another project with this name already exists in your company. Project names must be unique within your organization.' 
+          },
           { status: 409 }
         )
       }
     }
     
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false,
+        error: 'Internal server error',
+        message: 'Failed to update project due to an unexpected error' 
+      },
       { status: 500 }
     )
   }

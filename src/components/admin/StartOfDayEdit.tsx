@@ -202,6 +202,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 name="completedBy"
                 value={formData.completedBy || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
+                authType="admin"
               />
             </div>
             <div className="space-y-2">
@@ -221,6 +222,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 label={t('formFields.supervisor')}
                 value={formData.supervisor || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
+                authType="admin"
               />
             </div>
             <div className="space-y-2">
@@ -230,6 +232,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 value={formData.company || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
                 label={t('admin.companySubcontractor')}
+                authType="admin"
               />
             </div>
             <div className="space-y-2">
@@ -241,6 +244,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 label={t('formFields.projectName')}
                 placeholder={t('formFields.projectNamePlaceholder')}
                 required
+                authType="admin"
               />
             </div>
             <div className="space-y-2">

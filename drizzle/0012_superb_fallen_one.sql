@@ -1,0 +1,2 @@
+ALTER TABLE "companies" ALTER COLUMN "membership_info" SET DEFAULT '{"membershipLevel":"3","user":null,"memberships":[],"tokenVerifiedAt":"2025-08-04T09:53:55.576Z"}'::jsonb;--> statement-breakpoint
+ALTER TABLE "subcontractors" ADD COLUMN "contract_amount" numeric(12, 2);

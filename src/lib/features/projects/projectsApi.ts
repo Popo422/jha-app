@@ -47,29 +47,48 @@ export interface DeleteProjectResponse {
   message: string
 }
 
+export interface BulkProjectData {
+  name: string
+  location: string
+  projectManager?: string
+}
+
+export interface BulkCreateProjectsRequest {
+  projects: BulkProjectData[]
+}
+
+export interface BulkCreateProjectsResponse {
+  success: boolean
+  projects: Project[]
+  created: number
+  skipped: number
+  errors?: string[]
+  warnings?: string[]
+}
+
 export const projectsApi = createApi({
   reducerPath: 'projectsApi',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api/projects',
-    prepareHeaders: (headers) => {
-      // Get admin token from cookie
-      if (typeof window !== 'undefined') {
-        const token = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('adminAuthToken='))
-          ?.split('=')[1]
-        
-        if (token) {
-          headers.set('Authorization', `AdminBearer ${token}`)
-        }
+    prepareHeaders: (headers, { getState }) => {
+      const state = getState() as any
+      
+      // Check for admin token first (admin has priority)
+      if (state.auth?.adminToken && state.auth?.isAdminAuthenticated) {
+        headers.set('Authorization', `AdminBearer ${state.auth.adminToken}`)
       }
+      // Otherwise use regular user token
+      else if (state.auth?.token && state.auth?.isAuthenticated) {
+        headers.set('Authorization', `Bearer ${state.auth.token}`)
+      }
+      
       return headers
     },
   }),
   tagTypes: ['Project'],
   endpoints: (builder) => ({
-    getProjects: builder.query<ProjectsResponse, { search?: string; page?: number; pageSize?: number }>({
-      query: ({ search, page = 1, pageSize = 50 } = {}) => {
+    getProjects: builder.query<ProjectsResponse, { search?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin' }>({
+      query: ({ search, page = 1, pageSize = 50, authType } = {} as any) => {
         const params = new URLSearchParams({
           page: page.toString(),
           pageSize: pageSize.toString(),
@@ -77,6 +96,7 @@ export const projectsApi = createApi({
         if (search) {
           params.append('search', search)
         }
+        params.append('authType', authType)
         return `?${params}`
       },
       providesTags: ['Project'],
@@ -104,6 +124,14 @@ export const projectsApi = createApi({
       }),
       invalidatesTags: ['Project'],
     }),
+    bulkCreateProjects: builder.mutation<BulkCreateProjectsResponse, BulkCreateProjectsRequest>({
+      query: (data) => ({
+        url: '',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Project'],
+    }),
   }),
 })
 
@@ -112,4 +140,5 @@ export const {
   useCreateProjectMutation,
   useUpdateProjectMutation,
   useDeleteProjectMutation,
+  useBulkCreateProjectsMutation,
 } = projectsApi

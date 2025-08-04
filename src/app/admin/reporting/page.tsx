@@ -96,7 +96,8 @@ export default function ReportingPage() {
     data: contractorsData, 
     isLoading: contractorsLoading 
   } = useGetContractorsQuery({
-    limit: 1000 // Get all contractors
+    limit: 1000, // Get all contractors
+    authType: 'admin'
   });
 
   // Create employees filter string for contractor filtering
@@ -1635,6 +1636,14 @@ export default function ReportingPage() {
                                 <Legend 
                                   wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
                                   iconSize={8}
+                                  formatter={(value, entry) => {
+                                    const payload = entry.payload as { name: string; hours: number; cost: number };
+                                    return (
+                                      <span style={{ color: entry.color }}>
+                                        {payload?.name}: {payload?.hours?.toFixed(1)}h
+                                      </span>
+                                    );
+                                  }}
                                 />
                               )}
                             </PieChart>
@@ -1863,6 +1872,14 @@ export default function ReportingPage() {
                                 <Legend 
                                   wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
                                   iconSize={8}
+                                  formatter={(value, entry) => {
+                                    const payload = entry.payload as { name: string; hours: number; cost: number };
+                                    return (
+                                      <span style={{ color: entry.color }}>
+                                        {payload?.name}: ${payload?.cost?.toFixed(0)}
+                                      </span>
+                                    );
+                                  }}
                                 />
                               )}
                             </PieChart>

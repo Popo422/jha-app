@@ -104,6 +104,7 @@ export const projects = pgTable('projects', {
 export const subcontractors = pgTable('subcontractors', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
+  contractAmount: numeric('contract_amount', { precision: 12, scale: 2 }), // Optional budget/contract amount
   companyId: uuid('company_id').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -121,6 +122,19 @@ export const supervisors = pgTable('supervisors', {
 }, (table) => ({
   // Composite unique constraint: same supervisor name can exist across companies but not within same company
   companySupervisorUnique: unique().on(table.companyId, table.name),
+}))
+
+export const projectManagers = pgTable('project_managers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  phone: text('phone'),
+  companyId: uuid('company_id').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: same email can exist across companies but not within same company
+  companyEmailUnique: unique().on(table.companyId, table.email),
 }))
 
 export const toolboxTalks = pgTable('toolbox_talks', {

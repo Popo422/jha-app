@@ -1,36 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { timesheets } from '@/lib/db/schema'
-import { eq, and, like } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const companyId = searchParams.get('companyId')
-    const subcontractorFilter = searchParams.get('subcontractor')
 
     if (!companyId) {
       return NextResponse.json({ error: 'Company ID is required' }, { status: 400 })
     }
 
-    // Build conditions for filtering
-    const conditions = [
-      eq(timesheets.companyId, companyId),
-      eq(timesheets.status, 'approved')
-    ]
-
-    // Add subcontractor filter if provided
-    if (subcontractorFilter) {
-      conditions.push(like(timesheets.company, `%${subcontractorFilter}%`))
-    }
-
-    // Get unique projects from timesheets
+    // Get unique projects from approved timesheets
     const results = await db
       .select({
         project: timesheets.projectName
       })
       .from(timesheets)
-      .where(and(...conditions))
+      .where(and(
+        eq(timesheets.companyId, companyId),
+        eq(timesheets.status, 'approved')
+      ))
       .groupBy(timesheets.projectName)
       .orderBy(timesheets.projectName)
 

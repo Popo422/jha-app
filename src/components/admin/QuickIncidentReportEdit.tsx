@@ -181,6 +181,7 @@ export default function QuickIncidentReportEdit({ submission, onBack }: QuickInc
                 label={t('forms.completedBy')}
                 value={formData.completedBy || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
+                authType="admin"
               />
             </div>
             <div className="space-y-2">
@@ -200,6 +201,7 @@ export default function QuickIncidentReportEdit({ submission, onBack }: QuickInc
                 label={t('forms.projectName')}
                 value={formData.projectName || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
+                authType="admin"
               />
             </div>
             <div className="space-y-2">
@@ -209,6 +211,7 @@ export default function QuickIncidentReportEdit({ submission, onBack }: QuickInc
                 label={t('forms.injuredPerson')}
                 value={formData.injuredPerson || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, injuredPerson: value }))}
+                authType="admin"
               />
             </div>
           </div>
@@ -316,6 +319,7 @@ export default function QuickIncidentReportEdit({ submission, onBack }: QuickInc
                     label={t('forms.reportReviewedBy')}
                     value={formData.adminReportReviewedBy || ''}
                     onChange={(value) => setFormData(prev => ({ ...prev, adminReportReviewedBy: value }))}
+                    authType="admin"
                   />
                 </div>
                 <div className="space-y-2">

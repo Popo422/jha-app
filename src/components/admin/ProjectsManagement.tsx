@@ -4,6 +4,7 @@ import React, { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetProjectsQuery, useDeleteProjectMutation, useCreateProjectMutation, useUpdateProjectMutation, type Project, type PaginationInfo } from "@/lib/features/projects/projectsApi";
+import SupervisorSelect from "@/components/SupervisorSelect";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,8 +42,10 @@ export function ProjectsManagement() {
   const { data: projectsData, isLoading, isFetching, refetch } = useGetProjectsQuery({
     search: debouncedSearch || undefined,
     page: serverPagination.page,
-    pageSize: serverPagination.pageSize
+    pageSize: serverPagination.pageSize,
+    authType: 'admin'
   });
+  
   
   const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation();
   const [createProject, { isLoading: isCreating, error: createError }] = useCreateProjectMutation();
@@ -100,7 +103,8 @@ export function ProjectsManagement() {
   const { data: prefetchData } = useGetProjectsQuery({
     search: debouncedSearch || undefined,
     page: serverPagination.page + 1,
-    pageSize: serverPagination.pageSize
+    pageSize: serverPagination.pageSize,
+    authType: 'admin'
   }, {
     skip: !shouldPrefetch
   });
@@ -281,12 +285,12 @@ export function ProjectsManagement() {
                 )}
               </div>
               <div>
-                <Label htmlFor="projectManager">{t('admin.projectManager')}</Label>
-                <Input
-                  id="projectManager"
+                <SupervisorSelect
+                  label={t('admin.projectManager')}
                   value={formData.projectManager}
-                  onChange={(e) => setFormData({ ...formData, projectManager: e.target.value })}
-                  placeholder="Enter project manager name"
+                  onChange={(value) => setFormData({ ...formData, projectManager: value })}
+                  required={true}
+                  authType="admin"
                   className={formErrors.projectManager ? "border-red-500" : ""}
                 />
                 {formErrors.projectManager && (
@@ -349,12 +353,12 @@ export function ProjectsManagement() {
                 )}
               </div>
               <div>
-                <Label htmlFor="edit-projectManager">{t('admin.projectManager')}</Label>
-                <Input
-                  id="edit-projectManager"
+                <SupervisorSelect
+                  label={t('admin.projectManager')}
                   value={formData.projectManager}
-                  onChange={(e) => setFormData({ ...formData, projectManager: e.target.value })}
-                  placeholder="Enter project manager name"
+                  onChange={(value) => setFormData({ ...formData, projectManager: value })}
+                  required={true}
+                  authType="admin"
                   className={formErrors.projectManager ? "border-red-500" : ""}
                 />
                 {formErrors.projectManager && (

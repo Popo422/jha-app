@@ -51,9 +51,9 @@ export default function TimeFormsPage() {
   });
 
   // Fetch dropdown data
-  const { data: contractorsData } = useGetContractorsQuery({ fetchAll: true });
-  const { data: projectsData } = useGetProjectsQuery({ pageSize: 1000 });
-  const { data: subcontractorsData } = useGetSubcontractorsQuery({ pageSize: 1000 });
+  const { data: contractorsData } = useGetContractorsQuery({ fetchAll: true, authType: 'admin' });
+  const { data: projectsData } = useGetProjectsQuery({ pageSize: 1000, authType: 'admin' });
+  const { data: subcontractorsData } = useGetSubcontractorsQuery({ pageSize: 1000, authType: 'admin' });
 
   // Build combined search query for contractor and project filters
   const buildSearchQuery = useCallback(() => {

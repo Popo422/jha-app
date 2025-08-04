@@ -124,6 +124,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 onChange={(value) => setFormData(prev => ({ ...prev, employee: value }))}
                 placeholder={t('formFields.employeeName')}
                 required
+                authType="admin"
               />
             </div>
             <div className="space-y-2">
@@ -146,6 +147,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 label={t('formFields.projectName')}
                 placeholder={t('formFields.projectNamePlaceholder')}
                 required
+                authType="admin"
               />
             </div>
             <div className="space-y-2 md:col-span-1">

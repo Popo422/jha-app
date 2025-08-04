@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useGetProjectsQuery } from '@/lib/features/projects/projectsApi'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ interface ProjectSelectProps {
   className?: string
   id?: string
   name?: string
+  authType?: 'contractor' | 'admin'
 }
 
 export default function ProjectSelect({
@@ -30,7 +32,8 @@ export default function ProjectSelect({
   placeholder,
   className,
   id,
-  name
+  name,
+  authType = 'contractor'
 }: ProjectSelectProps) {
   const { t } = useTranslation('common')
   
@@ -42,11 +45,14 @@ export default function ProjectSelect({
   const [inputValue, setInputValue] = useState(value)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300)
 
   const { data: projectsData, isLoading } = useGetProjectsQuery({
-    search: searchTerm,
+    search: debouncedSearchTerm || undefined,
     pageSize: 1000,
-    page: 1
+    page: 1,
+    authType: authType
   })
 
   const projects = projectsData?.projects || []

@@ -4,6 +4,7 @@ import { eq, desc, and, or, ilike, count, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { contractors, companies } from '@/lib/db/schema'
 import { emailService } from '@/lib/email-service'
+import { authenticateRequest } from '@/lib/auth-utils'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -79,19 +80,31 @@ interface AdminTokenPayload {
 
 export async function GET(request: NextRequest) {
   try {
-    // Authenticate admin
-    let auth: { admin: any }
+    // Get authType from query parameters or default to 'any'
+    const { searchParams } = new URL(request.url)
+    const authType = (searchParams.get('authType') as 'contractor' | 'admin') || 'contractor'
+    
+    // Authenticate request
+    let auth: { isAdmin: boolean; userId?: string; userName?: string; contractor?: any; admin?: any }
     try {
-      auth = authenticateAdmin(request)
+      auth = authenticateRequest(request, authType)
     } catch (error) {
       return NextResponse.json(
-        { error: 'Admin authentication required' },
+        { error: 'Authentication required' },
         { status: 401 }
       )
     }
 
-    // Get query parameters
-    const { searchParams } = new URL(request.url)
+    const companyId = auth.isAdmin ? auth.admin.companyId : auth.contractor?.companyId
+    
+    if (!companyId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Get remaining query parameters
     const search = searchParams.get('search')
     const company = searchParams.get('company')
     const page = parseInt(searchParams.get('page') || '1')
@@ -100,8 +113,8 @@ export async function GET(request: NextRequest) {
     const limit = fetchAll ? undefined : pageSize
     const offset = fetchAll ? undefined : (page - 1) * pageSize
 
-    // Build query conditions - filter by admin's company
-    const conditions = [eq(contractors.companyId, auth.admin.companyId)]
+    // Build query conditions - filter by user's company
+    const conditions = [eq(contractors.companyId, companyId)]
     
     // Add search filter if specified
     if (search) {
@@ -154,7 +167,7 @@ export async function GET(request: NextRequest) {
         limit: fetchAll ? null : limit,
         offset: fetchAll ? null : offset,
         fetchAll,
-        companyId: auth.admin.companyId
+        companyId: companyId
       }
     })
 
@@ -181,6 +194,159 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    
+    // Check if this is a bulk operation
+    if (Array.isArray(body.contractors)) {
+      // Bulk create contractors
+      const { contractors: contractorsData } = body
+      
+      if (!contractorsData || contractorsData.length === 0) {
+        return NextResponse.json(
+          { error: 'No contractors provided' },
+          { status: 400 }
+        )
+      }
+
+      // Check contractor limit first
+      const limitCheck = await checkContractorLimit(auth.admin.companyId)
+      if (!limitCheck.canAdd && limitCheck.membershipLevel !== '3') {
+        const remainingSlots = limitCheck.limit - limitCheck.currentCount
+        if (contractorsData.length > remainingSlots) {
+          return NextResponse.json(
+            { 
+              error: 'Contractor limit exceeded',
+              message: `You can only add ${remainingSlots} more contractors. You have ${limitCheck.currentCount}/${limitCheck.limit} contractors. Please upgrade to add more contractors.`,
+              currentCount: limitCheck.currentCount,
+              limit: limitCheck.limit,
+              membershipLevel: limitCheck.membershipLevel,
+              requested: contractorsData.length,
+              remaining: remainingSlots
+            },
+            { status: 403 }
+          )
+        }
+      }
+
+      // Validate each contractor
+      for (const contractor of contractorsData) {
+        if (!contractor.firstName || !contractor.lastName || !contractor.email) {
+          return NextResponse.json(
+            { error: 'Missing required fields in contractor data: firstName, lastName, email' },
+            { status: 400 }
+          )
+        }
+        
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(contractor.email)) {
+          return NextResponse.json(
+            { error: `Invalid email format: ${contractor.email}` },
+            { status: 400 }
+          )
+        }
+      }
+
+      // Get existing contractor emails to avoid duplicates
+      const existingContractors = await db
+        .select({ email: contractors.email })
+        .from(contractors)
+        .where(eq(contractors.companyId, auth.admin.companyId))
+
+      const existingEmails = new Set(existingContractors.map(c => c.email.toLowerCase()))
+
+      // Filter out duplicates and prepare data
+      const uniqueContractors = contractorsData.filter((contractor: any) => 
+        !existingEmails.has(contractor.email.trim().toLowerCase())
+      )
+
+      if (uniqueContractors.length === 0) {
+        return NextResponse.json(
+          { error: 'All contractor emails already exist in your company' },
+          { status: 409 }
+        )
+      }
+
+      // Generate unique codes for contractors
+      const existingCodes = await db
+        .select({ code: contractors.code })
+        .from(contractors)
+
+      const existingCodesSet = new Set(existingCodes.map(c => c.code))
+      
+      // Prepare contractor data
+      const preparedContractors = uniqueContractors.map((contractor: any, index: number) => {
+        const firstName = contractor.firstName.trim();
+        const lastName = contractor.lastName.trim();
+        
+        // Generate unique code
+        let code = ''
+        let codeAttempt = 0
+        do {
+          const baseCode = `${firstName.substring(0, 2)}${lastName.substring(0, 2)}${String(Date.now() + index + codeAttempt).slice(-4)}`.toUpperCase()
+          code = baseCode
+          codeAttempt++
+        } while (existingCodesSet.has(code))
+        
+        existingCodesSet.add(code) // Prevent duplicate codes in the same batch
+        
+        return {
+          firstName,
+          lastName,
+          email: contractor.email.trim().toLowerCase(),
+          code,
+          companyId: auth.admin.companyId,
+          language: 'en',
+          rate: '0.00',
+          companyName: null // Will be set via dropdown in review step
+        }
+      })
+
+      // Create contractors with enhanced error handling
+      const createdContractors = []
+      const errors = []
+      
+      for (const contractorData of preparedContractors) {
+        try {
+          const [createdContractor] = await db.insert(contractors).values(contractorData).returning()
+          createdContractors.push(createdContractor)
+        } catch (insertError: any) {
+          if (insertError.code === '23505') {
+            if (insertError.constraint?.includes('company_email_unique')) {
+              errors.push(`Employee with email ${contractorData.email} already exists in your company`)
+            } else if (insertError.constraint?.includes('code')) {
+              errors.push(`Employee code ${contractorData.code} already exists`)
+            } else {
+              errors.push(`Duplicate entry detected for ${contractorData.firstName} ${contractorData.lastName}`)
+            }
+          } else {
+            errors.push(`Failed to create employee ${contractorData.firstName} ${contractorData.lastName}: ${insertError.message}`)
+          }
+        }
+      }
+
+      const totalSkipped = (contractorsData.length - uniqueContractors.length) + errors.length
+
+      if (errors.length > 0 && createdContractors.length === 0) {
+        return NextResponse.json(
+          { 
+            success: false,
+            message: 'Failed to create any employees',
+            errors: errors 
+          },
+          { status: 409 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        contractors: createdContractors,
+        created: createdContractors.length,
+        skipped: totalSkipped,
+        ...(errors.length > 0 && { warnings: errors })
+      })
+    }
+
+    // Single contractor creation (existing logic)
     const { firstName, lastName, email, code, rate, companyName, language } = body
 
     // Validate required fields
@@ -302,22 +468,34 @@ export async function POST(request: NextRequest) {
     
     // Handle unique constraint violations
     if (error.code === PG_UNIQUE_VIOLATION) {
-      if (error.constraint?.includes('company_email') || error.constraint?.includes('email')) {
+      if (error.constraint?.includes('company_email_unique')) {
         return NextResponse.json(
-          { error: 'Email address already exists in your company' },
+          { 
+            success: false,
+            error: 'Email address already exists in your company',
+            message: 'An employee with this email address already exists in your company. Email addresses must be unique within your organization.' 
+          },
           { status: 409 }
         )
       }
       if (error.constraint?.includes('code')) {
         return NextResponse.json(
-          { error: 'Contractor code already exists' },
+          { 
+            success: false,
+            error: 'Employee code already exists',
+            message: 'This employee code is already in use. Employee codes must be unique across all companies.' 
+          },
           { status: 409 }
         )
       }
     }
     
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false,
+        error: 'Internal server error',
+        message: 'Failed to create employee due to an unexpected error' 
+      },
       { status: 500 }
     )
   }
@@ -428,22 +606,34 @@ export async function PUT(request: NextRequest) {
     
     // Handle unique constraint violations
     if (error.code === PG_UNIQUE_VIOLATION) {
-      if (error.constraint?.includes('email')) {
+      if (error.constraint?.includes('company_email_unique')) {
         return NextResponse.json(
-          { error: 'Email address already exists' },
+          { 
+            success: false,
+            error: 'Email address already exists in your company',
+            message: 'Another employee with this email address already exists in your company. Email addresses must be unique within your organization.' 
+          },
           { status: 409 }
         )
       }
       if (error.constraint?.includes('code')) {
         return NextResponse.json(
-          { error: 'Contractor code already exists' },
+          { 
+            success: false,
+            error: 'Employee code already exists',
+            message: 'This employee code is already in use. Employee codes must be unique across all companies.' 
+          },
           { status: 409 }
         )
       }
     }
     
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false,
+        error: 'Internal server error',
+        message: 'Failed to update employee due to an unexpected error' 
+      },
       { status: 500 }
     )
   }

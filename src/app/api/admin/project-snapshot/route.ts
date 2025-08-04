@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const offset = fetchAll ? undefined : (page - 1) * pageSize;
     const projectFilter = searchParams.get('project')
     const subcontractorFilter = searchParams.get('subcontractor')
+    const searchFilter = searchParams.get('search')
     const companyId = searchParams.get('companyId')
 
     if (!companyId) {
@@ -27,11 +28,22 @@ export async function GET(request: NextRequest) {
 
     // Add filters to WHERE clause
     if (projectFilter) {
-      whereConditions.push(eq(timesheets.projectName, projectFilter))
+      whereConditions.push(like(timesheets.projectName, `%${projectFilter}%`))
     }
     
     if (subcontractorFilter) {
       whereConditions.push(like(timesheets.company, `%${subcontractorFilter}%`))
+    }
+
+    if (searchFilter) {
+      const searchCondition = or(
+        like(timesheets.projectName, `%${searchFilter}%`),
+        like(timesheets.company, `%${searchFilter}%`),
+        like(projects.projectManager, `%${searchFilter}%`)
+      );
+      if (searchCondition) {
+        whereConditions.push(searchCondition);
+      }
     }
 
     // Get total count for pagination (count distinct project names)

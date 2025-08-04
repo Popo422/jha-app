@@ -78,6 +78,20 @@
       "when": 1753673007560,
       "tag": "0010_neat_black_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1753968397035,
+      "tag": "0011_special_shaman",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1754301235597,
+      "tag": "0012_superb_fallen_one",
+      "breakpoints": true
     }
   ]
 }

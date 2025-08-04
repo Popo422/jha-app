@@ -23,6 +23,7 @@ export function SubcontractorsManagement() {
   const [editingSubcontractor, setEditingSubcontractor] = useState<Subcontractor | null>(null);
   const [formData, setFormData] = useState({
     name: "",
+    contractAmount: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [clientPagination, setClientPagination] = useState({
@@ -39,7 +40,8 @@ export function SubcontractorsManagement() {
   const { data: subcontractorsData, isLoading, isFetching, refetch } = useGetSubcontractorsQuery({
     search: debouncedSearch || undefined,
     page: serverPagination.page,
-    pageSize: serverPagination.pageSize
+    pageSize: serverPagination.pageSize,
+    authType: 'admin'
   });
   
   const [deleteSubcontractor, { isLoading: isDeleting }] = useDeleteSubcontractorMutation();
@@ -98,7 +100,8 @@ export function SubcontractorsManagement() {
   const { data: prefetchData } = useGetSubcontractorsQuery({
     search: debouncedSearch || undefined,
     page: serverPagination.page + 1,
-    pageSize: serverPagination.pageSize
+    pageSize: serverPagination.pageSize,
+    authType: 'admin'
   }, {
     skip: !shouldPrefetch
   });
@@ -107,6 +110,7 @@ export function SubcontractorsManagement() {
     setEditingSubcontractor(subcontractor);
     setFormData({
       name: subcontractor.name,
+      contractAmount: subcontractor.contractAmount || "",
     });
     setFormErrors({});
     setIsEditDialogOpen(true);
@@ -116,6 +120,7 @@ export function SubcontractorsManagement() {
     setEditingSubcontractor(null);
     setFormData({
       name: "",
+      contractAmount: "",
     });
     setFormErrors({});
     setIsCreateDialogOpen(true);
@@ -125,7 +130,7 @@ export function SubcontractorsManagement() {
     setIsCreateDialogOpen(false);
     setIsEditDialogOpen(false);
     setEditingSubcontractor(null);
-    setFormData({ name: "" });
+    setFormData({ name: "", contractAmount: "" });
     setFormErrors({});
   };
 
@@ -198,6 +203,23 @@ export function SubcontractorsManagement() {
       ),
     },
     {
+      accessorKey: "contractAmount",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Contract Amount
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const amount = row.getValue("contractAmount") as string | null;
+        return amount ? `$${parseFloat(amount).toLocaleString()}` : "-";
+      },
+    },
+    {
       accessorKey: "createdAt",
       header: ({ column }) => (
         <Button
@@ -242,6 +264,18 @@ export function SubcontractorsManagement() {
                   <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>
                 )}
               </div>
+              <div>
+                <Label htmlFor="contractAmount">Contract Amount (Optional)</Label>
+                <Input
+                  id="contractAmount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.contractAmount}
+                  onChange={(e) => setFormData({ ...formData, contractAmount: e.target.value })}
+                  placeholder="Enter contract amount"
+                />
+              </div>
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">
                   <p className="text-sm text-red-600">
@@ -283,6 +317,18 @@ export function SubcontractorsManagement() {
                 {formErrors.name && (
                   <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>
                 )}
+              </div>
+              <div>
+                <Label htmlFor="edit-contractAmount">Contract Amount (Optional)</Label>
+                <Input
+                  id="edit-contractAmount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.contractAmount}
+                  onChange={(e) => setFormData({ ...formData, contractAmount: e.target.value })}
+                  placeholder="Enter contract amount"
+                />
               </div>
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">
@@ -326,9 +372,10 @@ export function SubcontractorsManagement() {
             onDelete={handleDelete}
             getRowId={(subcontractor) => subcontractor.id}
             exportFilename="subcontractors"
-            exportHeaders={[t('contractors.companySubcontractor'), t('admin.created')]}
+            exportHeaders={[t('contractors.companySubcontractor'), 'Contract Amount', t('admin.created')]}
             getExportData={(subcontractor) => [
               subcontractor.name,
+              subcontractor.contractAmount ? `$${parseFloat(subcontractor.contractAmount).toLocaleString()}` : '',
               new Date(subcontractor.createdAt).toLocaleDateString()
             ]}
             searchValue={search}
