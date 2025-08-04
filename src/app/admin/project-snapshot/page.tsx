@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { useDebouncedCallback } from 'use-debounce';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
@@ -32,7 +32,7 @@ export default function ProjectSnapshotPage() {
   const [projectFilter, setProjectFilter] = useState('');
   const [subcontractorFilter, setSubcontractorFilter] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [clientPagination, setClientPagination] = useState({
     currentPage: 1,
     pageSize: 10
@@ -45,14 +45,6 @@ export default function ProjectSnapshotPage() {
   
   const { admin } = useSelector((state: RootState) => state.auth);
   const exportAllProjectSnapshot = useProjectSnapshotExportAll();
-
-  // Debounce search input to prevent excessive API calls
-  const debouncedSetSearch = useDebouncedCallback(
-    (value: string) => {
-      setDebouncedSearch(value);
-    },
-    300
-  );
 
   // Function to fetch all project snapshot data for export
   const handleExportAll = useCallback(async () => {
@@ -141,11 +133,6 @@ export default function ProjectSnapshotPage() {
     setClientPagination({ currentPage: 1, pageSize: 10 });
     setServerPagination({ page: 1, pageSize: 50 });
   }, []);
-
-  // Update debounced search when search changes
-  useEffect(() => {
-    debouncedSetSearch(search);
-  }, [search, debouncedSetSearch]);
 
   // Reset pagination when filters change
   useEffect(() => {
