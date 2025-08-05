@@ -17,12 +17,13 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Download, Calendar, Check, XCircle, Clock } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import { useGetReportingDataQuery } from '@/lib/features/reporting/reportingApi';
 import { useGetTimesheetsQuery, useLazyGetTimesheetsQuery, useGetTimesheetAggregatesQuery, useLazyGetTimesheetAggregatesQuery } from '@/lib/features/timesheets/timesheetsApi';
 import { useGetContractorsQuery } from '@/lib/features/contractors/contractorsApi';
+import { useGetSubcontractorsQuery } from '@/lib/features/subcontractors/subcontractorsApi';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import { CostForecasting } from '@/components/admin/CostForecasting';
 import type { Employee, ChartDataPoint, ReportingData } from '@/lib/features/reporting/reportingApi';
@@ -36,13 +37,14 @@ export default function ReportingPage() {
   const [endDate, setEndDate] = useState('');
   const [selectedContractors, setSelectedContractors] = useState<string[]>([]);
   const [selectedProjectNames, setSelectedProjectNames] = useState<string[]>([]);
-  const [selectedSubcontractors, setSelectedSubcontractors] = useState<string[]>([]);
+  const [selectedSubcontractor, setSelectedSubcontractor] = useState<string>('');
+  const [selectedBurndownSubcontractor, setSelectedBurndownSubcontractor] = useState<string>('');
   const [search, setSearch] = useState('');
   const [contractorSearch, setContractorSearch] = useState('');
   const [projectNameSearch, setProjectNameSearch] = useState('');
   const [subcontractorSearch, setSubcontractorSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // Default to all statuses
-  const [activeTab, setActiveTab] = useState('hours'); // 'hours', 'cost', or 'forecast'
+  const [activeTab, setActiveTab] = useState('hours'); // 'hours', 'cost', 'burndown', or 'forecast'
   const [contractorCostSearch, setContractorCostSearch] = useState('');
   const [contractorHoursSearch, setContractorHoursSearch] = useState('');
   const [companyCostSearch, setCompanyCostSearch] = useState('');
@@ -100,6 +102,15 @@ export default function ReportingPage() {
     authType: 'admin'
   });
 
+  // Get subcontractors data for contract amounts
+  const { 
+    data: subcontractorsData, 
+    isLoading: subcontractorsLoading 
+  } = useGetSubcontractorsQuery({
+    pageSize: 1000, // Get all subcontractors
+    authType: 'admin'
+  });
+
   // Create employees filter string for contractor filtering
   const employeesFilterString = useMemo(() => {
     if (selectedContractors.length === 0) return undefined;
@@ -121,9 +132,9 @@ export default function ReportingPage() {
 
   // Create subcontractor filter string
   const subcontractorFilterString = useMemo(() => {
-    if (selectedSubcontractors.length === 0) return undefined;
-    return selectedSubcontractors.join('|');
-  }, [selectedSubcontractors]);
+    if (!selectedSubcontractor) return undefined;
+    return selectedSubcontractor;
+  }, [selectedSubcontractor]);
 
   // Get timesheets data with smart pagination
   const { 
@@ -194,6 +205,23 @@ export default function ReportingPage() {
     if (!allTimesheets) return [];
     return allTimesheets.filter(timesheet => timesheet.status === 'approved');
   }, [allTimesheets]);
+
+  // SEPARATE BURNDOWN CHART CALCULATIONS
+  // Filtered timesheets specifically for burndown chart
+  const burndownTimesheets = useMemo(() => {
+    if (!allTimesheets) return [];
+    
+    let filtered = allTimesheets.filter(timesheet => timesheet.status === 'approved');
+    
+    // If a specific subcontractor is selected for burndown, filter by that subcontractor
+    if (selectedBurndownSubcontractor) {
+      filtered = filtered.filter(timesheet => 
+        timesheet.company && timesheet.company.trim() === selectedBurndownSubcontractor
+      );
+    }
+    
+    return filtered;
+  }, [allTimesheets, selectedBurndownSubcontractor]);
 
   // Create chart data from approved timesheets only
   const chartData = useMemo(() => {
@@ -341,6 +369,147 @@ export default function ReportingPage() {
     return approvedTimesheets.reduce((sum, timesheet) => sum + getCost(timesheet), 0);
   }, [approvedTimesheets, getCost]);
 
+  // Calculate total contract amounts for OTHER TABS (hours/cost) - uses original logic
+  const totalContractAmount = useMemo(() => {
+    if (!subcontractorsData?.subcontractors || !approvedTimesheets.length) return 0;
+    
+    // Get unique subcontractor names from filtered timesheets
+    const subcontractorNames = new Set<string>();
+    approvedTimesheets.forEach(timesheet => {
+      if (timesheet.company && timesheet.company.trim()) {
+        subcontractorNames.add(timesheet.company.trim());
+      }
+    });
+    
+    // Sum contract amounts for relevant subcontractors
+    let totalAmount = 0;
+    subcontractorsData.subcontractors.forEach(subcontractor => {
+      if (subcontractorNames.has(subcontractor.name) && subcontractor.contractAmount) {
+        totalAmount += parseFloat(subcontractor.contractAmount);
+      }
+    });
+    
+    return totalAmount;
+  }, [subcontractorsData?.subcontractors, approvedTimesheets]);
+
+  // SEPARATE contract amount calculation ONLY for burndown chart
+  const burndownContractAmount = useMemo(() => {
+    if (!subcontractorsData?.subcontractors) return 0;
+    
+    // If a specific burndown subcontractor is selected, use only that one
+    if (selectedBurndownSubcontractor) {
+      const selectedSubcontractor = subcontractorsData.subcontractors.find(
+        s => s.name === selectedBurndownSubcontractor
+      );
+      return selectedSubcontractor?.contractAmount ? parseFloat(selectedSubcontractor.contractAmount) : 0;
+    }
+    
+    // If no specific subcontractor selected, sum all subcontractors that have timesheets
+    if (!burndownTimesheets.length) return 0;
+    
+    const subcontractorNames = new Set<string>();
+    burndownTimesheets.forEach(timesheet => {
+      if (timesheet.company && timesheet.company.trim()) {
+        subcontractorNames.add(timesheet.company.trim());
+      }
+    });
+    
+    let totalAmount = 0;
+    subcontractorsData.subcontractors.forEach(subcontractor => {
+      if (subcontractorNames.has(subcontractor.name) && subcontractor.contractAmount) {
+        totalAmount += parseFloat(subcontractor.contractAmount);
+      }
+    });
+    
+    return totalAmount;
+  }, [subcontractorsData?.subcontractors, burndownTimesheets, selectedBurndownSubcontractor]);
+
+  // Burndown chart data calculations based on contract amounts
+  const burndownData = useMemo(() => {
+    if (!burndownTimesheets.length || !startDate || !endDate || burndownContractAmount === 0) return [];
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    // Early return for very large date ranges to avoid performance issues
+    if (totalDays > 730) return []; // Increased limit to 2 years
+    
+    // Create daily cost map from timesheet data
+    const dailyCostMap = new Map<string, number>();
+    burndownTimesheets.forEach(timesheet => {
+      const cost = getCost(timesheet);
+      const date = timesheet.date;
+      dailyCostMap.set(date, (dailyCostMap.get(date) || 0) + cost);
+    });
+    
+    // Generate data for burndown chart with smart sampling for large date ranges
+    const data = [];
+    let accumulatedCost = 0;
+    
+    // Determine sampling interval based on total days to optimize performance
+    let sampleInterval = 1; // Daily by default
+    if (totalDays > 180) sampleInterval = 7;      // Weekly for 6+ months
+    else if (totalDays > 90) sampleInterval = 3;  // Every 3 days for 3+ months
+    
+    // First, calculate accumulated cost for all days to maintain accuracy
+    const accumulatedCosts = new Array(totalDays).fill(0);
+    let runningTotal = 0;
+    for (let i = 0; i < totalDays; i++) {
+      const currentDate = new Date(start);
+      currentDate.setDate(start.getDate() + i);
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const dailyCost = dailyCostMap.get(dateStr) || 0;
+      runningTotal += dailyCost;
+      accumulatedCosts[i] = runningTotal;
+    }
+    
+    // Now sample data points at the determined interval
+    for (let i = 0; i < totalDays; i += sampleInterval) {
+      const currentDate = new Date(start);
+      currentDate.setDate(start.getDate() + i);
+      const dateStr = currentDate.toISOString().split('T')[0];
+      
+      // Use pre-calculated accumulated cost
+      accumulatedCost = accumulatedCosts[i];
+      
+      // Calculate ideal burndown (linear decrease from contract amount to 0)
+      const idealRemaining = burndownContractAmount * (1 - (i / (totalDays - 1)));
+      
+      // Calculate actual remaining (contract amount - accumulated spent)
+      const actualRemaining = Math.max(0, burndownContractAmount - accumulatedCost);
+      
+      data.push({
+        date: dateStr,
+        day: i + 1,
+        idealRemaining: Math.max(0, idealRemaining),
+        actualRemaining,
+        accumulatedCost,
+        dailyCost: dailyCostMap.get(dateStr) || 0,
+        contractAmount: burndownContractAmount
+      });
+    }
+    
+    // Always include the last day if not already included
+    if ((totalDays - 1) % sampleInterval !== 0) {
+      const lastDate = new Date(start);
+      lastDate.setDate(start.getDate() + totalDays - 1);
+      const lastDateStr = lastDate.toISOString().split('T')[0];
+      
+      data.push({
+        date: lastDateStr,
+        day: totalDays,
+        idealRemaining: 0,
+        actualRemaining: Math.max(0, burndownContractAmount - accumulatedCosts[totalDays - 1]),
+        accumulatedCost: accumulatedCosts[totalDays - 1],
+        dailyCost: dailyCostMap.get(lastDateStr) || 0,
+        contractAmount: burndownContractAmount
+      });
+    }
+    
+    return data;
+  }, [burndownTimesheets, getCost, burndownContractAmount, startDate, endDate]);
+
   // Filtered analytics data for search - using debounced values for better performance
   const filteredContractorHours = useMemo(() => {
     if (!debouncedContractorHoursSearch) return contractorHours;
@@ -411,13 +580,6 @@ export default function ReportingPage() {
     );
   };
 
-  const handleSubcontractorToggle = (subcontractor: string) => {
-    setSelectedSubcontractors(prev => 
-      prev.includes(subcontractor) 
-        ? prev.filter(name => name !== subcontractor)
-        : [...prev, subcontractor]
-    );
-  };
 
   // Pagination handlers
   const handlePageChange = useCallback((page: number) => {
@@ -516,7 +678,7 @@ export default function ReportingPage() {
 
   useEffect(() => {
     resetPagination();
-  }, [startDate, endDate, selectedContractors, selectedProjectNames, selectedSubcontractors, statusFilter, resetPagination]);
+  }, [startDate, endDate, selectedContractors, selectedProjectNames, selectedSubcontractor, statusFilter, resetPagination]);
 
   // Prefetch next batch when near end
   const { data: prefetchData } = useGetTimesheetsQuery({
@@ -582,10 +744,10 @@ export default function ReportingPage() {
     }
   }, [selectedContractors, allTimesheets, contractorsData?.contractors]);
 
-  // Auto-clear invalid subcontractor selections when contractors or projects change
+  // Auto-clear invalid subcontractor selection when contractors or projects change
   useEffect(() => {
-    if (selectedSubcontractors.length > 0 && (selectedContractors.length > 0 || selectedProjectNames.length > 0) && allTimesheets && contractorsData?.contractors) {
-      // Check if selected subcontractors have work from selected contractors/projects
+    if (selectedSubcontractor && (selectedContractors.length > 0 || selectedProjectNames.length > 0) && allTimesheets && contractorsData?.contractors) {
+      // Check if selected subcontractor has work from selected contractors/projects
       const validSubcontractors = new Set<string>();
       
       allTimesheets.forEach(timesheet => {
@@ -603,12 +765,11 @@ export default function ReportingPage() {
         }
       });
       
-      const invalidSubcontractors = selectedSubcontractors.filter(name => !validSubcontractors.has(name));
-      if (invalidSubcontractors.length > 0) {
-        setSelectedSubcontractors(prev => prev.filter(name => validSubcontractors.has(name)));
+      if (!validSubcontractors.has(selectedSubcontractor)) {
+        setSelectedSubcontractor('');
       }
     }
-  }, [selectedContractors, selectedProjectNames, allTimesheets, contractorsData?.contractors]);
+  }, [selectedContractors, selectedProjectNames, selectedSubcontractor, allTimesheets, contractorsData?.contractors]);
 
   const exportToCSV = () => {
     if (!chartData.length) return;
@@ -674,12 +835,10 @@ export default function ReportingPage() {
       );
     }
     
-    // Filter by selected subcontractors
-    if (selectedSubcontractors.length > 0) {
+    // Filter by selected subcontractor
+    if (selectedSubcontractor) {
       filteredTimesheets = filteredTimesheets.filter(timesheet =>
-        selectedSubcontractors.some(subcontractor => 
-          timesheet.company.toLowerCase().includes(subcontractor.toLowerCase())
-        )
+        timesheet.company.toLowerCase().includes(selectedSubcontractor.toLowerCase())
       );
     }
     
@@ -691,7 +850,7 @@ export default function ReportingPage() {
       }
     });
     return Array.from(projectNames).sort();
-  }, [allTimesheets, selectedContractors, selectedSubcontractors, contractorsData?.contractors]);
+  }, [allTimesheets, selectedContractors, selectedSubcontractor, contractorsData?.contractors]);
 
   // Get unique subcontractor names from timesheet data, filtered by selected contractors and projects
   const uniqueSubcontractors = useMemo(() => {
@@ -734,14 +893,14 @@ export default function ReportingPage() {
     
     let availableContractors = contractorsData.contractors;
     
-    // If projects or subcontractors are selected, only show contractors who worked on those projects/subcontractors
-    if ((selectedProjectNames.length > 0 || selectedSubcontractors.length > 0) && allTimesheets) {
+    // If projects or subcontractor is selected, only show contractors who worked on those projects/subcontractor
+    if ((selectedProjectNames.length > 0 || selectedSubcontractor) && allTimesheets) {
       const contractorsOnFilteredWork = new Set<string>();
       
       allTimesheets.forEach(timesheet => {
         const matchesProject = selectedProjectNames.length === 0 || selectedProjectNames.includes(timesheet.projectName);
-        const matchesSubcontractor = selectedSubcontractors.length === 0 || 
-          selectedSubcontractors.some(sub => timesheet.company.toLowerCase().includes(sub.toLowerCase()));
+        const matchesSubcontractor = !selectedSubcontractor || 
+          timesheet.company.toLowerCase().includes(selectedSubcontractor.toLowerCase());
         
         if (matchesProject && matchesSubcontractor) {
           // Find contractor by matching employee name
@@ -764,7 +923,7 @@ export default function ReportingPage() {
     return availableContractors.filter(contractor => 
       `${contractor.firstName} ${contractor.lastName}`.toLowerCase().includes(contractorSearch.toLowerCase())
     );
-  }, [contractorsData?.contractors, contractorSearch, selectedProjectNames, selectedSubcontractors, allTimesheets]);
+  }, [contractorsData?.contractors, contractorSearch, selectedProjectNames, selectedSubcontractor, allTimesheets]);
 
   // Filtered project names for search
   const filteredProjectNames = useMemo(() => {
@@ -775,7 +934,7 @@ export default function ReportingPage() {
     );
   }, [uniqueProjectNames, projectNameSearch]);
 
-  // Filtered subcontractors for search
+  // Filtered subcontractors for search (for other tabs - derived from timesheets)
   const filteredSubcontractors = useMemo(() => {
     if (!uniqueSubcontractors.length) return [];
     if (!subcontractorSearch) return uniqueSubcontractors;
@@ -783,6 +942,16 @@ export default function ReportingPage() {
       subcontractor.toLowerCase().includes(subcontractorSearch.toLowerCase())
     );
   }, [uniqueSubcontractors, subcontractorSearch]);
+
+  // Filtered subcontractors for burndown tab (from subcontractors table)
+  const filteredBurndownSubcontractors = useMemo(() => {
+    if (!subcontractorsData?.subcontractors?.length) return [];
+    const subcontractors = subcontractorsData.subcontractors;
+    if (!subcontractorSearch) return subcontractors;
+    return subcontractors.filter(subcontractor => 
+      subcontractor.name.toLowerCase().includes(subcontractorSearch.toLowerCase())
+    );
+  }, [subcontractorsData?.subcontractors, subcontractorSearch]);
 
   const formatTimeSpent = (timeSpent: string) => {
     const hours = parseFloat(timeSpent);
@@ -1119,11 +1288,9 @@ export default function ReportingPage() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-9 justify-between min-w-[140px]">
                 <span className="truncate">
-                  {selectedSubcontractors.length === 0 
+                  {!selectedSubcontractor 
                     ? t('admin.allSubcontractors') 
-                    : selectedSubcontractors.length === 1
-                      ? selectedSubcontractors[0]
-                      : `${selectedSubcontractors.length} ${t('admin.subcontractorsSelected')}`
+                    : selectedSubcontractor
                   }
                 </span>
                 <ChevronDown className="h-4 w-4 flex-shrink-0 ml-2" />
@@ -1150,27 +1317,30 @@ export default function ReportingPage() {
                 />
               </div>
               <DropdownMenuItem
-                onClick={() => setSelectedSubcontractors([])}
+                onClick={() => setSelectedSubcontractor('')}
                 className="cursor-pointer"
               >
                 {t('admin.allSubcontractors')}
               </DropdownMenuItem>
               <div className="max-h-48 overflow-y-auto">
                 {filteredSubcontractors.map((subcontractor) => (
-                  <DropdownMenuCheckboxItem
+                  <DropdownMenuItem
                     key={subcontractor}
-                    checked={selectedSubcontractors.includes(subcontractor)}
-                    onCheckedChange={() => handleSubcontractorToggle(subcontractor)}
+                    onClick={() => setSelectedSubcontractor(subcontractor)}
+                    className="cursor-pointer flex items-center justify-between"
                   >
-                    {subcontractor}
-                  </DropdownMenuCheckboxItem>
+                    <span>{subcontractor}</span>
+                    {selectedSubcontractor === subcontractor && (
+                      <Check className="h-4 w-4 text-green-600" />
+                    )}
+                  </DropdownMenuItem>
                 ))}
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
-  ), [startDate, endDate, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch, selectedProjectNames, filteredProjectNames, projectNameSearch, selectedSubcontractors, filteredSubcontractors, subcontractorSearch, statusFilterText, t]);
+  ), [startDate, endDate, selectedContractors, selectedContractorNames, filteredContractors, contractorSearch, selectedProjectNames, filteredProjectNames, projectNameSearch, selectedSubcontractor, filteredSubcontractors, subcontractorSearch, statusFilterText, t]);
 
   const renderMobileCard = useCallback((aggregate: TimesheetAggregate, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
     <Card className="mb-4">
@@ -1232,7 +1402,10 @@ export default function ReportingPage() {
     <div className="p-3 md:p-6 space-y-4 md:space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-          {activeTab === 'hours' ? t('admin.timeReports') : activeTab === 'cost' ? t('admin.costReports') : 'Cost Forecasting'}
+          {activeTab === 'hours' ? t('admin.timeReports') : 
+           activeTab === 'cost' ? t('admin.costReports') : 
+           activeTab === 'burndown' ? t('admin.burndownChart') : 
+           'Cost Forecasting'}
         </h1>
       </div>
 
@@ -1258,6 +1431,16 @@ export default function ReportingPage() {
             }`}
           >
             {t('admin.costReports')}
+          </button>
+          <button
+            onClick={() => setActiveTab('burndown')}
+            className={`px-4 py-3 rounded-md text-sm font-medium transition-colors min-w-0 flex-1 sm:flex-none whitespace-nowrap ${
+              activeTab === 'burndown'
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+            }`}
+          >
+            {t('admin.burndownChart')}
           </button>
           {/* Temporarily hidden forecast tab
           <button
@@ -1299,134 +1482,153 @@ export default function ReportingPage() {
               />
             </div>
 
-            <div className="space-y-1">
-              <div className="text-sm font-medium">{t('admin.contractors')}</div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full md:w-64 justify-between">
-                    {selectedContractors.length === 0 
-                      ? t('admin.allContractors') 
-                      : selectedContractors.length === 1
-                        ? selectedContractorNames[0]
-                        : `${selectedContractors.length} ${t('admin.contractorsSelected')}`
-                    }
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-64">
-                  <div className="p-2">
-                    <Input
-                      placeholder={t('admin.searchContractors')}
-                      className="w-full"
-                      value={contractorSearch}
-                      onChange={(e) => {
-                        setContractorSearch(e.target.value);
-                      }}
-                      onKeyDown={(e) => {
-                        e.stopPropagation();
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                      onFocus={(e) => {
-                        e.stopPropagation();
-                      }}
-                    />
-                  </div>
-                  <DropdownMenuItem
-                    onClick={() => setSelectedContractors([])}
-                    className="cursor-pointer"
-                  >
-                    {t('admin.allContractors')}
-                  </DropdownMenuItem>
-                  <div className="max-h-48 overflow-y-auto">
-                    {filteredContractors.map((contractor) => (
-                      <DropdownMenuCheckboxItem
-                        key={contractor.id}
-                        checked={selectedContractors.includes(contractor.id)}
-                        onCheckedChange={() => handleContractorToggle(contractor.id)}
-                      >
-                        {contractor.firstName} {contractor.lastName}
-                      </DropdownMenuCheckboxItem>
-                    ))}
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            {activeTab !== 'burndown' && (
+              <div className="space-y-1">
+                <div className="text-sm font-medium">{t('admin.contractors')}</div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full md:w-64 justify-between">
+                      {selectedContractors.length === 0 
+                        ? t('admin.allContractors') 
+                        : selectedContractors.length === 1
+                          ? selectedContractorNames[0]
+                          : `${selectedContractors.length} ${t('admin.contractorsSelected')}`
+                      }
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-64">
+                    <div className="p-2">
+                      <Input
+                        placeholder={t('admin.searchContractors')}
+                        className="w-full"
+                        value={contractorSearch}
+                        onChange={(e) => {
+                          setContractorSearch(e.target.value);
+                        }}
+                        onKeyDown={(e) => {
+                          e.stopPropagation();
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                        onFocus={(e) => {
+                          e.stopPropagation();
+                        }}
+                      />
+                    </div>
+                    <DropdownMenuItem
+                      onClick={() => setSelectedContractors([])}
+                      className="cursor-pointer"
+                    >
+                      {t('admin.allContractors')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setSelectedContractors(filteredContractors.map(c => c.id))}
+                      className="cursor-pointer"
+                    >
+                      Select All
+                    </DropdownMenuItem>
+                    <div className="max-h-48 overflow-y-auto">
+                      {filteredContractors.map((contractor) => (
+                        <DropdownMenuCheckboxItem
+                          key={contractor.id}
+                          checked={selectedContractors.includes(contractor.id)}
+                          onCheckedChange={() => handleContractorToggle(contractor.id)}
+                        >
+                          {contractor.firstName} {contractor.lastName}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
 
-            <div className="space-y-1">
-              <div className="text-sm font-medium">{t('admin.projects')}</div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full md:w-64 justify-between">
-                    {selectedProjectNames.length === 0 
-                      ? t('admin.allProjects') 
-                      : selectedProjectNames.length === 1
-                        ? selectedProjectNames[0]
-                        : `${selectedProjectNames.length} projects selected`
-                    }
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-64">
-                  <div className="p-2">
-                    <Input
-                      placeholder={t('admin.searchProjects')}
-                      className="w-full"
-                      value={projectNameSearch}
-                      onChange={(e) => {
-                        setProjectNameSearch(e.target.value);
-                      }}
-                      onKeyDown={(e) => {
-                        e.stopPropagation();
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                      onFocus={(e) => {
-                        e.stopPropagation();
-                      }}
-                    />
-                  </div>
-                  <DropdownMenuItem
-                    onClick={() => setSelectedProjectNames([])}
-                    className="cursor-pointer"
-                  >
-                    {t('admin.allProjects')}
-                  </DropdownMenuItem>
-                  <div className="max-h-48 overflow-y-auto">
-                    {filteredProjectNames.map((projectName) => (
-                      <DropdownMenuCheckboxItem
-                        key={projectName}
-                        checked={selectedProjectNames.includes(projectName)}
-                        onCheckedChange={() => handleProjectNameToggle(projectName)}
-                      >
-                        {projectName}
-                      </DropdownMenuCheckboxItem>
-                    ))}
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            {activeTab !== 'burndown' && (
+              <div className="space-y-1">
+                <div className="text-sm font-medium">{t('admin.projects')}</div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full md:w-64 justify-between">
+                      {selectedProjectNames.length === 0 
+                        ? t('admin.allProjects') 
+                        : selectedProjectNames.length === 1
+                          ? selectedProjectNames[0]
+                          : `${selectedProjectNames.length} projects selected`
+                      }
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-64">
+                    <div className="p-2">
+                      <Input
+                        placeholder={t('admin.searchProjects')}
+                        className="w-full"
+                        value={projectNameSearch}
+                        onChange={(e) => {
+                          setProjectNameSearch(e.target.value);
+                        }}
+                        onKeyDown={(e) => {
+                          e.stopPropagation();
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
+                        onFocus={(e) => {
+                          e.stopPropagation();
+                        }}
+                      />
+                    </div>
+                    <DropdownMenuItem
+                      onClick={() => setSelectedProjectNames([])}
+                      className="cursor-pointer"
+                    >
+                      {t('admin.allProjects')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setSelectedProjectNames(uniqueProjectNames)}
+                      className="cursor-pointer"
+                    >
+                      Select All
+                    </DropdownMenuItem>
+                    <div className="max-h-48 overflow-y-auto">
+                      {filteredProjectNames.map((projectName) => (
+                        <DropdownMenuCheckboxItem
+                          key={projectName}
+                          checked={selectedProjectNames.includes(projectName)}
+                          onCheckedChange={() => handleProjectNameToggle(projectName)}
+                        >
+                          {projectName}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
 
             <div className="space-y-1">
               <div className="text-sm font-medium">{t('admin.subcontractors')}</div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="w-full md:w-64 justify-between">
-                    {selectedSubcontractors.length === 0 
-                      ? t('admin.allSubcontractors') 
-                      : selectedSubcontractors.length === 1
-                        ? selectedSubcontractors[0]
-                        : `${selectedSubcontractors.length} ${t('admin.subcontractorsSelected')}`
-                    }
+                    {activeTab === 'burndown' ? (
+                      !selectedBurndownSubcontractor 
+                        ? t('admin.allSubcontractors') 
+                        : selectedBurndownSubcontractor
+                    ) : (
+                      !selectedSubcontractor 
+                        ? t('admin.allSubcontractors') 
+                        : selectedSubcontractor
+                    )}
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-64">
+                <DropdownMenuContent className="w-80">
                   <div className="p-2">
                     <Input
-                      placeholder={t('admin.searchSubcontractors')}
+                      placeholder={t('placeholders.searchSubcontractors')}
                       className="w-full"
                       value={subcontractorSearch}
                       onChange={(e) => {
@@ -1444,21 +1646,39 @@ export default function ReportingPage() {
                     />
                   </div>
                   <DropdownMenuItem
-                    onClick={() => setSelectedSubcontractors([])}
+                    onClick={() => activeTab === 'burndown' ? setSelectedBurndownSubcontractor('') : setSelectedSubcontractor('')}
                     className="cursor-pointer"
                   >
                     {t('admin.allSubcontractors')}
                   </DropdownMenuItem>
                   <div className="max-h-48 overflow-y-auto">
-                    {filteredSubcontractors.map((subcontractor) => (
-                      <DropdownMenuCheckboxItem
-                        key={subcontractor}
-                        checked={selectedSubcontractors.includes(subcontractor)}
-                        onCheckedChange={() => handleSubcontractorToggle(subcontractor)}
-                      >
-                        {subcontractor}
-                      </DropdownMenuCheckboxItem>
-                    ))}
+                    {activeTab === 'burndown' ? (
+                      filteredBurndownSubcontractors.map((subcontractor) => (
+                        <DropdownMenuItem
+                          key={subcontractor.id}
+                          onClick={() => setSelectedBurndownSubcontractor(subcontractor.name)}
+                          className="cursor-pointer flex items-center justify-between"
+                        >
+                          <span>{subcontractor.name}</span>
+                          {selectedBurndownSubcontractor === subcontractor.name && (
+                            <Check className="h-4 w-4 text-green-600" />
+                          )}
+                        </DropdownMenuItem>
+                      ))
+                    ) : (
+                      filteredSubcontractors.map((subcontractor) => (
+                        <DropdownMenuItem
+                          key={subcontractor}
+                          onClick={() => setSelectedSubcontractor(subcontractor)}
+                          className="cursor-pointer flex items-center justify-between"
+                        >
+                          <span>{subcontractor}</span>
+                          {selectedSubcontractor === subcontractor && (
+                            <Check className="h-4 w-4 text-green-600" />
+                          )}
+                        </DropdownMenuItem>
+                      ))
+                    )}
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -1913,6 +2133,292 @@ export default function ReportingPage() {
                       onSearchChange={setProjectCostSearch}
                       onExportAll={handleExportProjectCosts}
                     />
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'burndown' && (
+            <>
+              {/* Burndown Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      {t('admin.totalContractBudget')}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {timesheetLoading || subcontractorsLoading ? (
+                      <Skeleton className="h-8 w-20" />
+                    ) : (
+                      <div className="text-2xl font-bold text-blue-600">${burndownContractAmount.toFixed(2)}</div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Budget Remaining
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {timesheetLoading || subcontractorsLoading ? (
+                      <Skeleton className="h-8 w-20" />
+                    ) : (
+                      <div className="text-2xl font-bold text-orange-600">
+                        ${burndownData.length > 0 ? burndownData[burndownData.length - 1]?.actualRemaining.toFixed(2) : burndownContractAmount.toFixed(2)}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      Project Days
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {timesheetLoading ? (
+                      <Skeleton className="h-8 w-20" />
+                    ) : (
+                      <div className="text-2xl font-bold">{burndownData.length}</div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Burndown Chart */}
+              <Card>
+                <CardHeader className="pb-6">
+                  <div className="text-center space-y-3">
+                    <CardTitle className="text-2xl font-bold uppercase tracking-wide">
+                      {selectedBurndownSubcontractor ? `${selectedBurndownSubcontractor} ${t('admin.burndownChart').toUpperCase()}` : t('admin.projectBurndownChart').toUpperCase()}
+                    </CardTitle>
+                    <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                      {t('admin.totalContractBudget')}: ${burndownContractAmount.toLocaleString()}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {timesheetLoading || timesheetFetching ? (
+                    <div className="h-80 md:h-96 flex items-center justify-center">
+                      <Skeleton className="h-80 md:h-96 w-full" />
+                    </div>
+                  ) : burndownData.length === 0 ? (
+                    <div className="h-80 md:h-96 flex items-center justify-center text-gray-500">
+                      No data available for burndown chart. Please select a date range with approved timesheets.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Legend */}
+                      <div className="flex justify-center gap-8 py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 bg-blue-300 rounded-sm"></div>
+                          <span className="text-sm font-medium">Ideal Burndown</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 bg-red-300 rounded-sm"></div>
+                          <span className="text-sm font-medium">Remaining Effort</span>
+                        </div>
+                      </div>
+                      
+                      {/* Chart */}
+                      <div className="h-[500px] md:h-[600px] w-full bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={burndownData} margin={{ top: 20, right: 30, left: 60, bottom: 20 }}>
+                            <defs>
+                              <linearGradient id="idealBurndown" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#93c5fd" stopOpacity={0.4}/>
+                                <stop offset="95%" stopColor="#93c5fd" stopOpacity={0.1}/>
+                              </linearGradient>
+                              <linearGradient id="remainingEffort" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#fca5a5" stopOpacity={0.4}/>
+                                <stop offset="95%" stopColor="#fca5a5" stopOpacity={0.1}/>
+                              </linearGradient>
+                            </defs>
+                            
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis 
+                              dataKey="date" 
+                              tick={{ fontSize: 12 }}
+                              tickFormatter={(value) => {
+                                const date = new Date(value);
+                                return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${String(date.getFullYear()).slice(-2)}`;
+                              }}
+                              interval="preserveStartEnd"
+                              axisLine={{ stroke: '#6b7280' }}
+                              tickLine={{ stroke: '#6b7280' }}
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 12 }} 
+                              width={60}
+                              tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                              axisLine={{ stroke: '#6b7280' }}
+                              tickLine={{ stroke: '#6b7280' }}
+                              label={{ value: 'Employee Cost', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+                            />
+                            <Tooltip
+                              formatter={(value: number, name: string) => [
+                                `$${value.toLocaleString()}`, 
+                                name === 'idealRemaining' ? 'Ideal Burndown' : 'Remaining Effort'
+                              ]}
+                              labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                              contentStyle={{ 
+                                fontSize: '12px',
+                                backgroundColor: 'white',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '6px',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                              }}
+                            />
+                            
+                            <Area
+                              type="monotone"
+                              dataKey="idealRemaining"
+                              stackId="1"
+                              stroke="#60a5fa"
+                              strokeWidth={2}
+                              fill="url(#idealBurndown)"
+                              dot={{ fill: '#60a5fa', strokeWidth: 2, r: 5 }}
+                              activeDot={{ r: 7, stroke: '#60a5fa', strokeWidth: 2, fill: 'white' }}
+                              name="idealRemaining"
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="actualRemaining"
+                              stackId="2"
+                              stroke="#f87171"
+                              strokeWidth={2}
+                              fill="url(#remainingEffort)"
+                              dot={{ fill: '#f87171', strokeWidth: 2, r: 5 }}
+                              activeDot={{ r: 7, stroke: '#f87171', strokeWidth: 2, fill: 'white' }}
+                              name="actualRemaining"
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Burndown Analysis */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                {/* Daily Cost Burn Rate */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Daily Cost Burn Rate</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {timesheetLoading || timesheetFetching ? (
+                      <div className="h-64 flex items-center justify-center">
+                        <Skeleton className="h-64 w-full" />
+                      </div>
+                    ) : burndownData.length === 0 ? (
+                      <div className="h-64 flex items-center justify-center text-gray-500">
+                        No daily burn data available
+                      </div>
+                    ) : (
+                      <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={burndownData} margin={{ top: 5, right: 10, left: 10, bottom: 40 }}>
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                            <XAxis 
+                              dataKey="date" 
+                              tick={{ fontSize: 10 }}
+                              tickFormatter={(value) => {
+                                const date = new Date(value);
+                                return `${date.getMonth() + 1}/${date.getDate()}`;
+                              }}
+                              interval="preserveStartEnd"
+                              angle={-45}
+                              textAnchor="end"
+                              height={40}
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 10 }} 
+                              width={50}
+                              tickFormatter={(value) => `$${value.toFixed(0)}`}
+                            />
+                            <Tooltip
+                              formatter={(value: number) => [`$${value.toFixed(2)}`, 'Daily Cost']}
+                              labelFormatter={(label) => {
+                                const date = new Date(label);
+                                return date.toLocaleDateString();
+                              }}
+                              contentStyle={{ fontSize: '12px' }}
+                            />
+                            <Bar 
+                              dataKey="dailyCost" 
+                              fill="#3b82f6"
+                              name="Daily Cost"
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Burndown Status */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Project Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {burndownData.length > 0 && (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Progress:</span>
+                            <span className="text-sm font-bold">
+                              {((totalCost - (burndownData[burndownData.length - 1]?.actualRemaining || 0)) / totalCost * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full" 
+                              style={{ 
+                                width: `${((totalCost - (burndownData[burndownData.length - 1]?.actualRemaining || 0)) / totalCost * 100)}%` 
+                              }}
+                            ></div>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Daily Burn:</span>
+                            <span className="text-sm font-bold">
+                              ${(totalCost / burndownData.length).toFixed(2)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Ideal Daily Burn:</span>
+                            <span className="text-sm font-bold">
+                              ${(totalCost / burndownData.length).toFixed(2)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Status:</span>
+                            <Badge 
+                              variant={
+                                (burndownData[burndownData.length - 1]?.actualRemaining || 0) < 
+                                (burndownData[burndownData.length - 1]?.idealRemaining || 0) 
+                                  ? "destructive" : "default"
+                              }
+                            >
+                              {(burndownData[burndownData.length - 1]?.actualRemaining || 0) < 
+                               (burndownData[burndownData.length - 1]?.idealRemaining || 0) 
+                                ? "Behind Schedule" : "On Track"}
+                            </Badge>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
