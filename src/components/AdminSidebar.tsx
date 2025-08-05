@@ -139,6 +139,16 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           label: t('admin.contractorsEditor'),
           href: '/admin/contractors',
           icon: Users
+        },
+        {
+          label: t('admin.projectsEditor'),
+          href: '/admin/projects',
+          icon: FolderOpen
+        },
+        {
+          label: t('admin.subcontractorsEditor'),
+          href: '/admin/subcontractors',
+          icon: Users
         }
       ]
     }

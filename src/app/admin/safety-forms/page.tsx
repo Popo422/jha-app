@@ -254,6 +254,22 @@ export default function SafetyFormsPage() {
 
   const columns = useMemo<ColumnDef<Submission>[]>(() => [
     {
+      accessorKey: 'submissionType',
+      header: t('admin.type'),
+      cell: ({ row }) => {
+        const type = row.getValue('submissionType') as string;
+        return (
+          <Badge className={`${getSubmissionTypeBadgeColor(type)} text-xs px-2 py-1`}>
+            {getSubmissionTypeLabel(type)}
+          </Badge>
+        );
+      },
+      filterFn: (row, id, value) => {
+        if (!value) return true;
+        return row.getValue(id) === value;
+      },
+    },
+    {
       accessorKey: 'completedBy',
       header: ({ column }) => (
         <Button
@@ -319,22 +335,6 @@ export default function SafetyFormsPage() {
         </Button>
       ),
       cell: ({ row }) => <div className="text-sm">{row.getValue('projectName')}</div>,
-    },
-    {
-      accessorKey: 'submissionType',
-      header: t('admin.type'),
-      cell: ({ row }) => {
-        const type = row.getValue('submissionType') as string;
-        return (
-          <Badge className={`${getSubmissionTypeBadgeColor(type)} text-xs px-2 py-1`}>
-            {getSubmissionTypeLabel(type)}
-          </Badge>
-        );
-      },
-      filterFn: (row, id, value) => {
-        if (!value) return true;
-        return row.getValue(id) === value;
-      },
     },
     {
       id: 'injuredPerson',
