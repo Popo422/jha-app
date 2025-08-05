@@ -528,7 +528,9 @@
     "loginFailed": "Logowanie nie powiodło się",
     "loginSuccess": "Logowanie pomyślne",
     "logoutConfirm": "Czy na pewno chcesz się wylogować?",
-    "logoutDescription": "Będziesz musiał zalogować się ponownie, aby uzyskać dostęp do aplikacji."
+    "logoutDescription": "Będziesz musiał zalogować się ponownie, aby uzyskać dostęp do aplikacji.",
+    "confirmLogout": "Potwierdź Wylogowanie",
+    "logoutConfirmation": "Czy na pewno chcesz się wylogować? Będziesz musiał zalogować się ponownie, aby uzyskać dostęp do portalu administratora."
   },
   "pages": {
     "welcome": "Witamy w Aplikacji JHA",

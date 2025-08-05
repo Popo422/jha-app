@@ -528,7 +528,9 @@
     "loginFailed": "登录失败",
     "loginSuccess": "登录成功",
     "logoutConfirm": "您确定要注销吗？",
-    "logoutDescription": "您需要重新登录才能访问应用程序。"
+    "logoutDescription": "您需要重新登录才能访问应用程序。",
+    "confirmLogout": "确认登出",
+    "logoutConfirmation": "您确定要登出吗？您需要重新登录才能访问管理门户。"
   },
   "pages": {
     "welcome": "欢迎使用 JHA 应用",

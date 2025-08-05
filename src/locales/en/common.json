@@ -557,7 +557,9 @@
     "loginFailed": "Login failed",
     "loginSuccess": "Login successful",
     "logoutConfirm": "Are you sure you want to logout?",
-    "logoutDescription": "You will need to login again to access the application."
+    "logoutDescription": "You will need to login again to access the application.",
+    "confirmLogout": "Confirm Logout",
+    "logoutConfirmation": "Are you sure you want to logout? You will need to login again to access the admin portal."
   },
   "pages": {
     "welcome": "Welcome to JHA App",

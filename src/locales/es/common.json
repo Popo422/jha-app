@@ -551,7 +551,9 @@
     "loginFailed": "Error al iniciar sesión",
     "loginSuccess": "Inicio de sesión exitoso",
     "logoutConfirm": "¿Está seguro de que desea cerrar sesión?",
-    "logoutDescription": "Necesitará iniciar sesión nuevamente para acceder a la aplicación."
+    "logoutDescription": "Necesitará iniciar sesión nuevamente para acceder a la aplicación.",
+    "confirmLogout": "Confirmar Cierre de Sesión",
+    "logoutConfirmation": "¿Está seguro de que desea cerrar sesión? Necesitará iniciar sesión nuevamente para acceder al portal de administración."
   },
   "pages": {
     "welcome": "Bienvenido a la Aplicación JHA",
