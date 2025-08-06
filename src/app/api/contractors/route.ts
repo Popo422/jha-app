@@ -295,9 +295,9 @@ export async function POST(request: NextRequest) {
           email: contractor.email.trim().toLowerCase(),
           code,
           companyId: auth.admin.companyId,
-          language: 'en',
-          rate: '0.00',
-          companyName: null // Will be set via dropdown in review step
+          language: (contractor.language && (contractor.language === 'en' || contractor.language === 'es')) ? contractor.language : 'en',
+          rate: contractor.rate || '0.00',
+          companyName: contractor.companyName || null
         }
       })
 

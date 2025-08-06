@@ -21,6 +21,7 @@ interface EmployeeRow {
   email: string;
   rate?: string;
   companyName?: string;
+  language?: string;
   _fileName?: string;
 }
 
@@ -51,6 +52,7 @@ export function EmployeeBulkUploadModal({
     { field: 'email', label: t('admin.email') || 'Email', required: true, example: 'john.smith@email.com' },
     { field: 'rate', label: t('admin.rate') || 'Rate', required: false, example: '50.00' },
     { field: 'companyName', label: t('admin.subcontractor') || 'Subcontractor', required: false, example: 'ABC Construction' },
+    { field: 'language', label: t('settings.language') || 'Language', required: false, example: 'en' },
   ];
 
   const downloadTemplate = (format: 'csv' | 'excel' = 'csv') => {
@@ -124,10 +126,17 @@ export function EmployeeBulkUploadModal({
           case 'company name':
             row.companyName = value || undefined;
             break;
+          case 'language':
+            row.language = value || 'en';
+            break;
         }
       });
 
       if (row.firstName || row.lastName || row.email) {
+        // Default language to 'en' if not provided
+        if (!row.language) {
+          row.language = 'en';
+        }
         rows.push(row as EmployeeRow);
       }
     }
@@ -179,10 +188,17 @@ export function EmployeeBulkUploadModal({
           case 'company name':
             row.companyName = value || undefined;
             break;
+          case 'language':
+            row.language = value || 'en';
+            break;
         }
       });
 
       if (row.firstName || row.lastName || row.email) {
+        // Default language to 'en' if not provided
+        if (!row.language) {
+          row.language = 'en';
+        }
         rows.push(row as EmployeeRow);
       }
     }
@@ -540,6 +556,16 @@ export function EmployeeBulkUploadModal({
                         <p className="text-gray-900 dark:text-gray-100">{employee.companyName}</p>
                       </div>
                     )}
+                    <div>
+                      <span className="font-medium text-gray-500 dark:text-gray-400">{t('settings.language')}:</span>
+                      <p className="text-gray-900 dark:text-gray-100">
+                        {employee.language === 'en' && t('settings.english')}
+                        {employee.language === 'es' && t('settings.spanish')}
+                        {employee.language === 'pl' && t('settings.polish')}
+                        {employee.language === 'zh' && t('settings.chinese')}
+                        {!employee.language && t('settings.english')}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -565,6 +591,9 @@ export function EmployeeBulkUploadModal({
                   <th className="text-left p-4 border-b border-gray-200 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-100">
                     {t('admin.subcontractor')}
                   </th>
+                  <th className="text-left p-4 border-b border-gray-200 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-100">
+                    {t('settings.language')}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -586,6 +615,15 @@ export function EmployeeBulkUploadModal({
                       ) : (
                         <span className="text-gray-400 dark:text-gray-500">-</span>
                       )}
+                    </td>
+                    <td className="p-4">
+                      <span className="text-gray-700 dark:text-gray-300">
+                        {employee.language === 'en' && t('settings.english')}
+                        {employee.language === 'es' && t('settings.spanish')}
+                        {employee.language === 'pl' && t('settings.polish')}
+                        {employee.language === 'zh' && t('settings.chinese')}
+                        {!employee.language && t('settings.english')}
+                      </span>
                     </td>
                   </tr>
                 ))}

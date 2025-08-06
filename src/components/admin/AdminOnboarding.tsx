@@ -60,6 +60,7 @@ interface EmployeeData {
   email: string;
   rate?: string;
   companyName?: string; // Subcontractor assignment
+  language?: string; // Language preference
   code?: string; // Auto-generated, will be created by API
 }
 
@@ -137,6 +138,7 @@ export default function AdminOnboarding() {
     email: "",
     rate: "",
     companyName: "",
+    language: "en",
   });
 
   const steps: Step[] = ["welcome", "projectManagers", "projects", "subcontractors", "employees", "complete"];
@@ -457,6 +459,7 @@ export default function AdminOnboarding() {
           email: emp.email,
           rate: emp.rate || '0.00',
           companyName: emp.companyName,
+          language: emp.language || 'en',
         })),
       }).unwrap();
 
@@ -592,7 +595,7 @@ export default function AdminOnboarding() {
         ...prev,
         employees: [...prev.employees, newEmployee],
       }));
-      setNewEmployee({ firstName: "", lastName: "", email: "", rate: "", companyName: "" });
+      setNewEmployee({ firstName: "", lastName: "", email: "", rate: "", companyName: "", language: "en" });
       // Clear API errors when adding new data
       setApiErrors(prev => ({ ...prev, employees: undefined }));
     }
@@ -751,13 +754,14 @@ export default function AdminOnboarding() {
     setShowTable("subcontractors");
   };
 
-  const handleEmployeeBulkUploadSuccess = (employees: { firstName: string; lastName: string; email: string; rate?: string; companyName?: string }[]) => {
+  const handleEmployeeBulkUploadSuccess = (employees: { firstName: string; lastName: string; email: string; rate?: string; companyName?: string; language?: string }[]) => {
     const convertedEmployees: EmployeeData[] = employees.map(emp => ({
       firstName: emp.firstName,
       lastName: emp.lastName,
       email: emp.email,
       rate: emp.rate,
-      companyName: emp.companyName
+      companyName: emp.companyName,
+      language: emp.language || 'en'
     }));
     setOnboardingData((prev) => ({
       ...prev,
@@ -1875,6 +1879,9 @@ export default function AdminOnboarding() {
                         Rate
                       </th>
                       <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
+                        {t('settings.language')}
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         Actions
                       </th>
                     </tr>
@@ -1948,6 +1955,20 @@ export default function AdminOnboarding() {
                               />
                             </td>
                             <td className="p-4">
+                              <select
+                                value={editingEmployee?.language || "en"}
+                                onChange={(e) =>
+                                  setEditingEmployee((prev) => (prev ? { ...prev, language: e.target.value } : null))
+                                }
+                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                <option value="en">{t('settings.english')}</option>
+                                <option value="es">{t('settings.spanish')}</option>
+                                <option value="pl">{t('settings.polish')}</option>
+                                <option value="zh">{t('settings.chinese')}</option>
+                              </select>
+                            </td>
+                            <td className="p-4">
                               <div className="flex gap-2">
                                 <Button
                                   variant="ghost"
@@ -1989,6 +2010,13 @@ export default function AdminOnboarding() {
                             <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{employee.lastName}</td>
                             <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{employee.email}</td>
                             <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{employee.rate || "-"}</td>
+                            <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                              {employee.language === 'en' && t('settings.english')}
+                              {employee.language === 'es' && t('settings.spanish')}
+                              {employee.language === 'pl' && t('settings.polish')}
+                              {employee.language === 'zh' && t('settings.chinese')}
+                              {!employee.language && t('settings.english')}
+                            </td>
                             <td className="p-4">
                               <div className="flex gap-2">
                                 <Button

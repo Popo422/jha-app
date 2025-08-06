@@ -25,6 +25,7 @@ interface ContractorBulkData {
   email: string;
   rate?: string;
   companyName?: string;
+  language?: string;
 }
 
 // Helper function to authenticate admin requests
@@ -240,7 +241,7 @@ export async function POST(request: NextRequest) {
           email: contractor.email.trim().toLowerCase(),
           code: uniqueCode,
           companyId: auth.admin.companyId,
-          language: 'en', // Default to English as requested
+          language: (contractor.language && (contractor.language === 'en' || contractor.language === 'es')) ? contractor.language : 'en', // Validate language or default to English
         };
 
         // Add rate if provided and valid
