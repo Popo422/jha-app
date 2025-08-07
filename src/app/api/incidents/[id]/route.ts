@@ -141,7 +141,7 @@ interface AdminTokenPayload {
   exp: number
 }
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Get authType from query parameters or default to 'any'
     const { searchParams } = new URL(request.url)
@@ -158,7 +158,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       )
     }
 
-    const incidentId = params.id
+    const resolvedParams = await params
+    const incidentId = resolvedParams.id
 
     // Build conditions based on user type - only incident reports
     const conditions = [
@@ -232,7 +233,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Get authType from query parameters or default to 'any'
     const { searchParams } = new URL(request.url)
@@ -249,7 +250,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       )
     }
 
-    const incidentId = params.id
+    const resolvedParams = await params
+    const incidentId = resolvedParams.id
 
     // Parse request body
     const body = await request.json()
@@ -415,7 +417,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Get authType from query parameters or default to 'any'
     const { searchParams } = new URL(request.url)
@@ -432,7 +434,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       )
     }
 
-    const incidentId = params.id
+    const resolvedParams = await params
+    const incidentId = resolvedParams.id
 
     // Build conditions based on user type - only incident reports
     const conditions = [
