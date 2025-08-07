@@ -145,6 +145,7 @@ export const submissionsApi = createApi({
     }),
     getSubmissions: builder.query<GetSubmissionsResponse, { 
       type?: string
+      excludeTypes?: string[]
       dateFrom?: string
       dateTo?: string
       company?: string
@@ -156,7 +157,7 @@ export const submissionsApi = createApi({
       fetchAll?: boolean
       authType?: 'contractor' | 'admin' | 'any'
     }>({
-      query: ({ type, dateFrom, dateTo, company, search, page, pageSize, limit, offset, fetchAll, authType }) => {
+      query: ({ type, excludeTypes, dateFrom, dateTo, company, search, page, pageSize, limit, offset, fetchAll, authType }) => {
         const params = new URLSearchParams()
         
         if (fetchAll) {
@@ -174,6 +175,9 @@ export const submissionsApi = createApi({
         
         if (type) {
           params.append('type', type)
+        }
+        if (excludeTypes && excludeTypes.length > 0) {
+          params.append('excludeTypes', excludeTypes.join(','))
         }
         if (dateFrom) {
           params.append('dateFrom', dateFrom)

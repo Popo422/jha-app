@@ -107,8 +107,8 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       ]
     },
     {
-      label: 'Worker Comp',
-      href: '/admin/worker-comp',
+      label: 'Workers Comp',
+      href: '/admin/workers-comp',
       icon: Heart
     },
     {

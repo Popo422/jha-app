@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Toast, useToast } from "@/components/ui/toast";
 import { useUpdateSubmissionMutation, useDeleteAttachmentMutation } from "@/lib/features/submissions/submissionsApi";
+import { Incident } from "@/lib/features/incidents/incidentsApi";
 import { ArrowLeft } from "lucide-react";
 import SignatureCanvas from "react-signature-canvas";
 import AttachmentPreview from "@/components/AttachmentPreview";
@@ -32,13 +33,13 @@ interface Submission {
 }
 
 interface IncidentReportEditProps {
-  submission: Submission;
+  submission: Incident;
   onBack: () => void;
 }
 
 export default function IncidentReportEdit({ submission, onBack }: IncidentReportEditProps) {
   const { t } = useTranslation('common');
-  const [formData, setFormData] = useState(submission.formData);
+  const [formData, setFormData] = useState(submission.formData || {});
   const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
   const [updateSubmission, { isLoading }] = useUpdateSubmissionMutation();
   const [deleteAttachment] = useDeleteAttachmentMutation();

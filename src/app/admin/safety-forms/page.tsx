@@ -17,8 +17,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import JobHazardAnalysisEdit from "@/components/admin/JobHazardAnalysisEdit";
 import StartOfDayEdit from "@/components/admin/StartOfDayEdit";
 import EndOfDayEdit from "@/components/admin/EndOfDayEdit";
-import IncidentReportEdit from "@/components/admin/IncidentReportEdit";
-import QuickIncidentReportEdit from "@/components/admin/QuickIncidentReportEdit";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -96,6 +94,7 @@ export default function SafetyFormsPage() {
     page: serverPagination.page,
     pageSize: serverPagination.pageSize,
     type: filters.type || undefined,
+    excludeTypes: ['incident-report', 'quick-incident-report'],
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
     company: filters.company || undefined,
@@ -651,18 +650,6 @@ export default function SafetyFormsPage() {
             )}
             {editingSubmission.submissionType === 'end-of-day' && (
               <EndOfDayEdit 
-                submission={editingSubmission} 
-                onBack={() => setEditingSubmission(null)} 
-              />
-            )}
-            {editingSubmission.submissionType === 'incident-report' && (
-              <IncidentReportEdit 
-                submission={editingSubmission} 
-                onBack={() => setEditingSubmission(null)} 
-              />
-            )}
-            {editingSubmission.submissionType === 'quick-incident-report' && (
-              <QuickIncidentReportEdit 
                 submission={editingSubmission} 
                 onBack={() => setEditingSubmission(null)} 
               />
