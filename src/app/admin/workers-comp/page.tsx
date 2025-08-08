@@ -60,9 +60,18 @@ export default function WorkersCompPage() {
       {/* Incident Reports Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="recent">Recent Incidents</TabsTrigger>
-          <TabsTrigger value="quick-incidents">Quick Incident Reports</TabsTrigger>
-          <TabsTrigger value="full-incidents">Incident Reports</TabsTrigger>
+          <TabsTrigger value="recent" className="text-xs sm:text-sm">
+            <span className="sm:hidden">Recent</span>
+            <span className="hidden sm:inline">Recent Incidents</span>
+          </TabsTrigger>
+          <TabsTrigger value="quick-incidents" className="text-xs sm:text-sm">
+            <span className="sm:hidden">Quick Reports</span>
+            <span className="hidden sm:inline">Quick Incident Reports</span>
+          </TabsTrigger>
+          <TabsTrigger value="full-incidents" className="text-xs sm:text-sm">
+            <span className="sm:hidden">Full Reports</span>
+            <span className="hidden sm:inline">Incident Reports</span>
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="recent" className="mt-6">

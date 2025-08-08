@@ -335,42 +335,6 @@ export default function SafetyFormsPage() {
       ),
       cell: ({ row }) => <div className="text-sm">{row.getValue('projectName')}</div>,
     },
-    {
-      id: 'injuredPerson',
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium text-sm"
-        >
-          {t('forms.injuredPerson')}
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => {
-        const submission = row.original;
-        const isIncidentReport = submission.submissionType === 'incident-report' || submission.submissionType === 'quick-incident-report';
-        
-        if (!isIncidentReport) {
-          return <div className="text-sm text-gray-400">-</div>;
-        }
-        
-        // For full incident report, use injuredParty field
-        const injuredPerson = submission.submissionType === 'incident-report' 
-          ? submission.formData?.injuredParty 
-          : submission.formData?.injuredPerson;
-        
-        return <div className="text-sm">{injuredPerson || '-'}</div>;
-      },
-      accessorFn: (row) => {
-        const isIncidentReport = row.submissionType === 'incident-report' || row.submissionType === 'quick-incident-report';
-        if (!isIncidentReport) return '';
-        
-        return row.submissionType === 'incident-report' 
-          ? row.formData?.injuredParty || ''
-          : row.formData?.injuredPerson || '';
-      },
-    },
   ], [getSubmissionTypeLabel, getSubmissionTypeBadgeColor]);
 
   const filterComponents = useMemo(() => (
@@ -530,20 +494,12 @@ export default function SafetyFormsPage() {
   ]);
 
   const getExportData = useCallback((submission: Submission) => {
-    const isIncidentReport = submission.submissionType === 'incident-report' || submission.submissionType === 'quick-incident-report';
-    const injuredPerson = isIncidentReport 
-      ? (submission.submissionType === 'incident-report' 
-          ? submission.formData?.injuredParty 
-          : submission.formData?.injuredPerson) || '-'
-      : '-';
-    
     return [
       submission.completedBy,
       submission.company,
       submission.date,
       submission.projectName,
-      submission.submissionType,
-      injuredPerson
+      submission.submissionType
     ];
   }, []);
 
@@ -570,15 +526,6 @@ export default function SafetyFormsPage() {
               <div><span className="font-medium">{t('admin.company')}:</span> {submission.company}</div>
               <div><span className="font-medium">{t('tableHeaders.date')}:</span> {new Date(submission.date).toLocaleDateString()}</div>
               <div><span className="font-medium">{t('admin.projectName')}:</span> {submission.projectName}</div>
-              {(submission.submissionType === 'incident-report' || submission.submissionType === 'quick-incident-report') && (
-                <div>
-                  <span className="font-medium">{t('forms.injuredPerson')}:</span> {
-                    submission.submissionType === 'incident-report' 
-                      ? submission.formData?.injuredParty || '-'
-                      : submission.formData?.injuredPerson || '-'
-                  }
-                </div>
-              )}
             </div>
           </div>
           <DropdownMenu>
@@ -679,7 +626,7 @@ export default function SafetyFormsPage() {
         onBulkDelete={handleBulkDelete}
         getRowId={(submission) => submission.id}
         exportFilename="safety_forms"
-        exportHeaders={[t('admin.contractor'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.type'), t('forms.injuredPerson')]}
+        exportHeaders={[t('admin.contractor'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.type')]}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}

@@ -17,20 +17,10 @@ import {
   X,
   User,
 } from "lucide-react";
-
-interface Incident {
-  id: string;
-  reportedBy: string;
-  injuredEmployee: string;
-  projectName: string;
-  dateReported: string;
-  dateOfIncident: string;
-  incidentType: 'incident-report' | 'quick-incident-report';
-  company: string;
-  status: 'reported' | 'investigating' | 'closed';
-  createdAt: string;
-  updatedAt: string;
-}
+import IncidentViewDetails from "./IncidentViewDetails";
+import IncidentReportEdit from "@/components/admin/IncidentReportEdit";
+import QuickIncidentReportEdit from "@/components/admin/QuickIncidentReportEdit";
+import { Incident } from "@/lib/features/incidents/incidentsApi";
 
 export default function RecentIncidentsTab() {
   const [filters, setFilters] = useState({
@@ -43,6 +33,8 @@ export default function RecentIncidentsTab() {
     page: 1,
     pageSize: 6
   });
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
 
   // Fetch dropdown data
   const { data: projectsData } = useGetProjectsQuery({ pageSize: 1000, authType: 'admin' });
@@ -83,8 +75,19 @@ export default function RecentIncidentsTab() {
   }, []);
 
   const handleViewDetails = useCallback((incident: Incident) => {
-    // TODO: Implement view details functionality
-    console.log('View details for incident:', incident);
+    setSelectedIncident(incident);
+  }, []);
+
+  const handleBackToList = useCallback(() => {
+    setSelectedIncident(null);
+  }, []);
+
+  const handleEditIncident = useCallback((incident: Incident) => {
+    setEditingIncident(incident);
+  }, []);
+
+  const handleBackFromEdit = useCallback(() => {
+    setEditingIncident(null);
   }, []);
 
   if (isLoading) {
@@ -93,6 +96,35 @@ export default function RecentIncidentsTab() {
         <div className="text-sm text-gray-500">Loading incidents...</div>
       </div>
     );
+  }
+
+  // Show edit form if editing
+  if (editingIncident) {
+    const EditComponent = editingIncident.incidentType === 'incident-report' 
+      ? IncidentReportEdit 
+      : QuickIncidentReportEdit;
+    
+    return (
+      <div className="p-4 md:p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="p-4 md:p-6">
+            <EditComponent 
+              submission={editingIncident} 
+              onBack={handleBackFromEdit} 
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show detail view if an incident is selected
+  if (selectedIncident) {
+    return <IncidentViewDetails 
+      incident={selectedIncident} 
+      onBack={handleBackToList} 
+      onEditIncident={handleEditIncident}
+    />;
   }
 
   return (
