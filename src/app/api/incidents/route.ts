@@ -441,7 +441,7 @@ export async function GET(request: NextRequest) {
       return {
         id: submission.id,
         reportedBy: submission.completedBy,
-        injuredEmployee: formData?.injuredEmployee || formData?.injuredParty || '',
+        injuredEmployee: formData?.injuredEmployee || formData?.injuredParty || formData?.injuredPerson || '',
         projectName: submission.projectName,
         dateReported: submission.createdAt,
         dateOfIncident: submission.date,
@@ -556,7 +556,7 @@ export async function DELETE(request: NextRequest) {
         submissionType: existingIncident[0].submissionType,
         date: existingIncident[0].date,
         projectName: existingIncident[0].projectName,
-        injuredEmployee: existingFormData?.injuredEmployee || existingFormData?.injuredParty
+        injuredEmployee: existingFormData?.injuredEmployee || existingFormData?.injuredParty || existingFormData?.injuredPerson
       })
     } else if (auth.isAdmin) {
       // Send SSE event to the original submission owner if admin is deleting
@@ -565,7 +565,7 @@ export async function DELETE(request: NextRequest) {
         submissionType: existingIncident[0].submissionType,
         date: existingIncident[0].date,
         projectName: existingIncident[0].projectName,
-        injuredEmployee: existingFormData?.injuredEmployee || existingFormData?.injuredParty,
+        injuredEmployee: existingFormData?.injuredEmployee || existingFormData?.injuredParty || existingFormData?.injuredPerson,
         deletedByAdmin: true
       })
     }

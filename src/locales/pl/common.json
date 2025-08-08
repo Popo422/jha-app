@@ -869,5 +869,112 @@
     "investigatorTitle": "Tytuł",
     "investigatorSignature": "Podpis",
     "addInvestigator": "Dodaj Śledczego"
+  },
+  "workersComp": {
+    "title": "Panel Odszkodowań Pracowniczych",
+    "description": "Zarządzaj i śledź incydenty w miejscu pracy oraz raporty bezpieczeństwa",
+    "cards": {
+      "knowTheRisk": "Poznaj Ryzyko",
+      "knowTheRiskDescription": "Bądź czujny.",
+      "reportIncident": "Zgłoś Incydent",
+      "reportIncidentDescription": "Zobacz to. Zgłoś to.",
+      "planSafetyTraining": "Zaplanuj Szkolenie BHP",
+      "planSafetyTrainingDescription": "Bezpieczniejsza załoga."
+    },
+    "tabs": {
+      "recent": "Ostatnie",
+      "recentIncidents": "Ostatnie Incydenty",
+      "quickReports": "Szybkie Raporty",
+      "quickIncidentReports": "Szybkie Raporty Incydentów",
+      "fullReports": "Pełne Raporty",
+      "incidentReports": "Raporty Incydentów"
+    },
+    "filters": {
+      "from": "Od",
+      "to": "Do",
+      "projectName": "Nazwa Projektu",
+      "selectProject": "Wybierz projekt",
+      "allProjects": "Wszystkie Projekty",
+      "employee": "Pracownik",
+      "enterEmployeeName": "Wprowadź nazwę pracownika",
+      "clearFilters": "Wyczyść Filtry",
+      "injuredEmployee": "Ranny Pracownik",
+      "subcontractorCompany": "Podwykonawca/Firma",
+      "allCompanies": "Wszystkie Firmy",
+      "reportedBy": "Zgłoszone Przez",
+      "enterReporterName": "Wprowadź nazwę zgłaszającego",
+      "dateFrom": "Data Od",
+      "dateTo": "Data Do"
+    },
+    "table": {
+      "reportedBy": "Zgłoszone Przez",
+      "injuredEmployee": "Ranny Pracownik",
+      "projectName": "Nazwa Projektu",
+      "dateReported": "Data Zgłoszenia",
+      "company": "Firma",
+      "viewDetails": "Zobacz Szczegóły",
+      "edit": "Edytuj",
+      "delete": "Usuń",
+      "previous": "Poprzedni",
+      "next": "Następny",
+      "noIncidentsFound": "Nie znaleziono ostatnich incydentów",
+      "loading": "Ładowanie incydentów..."
+    },
+    "mobile": {
+      "injuredEmployee": "Ranny Pracownik:",
+      "project": "Projekt:",
+      "dateReported": "Data Zgłoszenia:",
+      "company": "Firma:"
+    },
+    "export": {
+      "injuredEmployee": "Ranny Pracownik",
+      "subcontractorCompany": "Podwykonawca/Firma",
+      "reportedBy": "Zgłoszone Przez",
+      "dateReported": "Data Zgłoszenia",
+      "projectName": "Nazwa Projektu"
+    },
+    "dialogs": {
+      "deleteIncident": "Usuń Incydent",
+      "deleteQuickIncidentConfirm": "Czy na pewno chcesz usunąć ten szybki raport incydentu dla {{employee}}?",
+      "deleteIncidentConfirm": "Czy na pewno chcesz usunąć ten raport incydentu dla {{employee}}?",
+      "cancel": "Anuluj",
+      "delete": "Usuń"
+    },
+    "incidentDetails": {
+      "backToRecent": "Powrót do Ostatnich Incydentów",
+      "title": "Szczegóły Incydentu",
+      "loading": "Ładowanie szczegółów incydentu...",
+      "injuredEmployee": "Ranny Pracownik",
+      "reportedBy": "Zgłoszone Przez",
+      "projectName": "Nazwa Projektu",
+      "dateTime": "Data i Czas",
+      "reviewedBy": "Przejrzane Przez",
+      "reviewerPlaceholder": "Nazwa oficera",
+      "actionTaken": "Podjęte Działania",
+      "actionPlaceholder": "Nazwa oficera",
+      "incidentChecklist": "Lista Kontrolna Incydentu",
+      "checklist": {
+        "reviewReports": "Przejrzyj Raporty Incydentów",
+        "seeForm": "Zobacz Formularz",
+        "getTRIR": "Uzyskaj TRIR lub poprzedni wskaźnik incydentów",
+        "estimateHours": "Oszacuj całkowite godziny pracy dla projektu",
+        "estimateImpact": "Oszacuj wpływ finansowy na incydent",
+        "planTraining": "Zaplanuj szkolenie pracowników i kontrole bezpieczeństwa"
+      },
+      "save": "Zapisz",
+      "saving": "Zapisywanie...",
+      "saveSuccess": "Dane zgodności zostały pomyślnie zapisane",
+      "saveFailed": "Nie udało się zapisać danych zgodności"
+    },
+    "compliance": {
+      "title": "Odliczanie Zgodności",
+      "days": "Dni",
+      "minutes": "Minuty",
+      "seconds": "Sekundy"
+    },
+    "attachments": {
+      "attachedFiles": "Załączone Pliki:",
+      "noFilesAttached": "Brak załączonych plików"
+    }
   }
 }

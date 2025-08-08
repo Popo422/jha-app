@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +25,7 @@ interface ChecklistItem {
 }
 
 export default function IncidentViewDetails({ incident, onBack, onEditIncident }: IncidentViewDetailsProps) {
+  const { t } = useTranslation();
   const [updateIncident, { isLoading: isSaving }] = useUpdateIncidentMutation();
   const { toast, showToast, hideToast } = useToast();
   
@@ -37,11 +39,11 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
   const [reviewedBy, setReviewedBy] = useState("");
   const [actionTaken, setActionTaken] = useState("");
   const [checklist, setChecklist] = useState<ChecklistItem[]>([
-    { id: "review", label: "Review Incident Reports", completed: false, link: "See Form" },
-    { id: "trir", label: "Get TRIR or past incident rate", completed: false },
-    { id: "labor", label: "Estimate total labor hours for the project", completed: false },
-    { id: "financial", label: "Estimate financial impact per incident", completed: false },
-    { id: "training", label: "Plan worker training and safety controls", completed: false },
+    { id: "review", label: t('workersComp.incidentDetails.checklist.reviewReports'), completed: false, link: t('workersComp.incidentDetails.checklist.seeForm') },
+    { id: "trir", label: t('workersComp.incidentDetails.checklist.getTRIR'), completed: false },
+    { id: "labor", label: t('workersComp.incidentDetails.checklist.estimateHours'), completed: false },
+    { id: "financial", label: t('workersComp.incidentDetails.checklist.estimateImpact'), completed: false },
+    { id: "training", label: t('workersComp.incidentDetails.checklist.planTraining'), completed: false },
   ]);
 
 
@@ -96,10 +98,10 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
         checklist: checklist.filter(item => item.completed)
       });
       
-      showToast("Compliance data saved successfully", "success");
+      showToast(t('workersComp.incidentDetails.saveSuccess'), "success");
     } catch (error) {
       console.error("Failed to save incident compliance data:", error);
-      showToast("Failed to save compliance data", "error");
+      showToast(t('workersComp.incidentDetails.saveFailed'), "error");
     }
   };
 
@@ -115,12 +117,12 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Recent Incidents
+            {t('workersComp.incidentDetails.backToRecent')}
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Incident Details</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('workersComp.incidentDetails.title')}</h1>
         </div>
         <div className="flex items-center justify-center p-8">
-          <div className="text-sm text-gray-500">Loading incident details...</div>
+          <div className="text-sm text-gray-500">{t('workersComp.incidentDetails.loading')}</div>
         </div>
       </div>
     );
@@ -137,7 +139,7 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
           className="mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Recent Incidents
+          {t('workersComp.incidentDetails.backToRecent')}
         </Button>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Incident Details</h1>
       </div>
@@ -146,7 +148,7 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
         {/* Left side - Incident Details Form */}
         <div className="lg:col-span-2 space-y-4">
           <div>
-            <Label htmlFor="injuredEmployee">Injured Employee</Label>
+            <Label htmlFor="injuredEmployee">{t('workersComp.incidentDetails.injuredEmployee')}</Label>
             <Input 
               id="injuredEmployee"
               value={fullIncident.injuredEmployee} 
@@ -156,7 +158,7 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
           </div>
           
           <div>
-            <Label htmlFor="reportedBy">Reported By</Label>
+            <Label htmlFor="reportedBy">{t('workersComp.incidentDetails.reportedBy')}</Label>
             <Input 
               id="reportedBy"
               value={fullIncident.reportedBy} 
@@ -166,7 +168,7 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
           </div>
           
           <div>
-            <Label htmlFor="projectName">Project Name</Label>
+            <Label htmlFor="projectName">{t('workersComp.incidentDetails.projectName')}</Label>
             <Input 
               id="projectName"
               value={fullIncident.projectName} 
@@ -176,7 +178,7 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
           </div>
           
           <div>
-            <Label htmlFor="dateTime">Date & Time</Label>
+            <Label htmlFor="dateTime">{t('workersComp.incidentDetails.dateTime')}</Label>
             <Input 
               id="dateTime"
               value={new Date(fullIncident.dateOfIncident).toLocaleString()} 
@@ -186,22 +188,22 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
           </div>
           
           <div>
-            <Label htmlFor="reviewedBy">Reviewed By</Label>
+            <Label htmlFor="reviewedBy">{t('workersComp.incidentDetails.reviewedBy')}</Label>
             <Input 
               id="reviewedBy"
               value={reviewedBy}
               onChange={(e) => setReviewedBy(e.target.value)}
-              placeholder="Name of officer"
+              placeholder={t('workersComp.incidentDetails.reviewerPlaceholder')}
             />
           </div>
           
           <div>
-            <Label htmlFor="actionTaken">Action Taken</Label>
+            <Label htmlFor="actionTaken">{t('workersComp.incidentDetails.actionTaken')}</Label>
             <Input 
               id="actionTaken"
               value={actionTaken}
               onChange={(e) => setActionTaken(e.target.value)}
-              placeholder="Name of officer"
+              placeholder={t('workersComp.incidentDetails.actionPlaceholder')}
             />
           </div>
         </div>
@@ -213,7 +215,7 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
           
           {/* Incident Checklist */}
           <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Incident Checklist</h3>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">{t('workersComp.incidentDetails.incidentChecklist')}</h3>
             
             <div className="space-y-3">
               {checklist.map((item) => (
@@ -250,7 +252,7 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
                 disabled={isSaving}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSaving ? "Saving..." : "Save"}
+                {isSaving ? t('workersComp.incidentDetails.saving') : t('workersComp.incidentDetails.save')}
               </Button>
             </div>
           </div>

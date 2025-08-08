@@ -140,7 +140,7 @@ export default function IncidentReportsTab() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Reported By
+          {t('workersComp.table.reportedBy')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -154,7 +154,7 @@ export default function IncidentReportsTab() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Injured Employee
+          {t('workersComp.table.injuredEmployee')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -168,7 +168,7 @@ export default function IncidentReportsTab() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Project Name
+          {t('workersComp.table.projectName')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -182,7 +182,7 @@ export default function IncidentReportsTab() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Date Reported
+          {t('workersComp.table.dateReported')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -196,7 +196,7 @@ export default function IncidentReportsTab() {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Company
+          {t('workersComp.table.company')}
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
@@ -207,9 +207,9 @@ export default function IncidentReportsTab() {
   const filterComponents = useMemo(() => (
     <div className="flex flex-wrap gap-3 items-end">
       <div className="space-y-1">
-        <div className="text-xs font-medium">Injured Employee</div>
+        <div className="text-xs font-medium">{t('workersComp.filters.injuredEmployee')}</div>
         <Input
-          placeholder="Enter employee name"
+          placeholder={t('workersComp.filters.enterEmployeeName')}
           value={filters.injuredEmployee}
           onChange={(e) => setFilters(prev => ({ ...prev, injuredEmployee: e.target.value }))}
           className="w-40 text-xs"
@@ -217,17 +217,17 @@ export default function IncidentReportsTab() {
       </div>
 
       <div className="space-y-1">
-        <div className="text-xs font-medium">Subcontractor/Company</div>
+        <div className="text-xs font-medium">{t('workersComp.filters.subcontractorCompany')}</div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
-              {filters.company || 'All Companies'}
+              {filters.company || t('workersComp.filters.allCompanies')}
               <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, company: '' }))}>
-              All Companies
+              {t('workersComp.filters.allCompanies')}
             </DropdownMenuItem>
             {subcontractorsData?.subcontractors?.map((subcontractor) => (
               <DropdownMenuItem 
@@ -242,9 +242,9 @@ export default function IncidentReportsTab() {
       </div>
 
       <div className="space-y-1">
-        <div className="text-xs font-medium">Reported By</div>
+        <div className="text-xs font-medium">{t('workersComp.filters.reportedBy')}</div>
         <Input
-          placeholder="Enter reporter name"
+          placeholder={t('workersComp.filters.enterReporterName')}
           value={filters.reportedBy}
           onChange={(e) => setFilters(prev => ({ ...prev, reportedBy: e.target.value }))}
           className="w-40 text-xs"
@@ -252,7 +252,7 @@ export default function IncidentReportsTab() {
       </div>
 
       <div className="space-y-1">
-        <div className="text-xs font-medium">Date From</div>
+        <div className="text-xs font-medium">{t('workersComp.filters.dateFrom')}</div>
         <DateInput 
           value={filters.dateFrom}
           onChange={(value) => setFilters(prev => ({ ...prev, dateFrom: value }))}
@@ -260,7 +260,7 @@ export default function IncidentReportsTab() {
       </div>
 
       <div className="space-y-1">
-        <div className="text-xs font-medium">Date To</div>
+        <div className="text-xs font-medium">{t('workersComp.filters.dateTo')}</div>
         <DateInput 
           value={filters.dateTo}
           onChange={(value) => setFilters(prev => ({ ...prev, dateTo: value }))}
@@ -268,17 +268,17 @@ export default function IncidentReportsTab() {
       </div>
 
       <div className="space-y-1">
-        <div className="text-xs font-medium">Project Name</div>
+        <div className="text-xs font-medium">{t('workersComp.filters.projectName')}</div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
-              {filters.project || 'All Projects'}
+              {filters.project || t('workersComp.filters.allProjects')}
               <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, project: '' }))}>
-              All Projects
+              {t('workersComp.filters.allProjects')}
             </DropdownMenuItem>
             {projectsData?.projects?.map((project) => (
               <DropdownMenuItem 
@@ -302,7 +302,7 @@ export default function IncidentReportsTab() {
             className="text-xs"
           >
             <X className="h-3 w-3 mr-1" />
-            Clear Filters
+            {t('workersComp.filters.clearFilters')}
           </Button>
         </div>
       )}
@@ -347,10 +347,10 @@ export default function IncidentReportsTab() {
               <h3 className="font-medium text-sm">{incident.reportedBy}</h3>
             </div>
             <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-              <div><span className="font-medium">Injured Employee:</span> {incident.injuredEmployee}</div>
-              <div><span className="font-medium">Project:</span> {incident.projectName}</div>
-              <div><span className="font-medium">Date Reported:</span> {new Date(incident.dateReported).toLocaleDateString()}</div>
-              <div><span className="font-medium">Company:</span> {incident.company}</div>
+              <div><span className="font-medium">{t('workersComp.mobile.injuredEmployee')}</span> {incident.injuredEmployee}</div>
+              <div><span className="font-medium">{t('workersComp.mobile.project')}</span> {incident.projectName}</div>
+              <div><span className="font-medium">{t('workersComp.mobile.dateReported')}</span> {new Date(incident.dateReported).toLocaleDateString()}</div>
+              <div><span className="font-medium">{t('workersComp.mobile.company')}</span> {incident.company}</div>
             </div>
           </div>
           <DropdownMenu>
@@ -365,7 +365,7 @@ export default function IncidentReportsTab() {
                 className="cursor-pointer"
               >
                 <Edit className="h-4 w-4 mr-2" />
-                Edit
+                {t('workersComp.table.edit')}
               </DropdownMenuItem>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -374,23 +374,23 @@ export default function IncidentReportsTab() {
                     className="cursor-pointer text-red-600"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
+                    {t('workersComp.table.delete')}
                   </DropdownMenuItem>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Incident</AlertDialogTitle>
+                    <AlertDialogTitle>{t('workersComp.dialogs.deleteIncident')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete this incident report for {incident.injuredEmployee}?
+                      {t('workersComp.dialogs.deleteIncidentConfirm', { employee: incident.injuredEmployee })}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                     <AlertDialogAction 
                       onClick={() => handleSingleDelete(incident.id)}
                       className="bg-red-600 hover:bg-red-700"
                     >
-                      Delete
+                      {t('workersComp.table.delete')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -429,7 +429,13 @@ export default function IncidentReportsTab() {
       onBulkDelete={handleBulkDelete}
       getRowId={(incident) => incident.id}
       exportFilename="incident_reports"
-      exportHeaders={['Injured Employee', 'Subcontractor/Company', 'Reported By', 'Date Reported', 'Project Name']}
+      exportHeaders={[
+        t('workersComp.export.injuredEmployee'), 
+        t('workersComp.export.subcontractorCompany'), 
+        t('workersComp.export.reportedBy'), 
+        t('workersComp.export.dateReported'), 
+        t('workersComp.export.projectName')
+      ]}
       getExportData={getExportData}
       filters={filterComponents}
       renderMobileCard={renderMobileCard}

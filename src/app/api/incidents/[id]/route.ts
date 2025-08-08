@@ -198,7 +198,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const incident = {
       id: submission.id,
       reportedBy: submission.completedBy,
-      injuredEmployee: formData?.injuredEmployee || formData?.injuredParty || '',
+      injuredEmployee: formData?.injuredEmployee || formData?.injuredParty || formData?.injuredPerson || '',
       projectName: submission.projectName,
       dateReported: submission.createdAt,
       dateOfIncident: submission.date,
@@ -372,7 +372,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       submissionType: existingIncident[0].submissionType,
       date: updatedIncident[0].date,
       projectName: updatedIncident[0].projectName,
-      injuredEmployee: updatedFormData.injuredEmployee || updatedFormData.injuredParty,
+      injuredEmployee: updatedFormData.injuredEmployee || updatedFormData.injuredParty || updatedFormData.injuredPerson,
       updatedByAdmin: auth.isAdmin
     })
 
@@ -380,7 +380,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const incident = {
       id: updatedIncident[0].id,
       reportedBy: updatedIncident[0].completedBy,
-      injuredEmployee: updatedFormData.injuredEmployee || updatedFormData.injuredParty || '',
+      injuredEmployee: updatedFormData.injuredEmployee || updatedFormData.injuredParty || updatedFormData.injuredPerson || '',
       projectName: updatedIncident[0].projectName,
       dateReported: updatedIncident[0].createdAt,
       dateOfIncident: updatedIncident[0].date,
@@ -474,7 +474,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         submissionType: existingIncident[0].submissionType,
         date: existingIncident[0].date,
         projectName: existingIncident[0].projectName,
-        injuredEmployee: (existingIncident[0].formData as IncidentFormData)?.injuredEmployee || (existingIncident[0].formData as IncidentFormData)?.injuredParty
+        injuredEmployee: (existingIncident[0].formData as IncidentFormData)?.injuredEmployee || (existingIncident[0].formData as IncidentFormData)?.injuredParty || (existingIncident[0].formData as IncidentFormData)?.injuredPerson
       })
     } else if (auth.isAdmin) {
       // Send SSE event to the original submission owner if admin is deleting
@@ -483,7 +483,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         submissionType: existingIncident[0].submissionType,
         date: existingIncident[0].date,
         projectName: existingIncident[0].projectName,
-        injuredEmployee: (existingIncident[0].formData as IncidentFormData)?.injuredEmployee || (existingIncident[0].formData as IncidentFormData)?.injuredParty,
+        injuredEmployee: (existingIncident[0].formData as IncidentFormData)?.injuredEmployee || (existingIncident[0].formData as IncidentFormData)?.injuredParty || (existingIncident[0].formData as IncidentFormData)?.injuredPerson,
         deletedByAdmin: true
       })
     }

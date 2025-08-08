@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useGetIncidentsQuery } from "@/lib/features/incidents/incidentsApi";
 import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import QuickIncidentReportEdit from "@/components/admin/QuickIncidentReportEdit"
 import { Incident } from "@/lib/features/incidents/incidentsApi";
 
 export default function RecentIncidentsTab() {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
@@ -93,7 +95,7 @@ export default function RecentIncidentsTab() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-sm text-gray-500">Loading incidents...</div>
+        <div className="text-sm text-gray-500">{t('workersComp.table.loading')}</div>
       </div>
     );
   }
@@ -132,7 +134,7 @@ export default function RecentIncidentsTab() {
       {/* Filter Row */}
       <div className="flex flex-wrap gap-3 items-end p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
         <div className="space-y-1">
-          <div className="text-xs font-medium text-gray-700 dark:text-gray-300">From</div>
+          <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('workersComp.filters.from')}</div>
           <DateInput 
             value={filters.dateFrom}
             onChange={(value) => setFilters(prev => ({ ...prev, dateFrom: value }))}
@@ -141,7 +143,7 @@ export default function RecentIncidentsTab() {
         </div>
 
         <div className="space-y-1">
-          <div className="text-xs font-medium text-gray-700 dark:text-gray-300">To</div>
+          <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('workersComp.filters.to')}</div>
           <DateInput 
             value={filters.dateTo}
             onChange={(value) => setFilters(prev => ({ ...prev, dateTo: value }))}
@@ -150,17 +152,17 @@ export default function RecentIncidentsTab() {
         </div>
 
         <div className="space-y-1">
-          <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Project Name</div>
+          <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('workersComp.filters.projectName')}</div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
-                {filters.project || "Select project"}
+                {filters.project || t('workersComp.filters.selectProject')}
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="max-h-48 overflow-y-auto">
               <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, project: '' }))}>
-                All Projects
+                {t('workersComp.filters.allProjects')}
               </DropdownMenuItem>
               {projectsData?.projects?.map((project) => (
                 <DropdownMenuItem 
@@ -175,9 +177,9 @@ export default function RecentIncidentsTab() {
         </div>
 
         <div className="space-y-1">
-          <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Employee</div>
+          <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('workersComp.filters.employee')}</div>
           <Input
-            placeholder="Enter employee name"
+            placeholder={t('workersComp.filters.enterEmployeeName')}
             value={filters.employee}
             onChange={(e) => setFilters(prev => ({ ...prev, employee: e.target.value }))}
             className="w-40 text-xs"
@@ -194,7 +196,7 @@ export default function RecentIncidentsTab() {
               className="text-xs"
             >
               <X className="h-3 w-3 mr-1" />
-              Clear Filters
+              {t('workersComp.filters.clearFilters')}
             </Button>
           </div>
         )}
@@ -204,7 +206,7 @@ export default function RecentIncidentsTab() {
       <div className="space-y-4">
         {incidents.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            No recent incidents found
+            {t('workersComp.table.noIncidentsFound')}
           </div>
         ) : (
           incidents.map((incident) => (
@@ -218,22 +220,22 @@ export default function RecentIncidentsTab() {
                 
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Reported By</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('workersComp.table.reportedBy')}</div>
                     <div className="text-sm text-blue-600 dark:text-blue-400">{incident.reportedBy}</div>
                   </div>
                   
                   <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Injured Employee</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('workersComp.table.injuredEmployee')}</div>
                     <div className="text-sm text-blue-600 dark:text-blue-400">{incident.injuredEmployee}</div>
                   </div>
                   
                   <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Project Name</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('workersComp.table.projectName')}</div>
                     <div className="text-sm text-blue-600 dark:text-blue-400">{incident.projectName}</div>
                   </div>
                   
                   <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Date Reported</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{t('workersComp.table.dateReported')}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
                       {new Date(incident.dateReported).toLocaleDateString()}
                     </div>
@@ -247,7 +249,7 @@ export default function RecentIncidentsTab() {
                     onClick={() => handleViewDetails(incident)}
                     className="text-blue-600 border-blue-200 hover:bg-blue-50"
                   >
-                    View Details
+                    {t('workersComp.table.viewDetails')}
                   </Button>
                 </div>
               </div>
@@ -265,7 +267,7 @@ export default function RecentIncidentsTab() {
             onClick={() => handlePageChange(pagination.page - 1)}
             disabled={!paginationInfo.hasPreviousPage}
           >
-            Previous
+            {t('workersComp.table.previous')}
           </Button>
           
           {Array.from({ length: paginationInfo.totalPages }, (_, i) => i + 1).map((pageNum) => (
@@ -286,7 +288,7 @@ export default function RecentIncidentsTab() {
             onClick={() => handlePageChange(pagination.page + 1)}
             disabled={!paginationInfo.hasNextPage}
           >
-            Next
+            {t('workersComp.table.next')}
           </Button>
         </div>
       )}

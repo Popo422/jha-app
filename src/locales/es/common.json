@@ -888,5 +888,112 @@
     "investigatorTitle": "Título",
     "investigatorSignature": "Firma",
     "addInvestigator": "Agregar Investigador"
+  },
+  "workersComp": {
+    "title": "Panel de Compensación de Trabajadores",
+    "description": "Gestionar y rastrear incidentes laborales e informes de seguridad",
+    "cards": {
+      "knowTheRisk": "Conoce el Riesgo",
+      "knowTheRiskDescription": "Mantente vigilante.",
+      "reportIncident": "Reportar el Incidente",
+      "reportIncidentDescription": "Véelo. Repórtalo.",
+      "planSafetyTraining": "Planificar Entrenamiento de Seguridad",
+      "planSafetyTrainingDescription": "Un equipo más seguro."
+    },
+    "tabs": {
+      "recent": "Recientes",
+      "recentIncidents": "Incidentes Recientes",
+      "quickReports": "Reportes Rápidos",
+      "quickIncidentReports": "Reportes de Incidentes Rápidos",
+      "fullReports": "Reportes Completos",
+      "incidentReports": "Reportes de Incidentes"
+    },
+    "filters": {
+      "from": "Desde",
+      "to": "Hasta",
+      "projectName": "Nombre del Proyecto",
+      "selectProject": "Seleccionar proyecto",
+      "allProjects": "Todos los Proyectos",
+      "employee": "Empleado",
+      "enterEmployeeName": "Ingrese nombre del empleado",
+      "clearFilters": "Limpiar Filtros",
+      "injuredEmployee": "Empleado Lesionado",
+      "subcontractorCompany": "Subcontratista/Empresa",
+      "allCompanies": "Todas las Empresas",
+      "reportedBy": "Reportado Por",
+      "enterReporterName": "Ingrese nombre del reportero",
+      "dateFrom": "Fecha Desde",
+      "dateTo": "Fecha Hasta"
+    },
+    "table": {
+      "reportedBy": "Reportado Por",
+      "injuredEmployee": "Empleado Lesionado",
+      "projectName": "Nombre del Proyecto",
+      "dateReported": "Fecha Reportada",
+      "company": "Empresa",
+      "viewDetails": "Ver Detalles",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "noIncidentsFound": "No se encontraron incidentes recientes",
+      "loading": "Cargando incidentes..."
+    },
+    "mobile": {
+      "injuredEmployee": "Empleado Lesionado:",
+      "project": "Proyecto:",
+      "dateReported": "Fecha Reportada:",
+      "company": "Empresa:"
+    },
+    "export": {
+      "injuredEmployee": "Empleado Lesionado",
+      "subcontractorCompany": "Subcontratista/Empresa",
+      "reportedBy": "Reportado Por",
+      "dateReported": "Fecha Reportada",
+      "projectName": "Nombre del Proyecto"
+    },
+    "dialogs": {
+      "deleteIncident": "Eliminar Incidente",
+      "deleteQuickIncidentConfirm": "¿Estás seguro de que quieres eliminar este reporte de incidente rápido para {{employee}}?",
+      "deleteIncidentConfirm": "¿Estás seguro de que quieres eliminar este reporte de incidente para {{employee}}?",
+      "cancel": "Cancelar",
+      "delete": "Eliminar"
+    },
+    "incidentDetails": {
+      "backToRecent": "Volver a Incidentes Recientes",
+      "title": "Detalles del Incidente",
+      "loading": "Cargando detalles del incidente...",
+      "injuredEmployee": "Empleado Lesionado",
+      "reportedBy": "Reportado Por",
+      "projectName": "Nombre del Proyecto",
+      "dateTime": "Fecha y Hora",
+      "reviewedBy": "Revisado Por",
+      "reviewerPlaceholder": "Nombre del oficial",
+      "actionTaken": "Acción Tomada",
+      "actionPlaceholder": "Nombre del oficial",
+      "incidentChecklist": "Lista de Verificación del Incidente",
+      "checklist": {
+        "reviewReports": "Revisar Reportes de Incidentes",
+        "seeForm": "Ver Formulario",
+        "getTRIR": "Obtener TRIR o tasa de incidentes pasados",
+        "estimateHours": "Estimar horas laborales totales para el proyecto",
+        "estimateImpact": "Estimar impacto financiero por incidente",
+        "planTraining": "Planificar entrenamiento de trabajadores y controles de seguridad"
+      },
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "saveSuccess": "Datos de cumplimiento guardados exitosamente",
+      "saveFailed": "Fallo al guardar datos de cumplimiento"
+    },
+    "compliance": {
+      "title": "Cuenta Regresiva de Cumplimiento",
+      "days": "Días",
+      "minutes": "Minutos",
+      "seconds": "Segundos"
+    },
+    "attachments": {
+      "attachedFiles": "Archivos Adjuntos:",
+      "noFilesAttached": "No hay archivos adjuntos"
+    }
   }
 }
