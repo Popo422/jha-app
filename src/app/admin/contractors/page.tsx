@@ -408,7 +408,7 @@ export default function ContractorsPage() {
       cell: ({ getValue }) => {
         const companyName = getValue() as string | null;
         return (
-          <div className="text-sm text-gray-600">
+          <div className="text-sm">
             {companyName || ""}
           </div>
         );
