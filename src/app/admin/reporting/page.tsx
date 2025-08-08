@@ -772,27 +772,57 @@ export default function ReportingPage() {
   }, [selectedContractors, selectedProjectNames, selectedSubcontractor, allTimesheets, contractorsData?.contractors]);
 
   const exportToCSV = () => {
-    if (!chartData.length) return;
-    
-    const csvData = chartData.map(item => [
-      item.date,
-      item.totalHours.toString()
-    ]);
+    if (activeTab === 'burndown') {
+      if (!burndownData.length) return;
+      
+      const csvData = burndownData.map(item => [
+        item.date,
+        item.day.toString(),
+        item.idealRemaining.toFixed(2),
+        item.actualRemaining.toFixed(2),
+        item.dailyCost.toFixed(2),
+        item.accumulatedCost.toFixed(2),
+        item.contractAmount.toFixed(2)
+      ]);
 
-    const csvContent = [
-      [t('tableHeaders.date'), t('admin.totalApprovedHours')],
-      ...csvData
-    ]
-      .map(row => row.map(field => `"${field}"`).join(','))
-      .join('\n');
+      const csvContent = [
+        ['Date', 'Day', 'Ideal Remaining', 'Actual Remaining', 'Daily Cost', 'Accumulated Cost', 'Contract Amount'],
+        ...csvData
+      ]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `approved_hours_report_${startDate}_to_${endDate}.csv`;
-    link.click();
-    window.URL.revokeObjectURL(url);
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `burndown_chart_${startDate}_to_${endDate}.csv`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } else {
+      // Original hours export logic
+      if (!chartData.length) return;
+      
+      const csvData = chartData.map(item => [
+        item.date,
+        item.totalHours.toString()
+      ]);
+
+      const csvContent = [
+        [t('tableHeaders.date'), t('admin.totalApprovedHours')],
+        ...csvData
+      ]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `approved_hours_report_${startDate}_to_${endDate}.csv`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    }
   };
 
   const totalHours = useMemo(() => {
@@ -1687,7 +1717,7 @@ export default function ReportingPage() {
             <Button 
               variant="outline" 
               onClick={exportToCSV}
-              disabled={chartData.length === 0 || timesheetFetching}
+              disabled={(activeTab === 'burndown' ? burndownData.length === 0 : chartData.length === 0) || timesheetFetching}
               className="md:ml-auto"
             >
               <Download className="h-4 w-4 mr-2" />
