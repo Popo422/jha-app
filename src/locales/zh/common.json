@@ -590,7 +590,8 @@
     "noToolboxTalksDescription": "您的安全团队尚未发布任何工具箱谈话...",
     "backToAllTalks": "返回所有谈话",
     "loadingSubmissions": "加载提交时出错。请稍后再试。",
-    "noTimesheetsFound": "未找到工时单。请先创建您的第一个工时单。"
+    "noTimesheetsFound": "未找到工时单。请先创建您的第一个工时单。",
+    "timesheetDescription": "跟踪并提交您的工作时间和项目时间，以实现准确的工资单和项目管理"
   },
   "tableHeaders": {
     "date": "日期",

@@ -395,11 +395,13 @@
     "endOfDayReport": "End of Day Report",
     "incidentReport": "Incident Report",
     "quickIncidentReport": "Quick Incident Report",
+    "nearMissReport": "Near Miss Report",
     "jobHazardAnalysisDescription": "This form tracks all potential job hazards on the worksite. To be completed by all employees.",
     "startOfDayReportDescription": "This form ensures all crewmen enter the worksite in healthy condition. To be completed by all employees.",
     "endOfDayReportDescription": "This form captures the general health of the crewmen leaving the job site. To be completed by all employees.",
     "incidentReportDescription": "This form documents incidents and safety compliance. To be completed when necessary.",
     "quickIncidentReportDescription": "This form provides a quick way to report incidents with basic information. To be completed when necessary.",
+    "nearMissReportDescription": "This form documents near miss incidents and potential hazards for safety analysis. To be completed when necessary.",
     "noFormsAvailable": "No forms are currently available. Please contact your administrator.",
     "seeForm": "See Form",
     "backToForms": "Back to Forms",
@@ -616,7 +618,8 @@
     "noToolboxTalksDescription": "Your safety team hasn't published any toolbox talks yet...",
     "backToAllTalks": "Back to All Talks",
     "loadingSubmissions": "Error loading submissions. Please try again later.",
-    "noTimesheetsFound": "No timesheets found. Start by creating your first timesheet."
+    "noTimesheetsFound": "No timesheets found. Start by creating your first timesheet.",
+    "timesheetDescription": "Track and submit your working hours and project time for accurate payroll and project management"
   },
   "tableHeaders": {
     "date": "Date",

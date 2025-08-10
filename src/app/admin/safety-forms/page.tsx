@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'next/navigation';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetSubmissionsQuery, useDeleteSubmissionMutation, type PaginationInfo } from "@/lib/features/submissions/submissionsApi";
 import { useSubmissionExportAll } from "@/hooks/useExportAll";
@@ -55,7 +56,8 @@ interface Submission {
 const columnHelper = createColumnHelper<Submission>();
 
 export default function SafetyFormsPage() {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('common');
+  const router = useRouter();
   const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
   const [filters, setFilters] = useState({
     type: '',
@@ -213,6 +215,8 @@ export default function SafetyFormsPage() {
         return t('forms.incidentReport');
       case 'quick-incident-report':
         return t('forms.quickIncidentReport');
+      case 'near-miss-report':
+        return t('forms.nearMissReport');
       default:
         return type;
     }
@@ -230,6 +234,8 @@ export default function SafetyFormsPage() {
         return 'bg-red-100 text-red-800';
       case 'quick-incident-report':
         return 'bg-pink-100 text-pink-800';
+      case 'near-miss-report':
+        return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -248,8 +254,14 @@ export default function SafetyFormsPage() {
   }, [deleteSubmission, refetch]);
 
   const handleEdit = useCallback((submission: Submission) => {
+    // For near-miss reports, redirect to the wizard edit page
+    if (submission.submissionType === 'near-miss-report') {
+      router.push(`/admin/near-miss-reports/${submission.id}/edit`);
+      return;
+    }
+    
     setEditingSubmission(submission);
-  }, []);
+  }, [router]);
 
   const columns = useMemo<ColumnDef<Submission>[]>(() => [
     {
@@ -366,6 +378,9 @@ export default function SafetyFormsPage() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'quick-incident-report' }))}>
               {t('forms.quickIncidentReport')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'near-miss-report' }))}>
+              {t('forms.nearMissReport')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

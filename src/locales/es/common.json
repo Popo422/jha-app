@@ -611,7 +611,8 @@
     "noToolboxTalksDescription": "Su equipo de seguridad aún no ha publicado ninguna charla de seguridad...",
     "backToAllTalks": "Volver a Todas las Charlas",
     "loadingSubmissions": "Error al cargar envíos. Por favor intente nuevamente más tarde.",
-    "noTimesheetsFound": "No se encontraron hojas de tiempo. Comience creando su primera hoja de tiempo."
+    "noTimesheetsFound": "No se encontraron hojas de tiempo. Comience creando su primera hoja de tiempo.",
+    "timesheetDescription": "Rastrea y envía tus horas de trabajo y tiempo de proyecto para una gestión precisa de nómina y proyectos"
   },
   "tableHeaders": {
     "date": "Fecha",

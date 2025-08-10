@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { RootState } from '@/lib/store'
 
 export interface SubmissionData {
-  submissionType: 'end-of-day' | 'job-hazard-analysis' | 'start-of-day' | 'incident-report' | 'quick-incident-report'
+  submissionType: 'end-of-day' | 'job-hazard-analysis' | 'start-of-day' | 'incident-report' | 'quick-incident-report' | 'near-miss-report'
   projectName: string
   date: string
   dateTimeClocked?: string
@@ -199,6 +199,10 @@ export const submissionsApi = createApi({
       },
       providesTags: ['Submission'],
     }),
+    getSubmission: builder.query<Submission, string>({
+      query: (id) => `/${id}`,
+      providesTags: (result, error, id) => [{ type: 'Submission', id }],
+    }),
     deleteSubmission: builder.mutation<DeleteSubmissionResponse, { id: string, authType?: 'contractor' | 'admin' | 'any' }>({
       query: ({ id, authType }) => {
         const params = new URLSearchParams({ id })
@@ -241,6 +245,7 @@ export const {
   useSubmitFormMutation, 
   useGetSubmissionsQuery,
   useLazyGetSubmissionsQuery,
+  useGetSubmissionQuery,
   useDeleteSubmissionMutation,
   useUpdateSubmissionMutation,
   useDeleteAttachmentMutation

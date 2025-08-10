@@ -94,6 +94,8 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
         return `${baseUrl}/contractor-forms/job-hazard-analysis`;
       case 'incident-report':
         return `${baseUrl}/contractor-forms/incident-report`;
+      case 'near-miss-report':
+        return `${baseUrl}/contractor-forms/near-miss-report`;
       case 'timesheet':
         return `${baseUrl}/timesheet`;
       default:

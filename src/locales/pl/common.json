@@ -590,7 +590,8 @@
     "noToolboxTalksDescription": "Twój zespół bezpieczeństwa nie opublikował jeszcze żadnych rozmów bezpieczeństwa...",
     "backToAllTalks": "Powrót do Wszystkich Rozmów",
     "loadingSubmissions": "Błąd ładowania zgłoszeń. Spróbuj ponownie później.",
-    "noTimesheetsFound": "Nie znaleziono kart czasu pracy. Zacznij od utworzenia pierwszej karty czasu pracy."
+    "noTimesheetsFound": "Nie znaleziono kart czasu pracy. Zacznij od utworzenia pierwszej karty czasu pracy.",
+    "timesheetDescription": "Śledź i przesyłaj swoje godziny pracy i czas projektu dla dokładnego zarządzania listą płac i projektami"
   },
   "tableHeaders": {
     "date": "Data",
