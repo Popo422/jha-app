@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { db } from '@/lib/db'
-import { timesheets, contractors } from '@/lib/db/schema'
+import { timesheets, contractors, projects } from '@/lib/db/schema'
 import { eq, and, gte, lte, inArray, sql } from 'drizzle-orm'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
@@ -70,6 +70,10 @@ export async function GET(request: NextRequest) {
         jobDescription: timesheets.jobDescription,
       })
       .from(timesheets)
+      .innerJoin(projects, and(
+        eq(projects.name, timesheets.projectName),
+        eq(projects.companyId, timesheets.companyId)
+      ))
       .where(and(...conditions))
       .orderBy(timesheets.date)
 

@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
         count: sql<number>`COUNT(DISTINCT ${timesheets.projectName})`.as('count')
       })
       .from(timesheets)
-      .leftJoin(projects, and(
+      .innerJoin(projects, and(
         eq(timesheets.projectName, projects.name),
         eq(projects.companyId, companyId)
       ))
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
         subcontractorCount: sql<number>`COUNT(DISTINCT ${timesheets.company})`.as('subcontractorCount')
       })
       .from(timesheets)
-      .leftJoin(projects, and(
+      .innerJoin(projects, and(
         eq(timesheets.projectName, projects.name),
         eq(projects.companyId, companyId)
       ))
