@@ -28,6 +28,7 @@ export interface GetProjectSnapshotParams {
   companyId: string;
   project?: string;
   subcontractor?: string;
+  projectManager?: string;
   page?: number;
   pageSize?: number;
   fetchAll?: boolean;
@@ -37,6 +38,7 @@ export interface GetProjectSnapshotFiltersParams {
   companyId: string;
   project?: string;
   subcontractor?: string;
+  projectManager?: string;
 }
 
 export const projectSnapshotApi = createApi({
@@ -62,7 +64,7 @@ export const projectSnapshotApi = createApi({
   tagTypes: ['ProjectSnapshot', 'ProjectSnapshotFilters'],
   endpoints: (builder) => ({
     getProjectSnapshot: builder.query<GetProjectSnapshotResponse, GetProjectSnapshotParams>({
-      query: ({ companyId, project, subcontractor, page, pageSize, fetchAll }) => {
+      query: ({ companyId, project, subcontractor, projectManager, page, pageSize, fetchAll }) => {
         const params = new URLSearchParams({
           companyId,
         })
@@ -80,6 +82,10 @@ export const projectSnapshotApi = createApi({
         
         if (subcontractor) {
           params.append('subcontractor', subcontractor)
+        }
+
+        if (projectManager) {
+          params.append('projectManager', projectManager)
         }
         
         return `?${params}`
@@ -116,6 +122,7 @@ export const projectSnapshotApi = createApi({
       },
       providesTags: ['ProjectSnapshotFilters'],
     }),
+
   }),
 })
 

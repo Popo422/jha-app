@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { companies, users } from '@/lib/db/schema'
+import { companies, users, subcontractors } from '@/lib/db/schema'
 import { eq, or } from 'drizzle-orm'
 import bcrypt from 'bcrypt'
 import { put } from '@vercel/blob'
@@ -209,6 +209,14 @@ export async function POST(request: NextRequest) {
       .update(companies)
       .set({ createdBy: newSuperAdmin.id })
       .where(eq(companies.id, newCompany.id))
+
+    // Create subcontractor entry for the company
+    await db
+      .insert(subcontractors)
+      .values({
+        name: companyName,
+        companyId: newCompany.id,
+      })
 
     // Handle logo upload if provided
     let logoUrl: string | null = null

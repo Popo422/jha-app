@@ -21,6 +21,7 @@ import { ChevronDown, Download, Building, Users, DollarSign, User, Check, X } fr
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import ProjectSelect from '@/components/ProjectSelect';
 import SubcontractorSelect from '@/components/SubcontractorSelect';
+import SupervisorSelect from '@/components/SupervisorSelect';
 import type { ColumnDef } from '@tanstack/react-table';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,7 @@ export default function ProjectSnapshotPage() {
   const { t } = useTranslation('common');
   const [projectFilter, setProjectFilter] = useState('');
   const [subcontractorFilter, setSubcontractorFilter] = useState('');
+  const [projectManagerFilter, setProjectManagerFilter] = useState('');
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
   const [clientPagination, setClientPagination] = useState({
@@ -52,9 +54,10 @@ export default function ProjectSnapshotPage() {
       companyId: admin?.companyId || '',
       project: projectFilter || undefined,
       subcontractor: subcontractorFilter || undefined,
+      projectManager: projectManagerFilter || undefined,
       search: debouncedSearch || undefined,
     });
-  }, [exportAllProjectSnapshot, admin?.companyId, projectFilter, subcontractorFilter, debouncedSearch]);
+  }, [exportAllProjectSnapshot, admin?.companyId, projectFilter, subcontractorFilter, projectManagerFilter, debouncedSearch]);
 
   // Redux API hooks
   const { data: projectSnapshotResponse, isLoading, isFetching } = useGetProjectSnapshotQuery(
@@ -64,6 +67,7 @@ export default function ProjectSnapshotPage() {
       pageSize: serverPagination.pageSize,
       ...(projectFilter && { project: projectFilter }),
       ...(subcontractorFilter && { subcontractor: subcontractorFilter }),
+      ...(projectManagerFilter && { projectManager: projectManagerFilter }),
       ...(debouncedSearch && { search: debouncedSearch })
     },
     {
@@ -137,7 +141,7 @@ export default function ProjectSnapshotPage() {
   // Reset pagination when filters change
   useEffect(() => {
     resetPagination();
-  }, [projectFilter, subcontractorFilter, debouncedSearch, resetPagination]);
+  }, [projectFilter, subcontractorFilter, projectManagerFilter, debouncedSearch, resetPagination]);
 
   // Prefetch next batch when near end
   const { data: prefetchData } = useGetProjectSnapshotQuery({
@@ -145,7 +149,8 @@ export default function ProjectSnapshotPage() {
     page: serverPagination.page + 1,
     pageSize: serverPagination.pageSize,
     ...(projectFilter && { project: projectFilter }),
-    ...(subcontractorFilter && { subcontractor: subcontractorFilter })
+    ...(subcontractorFilter && { subcontractor: subcontractorFilter }),
+    ...(projectManagerFilter && { projectManager: projectManagerFilter })
   }, {
     skip: !shouldPrefetch || !admin?.companyId
   });
@@ -321,6 +326,15 @@ export default function ProjectSnapshotPage() {
               value={subcontractorFilter}
               onChange={setSubcontractorFilter}
               placeholder="All subcontractors"
+              authType="admin"
+              className="w-full md:w-64"
+            />
+
+            <SupervisorSelect
+              label="Project Manager Filter"
+              value={projectManagerFilter}
+              onChange={setProjectManagerFilter}
+              placeholder="All project managers"
               authType="admin"
               className="w-full md:w-64"
             />
