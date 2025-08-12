@@ -276,7 +276,7 @@ export default function EndOfDayReportPage() {
                 {/* Instructions */}
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    <strong>{t('forms.instructions')}</strong> {`Any injuries or COVID-19 related symptoms must be reported to your supervisor immediately. Please Answer "${t('adminEdit.yes')}" or "${t('adminEdit.no')}"`}
+                     {`Any injuries or COVID-19 related symptoms must be reported to your supervisor immediately. Please Answer "${t('adminEdit.yes')}" or "${t('adminEdit.no')}"`}
                   </p>
                 </div>
 
