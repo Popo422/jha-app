@@ -17,6 +17,7 @@ import { adminUsersApi } from './features/admin-users/adminUsersApi'
 import { toolboxTalksApi } from './features/toolbox-talks/toolboxTalksApi'
 import { forecastingApi } from './features/forecasting/forecastingApi'
 import { projectManagersApi } from './features/project-managers/projectManagersApi'
+import { incidentsApi } from './features/incidents/incidentsApi'
 
 export const store = configureStore({
   reducer: {
@@ -38,6 +39,7 @@ export const store = configureStore({
     [toolboxTalksApi.reducerPath]: toolboxTalksApi.reducer,
     [forecastingApi.reducerPath]: forecastingApi.reducer,
     [projectManagersApi.reducerPath]: projectManagersApi.reducer,
+    [incidentsApi.reducerPath]: incidentsApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -54,7 +56,8 @@ export const store = configureStore({
       adminUsersApi.middleware,
       toolboxTalksApi.middleware,
       forecastingApi.middleware,
-      projectManagersApi.middleware
+      projectManagersApi.middleware,
+      incidentsApi.middleware
     ),
 })
 

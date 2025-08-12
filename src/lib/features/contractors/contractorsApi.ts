@@ -153,7 +153,7 @@ export const contractorsApi = createApi({
     }),
     bulkCreateContractors: builder.mutation<
       { success: boolean; contractors: Contractor[]; created: number; skipped: number; errors?: string[]; warnings?: string[] },
-      { contractors: Array<{ firstName: string; lastName: string; email: string; rate?: string; companyName?: string }> }
+      { contractors: Array<{ firstName: string; lastName: string; email: string; rate?: string; companyName?: string; language?: string }> }
     >({
       query: (body) => ({
         url: '',

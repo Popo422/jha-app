@@ -15,6 +15,10 @@
     "dashboard": "Panel Administratora",
     "adminPortal": "Portal Administratora",
     "contractorsEditor": "Edytor Kontraktorów",
+    "projectsEditor": "Edytor Projektów",
+    "projectsEditorDescription": "Twórz, edytuj i zarządzaj projektami, przypisuj menedżerów projektów i śledź szczegóły projektów",
+    "subcontractorsEditor": "Podwykonawcy",
+    "subcontractorsEditorDescription": "Twórz, edytuj i zarządzaj firmami podwykonawców, śledź ich informacje i utrzymuj relacje",
     "modules": "Menedżer Formularzy",
     "moduleConfiguration": "Menedżer Formularzy",
     "settings": "Ustawienia",
@@ -64,6 +68,9 @@
     "name": "Nazwa",
     "timeReports": "Raporty Czasu",
     "costReports": "Raporty Kosztów",
+    "burndownChart": "Wykres Burndown",
+    "projectBurndownChart": "Wykres Burndown Projektu",
+    "totalContractBudget": "Całkowity Budżet Umowy",
     "startDate": "Data Rozpoczęcia",
     "endDate": "Data Zakończenia",
     "contractors": "Kontraktorzy",
@@ -270,12 +277,52 @@
     "enterLastName": "Wprowadź nazwisko",
     "enterRate": "Wprowadź stawkę godzinową",
     "enterEmail": "Wprowadź adres email",
+    "subcontractor": "Podwykonawca",
+    "selectSubcontractor": "Wybierz podwykonawcę",
+    "employeesAdded": "pracownicy dodani",
+    "uploadCsvExcel": "Prześlij Pliki CSV lub Excel",
+    "csvTemplate": "Szablon CSV",
+    "excelTemplate": "Szablon Excel",
+    "bulkUploadEmployees": "Masowe Przesyłanie Pracowników",
+    "bulkUploadDescription": "Prześlij wielu pracowników używając plików CSV lub Excel",
+    "previewData": "Podgląd Danych",
+    "uploadSuccessful": "Przesyłanie Udane",
+    "addingEmployees": "Dodawanie Pracowników",
+    "uploadComplete": "Przesyłanie Zakończone",
+    "processingEmployees": "Przetwarzanie danych pracowników...",
+    "modalAutoClose": "To okno zamknie się automatycznie za kilka sekund",
+    "clickToUpload": "Kliknij aby przesłać pliki lub przeciągnij i upuść",
+    "uploadMultipleFiles": "Możesz przesłać wiele plików CSV/Excel jednocześnie",
+    "requiredFields": "Pola wymagane",
+    "optionalFields": "Pola opcjonalne",
+    "uploadedFiles": "Przesłane Pliki",
+    "validationErrors": "Błędy Walidacji",
+    "uploadDifferentFile": "Prześlij Inny Plik",
+    "employeesLoadedCount": "pracowników załadowanych z plików",
+    "employeesReadyCount": "pracowników gotowych do przesłania",
+    "employeesAddedCount": "pracowników dodanych pomyślnie",
+    "waitForEmployees": "Proszę czekać podczas przetwarzania pracowników...",
+    "previewEmployees": "Podgląd Pracowników",
     "errors": {
       "firstNameRequired": "Imię jest wymagane",
       "lastNameRequired": "Nazwisko jest wymagane",
       "emailRequired": "Email jest wymagany",
       "invalidEmail": "Nieprawidłowy format email",
-      "invalidRate": "Stawka musi być prawidłową liczbą"
+      "invalidRate": "Stawka musi być prawidłową liczbą",
+      "firstNameRequiredRow": "Wiersz {{row}}: Imię jest wymagane",
+      "lastNameRequiredRow": "Wiersz {{row}}: Nazwisko jest wymagane",
+      "emailRequiredRow": "Wiersz {{row}}: Email jest wymagany",
+      "invalidEmailRow": "Wiersz {{row}}: Nieprawidłowy format email",
+      "duplicateEmailRow": "Wiersz {{row}}: Duplikat adresu email w pliku",
+      "invalidRateRow": "Wiersz {{row}}: Stawka musi być prawidłową liczbą",
+      "invalidSubcontractorRow": "Wiersz {{row}}: Podwykonawca \"{{company}}\" nie znaleziony",
+      "invalidFileType": "Plik \"{{file}}\": Proszę przesłać tylko pliki CSV lub Excel",
+      "fileParseError": "Plik \"{{file}}\": {{error}}",
+      "csvHeaderRequired": "CSV musi mieć co najmniej wiersz nagłówka i jeden wiersz danych",
+      "excelSheetRequired": "Plik Excel musi zawierać co najmniej jeden arkusz",
+      "excelHeaderRequired": "Plik Excel musi mieć co najmniej wiersz nagłówka i jeden wiersz danych",
+      "noValidData": "Nie znaleziono prawidłowych danych pracowników w przesłanych plikach",
+      "uploadFailed": "Nie udało się przesłać pracowników"
     }
   },
   "settings": {
@@ -521,7 +568,9 @@
     "loginFailed": "Logowanie nie powiodło się",
     "loginSuccess": "Logowanie pomyślne",
     "logoutConfirm": "Czy na pewno chcesz się wylogować?",
-    "logoutDescription": "Będziesz musiał zalogować się ponownie, aby uzyskać dostęp do aplikacji."
+    "logoutDescription": "Będziesz musiał zalogować się ponownie, aby uzyskać dostęp do aplikacji.",
+    "confirmLogout": "Potwierdź Wylogowanie",
+    "logoutConfirmation": "Czy na pewno chcesz się wylogować? Będziesz musiał zalogować się ponownie, aby uzyskać dostęp do portalu administratora."
   },
   "pages": {
     "welcome": "Witamy w Aplikacji JHA",
@@ -541,7 +590,8 @@
     "noToolboxTalksDescription": "Twój zespół bezpieczeństwa nie opublikował jeszcze żadnych rozmów bezpieczeństwa...",
     "backToAllTalks": "Powrót do Wszystkich Rozmów",
     "loadingSubmissions": "Błąd ładowania zgłoszeń. Spróbuj ponownie później.",
-    "noTimesheetsFound": "Nie znaleziono kart czasu pracy. Zacznij od utworzenia pierwszej karty czasu pracy."
+    "noTimesheetsFound": "Nie znaleziono kart czasu pracy. Zacznij od utworzenia pierwszej karty czasu pracy.",
+    "timesheetDescription": "Śledź i przesyłaj swoje godziny pracy i czas projektu dla dokładnego zarządzania listą płac i projektami"
   },
   "tableHeaders": {
     "date": "Data",
@@ -820,5 +870,112 @@
     "investigatorTitle": "Tytuł",
     "investigatorSignature": "Podpis",
     "addInvestigator": "Dodaj Śledczego"
+  },
+  "workersComp": {
+    "title": "Panel Odszkodowań Pracowniczych",
+    "description": "Zarządzaj i śledź incydenty w miejscu pracy oraz raporty bezpieczeństwa",
+    "cards": {
+      "knowTheRisk": "Poznaj Ryzyko",
+      "knowTheRiskDescription": "Bądź czujny.",
+      "reportIncident": "Zgłoś Incydent",
+      "reportIncidentDescription": "Zobacz to. Zgłoś to.",
+      "planSafetyTraining": "Zaplanuj Szkolenie BHP",
+      "planSafetyTrainingDescription": "Bezpieczniejsza załoga."
+    },
+    "tabs": {
+      "recent": "Ostatnie",
+      "recentIncidents": "Ostatnie Incydenty",
+      "quickReports": "Szybkie Raporty",
+      "quickIncidentReports": "Szybkie Raporty Incydentów",
+      "fullReports": "Pełne Raporty",
+      "incidentReports": "Raporty Incydentów"
+    },
+    "filters": {
+      "from": "Od",
+      "to": "Do",
+      "projectName": "Nazwa Projektu",
+      "selectProject": "Wybierz projekt",
+      "allProjects": "Wszystkie Projekty",
+      "employee": "Pracownik",
+      "enterEmployeeName": "Wprowadź nazwę pracownika",
+      "clearFilters": "Wyczyść Filtry",
+      "injuredEmployee": "Ranny Pracownik",
+      "subcontractorCompany": "Podwykonawca/Firma",
+      "allCompanies": "Wszystkie Firmy",
+      "reportedBy": "Zgłoszone Przez",
+      "enterReporterName": "Wprowadź nazwę zgłaszającego",
+      "dateFrom": "Data Od",
+      "dateTo": "Data Do"
+    },
+    "table": {
+      "reportedBy": "Zgłoszone Przez",
+      "injuredEmployee": "Ranny Pracownik",
+      "projectName": "Nazwa Projektu",
+      "dateReported": "Data Zgłoszenia",
+      "company": "Firma",
+      "viewDetails": "Zobacz Szczegóły",
+      "edit": "Edytuj",
+      "delete": "Usuń",
+      "previous": "Poprzedni",
+      "next": "Następny",
+      "noIncidentsFound": "Nie znaleziono ostatnich incydentów",
+      "loading": "Ładowanie incydentów..."
+    },
+    "mobile": {
+      "injuredEmployee": "Ranny Pracownik:",
+      "project": "Projekt:",
+      "dateReported": "Data Zgłoszenia:",
+      "company": "Firma:"
+    },
+    "export": {
+      "injuredEmployee": "Ranny Pracownik",
+      "subcontractorCompany": "Podwykonawca/Firma",
+      "reportedBy": "Zgłoszone Przez",
+      "dateReported": "Data Zgłoszenia",
+      "projectName": "Nazwa Projektu"
+    },
+    "dialogs": {
+      "deleteIncident": "Usuń Incydent",
+      "deleteQuickIncidentConfirm": "Czy na pewno chcesz usunąć ten szybki raport incydentu dla {{employee}}?",
+      "deleteIncidentConfirm": "Czy na pewno chcesz usunąć ten raport incydentu dla {{employee}}?",
+      "cancel": "Anuluj",
+      "delete": "Usuń"
+    },
+    "incidentDetails": {
+      "backToRecent": "Powrót do Ostatnich Incydentów",
+      "title": "Szczegóły Incydentu",
+      "loading": "Ładowanie szczegółów incydentu...",
+      "injuredEmployee": "Ranny Pracownik",
+      "reportedBy": "Zgłoszone Przez",
+      "projectName": "Nazwa Projektu",
+      "dateTime": "Data i Czas",
+      "reviewedBy": "Przejrzane Przez",
+      "reviewerPlaceholder": "Nazwa oficera",
+      "actionTaken": "Podjęte Działania",
+      "actionPlaceholder": "Nazwa oficera",
+      "incidentChecklist": "Lista Kontrolna Incydentu",
+      "checklist": {
+        "reviewReports": "Przejrzyj Raporty Incydentów",
+        "seeForm": "Zobacz Formularz",
+        "getTRIR": "Uzyskaj TRIR lub poprzedni wskaźnik incydentów",
+        "estimateHours": "Oszacuj całkowite godziny pracy dla projektu",
+        "estimateImpact": "Oszacuj wpływ finansowy na incydent",
+        "planTraining": "Zaplanuj szkolenie pracowników i kontrole bezpieczeństwa"
+      },
+      "save": "Zapisz",
+      "saving": "Zapisywanie...",
+      "saveSuccess": "Dane zgodności zostały pomyślnie zapisane",
+      "saveFailed": "Nie udało się zapisać danych zgodności"
+    },
+    "compliance": {
+      "title": "Odliczanie Zgodności",
+      "days": "Dni",
+      "minutes": "Minuty",
+      "seconds": "Sekundy"
+    },
+    "attachments": {
+      "attachedFiles": "Załączone Pliki:",
+      "noFilesAttached": "Brak załączonych plików"
+    }
   }
 }

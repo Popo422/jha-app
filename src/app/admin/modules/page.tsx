@@ -5,8 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { useGetModulesQuery } from "@/lib/features/modules/modulesApi";
 import { ModuleInfo } from "@/components/admin/ModuleInfo";
 import { ModuleConfiguration } from "@/components/admin/ModuleConfiguration";
-import { ProjectsManagement } from "@/components/admin/ProjectsManagement";
-import { SubcontractorsManagement } from "@/components/admin/SubcontractorsManagement";
 
 export default function ModulesPage() {
   const { t } = useTranslation('common');
@@ -38,16 +36,6 @@ export default function ModulesPage() {
           isLoading={isLoading} 
           onSuccess={handleConfigurationSuccess}
         />
-      </div>
-
-      {/* Projects Management Section */}
-      <div className="mt-8">
-        <ProjectsManagement />
-      </div>
-
-      {/* Subcontractors Management Section */}
-      <div className="mt-8">
-        <SubcontractorsManagement />
       </div>
 
     </div>

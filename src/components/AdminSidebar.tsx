@@ -6,6 +6,7 @@ import { useAppSelector } from '@/lib/hooks'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { 
@@ -106,8 +107,8 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       ]
     },
     {
-      label: 'Worker Comp',
-      href: '/admin/worker-comp',
+      label: 'Workers Comp',
+      href: '/admin/workers-comp',
       icon: Heart
     },
     {
@@ -138,6 +139,16 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         {
           label: t('admin.contractorsEditor'),
           href: '/admin/contractors',
+          icon: Users
+        },
+        {
+          label: t('admin.projectsEditor'),
+          href: '/admin/projects',
+          icon: FolderOpen
+        },
+        {
+          label: t('admin.subcontractorsEditor'),
+          href: '/admin/subcontractors',
           icon: Users
         }
       ]
@@ -351,15 +362,35 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         })}
 
         {/* Logout */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start h-9 px-4 text-left font-normal text-red-400 hover:text-red-300 hover:bg-red-500/10 text-sm"
-          onClick={handleLogout}
-        >
-          <LogOut className="mr-3 h-4 w-4" />
-          {t('auth.logout')}
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start h-9 px-4 text-left font-normal text-red-400 hover:text-red-300 hover:bg-red-500/10 text-sm"
+            >
+              <LogOut className="mr-3 h-4 w-4" />
+              {t('auth.logout')}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t('auth.confirmLogout')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t('auth.logoutConfirmation')}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {t('auth.logout')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         </div>
       </div>
     </>

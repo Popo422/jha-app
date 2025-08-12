@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, desc, and, gte, lte, or, ilike, sql } from 'drizzle-orm'
+import { eq, desc, and, gte, lte, or, ilike, sql, not, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { submissions } from '@/lib/db/schema'
 import { put } from '@vercel/blob'
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!['end-of-day', 'job-hazard-analysis', 'start-of-day', 'timesheet', 'incident-report', 'quick-incident-report'].includes(submissionType)) {
+    if (!['end-of-day', 'job-hazard-analysis', 'start-of-day', 'timesheet', 'incident-report', 'quick-incident-report', 'near-miss-report'].includes(submissionType)) {
       return NextResponse.json(
         { error: 'Invalid submission type' },
         { status: 400 }
@@ -310,6 +310,7 @@ export async function GET(request: NextRequest) {
     const limit = fetchAll ? undefined : pageSize;
     const offset = fetchAll ? undefined : (page - 1) * pageSize;
     const submissionType = searchParams.get('type')
+    const excludeTypes = searchParams.get('excludeTypes')?.split(',').filter(Boolean)
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
     const company = searchParams.get('company')
@@ -330,6 +331,11 @@ export async function GET(request: NextRequest) {
     // Add submission type filter if specified
     if (submissionType) {
       conditions.push(eq(submissions.submissionType, submissionType))
+    }
+    
+    // Add exclude types filter if specified
+    if (excludeTypes && excludeTypes.length > 0) {
+      conditions.push(not(inArray(submissions.submissionType, excludeTypes)))
     }
 
     // Add date range filters if specified

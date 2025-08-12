@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { timesheets } from '@/lib/db/schema'
+import { timesheets, projects } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
@@ -12,12 +12,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Company ID is required' }, { status: 400 })
     }
 
-    // Get unique subcontractors from approved timesheets
+    // Get unique subcontractors from approved timesheets that exist in projects table
     const results = await db
       .select({
         subcontractor: timesheets.company
       })
       .from(timesheets)
+      .innerJoin(projects, and(
+        eq(timesheets.projectName, projects.name),
+        eq(projects.companyId, companyId)
+      ))
       .where(and(
         eq(timesheets.companyId, companyId),
         eq(timesheets.status, 'approved')

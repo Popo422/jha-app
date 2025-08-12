@@ -13,7 +13,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog';
-import { User, Mail, DollarSign, Users, Plus, ArrowRight, X } from 'lucide-react';
+import { User, Mail, DollarSign, Users, Plus, ArrowRight, X, Globe } from 'lucide-react';
 
 interface SubcontractorData {
   name: string;
@@ -25,6 +25,7 @@ interface EmployeeData {
   email: string;
   rate?: string;
   companyName?: string;
+  language?: string;
 }
 
 interface EmployeeManualAddModalProps {
@@ -53,6 +54,7 @@ export function EmployeeManualAddModal({
     email: '',
     rate: '',
     companyName: '',
+    language: 'en',
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -87,13 +89,14 @@ export function EmployeeManualAddModal({
       return;
     }
 
-    const newEmployee = { ...currentEmployee };
+    const newEmployee = { ...currentEmployee, language: currentEmployee.language || 'en' };
     setTempEmployees((prev) => [...prev, newEmployee]);
     onSaveAndAddMore(newEmployee);
 
-    // Reset form but keep companyName (subcontractor)
+    // Reset form but keep companyName (subcontractor) and language
     const savedCompanyName = currentEmployee.companyName;
-    setCurrentEmployee({ firstName: '', lastName: '', email: '', rate: '', companyName: savedCompanyName });
+    const savedLanguage = currentEmployee.language;
+    setCurrentEmployee({ firstName: '', lastName: '', email: '', rate: '', companyName: savedCompanyName, language: savedLanguage });
     setErrors({});
   };
 
@@ -104,17 +107,17 @@ export function EmployeeManualAddModal({
       return;
     }
 
-    const allEmployees = [...tempEmployees, currentEmployee];
+    const allEmployees = [...tempEmployees, { ...currentEmployee, language: currentEmployee.language || 'en' }];
     onSaveAndContinue(allEmployees);
 
     // Reset state
     setTempEmployees([]);
-    setCurrentEmployee({ firstName: '', lastName: '', email: '', rate: '', companyName: '' });
+    setCurrentEmployee({ firstName: '', lastName: '', email: '', rate: '', companyName: '', language: 'en' });
     setErrors({});
   };
 
   const handleClose = () => {
-    setCurrentEmployee({ firstName: '', lastName: '', email: '', rate: '', companyName: '' });
+    setCurrentEmployee({ firstName: '', lastName: '', email: '', rate: '', companyName: '', language: 'en' });
     setTempEmployees([]);
     setErrors({});
     onClose();
@@ -275,6 +278,28 @@ export function EmployeeManualAddModal({
                     </p>
                   )}
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="employeeLanguage" className="text-sm font-medium">
+                    {t('settings.language')} <span className="text-muted-foreground">{t('admin.optional')}</span>
+                  </Label>
+                  <div className="relative">
+                    <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <select
+                      id="employeeLanguage"
+                      value={currentEmployee.language}
+                      onChange={(e) =>
+                        setCurrentEmployee((prev) => ({ ...prev, language: e.target.value }))
+                      }
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-10 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="en">{t('settings.english')}</option>
+                      <option value="es">{t('settings.spanish')}</option>
+                      <option value="pl">{t('settings.polish')}</option>
+                      <option value="zh">{t('settings.chinese')}</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -299,6 +324,12 @@ export function EmployeeManualAddModal({
                         <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                           {t('admin.subcontractor')}
                         </th>
+                        <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
+                          {t('settings.language')}
+                        </th>
+                        <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
+                          
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -317,6 +348,13 @@ export function EmployeeManualAddModal({
                           </td>
                           <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
                             {employee.companyName || '-'}
+                          </td>
+                          <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                            {employee.language === 'en' && t('settings.english')}
+                            {employee.language === 'es' && t('settings.spanish')}
+                            {employee.language === 'pl' && t('settings.polish')}
+                            {employee.language === 'zh' && t('settings.chinese')}
+                            {!employee.language && 'English'}
                           </td>
                           <td className="p-4">
                             <Button

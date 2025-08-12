@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'next/navigation';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetSubmissionsQuery, useDeleteSubmissionMutation, type PaginationInfo } from "@/lib/features/submissions/submissionsApi";
 import { useSubmissionExportAll } from "@/hooks/useExportAll";
@@ -17,8 +18,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import JobHazardAnalysisEdit from "@/components/admin/JobHazardAnalysisEdit";
 import StartOfDayEdit from "@/components/admin/StartOfDayEdit";
 import EndOfDayEdit from "@/components/admin/EndOfDayEdit";
-import IncidentReportEdit from "@/components/admin/IncidentReportEdit";
-import QuickIncidentReportEdit from "@/components/admin/QuickIncidentReportEdit";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -57,7 +56,8 @@ interface Submission {
 const columnHelper = createColumnHelper<Submission>();
 
 export default function SafetyFormsPage() {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('common');
+  const router = useRouter();
   const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
   const [filters, setFilters] = useState({
     type: '',
@@ -96,6 +96,7 @@ export default function SafetyFormsPage() {
     page: serverPagination.page,
     pageSize: serverPagination.pageSize,
     type: filters.type || undefined,
+    excludeTypes: ['incident-report', 'quick-incident-report'],
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
     company: filters.company || undefined,
@@ -214,6 +215,8 @@ export default function SafetyFormsPage() {
         return t('forms.incidentReport');
       case 'quick-incident-report':
         return t('forms.quickIncidentReport');
+      case 'near-miss-report':
+        return t('forms.nearMissReport');
       default:
         return type;
     }
@@ -231,6 +234,8 @@ export default function SafetyFormsPage() {
         return 'bg-red-100 text-red-800';
       case 'quick-incident-report':
         return 'bg-pink-100 text-pink-800';
+      case 'near-miss-report':
+        return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -249,10 +254,32 @@ export default function SafetyFormsPage() {
   }, [deleteSubmission, refetch]);
 
   const handleEdit = useCallback((submission: Submission) => {
+    // For near-miss reports, redirect to the wizard edit page
+    if (submission.submissionType === 'near-miss-report') {
+      router.push(`/admin/near-miss-reports/${submission.id}/edit`);
+      return;
+    }
+    
     setEditingSubmission(submission);
-  }, []);
+  }, [router]);
 
   const columns = useMemo<ColumnDef<Submission>[]>(() => [
+    {
+      accessorKey: 'submissionType',
+      header: t('admin.type'),
+      cell: ({ row }) => {
+        const type = row.getValue('submissionType') as string;
+        return (
+          <Badge className={`${getSubmissionTypeBadgeColor(type)} text-xs px-2 py-1`}>
+            {getSubmissionTypeLabel(type)}
+          </Badge>
+        );
+      },
+      filterFn: (row, id, value) => {
+        if (!value) return true;
+        return row.getValue(id) === value;
+      },
+    },
     {
       accessorKey: 'completedBy',
       header: ({ column }) => (
@@ -320,58 +347,6 @@ export default function SafetyFormsPage() {
       ),
       cell: ({ row }) => <div className="text-sm">{row.getValue('projectName')}</div>,
     },
-    {
-      accessorKey: 'submissionType',
-      header: t('admin.type'),
-      cell: ({ row }) => {
-        const type = row.getValue('submissionType') as string;
-        return (
-          <Badge className={`${getSubmissionTypeBadgeColor(type)} text-xs px-2 py-1`}>
-            {getSubmissionTypeLabel(type)}
-          </Badge>
-        );
-      },
-      filterFn: (row, id, value) => {
-        if (!value) return true;
-        return row.getValue(id) === value;
-      },
-    },
-    {
-      id: 'injuredPerson',
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium text-sm"
-        >
-          {t('forms.injuredPerson')}
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => {
-        const submission = row.original;
-        const isIncidentReport = submission.submissionType === 'incident-report' || submission.submissionType === 'quick-incident-report';
-        
-        if (!isIncidentReport) {
-          return <div className="text-sm text-gray-400">-</div>;
-        }
-        
-        // For full incident report, use injuredParty field
-        const injuredPerson = submission.submissionType === 'incident-report' 
-          ? submission.formData?.injuredParty 
-          : submission.formData?.injuredPerson;
-        
-        return <div className="text-sm">{injuredPerson || '-'}</div>;
-      },
-      accessorFn: (row) => {
-        const isIncidentReport = row.submissionType === 'incident-report' || row.submissionType === 'quick-incident-report';
-        if (!isIncidentReport) return '';
-        
-        return row.submissionType === 'incident-report' 
-          ? row.formData?.injuredParty || ''
-          : row.formData?.injuredPerson || '';
-      },
-    },
   ], [getSubmissionTypeLabel, getSubmissionTypeBadgeColor]);
 
   const filterComponents = useMemo(() => (
@@ -403,6 +378,9 @@ export default function SafetyFormsPage() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'quick-incident-report' }))}>
               {t('forms.quickIncidentReport')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'near-miss-report' }))}>
+              {t('forms.nearMissReport')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -531,20 +509,12 @@ export default function SafetyFormsPage() {
   ]);
 
   const getExportData = useCallback((submission: Submission) => {
-    const isIncidentReport = submission.submissionType === 'incident-report' || submission.submissionType === 'quick-incident-report';
-    const injuredPerson = isIncidentReport 
-      ? (submission.submissionType === 'incident-report' 
-          ? submission.formData?.injuredParty 
-          : submission.formData?.injuredPerson) || '-'
-      : '-';
-    
     return [
       submission.completedBy,
       submission.company,
       submission.date,
       submission.projectName,
-      submission.submissionType,
-      injuredPerson
+      submission.submissionType
     ];
   }, []);
 
@@ -571,15 +541,6 @@ export default function SafetyFormsPage() {
               <div><span className="font-medium">{t('admin.company')}:</span> {submission.company}</div>
               <div><span className="font-medium">{t('tableHeaders.date')}:</span> {new Date(submission.date).toLocaleDateString()}</div>
               <div><span className="font-medium">{t('admin.projectName')}:</span> {submission.projectName}</div>
-              {(submission.submissionType === 'incident-report' || submission.submissionType === 'quick-incident-report') && (
-                <div>
-                  <span className="font-medium">{t('forms.injuredPerson')}:</span> {
-                    submission.submissionType === 'incident-report' 
-                      ? submission.formData?.injuredParty || '-'
-                      : submission.formData?.injuredPerson || '-'
-                  }
-                </div>
-              )}
             </div>
           </div>
           <DropdownMenu>
@@ -655,18 +616,6 @@ export default function SafetyFormsPage() {
                 onBack={() => setEditingSubmission(null)} 
               />
             )}
-            {editingSubmission.submissionType === 'incident-report' && (
-              <IncidentReportEdit 
-                submission={editingSubmission} 
-                onBack={() => setEditingSubmission(null)} 
-              />
-            )}
-            {editingSubmission.submissionType === 'quick-incident-report' && (
-              <QuickIncidentReportEdit 
-                submission={editingSubmission} 
-                onBack={() => setEditingSubmission(null)} 
-              />
-            )}
           </div>
         </div>
       </div>
@@ -692,7 +641,7 @@ export default function SafetyFormsPage() {
         onBulkDelete={handleBulkDelete}
         getRowId={(submission) => submission.id}
         exportFilename="safety_forms"
-        exportHeaders={[t('admin.contractor'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.type'), t('forms.injuredPerson')]}
+        exportHeaders={[t('admin.contractor'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.type')]}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}

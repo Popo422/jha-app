@@ -15,6 +15,10 @@
     "dashboard": "Panel de Administración",
     "adminPortal": "Portal de Administración",
     "contractorsEditor": "Editor de Contratistas",
+    "projectsEditor": "Editor de Proyectos",
+    "projectsEditorDescription": "Crear, editar y gestionar proyectos, asignar gerentes de proyecto y rastrear detalles de proyectos",
+    "subcontractorsEditor": "Subcontratistas",
+    "subcontractorsEditorDescription": "Crear, editar y gestionar empresas subcontratistas, rastrear su información y mantener relaciones",
     "modules": "Gestor de Formularios",
     "moduleConfiguration": "Gestor de Formularios",
     "settings": "Configuración",
@@ -92,6 +96,9 @@
     "name": "Nombre",
     "timeReports": "Reportes de Tiempo",
     "costReports": "Reportes de Costos",
+    "burndownChart": "Gráfico de Burndown",
+    "projectBurndownChart": "Gráfico de Burndown del Proyecto",
+    "totalContractBudget": "Presupuesto Total del Contrato",
     "startDate": "Fecha de Inicio",
     "endDate": "Fecha de Fin",
     "contractors": "Contratistas",
@@ -196,7 +203,6 @@
     "exportCSV": "Exportar CSV",
     "contractorCount": "Cantidad de Contratistas",
     "totalSpend": "Gasto Total",
-    "subcontractor": "Subcontratista",
     "totalProjects": "Proyectos Totales",
     "totalContractors": "Contratistas Totales",
     "avgSpendPerProject": "Gasto Promedio por Proyecto",
@@ -266,7 +272,6 @@
     "projectManagersAdded": "Gerentes de proyecto agregados",
     "projectsAdded": "Proyectos agregados",
     "subcontractorsAdded": "Subcontratistas agregados",
-    "employeesAdded": "Empleados agregados",
     "savingEmployees": "Guardando Empleados...",
     "completingSetup": "Completando Configuración...",
     "completeSetup": "Completar Configuración",
@@ -293,12 +298,52 @@
     "enterLastName": "Ingrese el apellido",
     "enterRate": "Ingrese la tarifa por hora",
     "enterEmail": "Ingrese el correo electrónico",
+    "subcontractor": "Subcontratista",
+    "selectSubcontractor": "Seleccionar subcontratista",
+    "employeesAdded": "empleados agregados",
+    "uploadCsvExcel": "Subir Archivos CSV o Excel",
+    "csvTemplate": "Plantilla CSV",
+    "excelTemplate": "Plantilla Excel",
+    "bulkUploadEmployees": "Carga Masiva de Empleados",
+    "bulkUploadDescription": "Subir múltiples empleados usando archivos CSV o Excel",
+    "previewData": "Previsualizar Datos",
+    "uploadSuccessful": "Carga Exitosa",
+    "addingEmployees": "Agregando Empleados",
+    "uploadComplete": "Carga Completa",
+    "processingEmployees": "Procesando datos de empleados...",
+    "modalAutoClose": "Este modal se cerrará automáticamente en unos segundos",
+    "clickToUpload": "Haga clic para subir archivos o arrastrar y soltar",
+    "uploadMultipleFiles": "Puede subir múltiples archivos CSV/Excel a la vez",
+    "requiredFields": "Campos requeridos",
+    "optionalFields": "Campos opcionales",
+    "uploadedFiles": "Archivos Subidos",
+    "validationErrors": "Errores de Validación",
+    "uploadDifferentFile": "Subir Archivo Diferente",
+    "employeesLoadedCount": "empleados cargados desde archivos",
+    "employeesReadyCount": "empleados listos para subir",
+    "employeesAddedCount": "empleados agregados exitosamente",
+    "waitForEmployees": "Por favor espere mientras se procesan empleados...",
+    "previewEmployees": "Previsualizar Empleados",
     "errors": {
       "firstNameRequired": "El nombre es obligatorio",
       "lastNameRequired": "El apellido es obligatorio",
       "emailRequired": "El correo electrónico es obligatorio",
       "invalidEmail": "Formato de correo electrónico inválido",
-      "invalidRate": "La tarifa debe ser un número válido"
+      "invalidRate": "La tarifa debe ser un número válido",
+      "firstNameRequiredRow": "Fila {{row}}: El nombre es obligatorio",
+      "lastNameRequiredRow": "Fila {{row}}: El apellido es obligatorio",
+      "emailRequiredRow": "Fila {{row}}: El correo electrónico es obligatorio",
+      "invalidEmailRow": "Fila {{row}}: Formato de correo electrónico inválido",
+      "duplicateEmailRow": "Fila {{row}}: Dirección de correo duplicada en el archivo",
+      "invalidRateRow": "Fila {{row}}: La tarifa debe ser un número válido",
+      "invalidSubcontractorRow": "Fila {{row}}: Subcontratista \"{{company}}\" no encontrado",
+      "invalidFileType": "Archivo \"{{file}}\": Por favor suba solo archivos CSV o Excel",
+      "fileParseError": "Archivo \"{{file}}\": {{error}}",
+      "csvHeaderRequired": "El CSV debe tener al menos una fila de encabezado y una fila de datos",
+      "excelSheetRequired": "El archivo Excel debe contener al menos una hoja de trabajo",
+      "excelHeaderRequired": "El archivo Excel debe tener al menos una fila de encabezado y una fila de datos",
+      "noValidData": "No se encontraron datos de empleados válidos en los archivos subidos",
+      "uploadFailed": "Error al subir empleados"
     }
   },
   "settings": {
@@ -544,7 +589,9 @@
     "loginFailed": "Error al iniciar sesión",
     "loginSuccess": "Inicio de sesión exitoso",
     "logoutConfirm": "¿Está seguro de que desea cerrar sesión?",
-    "logoutDescription": "Necesitará iniciar sesión nuevamente para acceder a la aplicación."
+    "logoutDescription": "Necesitará iniciar sesión nuevamente para acceder a la aplicación.",
+    "confirmLogout": "Confirmar Cierre de Sesión",
+    "logoutConfirmation": "¿Está seguro de que desea cerrar sesión? Necesitará iniciar sesión nuevamente para acceder al portal de administración."
   },
   "pages": {
     "welcome": "Bienvenido a la Aplicación JHA",
@@ -564,7 +611,8 @@
     "noToolboxTalksDescription": "Su equipo de seguridad aún no ha publicado ninguna charla de seguridad...",
     "backToAllTalks": "Volver a Todas las Charlas",
     "loadingSubmissions": "Error al cargar envíos. Por favor intente nuevamente más tarde.",
-    "noTimesheetsFound": "No se encontraron hojas de tiempo. Comience creando su primera hoja de tiempo."
+    "noTimesheetsFound": "No se encontraron hojas de tiempo. Comience creando su primera hoja de tiempo.",
+    "timesheetDescription": "Rastrea y envía tus horas de trabajo y tiempo de proyecto para una gestión precisa de nómina y proyectos"
   },
   "tableHeaders": {
     "date": "Fecha",
@@ -841,5 +889,112 @@
     "investigatorTitle": "Título",
     "investigatorSignature": "Firma",
     "addInvestigator": "Agregar Investigador"
+  },
+  "workersComp": {
+    "title": "Panel de Compensación de Trabajadores",
+    "description": "Gestionar y rastrear incidentes laborales e informes de seguridad",
+    "cards": {
+      "knowTheRisk": "Conoce el Riesgo",
+      "knowTheRiskDescription": "Mantente vigilante.",
+      "reportIncident": "Reportar el Incidente",
+      "reportIncidentDescription": "Véelo. Repórtalo.",
+      "planSafetyTraining": "Planificar Entrenamiento de Seguridad",
+      "planSafetyTrainingDescription": "Un equipo más seguro."
+    },
+    "tabs": {
+      "recent": "Recientes",
+      "recentIncidents": "Incidentes Recientes",
+      "quickReports": "Reportes Rápidos",
+      "quickIncidentReports": "Reportes de Incidentes Rápidos",
+      "fullReports": "Reportes Completos",
+      "incidentReports": "Reportes de Incidentes"
+    },
+    "filters": {
+      "from": "Desde",
+      "to": "Hasta",
+      "projectName": "Nombre del Proyecto",
+      "selectProject": "Seleccionar proyecto",
+      "allProjects": "Todos los Proyectos",
+      "employee": "Empleado",
+      "enterEmployeeName": "Ingrese nombre del empleado",
+      "clearFilters": "Limpiar Filtros",
+      "injuredEmployee": "Empleado Lesionado",
+      "subcontractorCompany": "Subcontratista/Empresa",
+      "allCompanies": "Todas las Empresas",
+      "reportedBy": "Reportado Por",
+      "enterReporterName": "Ingrese nombre del reportero",
+      "dateFrom": "Fecha Desde",
+      "dateTo": "Fecha Hasta"
+    },
+    "table": {
+      "reportedBy": "Reportado Por",
+      "injuredEmployee": "Empleado Lesionado",
+      "projectName": "Nombre del Proyecto",
+      "dateReported": "Fecha Reportada",
+      "company": "Empresa",
+      "viewDetails": "Ver Detalles",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "noIncidentsFound": "No se encontraron incidentes recientes",
+      "loading": "Cargando incidentes..."
+    },
+    "mobile": {
+      "injuredEmployee": "Empleado Lesionado:",
+      "project": "Proyecto:",
+      "dateReported": "Fecha Reportada:",
+      "company": "Empresa:"
+    },
+    "export": {
+      "injuredEmployee": "Empleado Lesionado",
+      "subcontractorCompany": "Subcontratista/Empresa",
+      "reportedBy": "Reportado Por",
+      "dateReported": "Fecha Reportada",
+      "projectName": "Nombre del Proyecto"
+    },
+    "dialogs": {
+      "deleteIncident": "Eliminar Incidente",
+      "deleteQuickIncidentConfirm": "¿Estás seguro de que quieres eliminar este reporte de incidente rápido para {{employee}}?",
+      "deleteIncidentConfirm": "¿Estás seguro de que quieres eliminar este reporte de incidente para {{employee}}?",
+      "cancel": "Cancelar",
+      "delete": "Eliminar"
+    },
+    "incidentDetails": {
+      "backToRecent": "Volver a Incidentes Recientes",
+      "title": "Detalles del Incidente",
+      "loading": "Cargando detalles del incidente...",
+      "injuredEmployee": "Empleado Lesionado",
+      "reportedBy": "Reportado Por",
+      "projectName": "Nombre del Proyecto",
+      "dateTime": "Fecha y Hora",
+      "reviewedBy": "Revisado Por",
+      "reviewerPlaceholder": "Nombre del oficial",
+      "actionTaken": "Acción Tomada",
+      "actionPlaceholder": "Nombre del oficial",
+      "incidentChecklist": "Lista de Verificación del Incidente",
+      "checklist": {
+        "reviewReports": "Revisar Reportes de Incidentes",
+        "seeForm": "Ver Formulario",
+        "getTRIR": "Obtener TRIR o tasa de incidentes pasados",
+        "estimateHours": "Estimar horas laborales totales para el proyecto",
+        "estimateImpact": "Estimar impacto financiero por incidente",
+        "planTraining": "Planificar entrenamiento de trabajadores y controles de seguridad"
+      },
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "saveSuccess": "Datos de cumplimiento guardados exitosamente",
+      "saveFailed": "Fallo al guardar datos de cumplimiento"
+    },
+    "compliance": {
+      "title": "Cuenta Regresiva de Cumplimiento",
+      "days": "Días",
+      "minutes": "Minutos",
+      "seconds": "Segundos"
+    },
+    "attachments": {
+      "attachedFiles": "Archivos Adjuntos:",
+      "noFilesAttached": "No hay archivos adjuntos"
+    }
   }
 }

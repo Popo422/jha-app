@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import type { RootState } from '@/lib/store'
 
 export interface SubmissionData {
-  submissionType: 'end-of-day' | 'job-hazard-analysis' | 'start-of-day' | 'incident-report' | 'quick-incident-report'
+  submissionType: 'end-of-day' | 'job-hazard-analysis' | 'start-of-day' | 'incident-report' | 'quick-incident-report' | 'near-miss-report'
   projectName: string
   date: string
   dateTimeClocked?: string
@@ -145,6 +145,7 @@ export const submissionsApi = createApi({
     }),
     getSubmissions: builder.query<GetSubmissionsResponse, { 
       type?: string
+      excludeTypes?: string[]
       dateFrom?: string
       dateTo?: string
       company?: string
@@ -156,7 +157,7 @@ export const submissionsApi = createApi({
       fetchAll?: boolean
       authType?: 'contractor' | 'admin' | 'any'
     }>({
-      query: ({ type, dateFrom, dateTo, company, search, page, pageSize, limit, offset, fetchAll, authType }) => {
+      query: ({ type, excludeTypes, dateFrom, dateTo, company, search, page, pageSize, limit, offset, fetchAll, authType }) => {
         const params = new URLSearchParams()
         
         if (fetchAll) {
@@ -174,6 +175,9 @@ export const submissionsApi = createApi({
         
         if (type) {
           params.append('type', type)
+        }
+        if (excludeTypes && excludeTypes.length > 0) {
+          params.append('excludeTypes', excludeTypes.join(','))
         }
         if (dateFrom) {
           params.append('dateFrom', dateFrom)
@@ -194,6 +198,10 @@ export const submissionsApi = createApi({
         return `?${params}`
       },
       providesTags: ['Submission'],
+    }),
+    getSubmission: builder.query<Submission, string>({
+      query: (id) => `/${id}`,
+      providesTags: (result, error, id) => [{ type: 'Submission', id }],
     }),
     deleteSubmission: builder.mutation<DeleteSubmissionResponse, { id: string, authType?: 'contractor' | 'admin' | 'any' }>({
       query: ({ id, authType }) => {
@@ -237,6 +245,7 @@ export const {
   useSubmitFormMutation, 
   useGetSubmissionsQuery,
   useLazyGetSubmissionsQuery,
+  useGetSubmissionQuery,
   useDeleteSubmissionMutation,
   useUpdateSubmissionMutation,
   useDeleteAttachmentMutation

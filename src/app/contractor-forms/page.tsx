@@ -46,6 +46,18 @@ export default function ContractorFormsPage() {
       href: "/contractor-forms/quick-incident-report",
       description: t('forms.quickIncidentReportDescription'),
     },
+    {
+      id: "near-miss-report",
+      title: t('forms.nearMissReport'),
+      href: "/contractor-forms/near-miss-report",
+      description: t('forms.nearMissReportDescription'),
+    },
+    {
+      id: "timesheet",
+      title: t('nav.timesheet'),
+      href: "/timesheet",
+      description: t('pages.timesheetDescription'),
+    },
   ];
 
   const availableForms = useMemo(() => {

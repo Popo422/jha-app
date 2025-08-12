@@ -15,6 +15,10 @@
     "dashboard": "Admin Dashboard",
     "adminPortal": "Admin Portal",
     "contractorsEditor": "Contractors Editor",
+    "projectsEditor": "Projects Editor",
+    "projectsEditorDescription": "Create, edit, and manage projects, assign project managers, and track project details",
+    "subcontractorsEditor": "Subcontractors",
+    "subcontractorsEditorDescription": "Create, edit, and manage subcontractor companies, track their information, and maintain relationships",
     "modules": "Form Manager",
     "moduleConfiguration": "Form Manager",
     "settings": "Settings",
@@ -93,6 +97,9 @@
     "name": "Name",
     "timeReports": "Time Reports",
     "costReports": "Cost Reports",
+    "burndownChart": "Burndown Chart",
+    "projectBurndownChart": "Project Burndown Chart",
+    "totalContractBudget": "Total Contract Budget",
     "startDate": "Start Date",
     "endDate": "End Date",
     "contractors": "Contractors",
@@ -296,12 +303,49 @@
     "subcontractor": "Subcontractor",
     "selectSubcontractor": "Select subcontractor", 
     "employeesAdded": "employees added",
+    "uploadCsvExcel": "Upload CSV or Excel Files",
+    "csvTemplate": "CSV Template",
+    "excelTemplate": "Excel Template",
+    "bulkUploadEmployees": "Bulk Upload Employees",
+    "bulkUploadDescription": "Upload multiple employees using CSV or Excel files",
+    "previewData": "Preview Data",
+    "uploadSuccessful": "Upload Successful",
+    "addingEmployees": "Adding Employees",
+    "uploadComplete": "Upload Complete",
+    "processingEmployees": "Processing employee data...",
+    "modalAutoClose": "This modal will close automatically in a few seconds",
+    "clickToUpload": "Click to upload files or drag and drop",
+    "uploadMultipleFiles": "You can upload multiple CSV/Excel files at once",
+    "requiredFields": "Required fields",
+    "optionalFields": "Optional fields",
+    "uploadedFiles": "Uploaded Files",
+    "validationErrors": "Validation Errors",
+    "uploadDifferentFile": "Upload Different File",
+    "employeesLoadedCount": "employees loaded from files",
+    "employeesReadyCount": "employees ready to upload",
+    "employeesAddedCount": "employees added successfully",
+    "waitForEmployees": "Please wait while employees are being processed...",
+    "previewEmployees": "Preview Employees",
     "errors": {
       "firstNameRequired": "First name is required",
       "lastNameRequired": "Last name is required",
       "emailRequired": "Email is required",
       "invalidEmail": "Invalid email format",
-      "invalidRate": "Rate must be a valid number"
+      "invalidRate": "Rate must be a valid number",
+      "firstNameRequiredRow": "Row {{row}}: First Name is required",
+      "lastNameRequiredRow": "Row {{row}}: Last Name is required",
+      "emailRequiredRow": "Row {{row}}: Email is required",
+      "invalidEmailRow": "Row {{row}}: Invalid email format",
+      "duplicateEmailRow": "Row {{row}}: Duplicate email address in file",
+      "invalidRateRow": "Row {{row}}: Rate must be a valid number",
+      "invalidSubcontractorRow": "Row {{row}}: Subcontractor \"{{company}}\" not found",
+      "invalidFileType": "File \"{{file}}\": Please upload only CSV or Excel files",
+      "fileParseError": "File \"{{file}}\": {{error}}",
+      "csvHeaderRequired": "CSV must have at least a header row and one data row",
+      "excelSheetRequired": "Excel file must contain at least one worksheet",
+      "excelHeaderRequired": "Excel file must have at least a header row and one data row",
+      "noValidData": "No valid employee data found in uploaded files",
+      "uploadFailed": "Failed to upload employees"
     }
   },
   "settings": {
@@ -351,11 +395,13 @@
     "endOfDayReport": "End of Day Report",
     "incidentReport": "Incident Report",
     "quickIncidentReport": "Quick Incident Report",
+    "nearMissReport": "Near Miss Report",
     "jobHazardAnalysisDescription": "This form tracks all potential job hazards on the worksite. To be completed by all employees.",
     "startOfDayReportDescription": "This form ensures all crewmen enter the worksite in healthy condition. To be completed by all employees.",
     "endOfDayReportDescription": "This form captures the general health of the crewmen leaving the job site. To be completed by all employees.",
     "incidentReportDescription": "This form documents incidents and safety compliance. To be completed when necessary.",
     "quickIncidentReportDescription": "This form provides a quick way to report incidents with basic information. To be completed when necessary.",
+    "nearMissReportDescription": "This form documents near miss incidents and potential hazards for safety analysis. To be completed when necessary.",
     "noFormsAvailable": "No forms are currently available. Please contact your administrator.",
     "seeForm": "See Form",
     "backToForms": "Back to Forms",
@@ -550,7 +596,9 @@
     "loginFailed": "Login failed",
     "loginSuccess": "Login successful",
     "logoutConfirm": "Are you sure you want to logout?",
-    "logoutDescription": "You will need to login again to access the application."
+    "logoutDescription": "You will need to login again to access the application.",
+    "confirmLogout": "Confirm Logout",
+    "logoutConfirmation": "Are you sure you want to logout? You will need to login again to access the admin portal."
   },
   "pages": {
     "welcome": "Welcome to JHA App",
@@ -570,7 +618,8 @@
     "noToolboxTalksDescription": "Your safety team hasn't published any toolbox talks yet...",
     "backToAllTalks": "Back to All Talks",
     "loadingSubmissions": "Error loading submissions. Please try again later.",
-    "noTimesheetsFound": "No timesheets found. Start by creating your first timesheet."
+    "noTimesheetsFound": "No timesheets found. Start by creating your first timesheet.",
+    "timesheetDescription": "Track and submit your working hours and project time for accurate payroll and project management"
   },
   "tableHeaders": {
     "date": "Date",
@@ -874,5 +923,112 @@
     "failedToCreate": "Failed to create supervisor",
     "failedToUpdate": "Failed to update supervisor",
     "failedToDelete": "Failed to delete supervisor"
+  },
+  "workersComp": {
+    "title": "Workers Compensation Dashboard",
+    "description": "Manage and track workplace incidents and safety reports",
+    "cards": {
+      "knowTheRisk": "Know the Risk",
+      "knowTheRiskDescription": "Stay vigilant.",
+      "reportIncident": "Report the Incident", 
+      "reportIncidentDescription": "See it. Report it.",
+      "planSafetyTraining": "Plan Safety Training",
+      "planSafetyTrainingDescription": "A safer crew."
+    },
+    "tabs": {
+      "recent": "Recent",
+      "recentIncidents": "Recent Incidents",
+      "quickReports": "Quick Reports",
+      "quickIncidentReports": "Quick Incident Reports", 
+      "fullReports": "Full Reports",
+      "incidentReports": "Incident Reports"
+    },
+    "filters": {
+      "from": "From",
+      "to": "To",
+      "projectName": "Project Name",
+      "selectProject": "Select project",
+      "allProjects": "All Projects",
+      "employee": "Employee",
+      "enterEmployeeName": "Enter employee name",
+      "clearFilters": "Clear Filters",
+      "injuredEmployee": "Injured Employee",
+      "subcontractorCompany": "Subcontractor/Company",
+      "allCompanies": "All Companies",
+      "reportedBy": "Reported By",
+      "enterReporterName": "Enter reporter name",
+      "dateFrom": "Date From",
+      "dateTo": "Date To"
+    },
+    "table": {
+      "reportedBy": "Reported By",
+      "injuredEmployee": "Injured Employee",
+      "projectName": "Project Name",
+      "dateReported": "Date Reported",
+      "company": "Company",
+      "viewDetails": "View Details",
+      "edit": "Edit",
+      "delete": "Delete",
+      "previous": "Previous", 
+      "next": "Next",
+      "noIncidentsFound": "No recent incidents found",
+      "loading": "Loading incidents..."
+    },
+    "mobile": {
+      "injuredEmployee": "Injured Employee:",
+      "project": "Project:",
+      "dateReported": "Date Reported:",
+      "company": "Company:"
+    },
+    "export": {
+      "injuredEmployee": "Injured Employee",
+      "subcontractorCompany": "Subcontractor/Company",
+      "reportedBy": "Reported By", 
+      "dateReported": "Date Reported",
+      "projectName": "Project Name"
+    },
+    "dialogs": {
+      "deleteIncident": "Delete Incident",
+      "deleteQuickIncidentConfirm": "Are you sure you want to delete this quick incident report for {{employee}}?",
+      "deleteIncidentConfirm": "Are you sure you want to delete this incident report for {{employee}}?",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "incidentDetails": {
+      "backToRecent": "Back to Recent Incidents",
+      "title": "Incident Details",
+      "loading": "Loading incident details...",
+      "injuredEmployee": "Injured Employee",
+      "reportedBy": "Reported By",
+      "projectName": "Project Name",
+      "dateTime": "Date & Time",
+      "reviewedBy": "Reviewed By",
+      "reviewerPlaceholder": "Name of officer",
+      "actionTaken": "Action Taken",
+      "actionPlaceholder": "Name of officer",
+      "incidentChecklist": "Incident Checklist",
+      "checklist": {
+        "reviewReports": "Review Incident Reports",
+        "seeForm": "See Form",
+        "getTRIR": "Get TRIR or past incident rate",
+        "estimateHours": "Estimate total labor hours for the project",
+        "estimateImpact": "Estimate financial impact per incident",
+        "planTraining": "Plan worker training and safety controls"
+      },
+      "save": "Save",
+      "saving": "Saving...",
+      "saveSuccess": "Compliance data saved successfully",
+      "saveFailed": "Failed to save compliance data"
+    },
+    "compliance": {
+      "title": "Compliance Countdown",
+      "days": "Days",
+      "minutes": "Minutes", 
+      "seconds": "Seconds"
+    },
+    "attachments": {
+      "attachedFiles": "Attached Files:",
+      "noFilesAttached": "No files attached"
+    }
   }
 }

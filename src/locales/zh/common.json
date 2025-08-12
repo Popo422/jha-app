@@ -15,6 +15,10 @@
     "dashboard": "管理员仪表板",
     "adminPortal": "管理员门户",
     "contractorsEditor": "承包商编辑器",
+    "projectsEditor": "项目编辑器",
+    "projectsEditorDescription": "创建、编辑和管理项目，分配项目经理，并跟踪项目详情",
+    "subcontractorsEditor": "分包商",
+    "subcontractorsEditorDescription": "创建、编辑和管理分包商公司，跟踪其信息并维护关系",
     "modules": "表单管理器",
     "moduleConfiguration": "表单管理器",
     "settings": "设置",
@@ -64,6 +68,9 @@
     "name": "名称",
     "timeReports": "时间报告",
     "costReports": "成本报告",
+    "burndownChart": "燃尽图",
+    "projectBurndownChart": "项目燃尽图",
+    "totalContractBudget": "合同总预算",
     "startDate": "开始日期",
     "endDate": "结束日期",
     "contractors": "承包商",
@@ -270,12 +277,52 @@
     "enterLastName": "输入姓氏",
     "enterRate": "输入小时费率",
     "enterEmail": "输入电子邮件地址",
+    "subcontractor": "分包商",
+    "selectSubcontractor": "选择分包商",
+    "employeesAdded": "员工已添加",
+    "uploadCsvExcel": "上传CSV或Excel文件",
+    "csvTemplate": "CSV模板",
+    "excelTemplate": "Excel模板",
+    "bulkUploadEmployees": "批量上传员工",
+    "bulkUploadDescription": "使用CSV或Excel文件上传多个员工",
+    "previewData": "预览数据",
+    "uploadSuccessful": "上传成功",
+    "addingEmployees": "正在添加员工",
+    "uploadComplete": "上传完成",
+    "processingEmployees": "正在处理员工数据...",
+    "modalAutoClose": "此对话框将在几秒钟后自动关闭",
+    "clickToUpload": "点击上传文件或拖放",
+    "uploadMultipleFiles": "您可以一次上传多个CSV/Excel文件",
+    "requiredFields": "必填字段",
+    "optionalFields": "可选字段",
+    "uploadedFiles": "已上传文件",
+    "validationErrors": "验证错误",
+    "uploadDifferentFile": "上传不同文件",
+    "employeesLoadedCount": "个员工从文件中加载",
+    "employeesReadyCount": "个员工准备上传",
+    "employeesAddedCount": "个员工成功添加",
+    "waitForEmployees": "请等待处理员工...",
+    "previewEmployees": "预览员工",
     "errors": {
       "firstNameRequired": "名字是必填项",
       "lastNameRequired": "姓氏是必填项",
       "emailRequired": "电子邮件是必填项",
       "invalidEmail": "电子邮件格式无效",
-      "invalidRate": "费率必须是有效数字"
+      "invalidRate": "费率必须是有效数字",
+      "firstNameRequiredRow": "第{{row}}行：名字是必填项",
+      "lastNameRequiredRow": "第{{row}}行：姓氏是必填项",
+      "emailRequiredRow": "第{{row}}行：电子邮件是必填项",
+      "invalidEmailRow": "第{{row}}行：电子邮件格式无效",
+      "duplicateEmailRow": "第{{row}}行：文件中有重复的电子邮件地址",
+      "invalidRateRow": "第{{row}}行：费率必须是有效数字",
+      "invalidSubcontractorRow": "第{{row}}行：未找到分包商\"{{company}}\"",
+      "invalidFileType": "文件\"{{file}}\"：请只上传CSV或Excel文件",
+      "fileParseError": "文件\"{{file}}\"：{{error}}",
+      "csvHeaderRequired": "CSV必须至少有一个标题行和一个数据行",
+      "excelSheetRequired": "Excel文件必须包含至少一个工作表",
+      "excelHeaderRequired": "Excel文件必须至少有一个标题行和一个数据行",
+      "noValidData": "在上传的文件中未找到有效的员工数据",
+      "uploadFailed": "上传员工失败"
     }
   },
   "settings": {
@@ -521,7 +568,9 @@
     "loginFailed": "登录失败",
     "loginSuccess": "登录成功",
     "logoutConfirm": "您确定要注销吗？",
-    "logoutDescription": "您需要重新登录才能访问应用程序。"
+    "logoutDescription": "您需要重新登录才能访问应用程序。",
+    "confirmLogout": "确认登出",
+    "logoutConfirmation": "您确定要登出吗？您需要重新登录才能访问管理门户。"
   },
   "pages": {
     "welcome": "欢迎使用 JHA 应用",
@@ -541,7 +590,8 @@
     "noToolboxTalksDescription": "您的安全团队尚未发布任何工具箱谈话...",
     "backToAllTalks": "返回所有谈话",
     "loadingSubmissions": "加载提交时出错。请稍后再试。",
-    "noTimesheetsFound": "未找到工时单。请先创建您的第一个工时单。"
+    "noTimesheetsFound": "未找到工时单。请先创建您的第一个工时单。",
+    "timesheetDescription": "跟踪并提交您的工作时间和项目时间，以实现准确的工资单和项目管理"
   },
   "tableHeaders": {
     "date": "日期",
@@ -820,5 +870,112 @@
     "investigatorTitle": "职位",
     "investigatorSignature": "签名",
     "addInvestigator": "添加调查员"
+  },
+  "workersComp": {
+    "title": "工人赔偿仪表板",
+    "description": "管理和跟踪工作场所事故及安全报告",
+    "cards": {
+      "knowTheRisk": "了解风险",
+      "knowTheRiskDescription": "保持警惕。",
+      "reportIncident": "报告事故",
+      "reportIncidentDescription": "发现即报告。",
+      "planSafetyTraining": "规划安全培训",
+      "planSafetyTrainingDescription": "更安全的团队。"
+    },
+    "tabs": {
+      "recent": "最近",
+      "recentIncidents": "最近事故",
+      "quickReports": "快速报告",
+      "quickIncidentReports": "快速事故报告",
+      "fullReports": "完整报告",
+      "incidentReports": "事故报告"
+    },
+    "filters": {
+      "from": "从",
+      "to": "到",
+      "projectName": "项目名称",
+      "selectProject": "选择项目",
+      "allProjects": "所有项目",
+      "employee": "员工",
+      "enterEmployeeName": "输入员工姓名",
+      "clearFilters": "清除筛选",
+      "injuredEmployee": "受伤员工",
+      "subcontractorCompany": "分包商/公司",
+      "allCompanies": "所有公司",
+      "reportedBy": "报告人",
+      "enterReporterName": "输入报告人姓名",
+      "dateFrom": "开始日期",
+      "dateTo": "结束日期"
+    },
+    "table": {
+      "reportedBy": "报告人",
+      "injuredEmployee": "受伤员工",
+      "projectName": "项目名称",
+      "dateReported": "报告日期",
+      "company": "公司",
+      "viewDetails": "查看详情",
+      "edit": "编辑",
+      "delete": "删除",
+      "previous": "上一页",
+      "next": "下一页",
+      "noIncidentsFound": "未找到最近的事故",
+      "loading": "加载事故中..."
+    },
+    "mobile": {
+      "injuredEmployee": "受伤员工：",
+      "project": "项目：",
+      "dateReported": "报告日期：",
+      "company": "公司："
+    },
+    "export": {
+      "injuredEmployee": "受伤员工",
+      "subcontractorCompany": "分包商/公司",
+      "reportedBy": "报告人",
+      "dateReported": "报告日期",
+      "projectName": "项目名称"
+    },
+    "dialogs": {
+      "deleteIncident": "删除事故",
+      "deleteQuickIncidentConfirm": "您确定要删除{{employee}}的快速事故报告吗？",
+      "deleteIncidentConfirm": "您确定要删除{{employee}}的事故报告吗？",
+      "cancel": "取消",
+      "delete": "删除"
+    },
+    "incidentDetails": {
+      "backToRecent": "返回最近事故",
+      "title": "事故详情",
+      "loading": "加载事故详情中...",
+      "injuredEmployee": "受伤员工",
+      "reportedBy": "报告人",
+      "projectName": "项目名称",
+      "dateTime": "日期和时间",
+      "reviewedBy": "审查人",
+      "reviewerPlaceholder": "官员姓名",
+      "actionTaken": "采取的行动",
+      "actionPlaceholder": "官员姓名",
+      "incidentChecklist": "事故检查清单",
+      "checklist": {
+        "reviewReports": "审查事故报告",
+        "seeForm": "查看表单",
+        "getTRIR": "获取TRIR或过往事故率",
+        "estimateHours": "估算项目总工时",
+        "estimateImpact": "估算每次事故的财务影响",
+        "planTraining": "规划工人培训和安全控制"
+      },
+      "save": "保存",
+      "saving": "保存中...",
+      "saveSuccess": "合规数据保存成功",
+      "saveFailed": "合规数据保存失败"
+    },
+    "compliance": {
+      "title": "合规倒计时",
+      "days": "天",
+      "minutes": "分钟",
+      "seconds": "秒"
+    },
+    "attachments": {
+      "attachedFiles": "附件：",
+      "noFilesAttached": "无附件"
+    }
   }
 }
