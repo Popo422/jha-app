@@ -209,6 +209,7 @@
     "avgSpendPerProject": "Avg Spend Per Project",
     "projectFilter": "Project Filter",
     "allSubcontractors": "All Subcontractors",
+    "selectAll": "Select All",
     "subcontractorFilter": "Subcontractor Filter",
     "subcontractorCount": "Subcontractor Count",
     "editTimesheet": "Edit Timesheet",

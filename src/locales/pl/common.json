@@ -208,6 +208,7 @@
     "moduleSelectionWarning": "Ostrzeżenie: Musisz wybrać co najmniej jeden moduł. Kontraktorzy potrzebują dostępu do co najmniej jednego typu formularza.",
     "reset": "Resetuj",
     "modified": "Zmodyfikowane",
+    "selectAll": "Zaznacz Wszystko",
     "formTypes": "Typy Formularzy",
     "searchSubmissions": "Szukaj zgłoszeń...",
     "noSubmissionsFound": "Nie znaleziono zgłoszeń. Zacznij od utworzenia pierwszego zgłoszenia formularza.",

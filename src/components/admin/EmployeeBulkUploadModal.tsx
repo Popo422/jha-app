@@ -52,7 +52,7 @@ export function EmployeeBulkUploadModal({
     { field: 'email', label: t('admin.email') || 'Email', required: true, example: 'john.smith@email.com' },
     { field: 'rate', label: t('admin.rate') || 'Rate', required: false, example: '50.00' },
     { field: 'companyName', label: t('admin.subcontractor') || 'Subcontractor', required: false, example: 'ABC Construction' },
-    { field: 'language', label: t('settings.language') || 'Language', required: false, example: 'en' },
+    { field: 'language', label: (t('settings.language') || 'Language') + ' (en=English, es=Spanish, zh=Chinese, pl=Polish)', required: false, example: 'en' },
   ];
 
   const downloadTemplate = (format: 'csv' | 'excel' = 'csv') => {
@@ -427,7 +427,10 @@ export function EmployeeBulkUploadModal({
                 {t('admin.requiredFields')}: {t('admin.firstName')}, {t('admin.lastName')}, {t('admin.email')}
               </p>
               <p className="text-xs text-muted-foreground">
-                {t('admin.optionalFields')}: {t('admin.rate')}, {t('admin.subcontractor')}
+                {t('admin.optionalFields')}: {t('admin.rate')}, {t('admin.subcontractor')}, {t('settings.language')}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t('settings.language')} codes: en (English), es (Español), zh (中文), pl (Polski)
               </p>
             </div>
           </div>

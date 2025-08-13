@@ -208,6 +208,7 @@
     "avgSpendPerProject": "Gasto Promedio por Proyecto",
     "projectFilter": "Filtro de Proyecto",
     "allSubcontractors": "Todos los Subcontratistas",
+    "selectAll": "Seleccionar Todo",
     "subcontractorFilter": "Filtro de Subcontratista",
     "subcontractorCount": "Cantidad de Subcontratistas",
     "editTimesheet": "Editar Hoja de Tiempo",
