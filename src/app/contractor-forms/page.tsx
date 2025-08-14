@@ -54,9 +54,9 @@ export default function ContractorFormsPage() {
     },
     {
       id: "vehicle-inspection",
-      title: "Vehicle Inspection",
+      title: t('forms.vehicleInspection'),
       href: "/contractor-forms/vehicle-inspection",
-      description: "Daily vehicle inspection weekly report for equipment safety",
+      description: t('forms.vehicleInspectionDescription'),
     },
     {
       id: "timesheet",

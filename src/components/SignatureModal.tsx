@@ -80,8 +80,14 @@ export default function SignatureModal({
 
   const handleMainSignatureEnd = () => {
     if (mainCanvasRef.current && !isLoadingSignature) {
-      const signatureData = mainCanvasRef.current.toDataURL();
-      onSignatureChange(signatureData);
+      try {
+        const signatureData = mainCanvasRef.current.toDataURL();
+        onSignatureChange(signatureData);
+      } catch (error) {
+        console.warn('Could not export signature - canvas may be tainted', error);
+        // Clear the signature if it can't be exported
+        onSignatureChange('');
+      }
     }
   };
 
@@ -114,21 +120,27 @@ export default function SignatureModal({
   const closeModal = () => {
     // Copy signature from modal back to main canvas
     if (modalCanvasRef.current) {
-      const newSignature = modalCanvasRef.current.toDataURL();
-      onSignatureChange(newSignature);
-      
-      // Update main canvas
-      if (mainCanvasRef.current) {
-        const canvas = mainCanvasRef.current.getCanvas();
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          const img = new Image();
-          img.onload = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          };
-          img.src = newSignature;
+      try {
+        const newSignature = modalCanvasRef.current.toDataURL();
+        onSignatureChange(newSignature);
+        
+        // Update main canvas
+        if (mainCanvasRef.current) {
+          const canvas = mainCanvasRef.current.getCanvas();
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            const img = new Image();
+            img.onload = () => {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = newSignature;
+          }
         }
+      } catch (error) {
+        console.warn('Could not export signature - canvas may be tainted', error);
+        // Clear the signature if it can't be exported
+        onSignatureChange('');
       }
     }
     setModalOpen(false);
@@ -224,8 +236,14 @@ export default function SignatureModal({
                 }}
                 onEnd={() => {
                   if (modalCanvasRef.current) {
-                    const newSignature = modalCanvasRef.current.toDataURL();
-                    onSignatureChange(newSignature);
+                    try {
+                      const newSignature = modalCanvasRef.current.toDataURL();
+                      onSignatureChange(newSignature);
+                    } catch (error) {
+                      console.warn('Could not export signature - canvas may be tainted', error);
+                      // Clear the signature if it can't be exported
+                      onSignatureChange('');
+                    }
                   }
                 }}
               />

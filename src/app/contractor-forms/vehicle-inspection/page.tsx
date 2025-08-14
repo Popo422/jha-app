@@ -88,50 +88,50 @@ interface VehicleInspectionFormData {
 }
 
 const EQUIPMENT_TYPES = [
-  'Backhoe',
-  'Excavator',
-  'Paver',
-  'Bulldozer',
-  'Forklist',
-  'Snowcat',
-  'Compactor',
-  'Grader',
-  'Yarder',
-  'Crane',
-  'Harvester'
+  'backhoe',
+  'excavator',
+  'paver',
+  'bulldozer',
+  'forklist',
+  'snowcat',
+  'compactor',
+  'grader',
+  'yarder',
+  'crane',
+  'harvester'
 ];
 
 const CONDITIONS = [
-  'Good Condition',
-  'Poor Condition',
-  'Bad Condition',
-  'N/A'
+  'goodCondition',
+  'poorCondition',
+  'badCondition',
+  'notApplicable'
 ];
 
 const INSPECTION_ITEMS = [
-  { key: 'headlights', label: 'HEADLIGHTS' },
-  { key: 'tailLights', label: 'TAIL LIGHTS' },
-  { key: 'turnIndicatorLights', label: 'TURN INDICATOR LIGHTS' },
-  { key: 'stopLights', label: 'STOP LIGHTS' },
-  { key: 'brakes', label: 'BRAKES' },
-  { key: 'emergencyParkingBrake', label: 'EMERGENCY/PARKING BRAKE' },
-  { key: 'steeringMechanism', label: 'STEERING MECHANISM' },
-  { key: 'ballJoints', label: 'Ball Joints' },
-  { key: 'tieRods', label: 'Tie Rods' },
-  { key: 'rackPinion', label: 'Rack & Pinion' },
-  { key: 'bushings', label: 'Bushings' },
-  { key: 'windshield', label: 'WINDSHIELD' },
-  { key: 'rearWindowOtherGlass', label: 'REAR WINDOW & OTHER GLASS' },
-  { key: 'windshieldWipers', label: 'WINDSHIELD WIPERS' },
-  { key: 'frontSeatAdjustment', label: 'FRONT SEAT ADJUSTMENT' },
-  { key: 'doors', label: 'DOORS (Open/Close/Lock)' },
-  { key: 'horn', label: 'HORN' },
-  { key: 'speedometer', label: 'SPEEDOMETER' },
-  { key: 'bumpers', label: 'BUMPERS' },
-  { key: 'mufflerExhaustSystem', label: 'MUFFLER AND EXHAUST SYSTEM' },
-  { key: 'tires', label: 'TIRES: adequate tread depth, all lugnuts in place' },
-  { key: 'rearViewMirrors', label: 'INTERIOR & EXTERIOR REAR VIEW MIRRORS' },
-  { key: 'safetyBelts', label: 'SAFETY BELTS FOR DRIVER & PASSENGERS' },
+  'headlights',
+  'tailLights',
+  'turnIndicatorLights',
+  'stopLights',
+  'brakes',
+  'emergencyParkingBrake',
+  'steeringMechanism',
+  'ballJoints',
+  'tieRods',
+  'rackPinion',
+  'bushings',
+  'windshield',
+  'rearWindowOtherGlass',
+  'windshieldWipers',
+  'frontSeatAdjustment',
+  'doors',
+  'horn',
+  'speedometer',
+  'bumpers',
+  'mufflerExhaustSystem',
+  'tires',
+  'rearViewMirrors',
+  'safetyBelts'
 ];
 
 export default function VehicleInspectionPage() {
@@ -278,7 +278,7 @@ export default function VehicleInspectionPage() {
       ...prev, 
       [itemKey]: condition,
       // Clear comment if condition is Good or N/A
-      [`${itemKey}Comment`]: (condition === 'Good Condition' || condition === 'N/A') ? '' : prev[`${itemKey}Comment` as keyof VehicleInspectionFormData] as string
+      [`${itemKey}Comment`]: (condition === 'goodCondition' || condition === 'notApplicable') ? '' : prev[`${itemKey}Comment` as keyof VehicleInspectionFormData] as string
     }));
   }, []);
 
@@ -306,7 +306,7 @@ export default function VehicleInspectionPage() {
   }, []);
 
   const needsComment = (condition: string) => {
-    return condition === 'Poor Condition' || condition === 'Bad Condition';
+    return condition === 'poorCondition' || condition === 'badCondition';
   };
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -334,16 +334,16 @@ export default function VehicleInspectionPage() {
             <Button variant="ghost" asChild className="mb-4">
               <Link href="/contractor-forms">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Forms
+                {t('forms.backToForms')}
               </Link>
             </Button>
-            <h1 className="text-3xl font-bold text-foreground">Vehicle Inspection</h1>
-            <p className="text-muted-foreground mt-2">Daily vehicle inspection weekly report</p>
+            <h1 className="text-3xl font-bold text-foreground">{t('vehicleInspection.title')}</h1>
+            <p className="text-muted-foreground mt-2">{t('vehicleInspection.description')}</p>
           </div>
 
           <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="text-foreground">Inspection Details</CardTitle>
+              <CardTitle className="text-foreground">{t('vehicleInspection.title')}</CardTitle>
             </CardHeader>
             <CardContent className="p-4">
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -351,14 +351,14 @@ export default function VehicleInspectionPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <ContractorSelect
-                      label="Completed by"
+                      label={t('forms.completedBy')}
                       value={formData.completedBy}
                       onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="date">Date</Label>
+                    <Label htmlFor="date">{t('formFields.date')}</Label>
                     <Input
                       id="date"
                       name="date"
@@ -370,14 +370,14 @@ export default function VehicleInspectionPage() {
                   </div>
                   <div className="space-y-2">
                     <ContractorSelect
-                      label="Supervisor"
+                      label={t('formFields.supervisor')}
                       value={formData.supervisor}
                       onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
                     />
                   </div>
                   <div className="space-y-2">
                     <ProjectSelect
-                      label="Project Name"
+                      label={t('forms.projectName')}
                       value={formData.projectName}
                       onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
                       required
@@ -385,53 +385,38 @@ export default function VehicleInspectionPage() {
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <SubcontractorSelect
-                      label="Company"
+                      label={t('forms.companySubcontractor')}
                       value={formData.company}
                       onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
                     />
                   </div>
                 </div>
 
-                {/* Instructions */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
-                    INSPECTION POINTS
-                  </h3>
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    Daily vehicle inspections are mandatory everyday, before you get behind the wheel! 
-                    Please complete the following vehicle inspection form below at the end of every week, 
-                    or as soon as something becomes an issue.
-                  </p>
-                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-2 font-medium">
-                    Please drive safely and respectfully!
-                  </p>
-                </div>
-
                 {/* Equipment Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-base font-semibold">Equipment Type *</Label>
+                    <Label className="text-base font-semibold">{t('vehicleInspection.equipmentType')} *</Label>
                     <Select value={formData.equipmentType} onValueChange={(value) => setFormData(prev => ({ ...prev, equipmentType: value }))}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select equipment type" />
+                        <SelectValue placeholder={t('vehicleInspection.selectEquipmentType')} />
                       </SelectTrigger>
                       <SelectContent>
                         {EQUIPMENT_TYPES.map((type) => (
                           <SelectItem key={type} value={type}>
-                            {type}
+                            {t(`equipmentTypes.${type}`)}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="unitNumber">Unit #</Label>
+                    <Label htmlFor="unitNumber">{t('vehicleInspection.unitNumber')}</Label>
                     <Input
                       id="unitNumber"
                       name="unitNumber"
                       value={formData.unitNumber}
                       onChange={handleInputChange}
-                      placeholder="Enter unit number"
+                      placeholder={t('vehicleInspection.enterUnitNumber')}
                     />
                   </div>
                 </div>
@@ -439,36 +424,36 @@ export default function VehicleInspectionPage() {
                 {/* Inspection Points */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-md md:text-xl">Vehicle Inspection Points</CardTitle>
+                    <CardTitle className="text-md md:text-xl">{t('vehicleInspection.vehicleInspectionPoints')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-8">
                     {INSPECTION_ITEMS.map((item) => {
-                      const conditionValue = formData[item.key as keyof VehicleInspectionFormData] as string;
-                      const commentKey = `${item.key}Comment` as keyof VehicleInspectionFormData;
+                      const conditionValue = formData[item as keyof VehicleInspectionFormData] as string;
+                      const commentKey = `${item}Comment` as keyof VehicleInspectionFormData;
                       const commentValue = formData[commentKey] as string;
                       const showComment = needsComment(conditionValue);
 
                       return (
-                        <div key={item.key} className="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-b-0">
+                        <div key={item} className="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-b-0">
                           <div className="space-y-4">
-                            <Label className="text-base font-semibold">{item.label} *</Label>
+                            <Label className="text-base font-semibold">{t(`vehicleInspectionItems.${item}`)} *</Label>
                             
                             <RadioGroup
                               value={conditionValue}
-                              onValueChange={(value) => handleConditionChange(item.key, value)}
+                              onValueChange={(value) => handleConditionChange(item, value)}
                               className="flex flex-wrap gap-4"
                             >
                               {CONDITIONS.map((condition) => (
                                 <div key={condition} className="flex items-center space-x-2">
                                   <RadioGroupItem 
                                     value={condition} 
-                                    id={`${item.key}-${condition.replace(/\s+/g, '-').toLowerCase()}`} 
+                                    id={`${item}-${condition}`} 
                                   />
                                   <Label 
-                                    htmlFor={`${item.key}-${condition.replace(/\s+/g, '-').toLowerCase()}`}
+                                    htmlFor={`${item}-${condition}`}
                                     className="text-sm cursor-pointer"
                                   >
-                                    {condition}
+                                    {t(`conditions.${condition}`)}
                                   </Label>
                                 </div>
                               ))}
@@ -476,14 +461,14 @@ export default function VehicleInspectionPage() {
 
                             {showComment && (
                               <div className="space-y-2">
-                                <Label htmlFor={`${item.key}-comment`} className="text-sm font-medium">
-                                  Additional Explanation *
+                                <Label htmlFor={`${item}-comment`} className="text-sm font-medium">
+                                  {t('vehicleInspection.additionalExplanation')} *
                                 </Label>
                                 <Textarea
-                                  id={`${item.key}-comment`}
+                                  id={`${item}-comment`}
                                   value={commentValue}
-                                  onChange={(e) => handleCommentChange(item.key, e.target.value)}
-                                  placeholder="Please provide additional explanation..."
+                                  onChange={(e) => handleCommentChange(item, e.target.value)}
+                                  placeholder={t('vehicleInspection.additionalExplanationPlaceholder')}
                                   className="min-h-[80px]"
                                   required
                                 />
@@ -499,11 +484,11 @@ export default function VehicleInspectionPage() {
                 {/* Additional Photos */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-md md:text-xl">Additional Photos</CardTitle>
+                    <CardTitle className="text-md md:text-xl">{t('vehicleInspection.additionalPhotos')}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-4">
-                      <Label htmlFor="photos">Add additional photos if necessary:</Label>
+                      <Label htmlFor="photos">{t('vehicleInspection.addAdditionalPhotos')}</Label>
                       <input
                         type="file"
                         id="photos"
@@ -514,7 +499,7 @@ export default function VehicleInspectionPage() {
                       />
                       {formData.additionalPhotos.length > 0 && (
                         <div className="mt-2">
-                          <p className="text-sm text-gray-600">Attached Files:</p>
+                          <p className="text-sm text-gray-600">{t('forms.attachments')}:</p>
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
                             {formData.additionalPhotos.map((file, index) => (
                               <AttachmentPreview
@@ -534,16 +519,16 @@ export default function VehicleInspectionPage() {
                 {/* Signature Section */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-md md:text-xl">Digital Signature</CardTitle>
+                    <CardTitle className="text-md md:text-xl">{t('forms.digitalSignature')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <SignatureModal
                       signature={formData.signature}
                       onSignatureChange={handleSignatureChange}
-                      signerName={formData.completedBy || 'Signature'}
-                      modalTitle="Vehicle Inspection Signature"
-                      modalDescription="Sign below to confirm this vehicle inspection"
-                      signatureLabel="Please sign below to confirm this inspection"
+                      signerName={formData.completedBy || t('forms.digitalSignature')}
+                      modalTitle={t('vehicleInspection.signatureTitle')}
+                      modalDescription={t('vehicleInspection.signatureDescription')}
+                      signatureLabel={t('vehicleInspection.signaturePrompt')}
                       required
                     />
                   </CardContent>
@@ -551,7 +536,7 @@ export default function VehicleInspectionPage() {
 
                 {isSuccess && (
                   <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800">
-                    Vehicle inspection submitted successfully!
+                    {t('vehicleInspection.submitSuccess')}
                   </div>
                 )}
 
@@ -559,7 +544,7 @@ export default function VehicleInspectionPage() {
                   <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800">
                     {error && 'data' in error && typeof error.data === 'object' && error.data && 'error' in error.data 
                       ? (error.data as any).error 
-                      : 'There was an error submitting your inspection. Please try again.'}
+                      : t('vehicleInspection.submitError')}
                   </div>
                 )}
 
@@ -568,7 +553,7 @@ export default function VehicleInspectionPage() {
                   disabled={isLoading || !formData.signature || !formData.equipmentType || !formData.completedBy || !formData.projectName} 
                   className="w-full"
                 >
-                  {isLoading ? 'Submitting...' : 'Submit Vehicle Inspection'}
+                  {isLoading ? t('vehicleInspection.submitting') : t('vehicleInspection.submitButton')}
                 </Button>
               </form>
             </CardContent>
