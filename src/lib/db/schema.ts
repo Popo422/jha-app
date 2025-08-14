@@ -9,7 +9,7 @@ export const companies = pgTable('companies', {
   logoUrl: text('logo_url'), // Optional company logo URL
   injuryTimerLastReset: timestamp('injury_timer_last_reset').defaultNow(),
   injuryTimerResetBy: text('injury_timer_reset_by'),
-  enabledModules: jsonb('enabled_modules').default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'timesheet']), // Available modules for this company
+  enabledModules: jsonb('enabled_modules').default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'near-miss-report', 'vehicle-inspection', 'timesheet']), // Available modules for this company
   modulesLastUpdatedAt: timestamp('modules_last_updated_at'),
   modulesLastUpdatedBy: text('modules_last_updated_by'), // Admin name who last updated modules
   modulesLastUpdatedByUserId: text('modules_last_updated_by_user_id'), // Admin user ID for reference
@@ -46,7 +46,7 @@ export const submissions = pgTable('submissions', {
   dateTimeClocked: timestamp('date_time_clocked'), // Combined date/time when clocked in/out
   company: text('company').notNull(),
   projectName: text('project_name').notNull(),
-  submissionType: text('submission_type').notNull(), // 'end-of-day', 'job-hazard-analysis', 'start-of-day'
+  submissionType: text('submission_type').notNull(), // 'end-of-day', 'job-hazard-analysis', 'start-of-day', 'incident-report', 'quick-incident-report', 'near-miss-report', 'vehicle-inspection', 'timesheet'
   formData: jsonb('form_data').notNull(), // Store the entire form as JSON including file paths
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

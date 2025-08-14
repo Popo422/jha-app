@@ -1,0 +1,637 @@
+"use client";
+
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useTranslation } from 'react-i18next';
+import { useRouter, useParams } from 'next/navigation';
+import { useGetSubmissionQuery, useUpdateSubmissionMutation } from '@/lib/features/submissions/submissionsApi';
+import { useToast } from '@/components/ui/toast';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import SignatureCanvas from "react-signature-canvas";
+import AttachmentPreview from "@/components/AttachmentPreview";
+import ContractorSelect from "@/components/ContractorSelect";
+import ProjectSelect from "@/components/ProjectSelect";
+import SubcontractorSelect from "@/components/SubcontractorSelect";
+
+interface VehicleInspectionFormData {
+  // General Information
+  completedBy: string;
+  date: string;
+  supervisor: string;
+  projectName: string;
+  company: string;
+  
+  // Equipment Info
+  equipmentType: string;
+  unitNumber: string;
+  
+  // Inspection Points
+  headlights: string;
+  headlightsComment: string;
+  tailLights: string;
+  tailLightsComment: string;
+  turnIndicatorLights: string;
+  turnIndicatorLightsComment: string;
+  stopLights: string;
+  stopLightsComment: string;
+  brakes: string;
+  brakesComment: string;
+  emergencyParkingBrake: string;
+  emergencyParkingBrakeComment: string;
+  steeringMechanism: string;
+  steeringMechanismComment: string;
+  ballJoints: string;
+  ballJointsComment: string;
+  tieRods: string;
+  tieRodsComment: string;
+  rackPinion: string;
+  rackPinionComment: string;
+  bushings: string;
+  bushingsComment: string;
+  windshield: string;
+  windshieldComment: string;
+  rearWindowOtherGlass: string;
+  rearWindowOtherGlassComment: string;
+  windshieldWipers: string;
+  windshieldWipersComment: string;
+  frontSeatAdjustment: string;
+  frontSeatAdjustmentComment: string;
+  doors: string;
+  doorsComment: string;
+  horn: string;
+  hornComment: string;
+  speedometer: string;
+  speedometerComment: string;
+  bumpers: string;
+  bumpersComment: string;
+  mufflerExhaustSystem: string;
+  mufflerExhaustSystemComment: string;
+  tires: string;
+  tiresComment: string;
+  rearViewMirrors: string;
+  rearViewMirrorsComment: string;
+  safetyBelts: string;
+  safetyBeltsComment: string;
+  
+  // Additional
+  additionalPhotos: File[];
+  uploadedFiles?: { filename: string; url: string }[];
+  signature: string;
+}
+
+const EQUIPMENT_TYPES = [
+  'Backhoe',
+  'Excavator',
+  'Paver',
+  'Bulldozer',
+  'Forklist',
+  'Snowcat',
+  'Compactor',
+  'Grader',
+  'Yarder',
+  'Crane',
+  'Harvester'
+];
+
+const CONDITIONS = [
+  'Good Condition',
+  'Poor Condition',
+  'Bad Condition',
+  'N/A'
+];
+
+const INSPECTION_ITEMS = [
+  { key: 'headlights', label: 'HEADLIGHTS' },
+  { key: 'tailLights', label: 'TAIL LIGHTS' },
+  { key: 'turnIndicatorLights', label: 'TURN INDICATOR LIGHTS' },
+  { key: 'stopLights', label: 'STOP LIGHTS' },
+  { key: 'brakes', label: 'BRAKES' },
+  { key: 'emergencyParkingBrake', label: 'EMERGENCY/PARKING BRAKE' },
+  { key: 'steeringMechanism', label: 'STEERING MECHANISM' },
+  { key: 'ballJoints', label: 'Ball Joints' },
+  { key: 'tieRods', label: 'Tie Rods' },
+  { key: 'rackPinion', label: 'Rack & Pinion' },
+  { key: 'bushings', label: 'Bushings' },
+  { key: 'windshield', label: 'WINDSHIELD' },
+  { key: 'rearWindowOtherGlass', label: 'REAR WINDOW & OTHER GLASS' },
+  { key: 'windshieldWipers', label: 'WINDSHIELD WIPERS' },
+  { key: 'frontSeatAdjustment', label: 'FRONT SEAT ADJUSTMENT' },
+  { key: 'doors', label: 'DOORS (Open/Close/Lock)' },
+  { key: 'horn', label: 'HORN' },
+  { key: 'speedometer', label: 'SPEEDOMETER' },
+  { key: 'bumpers', label: 'BUMPERS' },
+  { key: 'mufflerExhaustSystem', label: 'MUFFLER AND EXHAUST SYSTEM' },
+  { key: 'tires', label: 'TIRES: adequate tread depth, all lugnuts in place' },
+  { key: 'rearViewMirrors', label: 'INTERIOR & EXTERIOR REAR VIEW MIRRORS' },
+  { key: 'safetyBelts', label: 'SAFETY BELTS FOR DRIVER & PASSENGERS' },
+];
+
+export default function AdminEditVehicleInspectionPage() {
+  const { t } = useTranslation('common');
+  const router = useRouter();
+  const params = useParams();
+  const submissionId = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
+  const { showToast } = useToast();
+  const signatureRef = useRef<SignatureCanvas>(null);
+  
+  const { data: submission, isLoading: isLoadingSubmission } = useGetSubmissionQuery(submissionId);
+  const [updateSubmission, { isLoading: isUpdating }] = useUpdateSubmissionMutation();
+  
+  const [formData, setFormData] = useState<VehicleInspectionFormData>({
+    completedBy: "",
+    date: new Date().toISOString().split("T")[0],
+    supervisor: "",
+    projectName: "",
+    company: "",
+    equipmentType: "",
+    unitNumber: "",
+    headlights: "",
+    headlightsComment: "",
+    tailLights: "",
+    tailLightsComment: "",
+    turnIndicatorLights: "",
+    turnIndicatorLightsComment: "",
+    stopLights: "",
+    stopLightsComment: "",
+    brakes: "",
+    brakesComment: "",
+    emergencyParkingBrake: "",
+    emergencyParkingBrakeComment: "",
+    steeringMechanism: "",
+    steeringMechanismComment: "",
+    ballJoints: "",
+    ballJointsComment: "",
+    tieRods: "",
+    tieRodsComment: "",
+    rackPinion: "",
+    rackPinionComment: "",
+    bushings: "",
+    bushingsComment: "",
+    windshield: "",
+    windshieldComment: "",
+    rearWindowOtherGlass: "",
+    rearWindowOtherGlassComment: "",
+    windshieldWipers: "",
+    windshieldWipersComment: "",
+    frontSeatAdjustment: "",
+    frontSeatAdjustmentComment: "",
+    doors: "",
+    doorsComment: "",
+    horn: "",
+    hornComment: "",
+    speedometer: "",
+    speedometerComment: "",
+    bumpers: "",
+    bumpersComment: "",
+    mufflerExhaustSystem: "",
+    mufflerExhaustSystemComment: "",
+    tires: "",
+    tiresComment: "",
+    rearViewMirrors: "",
+    rearViewMirrorsComment: "",
+    safetyBelts: "",
+    safetyBeltsComment: "",
+    additionalPhotos: [],
+    uploadedFiles: [],
+    signature: "",
+  });
+
+  // Initialize form data when submission loads
+  useEffect(() => {
+    if (submission?.formData) {
+      setFormData(prev => ({
+        ...prev,
+        ...submission.formData,
+        additionalPhotos: [], // New files to be uploaded
+        uploadedFiles: submission.formData.uploadedFiles || [], // Existing files from database
+      }));
+    }
+  }, [submission]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  }, []);
+
+  const handleConditionChange = useCallback((itemKey: string, condition: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      [itemKey]: condition,
+      // Clear comment if condition is Good or N/A
+      [`${itemKey}Comment`]: (condition === 'Good Condition' || condition === 'N/A') ? '' : prev[`${itemKey}Comment` as keyof VehicleInspectionFormData] as string
+    }));
+  }, []);
+
+  const handleCommentChange = useCallback((itemKey: string, comment: string) => {
+    setFormData(prev => ({ ...prev, [`${itemKey}Comment`]: comment }));
+  }, []);
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setFormData(prev => ({
+      ...prev,
+      additionalPhotos: [...prev.additionalPhotos, ...files],
+    }));
+  }, []);
+
+  const handleDeletePhoto = useCallback((indexToDelete: number) => {
+    setFormData(prev => ({
+      ...prev,
+      additionalPhotos: prev.additionalPhotos.filter((_, index) => index !== indexToDelete),
+    }));
+  }, []);
+
+  const handleSignatureClear = useCallback(() => {
+    if (signatureRef.current) {
+      signatureRef.current.clear();
+      setFormData(prev => ({ ...prev, signature: "" }));
+    }
+  }, []);
+
+  const handleSignatureEnd = useCallback(() => {
+    if (signatureRef.current) {
+      const signatureData = signatureRef.current.toDataURL();
+      setFormData(prev => ({ ...prev, signature: signatureData }));
+    }
+  }, []);
+
+  const needsComment = (condition: string) => {
+    return condition === 'Poor Condition' || condition === 'Bad Condition';
+  };
+
+  const handleSave = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const result = await updateSubmission({
+        id: submissionId,
+        formData: {
+          ...formData,
+          updatedAt: new Date().toISOString(),
+        }
+      }).unwrap();
+      
+      if (result.success) {
+        showToast('Vehicle inspection updated successfully!', 'success');
+        setTimeout(() => {
+          router.push('/admin/safety-forms');
+        }, 2000);
+      } else {
+        throw new Error(result.error || 'Update failed');
+      }
+      
+    } catch (error: any) {
+      console.error('Error updating vehicle inspection:', error);
+      showToast(error?.data?.error || error?.message || 'There was an error updating the inspection. Please try again.', 'error');
+    }
+  }, [formData, updateSubmission, submissionId, showToast, router]);
+
+  if (isLoadingSubmission) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <main className="p-4 sm:p-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Loading vehicle inspection...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!submission) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <main className="p-4 sm:p-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center py-12">
+              <p className="text-red-600 dark:text-red-400">Vehicle inspection not found.</p>
+              <Button asChild className="mt-4">
+                <Link href="/admin/safety-forms">Back to Safety Forms</Link>
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <main className="p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6">
+            <Button variant="ghost" asChild className="mb-4">
+              <Link href="/admin/safety-forms">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Safety Forms
+              </Link>
+            </Button>
+            <h1 className="text-3xl font-bold text-foreground">Edit Vehicle Inspection</h1>
+            <p className="text-muted-foreground mt-2">
+              Submitted by {submission.completedBy} on {new Date(submission.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+
+          <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-foreground">Inspection Details</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <form onSubmit={handleSave} className="space-y-6">
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <ContractorSelect
+                      label="Completed by"
+                      value={formData.completedBy}
+                      onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Date</Label>
+                    <Input
+                      id="date"
+                      name="date"
+                      type="date"
+                      value={formData.date}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <ContractorSelect
+                      label="Supervisor"
+                      value={formData.supervisor}
+                      onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <ProjectSelect
+                      label="Project Name"
+                      value={formData.projectName}
+                      onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <SubcontractorSelect
+                      label="Company"
+                      value={formData.company}
+                      onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
+                    />
+                  </div>
+                </div>
+
+                {/* Instructions */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                    INSPECTION POINTS
+                  </h3>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Daily vehicle inspections are mandatory everyday, before you get behind the wheel! 
+                    Please complete the following vehicle inspection form below at the end of every week, 
+                    or as soon as something becomes an issue.
+                  </p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-2 font-medium">
+                    Please drive safely and respectfully!
+                  </p>
+                </div>
+
+                {/* Equipment Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold">Equipment Type *</Label>
+                    <Select value={formData.equipmentType} onValueChange={(value) => setFormData(prev => ({ ...prev, equipmentType: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select equipment type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EQUIPMENT_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="unitNumber">Unit #</Label>
+                    <Input
+                      id="unitNumber"
+                      name="unitNumber"
+                      value={formData.unitNumber}
+                      onChange={handleInputChange}
+                      placeholder="Enter unit number"
+                    />
+                  </div>
+                </div>
+
+                {/* Inspection Points */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-md md:text-xl">Vehicle Inspection Points</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-8">
+                    {INSPECTION_ITEMS.map((item) => {
+                      const conditionValue = formData[item.key as keyof VehicleInspectionFormData] as string;
+                      const commentKey = `${item.key}Comment` as keyof VehicleInspectionFormData;
+                      const commentValue = formData[commentKey] as string;
+                      const showComment = needsComment(conditionValue);
+
+                      return (
+                        <div key={item.key} className="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-b-0">
+                          <div className="space-y-4">
+                            <Label className="text-base font-semibold">{item.label} *</Label>
+                            
+                            <RadioGroup
+                              value={conditionValue}
+                              onValueChange={(value) => handleConditionChange(item.key, value)}
+                              className="flex flex-wrap gap-4"
+                            >
+                              {CONDITIONS.map((condition) => (
+                                <div key={condition} className="flex items-center space-x-2">
+                                  <RadioGroupItem 
+                                    value={condition} 
+                                    id={`${item.key}-${condition.replace(/\s+/g, '-').toLowerCase()}`} 
+                                  />
+                                  <Label 
+                                    htmlFor={`${item.key}-${condition.replace(/\s+/g, '-').toLowerCase()}`}
+                                    className="text-sm cursor-pointer"
+                                  >
+                                    {condition}
+                                  </Label>
+                                </div>
+                              ))}
+                            </RadioGroup>
+
+                            {showComment && (
+                              <div className="space-y-2">
+                                <Label htmlFor={`${item.key}-comment`} className="text-sm font-medium">
+                                  Additional Explanation *
+                                </Label>
+                                <Textarea
+                                  id={`${item.key}-comment`}
+                                  value={commentValue}
+                                  onChange={(e) => handleCommentChange(item.key, e.target.value)}
+                                  placeholder="Please provide additional explanation..."
+                                  className="min-h-[80px]"
+                                  required
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+
+                {/* Additional Photos */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-md md:text-xl">Additional Photos</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-4">
+                      <Label htmlFor="photos">Add additional photos if necessary:</Label>
+                      <input
+                        type="file"
+                        id="photos"
+                        multiple
+                        accept="image/*,.pdf"
+                        onChange={handleFileUpload}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      
+                      {/* Show existing uploaded files */}
+                      {formData.uploadedFiles && formData.uploadedFiles.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 mb-2">Existing Files:</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {formData.uploadedFiles.map((file, index) => (
+                              <div key={index} className="p-2 border border-gray-200 rounded-lg">
+                                <a 
+                                  href={file.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-600 hover:underline block truncate"
+                                >
+                                  {file.filename}
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Show new files to be uploaded */}
+                      {formData.additionalPhotos.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600">New Files to Upload:</p>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
+                            {formData.additionalPhotos.map((file, index) => (
+                              <AttachmentPreview
+                                key={index}
+                                file={file}
+                                onDelete={() => handleDeletePhoto(index)}
+                                showDeleteButton={true}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Signature Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-md md:text-xl">Digital Signature</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Please sign below to confirm this inspection:</Label>
+                      {formData.signature && formData.signature.startsWith('http') ? (
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600">Current signature:</p>
+                          <img src={formData.signature} alt="Current signature" className="border rounded-lg max-w-md" />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setFormData(prev => ({ ...prev, signature: "" }))}
+                            className="text-sm"
+                          >
+                            Replace Signature
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="border border-gray-300 rounded-lg p-2 bg-white">
+                            <SignatureCanvas
+                              ref={signatureRef}
+                              canvasProps={{
+                                width: 400,
+                                height: 200,
+                                className: "signature-canvas w-full max-w-md mx-auto border rounded"
+                              }}
+                              onEnd={handleSignatureEnd}
+                            />
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleSignatureClear}
+                              className="text-sm"
+                            >
+                              Clear Signature
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                      {!formData.signature && (
+                        <p className="text-sm text-red-600">Signature is required.</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Button 
+                  type="submit" 
+                  disabled={isUpdating || !formData.signature || !formData.equipmentType || !formData.completedBy || !formData.projectName} 
+                  className="w-full"
+                >
+                  {isUpdating ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </form>
+
+              {/* Admin Note */}
+              <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                  Admin Edit Mode
+                </h3>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  You are editing this submission as an administrator. Changes will be saved and logged for audit purposes.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    </div>
+  );
+}

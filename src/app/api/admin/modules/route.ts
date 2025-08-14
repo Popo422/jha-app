@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      enabledModules: company[0].enabledModules || ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'near-miss-report', 'timesheet'],
+      enabledModules: company[0].enabledModules || ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'near-miss-report', 'vehicle-inspection', 'timesheet'],
       availableModules: [
         { id: 'start-of-day', name: 'Start of Day Report', description: 'Daily morning health and safety check' },
         { id: 'end-of-day', name: 'End of Day Report', description: 'Daily evening status and incident report' },
@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
         { id: 'incident-report', name: 'Incident Report', description: 'Incident documentation and safety compliance reporting' },
         { id: 'quick-incident-report', name: 'Quick Incident Report', description: 'Quick incident documentation with basic details' },
         { id: 'near-miss-report', name: 'Near Miss Report', description: 'Document near miss incidents and potential hazards for safety analysis' },
+        { id: 'vehicle-inspection', name: 'Vehicle Inspection', description: 'Daily vehicle inspection weekly report for equipment safety' },
         { id: 'timesheet', name: 'Timesheet', description: 'Time tracking and job details' }
       ],
       lastUpdated: {
@@ -117,7 +118,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const validModules = ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'near-miss-report', 'timesheet']
+    const validModules = ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'near-miss-report', 'vehicle-inspection', 'timesheet']
     const invalidModules = enabledModules.filter(module => !validModules.includes(module))
     
     if (invalidModules.length > 0) {

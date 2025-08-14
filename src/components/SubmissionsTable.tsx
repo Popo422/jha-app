@@ -76,6 +76,12 @@ const getFormTypeLabel = (type: string, t: any) => {
       return t('forms.jobHazardAnalysis');
     case "incident-report":
       return t('forms.incidentReport');
+    case "quick-incident-report":
+      return t('forms.quickIncidentReport');
+    case "near-miss-report":
+      return t('forms.nearMissReport');
+    case "vehicle-inspection":
+      return 'Vehicle Inspection';
     default:
       return type;
   }
@@ -91,6 +97,12 @@ const getFormTypeBadgeVariant = (type: string) => {
       return "secondary";
     case "incident-report":
       return "outline";
+    case "quick-incident-report":
+      return "outline";
+    case "near-miss-report":
+      return "outline";
+    case "vehicle-inspection":
+      return "outline";
     default:
       return "outline";
   }
@@ -101,6 +113,9 @@ const getFormTypeOptions = (t: any) => [
   { value: "start-of-day", label: t('forms.startOfDayReport') },
   { value: "job-hazard-analysis", label: t('forms.jobHazardAnalysis') },
   { value: "incident-report", label: t('forms.incidentReport') },
+  { value: "quick-incident-report", label: t('forms.quickIncidentReport') },
+  { value: "near-miss-report", label: t('forms.nearMissReport') },
+  { value: "vehicle-inspection", label: 'Vehicle Inspection' },
 ];
 
 export function SubmissionsTable({ 

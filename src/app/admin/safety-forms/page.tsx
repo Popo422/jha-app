@@ -217,6 +217,8 @@ export default function SafetyFormsPage() {
         return t('forms.quickIncidentReport');
       case 'near-miss-report':
         return t('forms.nearMissReport');
+      case 'vehicle-inspection':
+        return 'Vehicle Inspection';
       default:
         return type;
     }
@@ -236,6 +238,8 @@ export default function SafetyFormsPage() {
         return 'bg-pink-100 text-pink-800';
       case 'near-miss-report':
         return 'bg-yellow-100 text-yellow-800';
+      case 'vehicle-inspection':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -257,6 +261,12 @@ export default function SafetyFormsPage() {
     // For near-miss reports, redirect to the wizard edit page
     if (submission.submissionType === 'near-miss-report') {
       router.push(`/admin/near-miss-reports/${submission.id}/edit`);
+      return;
+    }
+    
+    // For vehicle inspections, redirect to the vehicle inspection edit page
+    if (submission.submissionType === 'vehicle-inspection') {
+      router.push(`/admin/vehicle-inspections/${submission.id}/edit`);
       return;
     }
     
@@ -381,6 +391,9 @@ export default function SafetyFormsPage() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'near-miss-report' }))}>
               {t('forms.nearMissReport')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'vehicle-inspection' }))}>
+              Vehicle Inspection
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
