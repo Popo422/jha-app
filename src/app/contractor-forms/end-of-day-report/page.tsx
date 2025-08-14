@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import SignatureCanvas from "react-signature-canvas";
+import SignatureModal from "@/components/SignatureModal";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
@@ -61,7 +61,6 @@ export default function EndOfDayReportPage() {
     signature: "",
   });
 
-  const signatureRef = useRef<SignatureCanvas>(null);
 
   const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
   const router = useRouter();
@@ -98,24 +97,11 @@ export default function EndOfDayReportPage() {
     }));
   };
 
-  const handleSignatureClear = () => {
-    if (signatureRef.current) {
-      signatureRef.current.clear();
-      setFormData((prev) => ({
-        ...prev,
-        signature: "",
-      }));
-    }
-  };
-
-  const handleSignatureEnd = () => {
-    if (signatureRef.current) {
-      const signatureData = signatureRef.current.toDataURL();
-      setFormData((prev) => ({
-        ...prev,
-        signature: signatureData,
-      }));
-    }
+  const handleSignatureChange = (signature: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      signature,
+    }));
   };
 
   // Reset form and redirect on successful submission
@@ -142,9 +128,6 @@ export default function EndOfDayReportPage() {
         attachments: [],
         signature: "",
       });
-      if (signatureRef.current) {
-        signatureRef.current.clear();
-      }
     }
   }, [isSuccess, contractor]);
 
@@ -563,32 +546,15 @@ export default function EndOfDayReportPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label>{t('adminEdit.employeeSignature')}:</Label>
-                      <div className="border border-gray-300 rounded-lg p-2 bg-white">
-                        <SignatureCanvas
-                          ref={signatureRef}
-                          canvasProps={{
-                            width: 400,
-                            height: 200,
-                            className: "signature-canvas w-full max-w-md mx-auto border rounded"
-                          }}
-                          onEnd={handleSignatureEnd}
-                        />
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleSignatureClear}
-                          className="text-sm"
-                        >
-                          {t('forms.clearSignature')}
-                        </Button>
-                      </div>
-                      {!formData.signature && (
-                        <p className="text-sm text-red-600">{t('adminEdit.employeeSignature')} is required.</p>
-                      )}
+                      <SignatureModal
+                        signature={formData.signature}
+                        onSignatureChange={handleSignatureChange}
+                        signerName={formData.completedBy || 'Signature'}
+                        modalTitle={`${t('forms.endOfDayReport')} - ${t('forms.digitalSignature')}`}
+                        modalDescription={t('adminEdit.employeeSignature')}
+                        signatureLabel={`${t('adminEdit.employeeSignature')}:`}
+                        required
+                      />
                     </div>
                   </CardContent>
                 </Card>

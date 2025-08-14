@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import SignatureCanvas from "react-signature-canvas";
+import SignatureModal from "@/components/SignatureModal";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
@@ -139,7 +139,6 @@ export default function AdminEditVehicleInspectionPage() {
   const params = useParams();
   const submissionId = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
   const { showToast } = useToast();
-  const signatureRef = useRef<SignatureCanvas>(null);
   
   const { data: submission, isLoading: isLoadingSubmission } = useGetSubmissionQuery(submissionId);
   const [updateSubmission, { isLoading: isUpdating }] = useUpdateSubmissionMutation();
@@ -248,18 +247,8 @@ export default function AdminEditVehicleInspectionPage() {
     }));
   }, []);
 
-  const handleSignatureClear = useCallback(() => {
-    if (signatureRef.current) {
-      signatureRef.current.clear();
-      setFormData(prev => ({ ...prev, signature: "" }));
-    }
-  }, []);
-
-  const handleSignatureEnd = useCallback(() => {
-    if (signatureRef.current) {
-      const signatureData = signatureRef.current.toDataURL();
-      setFormData(prev => ({ ...prev, signature: signatureData }));
-    }
+  const handleSignatureChange = useCallback((signature: string) => {
+    setFormData(prev => ({ ...prev, signature }));
   }, []);
 
   const needsComment = (condition: string) => {
@@ -560,53 +549,16 @@ export default function AdminEditVehicleInspectionPage() {
                   <CardHeader>
                     <CardTitle className="text-md md:text-xl">Digital Signature</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Please sign below to confirm this inspection:</Label>
-                      {formData.signature && formData.signature.startsWith('http') ? (
-                        <div className="space-y-2">
-                          <p className="text-sm text-gray-600">Current signature:</p>
-                          <img src={formData.signature} alt="Current signature" className="border rounded-lg max-w-md" />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setFormData(prev => ({ ...prev, signature: "" }))}
-                            className="text-sm"
-                          >
-                            Replace Signature
-                          </Button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="border border-gray-300 rounded-lg p-2 bg-white">
-                            <SignatureCanvas
-                              ref={signatureRef}
-                              canvasProps={{
-                                width: 400,
-                                height: 200,
-                                className: "signature-canvas w-full max-w-md mx-auto border rounded"
-                              }}
-                              onEnd={handleSignatureEnd}
-                            />
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={handleSignatureClear}
-                              className="text-sm"
-                            >
-                              Clear Signature
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                      {!formData.signature && (
-                        <p className="text-sm text-red-600">Signature is required.</p>
-                      )}
-                    </div>
+                  <CardContent>
+                    <SignatureModal
+                      signature={formData.signature}
+                      onSignatureChange={handleSignatureChange}
+                      signerName={formData.completedBy || 'Signature'}
+                      modalTitle="Vehicle Inspection Signature (Admin Edit)"
+                      modalDescription="Edit signature for this vehicle inspection"
+                      signatureLabel="Please sign below to confirm this inspection"
+                      required
+                    />
                   </CardContent>
                 </Card>
 

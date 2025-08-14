@@ -13,10 +13,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, Upload, X } from "lucide-react";
+import { ArrowLeft, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import SignatureCanvas from "react-signature-canvas";
+import SignatureModal from "@/components/SignatureModal";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
@@ -139,7 +139,6 @@ export default function VehicleInspectionPage() {
   const { contractor } = useAppSelector((state) => state.auth);
   const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
   const router = useRouter();
-  const signatureRef = useRef<SignatureCanvas>(null);
   
   const [formData, setFormData] = useState<VehicleInspectionFormData>({
     completedBy: contractor?.name || "",
@@ -267,9 +266,6 @@ export default function VehicleInspectionPage() {
       additionalPhotos: [],
       signature: "",
     });
-    if (signatureRef.current) {
-      signatureRef.current.clear();
-    }
   }, [contractor]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -305,18 +301,8 @@ export default function VehicleInspectionPage() {
     }));
   }, []);
 
-  const handleSignatureClear = useCallback(() => {
-    if (signatureRef.current) {
-      signatureRef.current.clear();
-      setFormData(prev => ({ ...prev, signature: "" }));
-    }
-  }, []);
-
-  const handleSignatureEnd = useCallback(() => {
-    if (signatureRef.current) {
-      const signatureData = signatureRef.current.toDataURL();
-      setFormData(prev => ({ ...prev, signature: signatureData }));
-    }
+  const handleSignatureChange = useCallback((signature: string) => {
+    setFormData(prev => ({ ...prev, signature }));
   }, []);
 
   const needsComment = (condition: string) => {
@@ -550,35 +536,16 @@ export default function VehicleInspectionPage() {
                   <CardHeader>
                     <CardTitle className="text-md md:text-xl">Digital Signature</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Please sign below to confirm this inspection:</Label>
-                      <div className="border border-gray-300 rounded-lg p-2 bg-white">
-                        <SignatureCanvas
-                          ref={signatureRef}
-                          canvasProps={{
-                            width: 400,
-                            height: 200,
-                            className: "signature-canvas w-full max-w-md mx-auto border rounded"
-                          }}
-                          onEnd={handleSignatureEnd}
-                        />
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleSignatureClear}
-                          className="text-sm"
-                        >
-                          Clear Signature
-                        </Button>
-                      </div>
-                      {!formData.signature && (
-                        <p className="text-sm text-red-600">Signature is required.</p>
-                      )}
-                    </div>
+                  <CardContent>
+                    <SignatureModal
+                      signature={formData.signature}
+                      onSignatureChange={handleSignatureChange}
+                      signerName={formData.completedBy || 'Signature'}
+                      modalTitle="Vehicle Inspection Signature"
+                      modalDescription="Sign below to confirm this vehicle inspection"
+                      signatureLabel="Please sign below to confirm this inspection"
+                      required
+                    />
                   </CardContent>
                 </Card>
 

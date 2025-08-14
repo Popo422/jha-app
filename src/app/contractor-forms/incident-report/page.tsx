@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import SignatureCanvas from "react-signature-canvas";
+import SignatureModal from "@/components/SignatureModal";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
@@ -72,7 +72,6 @@ export default function IncidentReportPage() {
   const { contractor } = useAppSelector((state) => state.auth);
   const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
   const router = useRouter();
-  const signatureRef = useRef<SignatureCanvas>(null);
   
   const [formData, setFormData] = useState<IncidentReportFormData>({
     completedBy: contractor?.name || "",
@@ -152,9 +151,6 @@ export default function IncidentReportPage() {
       
       photos: [],
     });
-    if (signatureRef.current) {
-      signatureRef.current.clear();
-    }
   }, [contractor]);
 
   useEffect(() => {
@@ -196,24 +192,11 @@ export default function IncidentReportPage() {
     }));
   }, []);
 
-  const handleSignatureClear = useCallback(() => {
-    if (signatureRef.current) {
-      signatureRef.current.clear();
-      setFormData((prev) => ({
-        ...prev,
-        signature: "",
-      }));
-    }
-  }, []);
-
-  const handleSignatureEnd = useCallback(() => {
-    if (signatureRef.current) {
-      const signatureData = signatureRef.current.toDataURL();
-      setFormData((prev) => ({
-        ...prev,
-        signature: signatureData,
-      }));
-    }
+  const handleSignatureChange = useCallback((signature: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      signature,
+    }));
   }, []);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -793,32 +776,15 @@ export default function IncidentReportPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>{t('forms.signature')}</Label>
-                      <div className="border border-gray-300 rounded-lg p-2 bg-white">
-                        <SignatureCanvas
-                          ref={signatureRef}
-                          canvasProps={{
-                            width: 400,
-                            height: 200,
-                            className: "signature-canvas w-full max-w-md mx-auto border rounded"
-                          }}
-                          onEnd={handleSignatureEnd}
-                        />
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleSignatureClear}
-                          className="text-sm"
-                        >
-                          {t('forms.clearSignature')}
-                        </Button>
-                      </div>
-                      {!formData.signature && (
-                        <p className="text-sm text-red-600">{t('forms.signatureRequired')}</p>
-                      )}
+                      <SignatureModal
+                        signature={formData.signature}
+                        onSignatureChange={handleSignatureChange}
+                        signerName={formData.completedBy || 'Signature'}
+                        modalTitle={`${t('forms.incidentReport')} - ${t('forms.digitalSignature')}`}
+                        modalDescription={t('forms.signature')}
+                        signatureLabel={t('forms.signature')}
+                        required
+                      />
                     </div>
                   </CardContent>
                 </Card>
