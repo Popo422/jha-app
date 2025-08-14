@@ -396,18 +396,20 @@ export default function VehicleInspectionPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-base font-semibold">{t('vehicleInspection.equipmentType')} *</Label>
-                    <Select value={formData.equipmentType} onValueChange={(value) => setFormData(prev => ({ ...prev, equipmentType: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('vehicleInspection.selectEquipmentType')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {EQUIPMENT_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {t(`equipmentTypes.${type}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="relative">
+                      <Select value={formData.equipmentType} onValueChange={(value) => setFormData(prev => ({ ...prev, equipmentType: value }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('vehicleInspection.selectEquipmentType')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EQUIPMENT_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {t(`equipmentTypes.${type}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="unitNumber">{t('vehicleInspection.unitNumber')}</Label>
@@ -441,7 +443,7 @@ export default function VehicleInspectionPage() {
                             <RadioGroup
                               value={conditionValue}
                               onValueChange={(value) => handleConditionChange(item, value)}
-                              className="flex flex-wrap gap-4"
+                              className="relative flex flex-wrap gap-4"
                             >
                               {CONDITIONS.map((condition) => (
                                 <div key={condition} className="flex items-center space-x-2">

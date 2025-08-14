@@ -315,8 +315,8 @@ export default function AdminEditVehicleInspectionPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="p-4 sm:p-8 overflow-x-hidden">
+      <div className="max-w-4xl mx-auto space-y-6 overflow-x-hidden">
             <div className="mb-6">
               <Button variant="ghost" asChild className="mb-4">
                 <Link href="/admin/safety-forms">
@@ -330,21 +330,23 @@ export default function AdminEditVehicleInspectionPage() {
               </p>
             </div>
 
-            <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 w-full overflow-hidden">
               <CardHeader>
                 <CardTitle className="text-foreground">Inspection Details</CardTitle>
               </CardHeader>
-              <CardContent className="p-4">
-                <form onSubmit={handleSave} className="space-y-6">
+              <CardContent className="p-4 w-full overflow-x-hidden">
+                <form onSubmit={handleSave} className="space-y-6 w-full max-w-none overflow-x-hidden">
                 {/* Basic Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                   <div className="space-y-2">
-                    <ContractorSelect
-                      label={t('forms.completedBy')}
-                      value={formData.completedBy}
-                      onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
-                      required
-                    />
+                    <div className="relative">
+                      <ContractorSelect
+                        label={t('forms.completedBy')}
+                        value={formData.completedBy}
+                        onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
+                        required
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="date">{t('formFields.date')}</Label>
@@ -358,50 +360,58 @@ export default function AdminEditVehicleInspectionPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <ContractorSelect
-                      label={t('formFields.supervisor')}
-                      value={formData.supervisor}
-                      onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
-                    />
+                    <div className="relative">
+                      <ContractorSelect
+                        label={t('formFields.supervisor')}
+                        value={formData.supervisor}
+                        onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <ProjectSelect
-                      label={t('formFields.projectName')}
-                      value={formData.projectName}
-                      onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
-                      required
-                    />
+                    <div className="relative">
+                      <ProjectSelect
+                        label={t('formFields.projectName')}
+                        value={formData.projectName}
+                        onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
+                        required
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <SubcontractorSelect
-                      label={t('forms.companySubcontractor')}
-                      value={formData.company}
-                      onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
-                    />
+                    <div className="relative">
+                      <SubcontractorSelect
+                        label={t('forms.companySubcontractor')}
+                        value={formData.company}
+                        onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
+                      />
+                    </div>
                   </div>
                 </div>
 
 
                 {/* Equipment Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                   <div className="space-y-2">
                     <Label className="text-base font-semibold">{t('vehicleInspection.equipmentType')} *</Label>
-                    <Select 
-                      value={formData.equipmentType || undefined} 
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, equipmentType: value }))}
-                      key={formData.equipmentType} // Force re-render when value changes
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('vehicleInspection.selectEquipmentType')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {EQUIPMENT_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {t(`equipmentTypes.${type}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="relative">
+                      <Select 
+                        value={formData.equipmentType || undefined} 
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, equipmentType: value }))}
+                        key={formData.equipmentType} // Force re-render when value changes
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('vehicleInspection.selectEquipmentType')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EQUIPMENT_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {t(`equipmentTypes.${type}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="unitNumber">{t('vehicleInspection.unitNumber')}</Label>
@@ -435,7 +445,7 @@ export default function AdminEditVehicleInspectionPage() {
                             <RadioGroup
                               value={conditionValue}
                               onValueChange={(value) => handleConditionChange(item, value)}
-                              className="flex flex-wrap gap-4"
+                              className="relative space-y-2"
                             >
                               {CONDITIONS.map((condition) => (
                                 <div key={condition} className="flex items-center space-x-2">
@@ -496,7 +506,7 @@ export default function AdminEditVehicleInspectionPage() {
                       {formData.uploadedFiles && formData.uploadedFiles.length > 0 && (
                         <div className="mt-2">
                           <p className="text-sm text-gray-600 mb-2">Existing Files:</p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
                             {formData.uploadedFiles.map((file, index) => (
                               <div key={index} className="p-2 border border-gray-200 rounded-lg">
                                 <a 
