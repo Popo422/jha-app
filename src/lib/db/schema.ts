@@ -102,7 +102,7 @@ export const subcontractors = pgTable('subcontractors', {
   name: text('name').notNull(),
   contractAmount: numeric('contract_amount', { precision: 12, scale: 2 }), // Optional budget/contract amount
   companyId: uuid('company_id').notNull(),
-  enabledModules: jsonb('enabled_modules').$type<string[]>().default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'near-miss-report', 'vehicle-inspection', 'timesheet']), // Available modules for this subcontractor
+  enabledModules: jsonb('enabled_modules').$type<string[]>().default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'timesheet']), // Available modules for this subcontractor
   modulesLastUpdatedAt: timestamp('modules_last_updated_at'),
   modulesLastUpdatedBy: text('modules_last_updated_by'), // Admin name who last updated modules
   modulesLastUpdatedByUserId: text('modules_last_updated_by_user_id'), // Admin user ID for reference
