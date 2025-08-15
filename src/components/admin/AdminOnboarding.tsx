@@ -1269,13 +1269,13 @@ export default function AdminOnboarding() {
                 <Button 
                   variant="outline" 
                   onClick={() => {
-                    if (projectLimitData?.currentCount >= projectLimitData?.limit) {
+                    if (projectLimitData?.currentCount != null && projectLimitData?.limit != null && projectLimitData.currentCount >= projectLimitData.limit) {
                       return;
                     }
                     setIsProjectManualAddModalOpen(true);
                   }}
                   size="sm"
-                  disabled={projectLimitData?.currentCount >= projectLimitData?.limit}
+                  disabled={projectLimitData?.currentCount != null && projectLimitData?.limit != null && projectLimitData.currentCount >= projectLimitData.limit}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add More
@@ -1283,13 +1283,13 @@ export default function AdminOnboarding() {
                 <Button 
                   variant="outline" 
                   onClick={() => {
-                    if (projectLimitData?.currentCount >= projectLimitData?.limit) {
+                    if (projectLimitData?.currentCount != null && projectLimitData?.limit != null && projectLimitData.currentCount >= projectLimitData.limit) {
                       return;
                     }
                     setIsProjectBulkUploadModalOpen(true);
                   }}
                   size="sm"
-                  disabled={projectLimitData?.currentCount >= projectLimitData?.limit}
+                  disabled={projectLimitData?.currentCount != null && projectLimitData?.limit != null && projectLimitData.currentCount >= projectLimitData.limit}
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   Bulk Upload
@@ -1518,12 +1518,12 @@ export default function AdminOnboarding() {
           <div className="flex-1">
             <Card
               className={`border-2 border-dashed transition-colors h-full ${
-                projectLimitData?.currentCount >= projectLimitData?.limit
+                projectLimitData?.currentCount != null && projectLimitData?.limit != null && projectLimitData.currentCount >= projectLimitData.limit
                   ? 'border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
                   : 'border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600 cursor-pointer'
               }`}
               onClick={() => {
-                if (projectLimitData?.currentCount >= projectLimitData?.limit) {
+                if (projectLimitData?.currentCount != null && projectLimitData?.limit != null && projectLimitData.currentCount >= projectLimitData.limit) {
                   return;
                 }
                 setIsProjectManualAddModalOpen(true);
@@ -1548,12 +1548,12 @@ export default function AdminOnboarding() {
           <div className="flex-1">
             <Card
               className={`border-2 border-dashed transition-colors h-full ${
-                projectLimitData?.currentCount >= projectLimitData?.limit
+                projectLimitData?.currentCount != null && projectLimitData?.limit != null && projectLimitData.currentCount >= projectLimitData.limit
                   ? 'border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
                   : 'border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600 cursor-pointer'
               }`}
               onClick={() => {
-                if (projectLimitData?.currentCount >= projectLimitData?.limit) {
+                if (projectLimitData?.currentCount != null && projectLimitData?.limit != null && projectLimitData.currentCount >= projectLimitData.limit) {
                   return;
                 }
                 setIsProjectBulkUploadModalOpen(true);
@@ -1929,13 +1929,13 @@ export default function AdminOnboarding() {
                 <Button 
                   variant="outline" 
                   onClick={() => {
-                    if (contractorLimitData?.currentCount >= contractorLimitData?.limit) {
+                    if (contractorLimitData?.currentCount != null && contractorLimitData?.limit != null && contractorLimitData.currentCount >= contractorLimitData.limit) {
                       return;
                     }
                     setIsEmployeeManualAddModalOpen(true);
                   }}
                   size="sm"
-                  disabled={contractorLimitData?.currentCount >= contractorLimitData?.limit}
+                  disabled={contractorLimitData?.currentCount != null && contractorLimitData?.limit != null && contractorLimitData.currentCount >= contractorLimitData.limit}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add More
@@ -1943,13 +1943,13 @@ export default function AdminOnboarding() {
                 <Button 
                   variant="outline" 
                   onClick={() => {
-                    if (contractorLimitData?.currentCount >= contractorLimitData?.limit) {
+                    if (contractorLimitData?.currentCount != null && contractorLimitData?.limit != null && contractorLimitData.currentCount >= contractorLimitData.limit) {
                       return;
                     }
                     setIsEmployeeBulkUploadModalOpen(true);
                   }}
                   size="sm"
-                  disabled={contractorLimitData?.currentCount >= contractorLimitData?.limit}
+                  disabled={contractorLimitData?.currentCount != null && contractorLimitData?.limit != null && contractorLimitData.currentCount >= contractorLimitData.limit}
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   Bulk Upload
@@ -2232,12 +2232,12 @@ export default function AdminOnboarding() {
           <div className="flex-1">
             <Card
               className={`border-2 border-dashed transition-colors h-full ${
-                contractorLimitData?.currentCount >= contractorLimitData?.limit
+                contractorLimitData?.currentCount != null && contractorLimitData?.limit != null && contractorLimitData.currentCount >= contractorLimitData.limit
                   ? 'border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
                   : 'border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600 cursor-pointer'
               }`}
               onClick={() => {
-                if (contractorLimitData?.currentCount >= contractorLimitData?.limit) {
+                if (contractorLimitData?.currentCount != null && contractorLimitData?.limit != null && contractorLimitData.currentCount >= contractorLimitData.limit) {
                   return;
                 }
                 setIsEmployeeManualAddModalOpen(true);
@@ -2262,12 +2262,12 @@ export default function AdminOnboarding() {
           <div className="flex-1">
             <Card
               className={`border-2 border-dashed transition-colors h-full ${
-                contractorLimitData?.currentCount >= contractorLimitData?.limit
+                contractorLimitData?.currentCount != null && contractorLimitData?.limit != null && contractorLimitData.currentCount >= contractorLimitData.limit
                   ? 'border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
                   : 'border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600 cursor-pointer'
               }`}
               onClick={() => {
-                if (contractorLimitData?.currentCount >= contractorLimitData?.limit) {
+                if (contractorLimitData?.currentCount != null && contractorLimitData?.limit != null && contractorLimitData.currentCount >= contractorLimitData.limit) {
                   return;
                 }
                 setIsEmployeeBulkUploadModalOpen(true);

@@ -422,7 +422,7 @@ export function ProjectsManagement() {
               )}
               <Button 
                 onClick={handleAdd}
-                disabled={limitData?.currentCount >= limitData?.limit}
+                disabled={limitData?.currentCount != null && limitData?.limit != null && limitData.currentCount >= limitData.limit}
                 className="order-1 sm:order-2"
               >
                 <Plus className="mr-2 h-4 w-4" />
