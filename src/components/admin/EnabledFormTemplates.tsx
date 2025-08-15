@@ -10,10 +10,12 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Toast, useToast } from "@/components/ui/toast";
-import { FileText, Users, Check, AlertCircle, Plus, Save, Search } from "lucide-react";
+import { FileText, Users, Check, AlertCircle, Plus, Save, Search, Edit2, Trash2, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { ModulesResponse, SubcontractorInfo } from "@/lib/features/modules/modulesApi";
-import { useGetFormTemplatesQuery, useCreateFormTemplateMutation } from "@/lib/features/form-templates/formTemplatesApi";
+import { useGetFormTemplatesQuery, useCreateFormTemplateMutation, useUpdateFormTemplateMutation, useDeleteFormTemplateMutation } from "@/lib/features/form-templates/formTemplatesApi";
 
 interface EnabledFormTemplatesProps {
   subcontractorsData?: ModulesResponse;
@@ -25,7 +27,7 @@ interface FormTemplate {
   id: string;
   name: string;
   modules: string[];
-  description: string;
+  description: string | null;
 }
 
 const defaultTemplates: FormTemplate[] = [
@@ -50,8 +52,10 @@ export function EnabledFormTemplates({ subcontractorsData, isLoading, onApplyTem
   const [selectedSubcontractors, setSelectedSubcontractors] = useState<string[]>([]);
   const [isApplying, setIsApplying] = useState(false);
   
-  // Custom template creation
+  // Custom template creation/editing
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateDescription, setNewTemplateDescription] = useState('');
   const [newTemplateModules, setNewTemplateModules] = useState<string[]>([]);
@@ -62,6 +66,8 @@ export function EnabledFormTemplates({ subcontractorsData, isLoading, onApplyTem
   // API hooks
   const { data: customTemplatesData, isLoading: isLoadingTemplates } = useGetFormTemplatesQuery();
   const [createTemplate, { isLoading: isCreatingTemplate }] = useCreateFormTemplateMutation();
+  const [updateTemplate, { isLoading: isUpdatingTemplate }] = useUpdateFormTemplateMutation();
+  const [deleteTemplate, { isLoading: isDeletingTemplate }] = useDeleteFormTemplateMutation();
 
   const handleSubcontractorToggle = useCallback((subcontractorId: string, checked: boolean) => {
     setSelectedSubcontractors(prev => 
@@ -97,7 +103,7 @@ export function EnabledFormTemplates({ subcontractorsData, isLoading, onApplyTem
       id: t.id,
       name: t.name,
       modules: t.modules,
-      description: t.description || ''
+      description: t.description
     })) || [];
     
     return [...defaultTemplates, ...customTemplates];
@@ -110,6 +116,13 @@ export function EnabledFormTemplates({ subcontractorsData, isLoading, onApplyTem
         ? [...prev, moduleId]
         : prev.filter(id => id !== moduleId)
     );
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setNewTemplateName('');
+    setNewTemplateDescription('');
+    setNewTemplateModules([]);
+    setEditingTemplate(null);
   }, []);
 
   const handleCreateTemplate = useCallback(async () => {
@@ -127,15 +140,54 @@ export function EnabledFormTemplates({ subcontractorsData, isLoading, onApplyTem
 
       // Reset form and close dialog
       const templateName = newTemplateName.trim();
-      setNewTemplateName('');
-      setNewTemplateDescription('');
-      setNewTemplateModules([]);
+      resetForm();
       setIsCreateDialogOpen(false);
       showToast(`Custom template "${templateName}" created successfully`, 'success');
     } catch (error: any) {
       showToast(error?.data?.error || 'Failed to create template', 'error');
     }
-  }, [newTemplateName, newTemplateDescription, newTemplateModules, createTemplate, showToast]);
+  }, [newTemplateName, newTemplateDescription, newTemplateModules, createTemplate, showToast, resetForm]);
+
+  const handleEditTemplate = useCallback((template: FormTemplate) => {
+    setEditingTemplate(template.id);
+    setNewTemplateName(template.name);
+    setNewTemplateDescription(template.description || '');
+    setNewTemplateModules(template.modules);
+    setIsEditDialogOpen(true);
+  }, []);
+
+  const handleUpdateTemplate = useCallback(async () => {
+    if (!editingTemplate || !newTemplateName.trim() || newTemplateModules.length === 0) {
+      showToast('Please provide a template name and select at least one module', 'error');
+      return;
+    }
+
+    try {
+      await updateTemplate({
+        id: editingTemplate,
+        name: newTemplateName.trim(),
+        description: newTemplateDescription.trim() || undefined,
+        modules: newTemplateModules
+      }).unwrap();
+
+      // Reset form and close dialog
+      const templateName = newTemplateName.trim();
+      resetForm();
+      setIsEditDialogOpen(false);
+      showToast(`Template "${templateName}" updated successfully`, 'success');
+    } catch (error: any) {
+      showToast(error?.data?.error || 'Failed to update template', 'error');
+    }
+  }, [editingTemplate, newTemplateName, newTemplateDescription, newTemplateModules, updateTemplate, showToast, resetForm]);
+
+  const handleDeleteTemplate = useCallback(async (templateId: string, templateName: string) => {
+    try {
+      await deleteTemplate(templateId).unwrap();
+      showToast(`Template "${templateName}" deleted successfully`, 'success');
+    } catch (error: any) {
+      showToast(error?.data?.error || 'Failed to delete template', 'error');
+    }
+  }, [deleteTemplate, showToast]);
 
   const handleApplyTemplate = useCallback(async () => {
     if (!selectedTemplate || selectedSubcontractors.length === 0) {
@@ -288,19 +340,146 @@ export function EnabledFormTemplates({ subcontractorsData, isLoading, onApplyTem
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Edit Template Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+              setIsEditDialogOpen(open);
+              if (!open) resetForm();
+            }}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Edit Template</DialogTitle>
+                  <DialogDescription>
+                    Update your custom template configuration.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Template Name</label>
+                    <Input
+                      value={newTemplateName}
+                      onChange={(e) => setNewTemplateName(e.target.value)}
+                      placeholder="e.g., Field Workers, Office Staff..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Description (Optional)</label>
+                    <Textarea
+                      value={newTemplateDescription}
+                      onChange={(e) => setNewTemplateDescription(e.target.value)}
+                      placeholder="Brief description of when to use this template..."
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Select Modules</label>
+                    <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2">
+                      {availableModules.map((module) => (
+                        <div key={module.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`edit-module-${module.id}`}
+                            checked={newTemplateModules.includes(module.id)}
+                            onCheckedChange={(checked) => 
+                              handleModuleToggle(module.id, !!checked)
+                            }
+                          />
+                          <label 
+                            htmlFor={`edit-module-${module.id}`}
+                            className="text-sm cursor-pointer flex-1"
+                          >
+                            {module.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={handleUpdateTemplate}
+                    disabled={!newTemplateName.trim() || newTemplateModules.length === 0 || isUpdatingTemplate}
+                    className="w-full"
+                  >
+                    {isUpdatingTemplate ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Update Template
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
           
-          <SearchableSelect
-            options={allTemplates.map(template => ({
-              value: template.id,
-              label: template.name,
-            }))}
-            value={selectedTemplate}
-            onValueChange={setSelectedTemplate}
-            placeholder="Choose a form template..."
-            searchPlaceholder="Search templates..."
-            emptyText="No templates found."
-          />
+          <div className="space-y-2">
+            <SearchableSelect
+              options={allTemplates.map(template => ({
+                value: template.id,
+                label: template.name,
+              }))}
+              value={selectedTemplate}
+              onValueChange={setSelectedTemplate}
+              placeholder="Choose a form template..."
+              searchPlaceholder="Search templates..."
+              emptyText="No templates found."
+            />
+            
+            {/* Template Management */}
+            {customTemplatesData?.templates && customTemplatesData.templates.length > 0 && (
+              <div className="mt-3">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Manage Custom Templates</h4>
+                <div className="space-y-1 max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2">
+                  {customTemplatesData.templates.map((template) => (
+                    <div key={template.id} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
+                      <span className="text-sm font-medium">{template.name}</span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => handleEditTemplate(template)}
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {`Are you sure you want to delete "${template.name}"? This action cannot be undone.`}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteTemplate(template.id, template.name)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           
           {/* Template Preview */}
           {selectedTemplate_obj && (

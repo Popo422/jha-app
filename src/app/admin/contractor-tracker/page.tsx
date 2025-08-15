@@ -57,7 +57,7 @@ export default function ContractTrackerPage() {
     pageSize: 10
   });
 
-  const { data: modulesData } = useGetModulesQuery();
+  const { data: modulesData } = useGetModulesQuery({});
   const { data: subcontractorsData } = useGetSubcontractorsQuery({ pageSize: 1000, authType: 'admin' });
   
   const { data: contractorsData, isLoading: contractorsLoading } = useGetContractorsQuery({

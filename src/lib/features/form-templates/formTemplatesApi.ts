@@ -30,6 +30,24 @@ export interface CreateTemplateResponse {
   message: string
 }
 
+export interface UpdateTemplateRequest {
+  id: string
+  name: string
+  description?: string
+  modules: string[]
+}
+
+export interface UpdateTemplateResponse {
+  success: boolean
+  template: FormTemplate
+  message: string
+}
+
+export interface DeleteTemplateResponse {
+  success: boolean
+  message: string
+}
+
 export const formTemplatesApi = createApi({
   reducerPath: 'formTemplatesApi',
   baseQuery: fetchBaseQuery({
@@ -63,10 +81,27 @@ export const formTemplatesApi = createApi({
       }),
       invalidatesTags: ['FormTemplates'],
     }),
+    updateFormTemplate: builder.mutation<UpdateTemplateResponse, UpdateTemplateRequest>({
+      query: ({ id, ...data }) => ({
+        url: `/${id}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['FormTemplates'],
+    }),
+    deleteFormTemplate: builder.mutation<DeleteTemplateResponse, string>({
+      query: (id) => ({
+        url: `/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['FormTemplates'],
+    }),
   }),
 })
 
 export const {
   useGetFormTemplatesQuery,
   useCreateFormTemplateMutation,
+  useUpdateFormTemplateMutation,
+  useDeleteFormTemplateMutation,
 } = formTemplatesApi
