@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Settings, AlertCircle, Link, Copy, Download, QrCode } from "lucide-react";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Check, Settings, AlertCircle, Link, Copy, Download, QrCode, Building2, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,14 +22,19 @@ import type { ModulesResponse } from "@/lib/features/modules/modulesApi";
 
 interface ModuleConfigurationProps {
   modulesData?: ModulesResponse;
+  subcontractorsData?: ModulesResponse;
   isLoading: boolean;
   onSuccess: () => void;
+  onSubcontractorSelect?: (subcontractorId: string) => void;
+  adminCompanyName?: string;
 }
 
-export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: ModuleConfigurationProps) {
+export function ModuleConfiguration({ modulesData, subcontractorsData, isLoading, onSuccess, onSubcontractorSelect, adminCompanyName }: ModuleConfigurationProps) {
   const { t } = useTranslation('common');
   const [updateModules, { isLoading: isUpdating }] = useUpdateModulesMutation();
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [selectedSubcontractor, setSelectedSubcontractor] = useState<string | null>(null);
+  const [previousSubcontractor, setPreviousSubcontractor] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -43,6 +49,24 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
       setSelectedModules(modulesData.enabledModules);
     }
   }, [modulesData]);
+
+  // Auto-select default subcontractor based on admin's company name
+  useEffect(() => {
+    if (subcontractorsData?.subcontractors && !selectedSubcontractor && adminCompanyName) {
+      // Find subcontractor that matches admin's company name
+      const matchingSubcontractor = subcontractorsData.subcontractors.find(
+        sub => sub.name === adminCompanyName
+      );
+      
+      // If found, select it; otherwise select the first one
+      const defaultSubcontractor = matchingSubcontractor || subcontractorsData.subcontractors[0];
+      
+      if (defaultSubcontractor) {
+        setSelectedSubcontractor(defaultSubcontractor.id);
+        onSubcontractorSelect?.(defaultSubcontractor.id);
+      }
+    }
+  }, [subcontractorsData, selectedSubcontractor, onSubcontractorSelect, adminCompanyName]);
 
   const handleModuleToggle = useCallback((moduleId: string, checked: boolean) => {
     const newSelected = checked 
@@ -61,8 +85,16 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
   }, [selectedModules, modulesData?.enabledModules]);
 
   const handleSave = useCallback(async () => {
+    if (!selectedSubcontractor) {
+      setErrorMessage('Please select a subcontractor first');
+      return;
+    }
+    
     try {
-      const result = await updateModules({ enabledModules: selectedModules }).unwrap();
+      const result = await updateModules({ 
+        enabledModules: selectedModules,
+        subcontractorId: selectedSubcontractor
+      }).unwrap();
       setSuccessMessage(result.message || t('admin.moduleConfigurationUpdated'));
       setErrorMessage('');
       setHasChanges(false);
@@ -71,7 +103,7 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
       setErrorMessage(error?.data?.error || t('admin.failedToUpdateModuleConfiguration'));
       setSuccessMessage('');
     }
-  }, [selectedModules, updateModules, onSuccess]);
+  }, [selectedModules, selectedSubcontractor, updateModules, onSuccess]);
 
   const handleReset = useCallback(() => {
     if (modulesData?.enabledModules) {
@@ -206,10 +238,10 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
       <CardHeader>
         <CardTitle className="flex items-center">
           <Settings className="mr-2 h-5 w-5" />
-{t('admin.moduleConfiguration')}
+          {t('admin.moduleConfiguration')}
         </CardTitle>
         <CardDescription>
-{t('admin.selectModulesDescription')}
+          {t('admin.selectModulesDescription')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -229,11 +261,64 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
           </div>
         )}
 
+        {/* Subcontractor Selection */}
+        {subcontractorsData?.subcontractors && (
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+              <Building2 className="h-4 w-4 mr-2" />
+              Select Subcontractor
+            </label>
+            <SearchableSelect
+              options={subcontractorsData.subcontractors.map((sub) => ({
+                value: sub.id,
+                label: sub.name,
+              }))}
+              value={selectedSubcontractor || ''}
+              onValueChange={(value) => {
+                setPreviousSubcontractor(selectedSubcontractor);
+                setSelectedSubcontractor(value);
+                onSubcontractorSelect?.(value);
+              }}
+              placeholder="Choose a subcontractor to configure modules..."
+              searchPlaceholder="Search subcontractors..."
+              emptyText="No subcontractors found."
+            />
+          </div>
+        )}
+
         {/* Module Selection */}
-        <div className="space-y-4">
-          {modulesData?.availableModules?.map((module) => {
-            const isChecked = selectedModules.includes(module.id);
-            const isCopied = copiedModule === module.id;
+        {modulesData?.subcontractor && (
+          <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+            <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+              Configuring modules for: {modulesData.subcontractor.name}
+            </h4>
+          </div>
+        )}
+        {/* Loading state when switching subcontractors */}
+        {selectedSubcontractor && (isLoading || (previousSubcontractor !== selectedSubcontractor && modulesData?.subcontractor?.id !== selectedSubcontractor)) && (
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+              <Skeleton className="h-4 w-48" />
+            </div>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="flex items-start space-x-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <Skeleton className="h-5 w-5 mt-0.5" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+                <Skeleton className="h-8 w-20" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Module Selection List - only show when data is loaded and matches selected subcontractor */}
+        {selectedSubcontractor && modulesData?.subcontractor?.id === selectedSubcontractor && !isLoading && (
+          <div className="space-y-4">
+            {modulesData?.availableModules?.map((module) => {
+              const isChecked = selectedModules.includes(module.id);
+              const isCopied = copiedModule === module.id;
             return (
               <div key={module.id} className="flex items-start space-x-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
                 <Checkbox
@@ -265,7 +350,7 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
                           onClick={() => handleOpenModal(module.id)}
                         >
                           <Link className="h-3 w-3 mr-1" />
-{t('admin.generateLink')}
+                              {t('admin.generateLink')}
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-md">
@@ -305,7 +390,7 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
                               disabled={!qrCodeDataURL || isGeneratingQR}
                             >
                               <Download className="h-4 w-4 mr-2" />
-{t('admin.downloadQRCode')}
+                              {t('admin.downloadQRCode')}
                             </Button>
                           </div>
 
@@ -326,12 +411,12 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
                                 {copiedModule === selectedModuleForLink ? (
                                   <>
                                     <Check className="h-4 w-4 mr-2" />
-{t('admin.copied')}
+                                    {t('admin.copied')}
                                   </>
                                 ) : (
                                   <>
                                     <Copy className="h-4 w-4 mr-2" />
-{t('admin.copyLink')}
+                                    {t('admin.copyLink')}
                                   </>
                                 )}
                               </Button>
@@ -345,16 +430,18 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
 
         {/* Actions */}
+        {(modulesData?.enabledModules !== undefined) && (
         <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <Button 
             onClick={handleSave} 
             disabled={!hasChanges || isUpdating || selectedModules.length === 0}
             className="flex-1 sm:flex-none"
           >
-{isUpdating ? t('common.saving') : t('common.saveChanges')}
+            {isUpdating ? t('common.saving') : t('common.saveChanges')}
           </Button>
           <Button 
             variant="outline" 
@@ -362,18 +449,18 @@ export function ModuleConfiguration({ modulesData, isLoading, onSuccess }: Modul
             disabled={!hasChanges || isUpdating}
             className="flex-1 sm:flex-none"
           >
-{t('admin.reset')}
+            {t('admin.reset')}
           </Button>
-        </div>
-
         {/* Warning */}
         {selectedModules.length === 0 && (
           <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800 flex items-start">
             <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
             <div>
-{t('admin.moduleSelectionWarning')}
+              {t('admin.moduleSelectionWarning')}
             </div>
           </div>
+        )}
+        </div>
         )}
       </CardContent>
     </Card>
