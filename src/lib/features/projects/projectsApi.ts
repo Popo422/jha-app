@@ -66,6 +66,13 @@ export interface BulkCreateProjectsResponse {
   warnings?: string[]
 }
 
+export interface ProjectLimitResponse {
+  canAdd: boolean
+  currentCount: number
+  limit: number
+  membershipLevel: string | null
+}
+
 export const projectsApi = createApi({
   reducerPath: 'projectsApi',
   baseQuery: fetchBaseQuery({
@@ -132,6 +139,10 @@ export const projectsApi = createApi({
       }),
       invalidatesTags: ['Project'],
     }),
+    getProjectLimit: builder.query<ProjectLimitResponse, void>({
+      query: () => '/limit',
+      providesTags: ['Project'],
+    }),
   }),
 })
 
@@ -141,4 +152,5 @@ export const {
   useUpdateProjectMutation,
   useDeleteProjectMutation,
   useBulkCreateProjectsMutation,
+  useGetProjectLimitQuery,
 } = projectsApi

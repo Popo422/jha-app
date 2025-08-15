@@ -11,16 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, Download, X, Check, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import * as XLSX from 'xlsx';
 
-interface SubcontractorData {
-  name: string;
-}
-
 interface EmployeeRow {
   firstName: string;
   lastName: string;
   email: string;
   rate?: string;
-  companyName?: string;
   language?: string;
   _fileName?: string;
 }
@@ -29,14 +24,12 @@ interface EmployeeBulkUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUploadSuccess: (employees: EmployeeRow[]) => void;
-  availableSubcontractors: SubcontractorData[];
 }
 
 export function EmployeeBulkUploadModal({ 
   isOpen, 
   onClose,
-  onUploadSuccess,
-  availableSubcontractors
+  onUploadSuccess
 }: EmployeeBulkUploadModalProps) {
   const { t } = useTranslation('common');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,7 +44,6 @@ export function EmployeeBulkUploadModal({
     { field: 'lastName', label: t('admin.lastName') || 'Last Name', required: true, example: 'Smith' },
     { field: 'email', label: t('admin.email') || 'Email', required: true, example: 'john.smith@email.com' },
     { field: 'rate', label: t('admin.rate') || 'Rate', required: false, example: '50.00' },
-    { field: 'companyName', label: t('admin.subcontractor') || 'Subcontractor', required: false, example: 'ABC Construction' },
     { field: 'language', label: (t('settings.language') || 'Language') + ' (en=English, es=Spanish, zh=Chinese, pl=Polish)', required: false, example: 'en' },
   ];
 
@@ -121,11 +113,6 @@ export function EmployeeBulkUploadModal({
           case 'rate':
             row.rate = value || undefined;
             break;
-          case 'subcontractor':
-          case 'companyname':
-          case 'company name':
-            row.companyName = value || undefined;
-            break;
           case 'language':
             row.language = value || 'en';
             break;
@@ -183,11 +170,6 @@ export function EmployeeBulkUploadModal({
           case 'rate':
             row.rate = value || undefined;
             break;
-          case 'subcontractor':
-          case 'companyname':
-          case 'company name':
-            row.companyName = value || undefined;
-            break;
           case 'language':
             row.language = value || 'en';
             break;
@@ -236,9 +218,6 @@ export function EmployeeBulkUploadModal({
       }
       if (employee.rate && isNaN(Number(employee.rate))) {
         errors.push(t('admin.errors.invalidRateRow', { row: rowNum }) || `Row ${rowNum}: Rate must be a valid number`);
-      }
-      if (employee.companyName && !availableSubcontractors.some(sub => sub.name === employee.companyName)) {
-        errors.push(t('admin.errors.invalidSubcontractorRow', { row: rowNum, company: employee.companyName }) || `Row ${rowNum}: Subcontractor "${employee.companyName}" not found`);
       }
     });
 
@@ -427,7 +406,7 @@ export function EmployeeBulkUploadModal({
                 {t('admin.requiredFields')}: {t('admin.firstName')}, {t('admin.lastName')}, {t('admin.email')}
               </p>
               <p className="text-xs text-muted-foreground">
-                {t('admin.optionalFields')}: {t('admin.rate')}, {t('admin.subcontractor')}, {t('settings.language')}
+                {t('admin.optionalFields')}: {t('admin.rate')}, {t('settings.language')}
               </p>
               <p className="text-xs text-muted-foreground">
                 {t('settings.language')} codes: en (English), es (Español), zh (中文), pl (Polski)
@@ -553,12 +532,6 @@ export function EmployeeBulkUploadModal({
                         <p className="text-gray-900 dark:text-gray-100">{employee.rate}</p>
                       </div>
                     )}
-                    {employee.companyName && (
-                      <div>
-                        <span className="font-medium text-gray-500 dark:text-gray-400">{t('admin.subcontractor')}:</span>
-                        <p className="text-gray-900 dark:text-gray-100">{employee.companyName}</p>
-                      </div>
-                    )}
                     <div>
                       <span className="font-medium text-gray-500 dark:text-gray-400">{t('settings.language')}:</span>
                       <p className="text-gray-900 dark:text-gray-100">
@@ -592,9 +565,6 @@ export function EmployeeBulkUploadModal({
                     {t('admin.rate')}
                   </th>
                   <th className="text-left p-4 border-b border-gray-200 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-100">
-                    {t('admin.subcontractor')}
-                  </th>
-                  <th className="text-left p-4 border-b border-gray-200 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-100">
                     {t('settings.language')}
                   </th>
                 </tr>
@@ -608,13 +578,6 @@ export function EmployeeBulkUploadModal({
                     <td className="p-4">
                       {employee.rate ? (
                         <span className="text-gray-700 dark:text-gray-300">{employee.rate}</span>
-                      ) : (
-                        <span className="text-gray-400 dark:text-gray-500">-</span>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      {employee.companyName ? (
-                        <span className="text-gray-700 dark:text-gray-300">{employee.companyName}</span>
                       ) : (
                         <span className="text-gray-400 dark:text-gray-500">-</span>
                       )}

@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetProjectsQuery, useDeleteProjectMutation, useCreateProjectMutation, useUpdateProjectMutation, type Project, type PaginationInfo } from "@/lib/features/projects/projectsApi";
+import { useGetProjectsQuery, useDeleteProjectMutation, useCreateProjectMutation, useUpdateProjectMutation, useGetProjectLimitQuery, type Project, type PaginationInfo } from "@/lib/features/projects/projectsApi";
 import SupervisorSelect from "@/components/SupervisorSelect";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,8 @@ export function ProjectsManagement() {
     pageSize: serverPagination.pageSize,
     authType: 'admin'
   });
+  
+  const { data: limitData } = useGetProjectLimitQuery();
   
   
   const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation();
@@ -177,7 +179,15 @@ export function ProjectsManagement() {
       handleCancel();
       refetch();
     } catch (error: any) {
-      showToast(error.data?.error || 'Failed to save project', 'error');
+      // Handle project limit exceeded errors
+      if (error?.data?.error === 'Project limit exceeded') {
+        showToast(
+          `Project limit exceeded: ${error.data.message}`,
+          'error'
+        );
+      } else {
+        showToast(error.data?.error || 'Failed to save project', 'error');
+      }
     }
   };
 
@@ -399,15 +409,26 @@ export function ProjectsManagement() {
       {/* Main Projects Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center">
               <Building className="mr-2 h-5 w-5" />
               {t('admin.projectManagement')}
             </div>
-            <Button onClick={handleAdd}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('admin.addProject')}
-            </Button>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              {limitData && (
+                <div className="text-sm text-gray-600 dark:text-gray-400 order-3 sm:order-1">
+                  {`Projects remaining: ${limitData.limit - limitData.currentCount}`}
+                </div>
+              )}
+              <Button 
+                onClick={handleAdd}
+                disabled={limitData?.currentCount >= limitData?.limit}
+                className="order-1 sm:order-2"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t('admin.addProject')}
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>

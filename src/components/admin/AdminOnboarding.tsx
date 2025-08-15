@@ -32,9 +32,9 @@ import { SubcontractorManualAddModal } from "./SubcontractorManualAddModal";
 import { EmployeeBulkUploadModal } from "./EmployeeBulkUploadModal";
 import { EmployeeManualAddModal } from "./EmployeeManualAddModal";
 import { useCreateAdminUserMutation, useBulkCreateAdminUsersMutation, useGetAdminUsersQuery } from "@/lib/features/admin-users/adminUsersApi";
-import { useBulkCreateProjectsMutation } from "@/lib/features/projects/projectsApi";
+import { useBulkCreateProjectsMutation, useGetProjectLimitQuery } from "@/lib/features/projects/projectsApi";
 import { useBulkCreateSubcontractorsMutation, useGetSubcontractorsQuery } from "@/lib/features/subcontractors/subcontractorsApi";
-import { useBulkCreateContractorsMutation } from "@/lib/features/contractors/contractorsApi";
+import { useBulkCreateContractorsMutation, useGetContractorLimitQuery } from "@/lib/features/contractors/contractorsApi";
 
 type Step = "welcome" | "projectManagers" | "projects" | "subcontractors" | "employees" | "complete";
 
@@ -99,6 +99,8 @@ export default function AdminOnboarding() {
   const savedProjectManagers = savedAdminUsersData?.adminUsers.filter(user => user.role === 'admin') || [];
   const { data: savedSubcontractorsData } = useGetSubcontractorsQuery({ authType: 'admin' });
   const savedSubcontractors = savedSubcontractorsData?.subcontractors || [];
+  const { data: contractorLimitData } = useGetContractorLimitQuery();
+  const { data: projectLimitData } = useGetProjectLimitQuery();
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   const [isManualAddModalOpen, setIsManualAddModalOpen] = useState(false);
   const [isProjectBulkUploadModalOpen, setIsProjectBulkUploadModalOpen] = useState(false);
@@ -1260,13 +1262,35 @@ export default function AdminOnboarding() {
             )}
             
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Added Projects ({onboardingData.projects.length})</h3>
+              <h3 className="text-lg font-semibold">
+                Added Projects ({onboardingData.projects.length}{projectLimitData ? ` / ${projectLimitData.limit}` : ''})
+              </h3>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setIsProjectManualAddModalOpen(true)} size="sm">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    if (projectLimitData?.currentCount >= projectLimitData?.limit) {
+                      return;
+                    }
+                    setIsProjectManualAddModalOpen(true);
+                  }}
+                  size="sm"
+                  disabled={projectLimitData?.currentCount >= projectLimitData?.limit}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add More
                 </Button>
-                <Button variant="outline" onClick={() => setIsProjectBulkUploadModalOpen(true)} size="sm">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    if (projectLimitData?.currentCount >= projectLimitData?.limit) {
+                      return;
+                    }
+                    setIsProjectBulkUploadModalOpen(true);
+                  }}
+                  size="sm"
+                  disabled={projectLimitData?.currentCount >= projectLimitData?.limit}
+                >
                   <Upload className="w-4 h-4 mr-2" />
                   Bulk Upload
                 </Button>
@@ -1454,11 +1478,56 @@ export default function AdminOnboarding() {
           <p className="text-muted-foreground">{t("admin.projectsDescription")}</p>
         </div>
 
+        {projectLimitData && (
+          <div className="max-w-md mx-auto">
+            <Card className={`${
+              projectLimitData.currentCount >= projectLimitData.limit 
+                ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
+                : projectLimitData.currentCount >= projectLimitData.limit * 0.8
+                  ? 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20'
+                  : 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20'
+            }`}>
+              <CardContent className="p-4 text-center">
+                <div className="text-sm font-medium mb-1">
+                  Project Limit: {projectLimitData.currentCount} / {projectLimitData.limit}
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${
+                      projectLimitData.currentCount >= projectLimitData.limit 
+                        ? 'bg-red-500'
+                        : projectLimitData.currentCount >= projectLimitData.limit * 0.8
+                          ? 'bg-yellow-500'
+                          : 'bg-blue-500'
+                    }`}
+                    style={{ width: `${Math.min((projectLimitData.currentCount / projectLimitData.limit) * 100, 100)}%` }}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {projectLimitData.currentCount >= projectLimitData.limit 
+                    ? 'You have reached your project limit'
+                    : `${projectLimitData.limit - projectLimitData.currentCount} projects remaining`
+                  }
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-2xl mx-auto">
           <div className="flex-1">
             <Card
-              className="border-2 border-dashed border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600 transition-colors cursor-pointer h-full"
-              onClick={() => setIsProjectManualAddModalOpen(true)}
+              className={`border-2 border-dashed transition-colors h-full ${
+                projectLimitData?.currentCount >= projectLimitData?.limit
+                  ? 'border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
+                  : 'border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600 cursor-pointer'
+              }`}
+              onClick={() => {
+                if (projectLimitData?.currentCount >= projectLimitData?.limit) {
+                  return;
+                }
+                setIsProjectManualAddModalOpen(true);
+              }}
             >
               <CardContent className="p-6 text-center h-full flex flex-col justify-center">
                 <Building2 className="w-12 h-12 mx-auto text-blue-600 mb-4" />
@@ -1478,8 +1547,17 @@ export default function AdminOnboarding() {
 
           <div className="flex-1">
             <Card
-              className="border-2 border-dashed border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600 transition-colors cursor-pointer h-full"
-              onClick={() => setIsProjectBulkUploadModalOpen(true)}
+              className={`border-2 border-dashed transition-colors h-full ${
+                projectLimitData?.currentCount >= projectLimitData?.limit
+                  ? 'border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
+                  : 'border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600 cursor-pointer'
+              }`}
+              onClick={() => {
+                if (projectLimitData?.currentCount >= projectLimitData?.limit) {
+                  return;
+                }
+                setIsProjectBulkUploadModalOpen(true);
+              }}
             >
               <CardContent className="p-6 text-center h-full flex flex-col justify-center">
                 <Upload className="w-12 h-12 mx-auto text-green-600 mb-4" />
@@ -1499,6 +1577,7 @@ export default function AdminOnboarding() {
             <div className="bg-muted/50 rounded-lg p-4 max-w-md mx-auto">
               <p className="text-sm text-muted-foreground mb-2">
                 {onboardingData.projects.length} project{onboardingData.projects.length !== 1 ? "s" : ""} added
+                {projectLimitData && ` of ${projectLimitData.limit} limit`}
               </p>
               <Button onClick={() => setShowTable("projects")} variant="outline" size="sm">
                 Review Projects
@@ -1844,14 +1923,34 @@ export default function AdminOnboarding() {
             
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">
-                Added Employees ({onboardingData.employees.length})
+                Added Employees ({onboardingData.employees.length}{contractorLimitData ? ` / ${contractorLimitData.limit}` : ''})
               </h3>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setIsEmployeeManualAddModalOpen(true)} size="sm">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    if (contractorLimitData?.currentCount >= contractorLimitData?.limit) {
+                      return;
+                    }
+                    setIsEmployeeManualAddModalOpen(true);
+                  }}
+                  size="sm"
+                  disabled={contractorLimitData?.currentCount >= contractorLimitData?.limit}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add More
                 </Button>
-                <Button variant="outline" onClick={() => setIsEmployeeBulkUploadModalOpen(true)} size="sm">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    if (contractorLimitData?.currentCount >= contractorLimitData?.limit) {
+                      return;
+                    }
+                    setIsEmployeeBulkUploadModalOpen(true);
+                  }}
+                  size="sm"
+                  disabled={contractorLimitData?.currentCount >= contractorLimitData?.limit}
+                >
                   <Upload className="w-4 h-4 mr-2" />
                   Bulk Upload
                 </Button>
@@ -2093,11 +2192,56 @@ export default function AdminOnboarding() {
           <p className="text-muted-foreground">{t("admin.employeesDescription")}</p>
         </div>
 
+        {contractorLimitData && (
+          <div className="max-w-md mx-auto">
+            <Card className={`${
+              contractorLimitData.currentCount >= contractorLimitData.limit 
+                ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
+                : contractorLimitData.currentCount >= contractorLimitData.limit * 0.8
+                  ? 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20'
+                  : 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20'
+            }`}>
+              <CardContent className="p-4 text-center">
+                <div className="text-sm font-medium mb-1">
+                  Employee Limit: {contractorLimitData.currentCount} / {contractorLimitData.limit}
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${
+                      contractorLimitData.currentCount >= contractorLimitData.limit 
+                        ? 'bg-red-500'
+                        : contractorLimitData.currentCount >= contractorLimitData.limit * 0.8
+                          ? 'bg-yellow-500'
+                          : 'bg-blue-500'
+                    }`}
+                    style={{ width: `${Math.min((contractorLimitData.currentCount / contractorLimitData.limit) * 100, 100)}%` }}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {contractorLimitData.currentCount >= contractorLimitData.limit 
+                    ? 'You have reached your employee limit'
+                    : `${contractorLimitData.limit - contractorLimitData.currentCount} employees remaining`
+                  }
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-2xl mx-auto">
           <div className="flex-1">
             <Card
-              className="border-2 border-dashed border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600 transition-colors cursor-pointer h-full"
-              onClick={() => setIsEmployeeManualAddModalOpen(true)}
+              className={`border-2 border-dashed transition-colors h-full ${
+                contractorLimitData?.currentCount >= contractorLimitData?.limit
+                  ? 'border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
+                  : 'border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600 cursor-pointer'
+              }`}
+              onClick={() => {
+                if (contractorLimitData?.currentCount >= contractorLimitData?.limit) {
+                  return;
+                }
+                setIsEmployeeManualAddModalOpen(true);
+              }}
             >
               <CardContent className="p-6 text-center h-full flex flex-col justify-center">
                 <User className="w-12 h-12 mx-auto text-green-600 mb-4" />
@@ -2117,8 +2261,17 @@ export default function AdminOnboarding() {
 
           <div className="flex-1">
             <Card
-              className="border-2 border-dashed border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600 transition-colors cursor-pointer h-full"
-              onClick={() => setIsEmployeeBulkUploadModalOpen(true)}
+              className={`border-2 border-dashed transition-colors h-full ${
+                contractorLimitData?.currentCount >= contractorLimitData?.limit
+                  ? 'border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
+                  : 'border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600 cursor-pointer'
+              }`}
+              onClick={() => {
+                if (contractorLimitData?.currentCount >= contractorLimitData?.limit) {
+                  return;
+                }
+                setIsEmployeeBulkUploadModalOpen(true);
+              }}
             >
               <CardContent className="p-6 text-center h-full flex flex-col justify-center">
                 <Upload className="w-12 h-12 mx-auto text-green-600 mb-4" />
@@ -2138,6 +2291,7 @@ export default function AdminOnboarding() {
             <div className="bg-muted/50 rounded-lg p-4 max-w-md mx-auto">
               <p className="text-sm text-muted-foreground mb-2">
                 {onboardingData.employees.length} employee{onboardingData.employees.length !== 1 ? "s" : ""} added
+                {contractorLimitData && ` of ${contractorLimitData.limit} limit`}
               </p>
               <Button onClick={() => setShowTable("employees")} variant="outline" size="sm">
                 Review Employees
@@ -2296,7 +2450,6 @@ export default function AdminOnboarding() {
         isOpen={isEmployeeBulkUploadModalOpen}
         onClose={() => setIsEmployeeBulkUploadModalOpen(false)}
         onUploadSuccess={handleEmployeeBulkUploadSuccess}
-        availableSubcontractors={onboardingData.subcontractors.map(s => ({ name: s.name }))}
       />
 
       <ProjectManualAddModal
