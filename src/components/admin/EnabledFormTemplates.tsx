@@ -428,54 +428,53 @@ export function EnabledFormTemplates({ subcontractorsData, isLoading, onApplyTem
               emptyText="No templates found."
             />
             
-            {/* Template Management */}
-            {customTemplatesData?.templates && customTemplatesData.templates.length > 0 && (
+            {/* Template Management - Show edit/delete only for selected custom template */}
+            {selectedTemplate_obj && !['basic', 'full'].includes(selectedTemplate_obj.id) && (
               <div className="mt-3">
-                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Manage Custom Templates</h4>
-                <div className="space-y-1 max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-                  {customTemplatesData.templates.map((template) => (
-                    <div key={template.id} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
-                      <span className="text-sm font-medium">{template.name}</span>
-                      <div className="flex items-center gap-1">
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {`Manage "${selectedTemplate_obj.name}" template`}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-3"
+                      onClick={() => handleEditTemplate(selectedTemplate_obj)}
+                    >
+                      <Edit2 className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 w-7 p-0"
-                          onClick={() => handleEditTemplate(template)}
+                          className="h-8 px-3 text-red-600 hover:text-red-700"
                         >
-                          <Edit2 className="h-3 w-3" />
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Template</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {`Are you sure you want to delete "${template.name}"? This action cannot be undone.`}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteTemplate(template.id, template.name)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  ))}
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {`Are you sure you want to delete "${selectedTemplate_obj.name}"? This action cannot be undone.`}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteTemplate(selectedTemplate_obj.id, selectedTemplate_obj.name)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </div>
             )}

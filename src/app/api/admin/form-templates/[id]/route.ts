@@ -40,7 +40,7 @@ function authenticateAdmin(request: NextRequest): { admin: any } {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate admin
     let auth: { admin: any }
@@ -53,6 +53,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       )
     }
 
+    const resolvedParams = await params
     const body = await request.json()
     const { name, description, modules } = body
 
@@ -78,7 +79,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Check if template exists and belongs to this company
     const existingTemplate = await db.select().from(formTemplates)
       .where(and(
-        eq(formTemplates.id, params.id),
+        eq(formTemplates.id, resolvedParams.id),
         eq(formTemplates.companyId, auth.admin.companyId)
       ))
       .limit(1)
@@ -106,7 +107,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         modules
       })
       .where(and(
-        eq(formTemplates.id, params.id),
+        eq(formTemplates.id, resolvedParams.id),
         eq(formTemplates.companyId, auth.admin.companyId)
       ))
       .returning()
@@ -135,7 +136,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate admin
     let auth: { admin: any }
@@ -148,10 +149,12 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       )
     }
 
+    const resolvedParams = await params
+
     // Check if template exists and belongs to this company
     const existingTemplate = await db.select().from(formTemplates)
       .where(and(
-        eq(formTemplates.id, params.id),
+        eq(formTemplates.id, resolvedParams.id),
         eq(formTemplates.companyId, auth.admin.companyId)
       ))
       .limit(1)
@@ -174,7 +177,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     // Delete template
     await db.delete(formTemplates)
       .where(and(
-        eq(formTemplates.id, params.id),
+        eq(formTemplates.id, resolvedParams.id),
         eq(formTemplates.companyId, auth.admin.companyId)
       ))
 
