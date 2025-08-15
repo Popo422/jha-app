@@ -9,10 +9,6 @@ export const companies = pgTable('companies', {
   logoUrl: text('logo_url'), // Optional company logo URL
   injuryTimerLastReset: timestamp('injury_timer_last_reset').defaultNow(),
   injuryTimerResetBy: text('injury_timer_reset_by'),
-  enabledModules: jsonb('enabled_modules').default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'near-miss-report', 'vehicle-inspection', 'timesheet']), // Available modules for this company
-  modulesLastUpdatedAt: timestamp('modules_last_updated_at'),
-  modulesLastUpdatedBy: text('modules_last_updated_by'), // Admin name who last updated modules
-  modulesLastUpdatedByUserId: text('modules_last_updated_by_user_id'), // Admin user ID for reference
   membershipInfo: jsonb('membership_info').default({
     membershipLevel: "3",
     user: null,
@@ -106,6 +102,10 @@ export const subcontractors = pgTable('subcontractors', {
   name: text('name').notNull(),
   contractAmount: numeric('contract_amount', { precision: 12, scale: 2 }), // Optional budget/contract amount
   companyId: uuid('company_id').notNull(),
+  enabledModules: jsonb('enabled_modules').$type<string[]>().default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'timesheet']), // Available modules for this subcontractor
+  modulesLastUpdatedAt: timestamp('modules_last_updated_at'),
+  modulesLastUpdatedBy: text('modules_last_updated_by'), // Admin name who last updated modules
+  modulesLastUpdatedByUserId: text('modules_last_updated_by_user_id'), // Admin user ID for reference
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -162,5 +162,21 @@ export const toolboxTalkReadEntries = pgTable('toolbox_talk_read_entries', {
 }, (table) => ({
   // Composite unique constraint: prevent duplicate readings by same person for same talk
   talkReadByUnique: unique().on(table.toolboxTalkId, table.readBy, table.companyId),
+}))
+
+export const formTemplates = pgTable('form_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  description: text('description'),
+  modules: jsonb('modules').$type<string[]>().notNull(), // Array of module IDs
+  companyId: uuid('company_id').notNull(),
+  createdBy: uuid('created_by').notNull(), // Admin user ID who created it
+  createdByName: text('created_by_name').notNull(), // Admin name for display
+  isDefault: text('is_default').notNull().default('false'), // 'true' for system defaults, 'false' for custom
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: same template name can exist across companies but not within same company
+  companyTemplateUnique: unique().on(table.companyId, table.name),
 }))
 

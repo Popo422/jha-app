@@ -1,0 +1,2 @@
+ALTER TABLE "companies" ALTER COLUMN "membership_info" SET DEFAULT '{"membershipLevel":"3","user":null,"memberships":[],"tokenVerifiedAt":"2025-08-15T08:14:25.473Z"}'::jsonb;--> statement-breakpoint
+ALTER TABLE "subcontractors" ALTER COLUMN "enabled_modules" SET DEFAULT '["start-of-day","end-of-day","job-hazard-analysis","timesheet"]'::jsonb;

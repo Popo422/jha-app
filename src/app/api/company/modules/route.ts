@@ -1,31 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { companies } from '@/lib/db/schema'
+import { subcontractors } from '@/lib/db/schema'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
-
-// Helper function to authenticate contractor requests
-function authenticateContractor(request: NextRequest): { user: any } {
-  const token = request.cookies.get('authToken')?.value || 
-                (request.headers.get('Authorization')?.startsWith('Bearer ') ? 
-                 request.headers.get('Authorization')?.replace('Bearer ', '') : null)
-  
-  if (!token) {
-    throw new Error('Authentication required')
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload
-    if (!decoded.user) {
-      throw new Error('Invalid token')
-    }
-    return { user: decoded.user }
-  } catch (error) {
-    throw new Error('Invalid token')
-  }
-}
 
 interface TokenPayload {
   user: {
@@ -34,6 +13,15 @@ interface TokenPayload {
     name: string
     companyId: string
   }
+  contractor: {
+    id: string
+    name: string
+    companyName: string
+    code: string
+    companyId: string
+    companyLogoUrl: string
+    language: string
+  }
   iat: number
   exp: number
 }
@@ -41,35 +29,52 @@ interface TokenPayload {
 export async function GET(request: NextRequest) {
   try {
     // Authenticate contractor
-    let auth: { user: any }
-    try {
-      auth = authenticateContractor(request)
-    } catch (error) {
+    const token = request.cookies.get('authToken')?.value || 
+                  (request.headers.get('Authorization')?.startsWith('Bearer ') ? 
+                   request.headers.get('Authorization')?.replace('Bearer ', '') : null)
+    
+    if (!token) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       )
     }
 
-    // Get company's enabled modules
-    const company = await db.select().from(companies)
-      .where(eq(companies.id, auth.user.companyId))
+    let decoded: TokenPayload
+    try {
+      decoded = jwt.verify(token, JWT_SECRET) as TokenPayload
+      if (!decoded.contractor) {
+        throw new Error('Invalid token - contractor info missing')
+      }
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
+    // Find subcontractor by company name within the contractor's company
+    // If contractor.companyName doesn't match any subcontractor, use default modules
+    let enabledModules = ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'near-miss-report', 'vehicle-inspection', 'timesheet']
+    
+    const subcontractor = await db.select().from(subcontractors)
+      .where(and(
+        eq(subcontractors.name, decoded.contractor.companyName),
+        eq(subcontractors.companyId, decoded.contractor.companyId)
+      ))
       .limit(1)
 
-    if (company.length === 0) {
-      return NextResponse.json(
-        { error: 'Company not found' + JSON.stringify(auth.user) },
-        { status: 404 }
-      )
+    if (subcontractor.length > 0) {
+      enabledModules = subcontractor[0].enabledModules || enabledModules
     }
 
     return NextResponse.json({
       success: true,
-      enabledModules: company[0].enabledModules || ['start-of-day', 'end-of-day', 'job-hazard-analysis', 'incident-report', 'quick-incident-report', 'timesheet']
+      enabledModules: enabledModules
     })
 
   } catch (error) {
-    console.error('Get company modules error:', error)
+    console.error('Get subcontractor modules error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
