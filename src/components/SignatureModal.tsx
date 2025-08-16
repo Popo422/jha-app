@@ -65,23 +65,35 @@ export default function SignatureModal({
       const ctx = canvas.getContext('2d');
       if (ctx) {
         const img = new Image();
+        img.crossOrigin = 'anonymous'; // Prevent canvas tainting
         img.onload = () => {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           setIsLoadingSignature(false);
         };
         img.onerror = () => {
+          console.warn('Failed to load signature image');
           setIsLoadingSignature(false);
         };
         img.src = signature;
       }
+    } else if (!signature && mainCanvasRef.current) {
+      // Clear canvas and reset loading state when signature is cleared
+      const canvas = mainCanvasRef.current.getCanvas();
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      setIsLoadingSignature(false);
     }
   }, [signature]);
 
   const handleMainSignatureEnd = () => {
-    if (mainCanvasRef.current && !isLoadingSignature) {
+    console.log('Main canvas onEnd called');
+    if (mainCanvasRef.current) {
       try {
         const signatureData = mainCanvasRef.current.toDataURL();
+        console.log('Main canvas signature data length:', signatureData.length);
         onSignatureChange(signatureData);
       } catch (error) {
         console.warn('Could not export signature - canvas may be tainted', error);
@@ -94,53 +106,94 @@ export default function SignatureModal({
   const handleMainSignatureClear = () => {
     if (mainCanvasRef.current) {
       mainCanvasRef.current.clear();
+      // Clear the canvas completely to remove any tainted state
+      const canvas = mainCanvasRef.current.getCanvas();
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
       onSignatureChange('');
     }
   };
 
   const openModal = () => {
     setModalOpen(true);
-    // Copy existing signature data to modal canvas
+    // Copy signature to modal canvas
     setTimeout(() => {
-      if (signature && modalCanvasRef.current) {
+      if (modalCanvasRef.current) {
         const canvas = modalCanvasRef.current.getCanvas();
         const ctx = canvas.getContext('2d');
-        if (ctx && signature) {
-          const img = new Image();
-          img.onload = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          };
-          img.src = signature;
+        
+        if (ctx) {
+          // Clear modal canvas first
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // Check if main canvas has content that hasn't been saved yet
+          const hasMainCanvasContent = mainCanvasRef.current && !mainCanvasRef.current.isEmpty();
+          
+          // If we have a saved signature and main canvas is empty (loaded state), use saved signature
+          if (signature && (!hasMainCanvasContent || signature.length > 100)) {
+            const img = new Image();
+            img.onload = () => {
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.onerror = () => {
+              console.warn('Failed to load signature image');
+            };
+            img.src = signature;
+          }
+          // Otherwise, copy from main canvas if it has content
+          else if (hasMainCanvasContent) {
+            try {
+              const currentSignature = mainCanvasRef.current.toDataURL();
+              const img = new Image();
+              img.onload = () => {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              };
+              img.src = currentSignature;
+            } catch (error) {
+              console.warn('Could not copy signature from main canvas', error);
+            }
+          }
         }
       }
     }, 100);
   };
 
   const closeModal = () => {
-    // Copy signature from modal back to main canvas
+    // Copy signature from modal back to main canvas only if modal has content
     if (modalCanvasRef.current) {
       try {
         const newSignature = modalCanvasRef.current.toDataURL();
-        onSignatureChange(newSignature);
         
-        // Update main canvas
-        if (mainCanvasRef.current) {
-          const canvas = mainCanvasRef.current.getCanvas();
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            const img = new Image();
-            img.onload = () => {
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            };
-            img.src = newSignature;
+        // Only update if modal canvas has actual content or is explicitly empty
+        if (!modalCanvasRef.current.isEmpty()) {
+          onSignatureChange(newSignature);
+          
+          // Update main canvas
+          if (mainCanvasRef.current) {
+            const canvas = mainCanvasRef.current.getCanvas();
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              const img = new Image();
+              img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              };
+              img.src = newSignature;
+            }
+          }
+        }
+        // If modal is empty and we opened it with content from main canvas, 
+        // it means user cleared it, so clear the signature
+        else if (signature) {
+          onSignatureChange('');
+          if (mainCanvasRef.current) {
+            mainCanvasRef.current.clear();
           }
         }
       } catch (error) {
         console.warn('Could not export signature - canvas may be tainted', error);
-        // Clear the signature if it can't be exported
-        onSignatureChange('');
       }
     }
     setModalOpen(false);
@@ -149,6 +202,7 @@ export default function SignatureModal({
   const clearModalSignature = () => {
     if (modalCanvasRef.current) {
       modalCanvasRef.current.clear();
+      onSignatureChange('');
     }
   };
 

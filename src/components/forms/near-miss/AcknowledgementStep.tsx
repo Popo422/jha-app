@@ -389,6 +389,7 @@ export default function AcknowledgementStep({ data, updateData, onSubmit }: Ackn
                 onClick={() => {
                   if (reporterModalCanvasRef.current) {
                     reporterModalCanvasRef.current.clear();
+                    updateData({ reporterSignature: '' });
                   }
                 }}
               >
@@ -452,6 +453,7 @@ export default function AcknowledgementStep({ data, updateData, onSubmit }: Ackn
                 onClick={() => {
                   if (supervisorModalCanvasRef.current) {
                     supervisorModalCanvasRef.current.clear();
+                    updateData({ supervisorSignature: '' });
                   }
                 }}
               >
