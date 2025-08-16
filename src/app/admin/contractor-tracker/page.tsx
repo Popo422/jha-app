@@ -34,10 +34,10 @@ interface ContractorStatus {
   name: string;
   email: string;
   companyName: string;
-  timesheetStatus: 'completed' | 'pending' | 'missing';
-  jhaStatus: 'completed' | 'pending' | 'missing';
-  eodStatus: 'completed' | 'pending' | 'missing';
-  sodStatus: 'completed' | 'pending' | 'missing';
+  timesheetStatus: 'approved' | 'pending' | 'missing' | 'rejected';
+  jhaStatus: 'submitted' | 'missing';
+  eodStatus: 'submitted' | 'missing';
+  sodStatus: 'submitted' | 'missing';
 }
 
 
@@ -96,17 +96,29 @@ export default function ContractTrackerPage() {
         const jhaSubmission = userSubmissions.find(sub => sub.submissionType === 'job-hazard-analysis');
         const eodSubmission = userSubmissions.find(sub => sub.submissionType === 'end-of-day');
         const sodSubmission = userSubmissions.find(sub => sub.submissionType === 'start-of-day');
-        const timesheetSubmission = userTimesheets.length > 0;
+        
+        // Check timesheet status properly based on approval
+        let timesheetStatus: 'approved' | 'pending' | 'missing' | 'rejected' = 'missing';
+        if (userTimesheets.length > 0) {
+          const latestTimesheet = userTimesheets[0]; // Assuming latest is first
+          if (latestTimesheet.status === 'approved') {
+            timesheetStatus = 'approved';
+          } else if (latestTimesheet.status === 'rejected') {
+            timesheetStatus = 'rejected';
+          } else {
+            timesheetStatus = 'pending';
+          }
+        }
 
         return {
           id: contractor.id,
           name: contractorName,
           email: contractor.email,
           companyName: contractor.companyName || '',
-          timesheetStatus: timesheetSubmission ? 'completed' : 'missing',
-          jhaStatus: jhaSubmission ? 'completed' : 'missing',
-          eodStatus: eodSubmission ? 'completed' : 'missing',
-          sodStatus: sodSubmission ? 'completed' : 'missing'
+          timesheetStatus: timesheetStatus,
+          jhaStatus: jhaSubmission ? 'submitted' : 'missing',
+          eodStatus: eodSubmission ? 'submitted' : 'missing',
+          sodStatus: sodSubmission ? 'submitted' : 'missing'
         };
       });
       setContractorStatuses(statuses);
@@ -116,6 +128,18 @@ export default function ContractTrackerPage() {
   // Apply local filtering to contractor statuses
   const filteredContractorStatuses = useMemo(() => {
     return contractorStatuses.filter(contractor => {
+      // General search filter (searches name, email, company)
+      if (searchValue) {
+        const searchLower = searchValue.toLowerCase();
+        const matchesSearch = 
+          contractor.name.toLowerCase().includes(searchLower) ||
+          contractor.email.toLowerCase().includes(searchLower) ||
+          contractor.companyName?.toLowerCase().includes(searchLower);
+        if (!matchesSearch) {
+          return false;
+        }
+      }
+      
       // Company filter
       if (filters.company && !contractor.companyName?.toLowerCase().includes(filters.company.toLowerCase())) {
         return false;
@@ -128,7 +152,7 @@ export default function ContractTrackerPage() {
       
       return true;
     });
-  }, [contractorStatuses, filters.company, filters.contractor]);
+  }, [contractorStatuses, searchValue, filters.company, filters.contractor]);
 
   // Client-side pagination logic (using filtered data)
   const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
@@ -173,18 +197,22 @@ export default function ContractTrackerPage() {
   }, []);
 
 
-  const getStatusBadge = useCallback((status: 'completed' | 'pending' | 'missing') => {
+  const getStatusBadge = useCallback((status: 'approved' | 'pending' | 'missing' | 'rejected' | 'submitted') => {
     switch (status) {
-      case 'completed':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{t('admin.approved')}</Badge>;
+      case 'approved':
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{t('status.approved')}</Badge>;
+      case 'submitted':
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{t('status.submitted')}</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">{t('admin.pending')}</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">{t('status.pending')}</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-900 text-red-100 hover:bg-red-900">{t('status.rejected')}</Badge>;
       case 'missing':
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{t('status.missing')}</Badge>;
       default:
         return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{t('status.unknown')}</Badge>;
     }
-  }, []);
+  }, [t]);
 
   const columns = useMemo<ColumnDef<ContractorStatus>[]>(() => {
     const columns: ColumnDef<ContractorStatus>[] = [];
@@ -210,7 +238,7 @@ export default function ContractTrackerPage() {
       accessorKey: 'timesheetStatus',
       header: t('nav.timesheet'),
       cell: ({ row }: { row: any }) => {
-        const status = row.getValue('timesheetStatus') as 'completed' | 'pending' | 'missing';
+        const status = row.getValue('timesheetStatus') as 'approved' | 'pending' | 'missing' | 'rejected';
         return <div className="text-left">{getStatusBadge(status)}</div>;
       },
     });
@@ -219,7 +247,7 @@ export default function ContractTrackerPage() {
       accessorKey: 'jhaStatus',
       header: t('forms.jobHazardAnalysis'),
       cell: ({ row }: { row: any }) => {
-        const status = row.getValue('jhaStatus') as 'completed' | 'pending' | 'missing';
+        const status = row.getValue('jhaStatus') as 'submitted' | 'missing';
         return <div className="text-left">{getStatusBadge(status)}</div>;
       },
     });
@@ -228,7 +256,7 @@ export default function ContractTrackerPage() {
       accessorKey: 'sodStatus',
       header: t('admin.startOfDay'),
       cell: ({ row }: { row: any }) => {
-        const status = row.getValue('sodStatus') as 'completed' | 'pending' | 'missing';
+        const status = row.getValue('sodStatus') as 'submitted' | 'missing';
         return <div className="text-left">{getStatusBadge(status)}</div>;
       },
     });
@@ -237,7 +265,7 @@ export default function ContractTrackerPage() {
       accessorKey: 'eodStatus',
       header: t('admin.endOfDay'),
       cell: ({ row }: { row: any }) => {
-        const status = row.getValue('eodStatus') as 'completed' | 'pending' | 'missing';
+        const status = row.getValue('eodStatus') as 'submitted' | 'missing';
         return <div className="text-left">{getStatusBadge(status)}</div>;
       },
     });
