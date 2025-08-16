@@ -19,6 +19,7 @@ interface TimesheetExportParams {
 
 interface SubmissionExportParams {
   type?: string;
+  excludeTypes?: string[];
   dateFrom?: string;
   dateTo?: string;
   company?: string;

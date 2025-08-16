@@ -174,6 +174,7 @@ export default function SafetyFormsPage() {
   const handleExportAll = useCallback(async () => {
     return await exportAllSubmissions({
       type: filters.type || undefined,
+      excludeTypes: ['incident-report', 'quick-incident-report'],
       dateFrom: filters.dateFrom || undefined,
       dateTo: filters.dateTo || undefined,
       company: filters.company || undefined,

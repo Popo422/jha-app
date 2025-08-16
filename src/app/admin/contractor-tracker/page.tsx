@@ -6,7 +6,6 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetContractorsQuery, type PaginationInfo as ContractorPaginationInfo } from '@/lib/features/contractors/contractorsApi';
 import { useGetSubmissionsQuery } from '@/lib/features/submissions/submissionsApi';
 import { useGetTimesheetsQuery } from '@/lib/features/timesheets/timesheetsApi';
-import { useGetModulesQuery } from '@/lib/features/modules/modulesApi';
 import { useGetSubcontractorsQuery } from '@/lib/features/subcontractors/subcontractorsApi';
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
@@ -57,7 +56,6 @@ export default function ContractTrackerPage() {
     pageSize: 10
   });
 
-  const { data: modulesData } = useGetModulesQuery({});
   const { data: subcontractorsData } = useGetSubcontractorsQuery({ pageSize: 1000, authType: 'admin' });
   
   const { data: contractorsData, isLoading: contractorsLoading } = useGetContractorsQuery({
@@ -189,7 +187,6 @@ export default function ContractTrackerPage() {
   }, []);
 
   const columns = useMemo<ColumnDef<ContractorStatus>[]>(() => {
-    const enabledModules = modulesData?.enabledModules || [];
     const columns: ColumnDef<ContractorStatus>[] = [];
 
     // Add contractor name first (leftmost column)
@@ -208,50 +205,42 @@ export default function ContractTrackerPage() {
       cell: ({ row }: { row: any }) => <div className="text-sm font-medium">{row.getValue('name')}</div>,
     });
 
-    // Then add form type columns (in the middle)
-    if (enabledModules.includes('timesheet')) {
-      columns.push({
-        accessorKey: 'timesheetStatus',
-        header: t('nav.timesheet'),
-        cell: ({ row }: { row: any }) => {
-          const status = row.getValue('timesheetStatus') as 'completed' | 'pending' | 'missing';
-          return <div className="text-left">{getStatusBadge(status)}</div>;
-        },
-      });
-    }
+    // Then add form type columns (in the middle) - Admin sees all form types
+    columns.push({
+      accessorKey: 'timesheetStatus',
+      header: t('nav.timesheet'),
+      cell: ({ row }: { row: any }) => {
+        const status = row.getValue('timesheetStatus') as 'completed' | 'pending' | 'missing';
+        return <div className="text-left">{getStatusBadge(status)}</div>;
+      },
+    });
 
-    if (enabledModules.includes('job-hazard-analysis')) {
-      columns.push({
-        accessorKey: 'jhaStatus',
-        header: t('forms.jobHazardAnalysis'),
-        cell: ({ row }: { row: any }) => {
-          const status = row.getValue('jhaStatus') as 'completed' | 'pending' | 'missing';
-          return <div className="text-left">{getStatusBadge(status)}</div>;
-        },
-      });
-    }
+    columns.push({
+      accessorKey: 'jhaStatus',
+      header: t('forms.jobHazardAnalysis'),
+      cell: ({ row }: { row: any }) => {
+        const status = row.getValue('jhaStatus') as 'completed' | 'pending' | 'missing';
+        return <div className="text-left">{getStatusBadge(status)}</div>;
+      },
+    });
 
-    if (enabledModules.includes('start-of-day')) {
-      columns.push({
-        accessorKey: 'sodStatus',
-        header: t('admin.startOfDay'),
-        cell: ({ row }: { row: any }) => {
-          const status = row.getValue('sodStatus') as 'completed' | 'pending' | 'missing';
-          return <div className="text-left">{getStatusBadge(status)}</div>;
-        },
-      });
-    }
+    columns.push({
+      accessorKey: 'sodStatus',
+      header: t('admin.startOfDay'),
+      cell: ({ row }: { row: any }) => {
+        const status = row.getValue('sodStatus') as 'completed' | 'pending' | 'missing';
+        return <div className="text-left">{getStatusBadge(status)}</div>;
+      },
+    });
 
-    if (enabledModules.includes('end-of-day')) {
-      columns.push({
-        accessorKey: 'eodStatus',
-        header: t('admin.endOfDay'),
-        cell: ({ row }: { row: any }) => {
-          const status = row.getValue('eodStatus') as 'completed' | 'pending' | 'missing';
-          return <div className="text-left">{getStatusBadge(status)}</div>;
-        },
-      });
-    }
+    columns.push({
+      accessorKey: 'eodStatus',
+      header: t('admin.endOfDay'),
+      cell: ({ row }: { row: any }) => {
+        const status = row.getValue('eodStatus') as 'completed' | 'pending' | 'missing';
+        return <div className="text-left">{getStatusBadge(status)}</div>;
+      },
+    });
 
     // Finally add company and email columns (rightmost)
     columns.push({
@@ -285,7 +274,7 @@ export default function ContractTrackerPage() {
     });
 
     return columns;
-  }, [getStatusBadge, modulesData]);
+  }, [getStatusBadge]);
 
   const filterComponents = useMemo(() => (
     <div className="flex flex-wrap gap-3 items-end">
@@ -365,23 +354,22 @@ export default function ContractTrackerPage() {
   ), [filters.date, filters.company, filters.contractor, hasActiveFilters, clearFilters, subcontractorsData?.subcontractors, allContractors, t]);
 
   const getExportData = useCallback((contractor: ContractorStatus) => {
-    const enabledModules = modulesData?.enabledModules || [];
     const data = [];
     
     // Add contractor name first (leftmost)
     data.push(contractor.name);
     
-    // Then add form type data (in the middle)
-    if (enabledModules.includes('timesheet')) data.push(contractor.timesheetStatus);
-    if (enabledModules.includes('job-hazard-analysis')) data.push(contractor.jhaStatus);
-    if (enabledModules.includes('start-of-day')) data.push(contractor.sodStatus);
-    if (enabledModules.includes('end-of-day')) data.push(contractor.eodStatus);
+    // Then add form type data (in the middle) - Admin exports all form types
+    data.push(contractor.timesheetStatus);
+    data.push(contractor.jhaStatus);
+    data.push(contractor.sodStatus);
+    data.push(contractor.eodStatus);
     
     // Finally add company and email (rightmost)
     data.push(contractor.companyName || '-', contractor.email);
     
     return data;
-  }, [modulesData]);
+  }, []);
 
   // Function to export all contractor status data
   const handleExportAll = useCallback(async () => {
@@ -390,8 +378,6 @@ export default function ContractTrackerPage() {
   }, [filteredContractorStatuses]);
 
   const renderMobileCard = useCallback((contractor: ContractorStatus, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => {
-    const enabledModules = modulesData?.enabledModules || [];
-    
     return (
       <Card className="p-4">
         <CardContent className="p-0">
@@ -413,25 +399,17 @@ export default function ContractTrackerPage() {
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                {enabledModules.includes('timesheet') && (
-                  <div><span className="font-medium">{t('nav.timesheet')}:</span> {getStatusBadge(contractor.timesheetStatus)}</div>
-                )}
-                {enabledModules.includes('job-hazard-analysis') && (
-                  <div><span className="font-medium">{t('forms.jobHazardAnalysis')}:</span> {getStatusBadge(contractor.jhaStatus)}</div>
-                )}
-                {enabledModules.includes('end-of-day') && (
-                  <div><span className="font-medium">{t('admin.endOfDay')}:</span> {getStatusBadge(contractor.eodStatus)}</div>
-                )}
-                {enabledModules.includes('start-of-day') && (
-                  <div><span className="font-medium">{t('admin.startOfDay')}:</span> {getStatusBadge(contractor.sodStatus)}</div>
-                )}
+                <div><span className="font-medium">{t('nav.timesheet')}:</span> {getStatusBadge(contractor.timesheetStatus)}</div>
+                <div><span className="font-medium">{t('forms.jobHazardAnalysis')}:</span> {getStatusBadge(contractor.jhaStatus)}</div>
+                <div><span className="font-medium">{t('admin.endOfDay')}:</span> {getStatusBadge(contractor.eodStatus)}</div>
+                <div><span className="font-medium">{t('admin.startOfDay')}:</span> {getStatusBadge(contractor.sodStatus)}</div>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
     );
-  }, [getStatusBadge, modulesData]);
+  }, [getStatusBadge]);
 
   return (
     <div className="p-4 md:p-6">
@@ -450,23 +428,22 @@ export default function ContractTrackerPage() {
         getRowId={(contractor) => contractor.id}
         exportFilename="contractor_tracker"
         exportHeaders={useMemo(() => {
-          const enabledModules = modulesData?.enabledModules || [];
           const headers = [];
           
           // Add contractor name first (leftmost)
           headers.push(t('admin.contractor'));
           
-          // Then add form type headers (in the middle)
-          if (enabledModules.includes('timesheet')) headers.push(t('nav.timesheet'));
-          if (enabledModules.includes('job-hazard-analysis')) headers.push(t('forms.jobHazardAnalysis'));
-          if (enabledModules.includes('start-of-day')) headers.push(t('admin.startOfDay'));
-          if (enabledModules.includes('end-of-day')) headers.push(t('admin.endOfDay'));
+          // Then add form type headers (in the middle) - Admin exports all form types
+          headers.push(t('nav.timesheet'));
+          headers.push(t('forms.jobHazardAnalysis'));
+          headers.push(t('admin.startOfDay'));
+          headers.push(t('admin.endOfDay'));
           
           // Finally add company and email (rightmost)
           headers.push(t('admin.company'), t('auth.email'));
           
           return headers;
-        }, [modulesData, t])}
+        }, [t])}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}
