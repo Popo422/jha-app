@@ -80,7 +80,7 @@ export function ModuleInfo({ modulesData, isLoading }: ModuleInfoProps) {
             </span>
             <div className="flex flex-wrap gap-2">
               {modulesData?.availableModules
-                ?.filter(module => modulesData.enabledModules.includes(module.id))
+                ?.filter(module => modulesData.enabledModules?.includes(module.id))
                 .map(module => (
                   <Badge key={module.id} variant="outline" className="text-xs">
                     {module.name}
