@@ -143,7 +143,7 @@ export default function SignatureModal({
             img.src = signature;
           }
           // Otherwise, copy from main canvas if it has content
-          else if (hasMainCanvasContent) {
+          else if (hasMainCanvasContent && mainCanvasRef.current) {
             try {
               const currentSignature = mainCanvasRef.current.toDataURL();
               const img = new Image();
