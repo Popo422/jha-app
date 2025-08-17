@@ -1032,12 +1032,25 @@
       "actionPlaceholder": "官员姓名",
       "incidentChecklist": "事故检查清单",
       "checklist": {
-        "reviewReports": "审查事故报告",
-        "seeForm": "查看表单",
-        "getTRIR": "获取TRIR或过往事故率",
-        "estimateHours": "估算项目总工时",
-        "estimateImpact": "估算每次事故的财务影响",
-        "planTraining": "规划工人培训和安全控制"
+        "actionHeader": "行动",
+        "deadlineHeader": "截止日期",
+        "provideMedicalCare": "提供医疗护理",
+        "supervisorDocuments": "主管记录事故",
+        "employeeReports": "员工向雇主报告",
+        "fileFROI": "提交FROI",
+        "reportOSHA": "向OSHA报告（如需要）",
+        "maintainRecords": "维护记录",
+        "supportClaims": "支持理赔流程",
+        "conductSafetyReview": "进行安全审查",
+        "deadlines": {
+          "immediately": "立即",
+          "within45Days": "45天内（理想情况下24-48小时）",
+          "asapWithin30Days": "尽快（30天内）",
+          "within8to24Hours": "8-24小时",
+          "upTo5Years": "最多5年",
+          "ongoing": "持续进行",
+          "within1Week": "1周内"
+        }
       },
       "save": "保存",
       "saving": "保存中...",

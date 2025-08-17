@@ -60,11 +60,11 @@ export default function ModulesPage() {
           />
 
           {/* Enabled Form Templates Component */}
-          <EnabledFormTemplates
+          {/* <EnabledFormTemplates
             subcontractorsData={subcontractorsData}
             isLoading={isLoadingSubcontractors}
             onApplyTemplate={handleApplyTemplate}
-          />
+          /> */}
         </div>
 
         {/* Right Column: Module Configuration */}

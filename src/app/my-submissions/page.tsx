@@ -10,6 +10,7 @@ import { useGetTimesheetsQuery } from "@/lib/features/timesheets/timesheetsApi";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, XCircle, Clock, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -154,36 +155,51 @@ export default function MySubmissionsPage() {
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-bold mb-6 text-center">{t('pages.mySubmissions')}</h1>
           
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-4">{t('pages.safetyFormSubmissions')}</h2>
-          </div>
-
-          {error ? (
-            <div className="bg-card text-card-foreground rounded-lg border p-6">
-              <p className="text-destructive">{t('pages.loadingSubmissions')}</p>
-            </div>
-          ) : (
-            <>
-              <SubmissionsTable 
-                data={paginatedSubmissions} 
-                isLoading={isLoading}
-                isFetching={isFetching}
-                onDelete={handleDelete}
-                serverSide={true}
-                pagination={submissionsPaginationInfo}
-                onPageChange={handleSubmissionsPageChange}
-                onPageSizeChange={handleSubmissionsPageSizeChange}
-              />
-              
-              {/* Timesheets Section */}
-              <div className="mt-8">
-                <h2 className="text-2xl font-bold mb-4">{t('pages.myTimesheets')}</h2>
+          <Tabs defaultValue="safety-forms" className="w-full">
+            <TabsList className="bg-transparent border-0 p-0 h-auto justify-start space-x-8">
+              <TabsTrigger 
+                value="safety-forms" 
+                className="bg-transparent border-0 rounded-none px-0 pb-2 border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+              >
+                {t('pages.safetyFormSubmissions')}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="timesheets" 
+                className="bg-transparent border-0 rounded-none px-0 pb-2 border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 text-gray-600 hover:text-blue-600 transition-colors font-medium"
+              >
+                {t('pages.myTimesheets')}
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="safety-forms" className="mt-6">
+              <div className="w-full">
+                {error ? (
+                  <div className="bg-card text-card-foreground rounded-lg border p-6">
+                    <p className="text-destructive">{t('pages.loadingSubmissions')}</p>
+                  </div>
+                ) : (
+                  <SubmissionsTable 
+                    data={paginatedSubmissions} 
+                    isLoading={isLoading}
+                    isFetching={isFetching}
+                    onDelete={handleDelete}
+                    serverSide={true}
+                    pagination={submissionsPaginationInfo}
+                    onPageChange={handleSubmissionsPageChange}
+                    onPageSizeChange={handleSubmissionsPageSizeChange}
+                  />
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="timesheets" className="mt-6">
+              <div className="w-full">
                 {timesheetsError ? (
                   <div className="bg-card text-card-foreground rounded-lg border p-6">
                     <p className="text-destructive">{t('pages.loadingSubmissions')}</p>
                   </div>
                 ) : (
-                  <Card>
+                  <Card className="w-full">
                     <CardHeader>
                       <CardTitle>{t('pages.timesheetSubmissions')}</CardTitle>
                     </CardHeader>
@@ -306,8 +322,8 @@ export default function MySubmissionsPage() {
                   </Card>
                 )}
               </div>
-            </>
-          )}
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>

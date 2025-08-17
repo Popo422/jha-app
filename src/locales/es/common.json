@@ -1051,12 +1051,25 @@
       "actionPlaceholder": "Nombre del oficial",
       "incidentChecklist": "Lista de Verificación del Incidente",
       "checklist": {
-        "reviewReports": "Revisar Reportes de Incidentes",
-        "seeForm": "Ver Formulario",
-        "getTRIR": "Obtener TRIR o tasa de incidentes pasados",
-        "estimateHours": "Estimar horas laborales totales para el proyecto",
-        "estimateImpact": "Estimar impacto financiero por incidente",
-        "planTraining": "Planificar entrenamiento de trabajadores y controles de seguridad"
+        "actionHeader": "Acción",
+        "deadlineHeader": "Fecha Límite",
+        "provideMedicalCare": "Proporcionar atención médica",
+        "supervisorDocuments": "Supervisor documenta el incidente",
+        "employeeReports": "Empleado reporta al empleador",
+        "fileFROI": "Archivar FROI",
+        "reportOSHA": "Reportar a OSHA (si es requerido)",
+        "maintainRecords": "Mantener registros",
+        "supportClaims": "Apoyar proceso de reclamos",
+        "conductSafetyReview": "Realizar revisión de seguridad",
+        "deadlines": {
+          "immediately": "Inmediatamente",
+          "within45Days": "Dentro de 45 días (idealmente 24 - 48 horas)",
+          "asapWithin30Days": "ASAP (dentro de 30 días)",
+          "within8to24Hours": "8 - 24 horas",
+          "upTo5Years": "Hasta 5 años",
+          "ongoing": "En curso",
+          "within1Week": "Dentro de 1 semana"
+        }
       },
       "save": "Guardar",
       "saving": "Guardando...",

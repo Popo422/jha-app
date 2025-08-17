@@ -1015,12 +1015,25 @@
       "actionPlaceholder": "Name of officer",
       "incidentChecklist": "Incident Checklist",
       "checklist": {
-        "reviewReports": "Review Incident Reports",
-        "seeForm": "See Form",
-        "getTRIR": "Get TRIR or past incident rate",
-        "estimateHours": "Estimate total labor hours for the project",
-        "estimateImpact": "Estimate financial impact per incident",
-        "planTraining": "Plan worker training and safety controls"
+        "actionHeader": "Action",
+        "deadlineHeader": "Deadline",
+        "provideMedicalCare": "Provide medical care",
+        "supervisorDocuments": "Supervisor documents incident",
+        "employeeReports": "Employee reports to employer",
+        "fileFROI": "File FROI",
+        "reportOSHA": "Report to OSHA (if required)",
+        "maintainRecords": "Maintain records",
+        "supportClaims": "Support claims process",
+        "conductSafetyReview": "Conduct safety review",
+        "deadlines": {
+          "immediately": "Immediately",
+          "within45Days": "Within 45 days (ideally 24 - 48 hours)",
+          "asapWithin30Days": "ASAP (within 30 days)",
+          "within8to24Hours": "8 - 24 hours",
+          "upTo5Years": "Up to 5 years",
+          "ongoing": "Ongoing",
+          "within1Week": "Within 1 week"
+        }
       },
       "save": "Save",
       "saving": "Saving...",
@@ -1105,5 +1118,40 @@
     "poorCondition": "Poor Condition",
     "badCondition": "Bad Condition",
     "notApplicable": "N/A"
+  },
+  "help": {
+    "supportRequest": {
+      "title": "Submit Support Request",
+      "description": "Need help? Submit a support request and our team will get back to you.",
+      "requestedBy": "Requested By",
+      "selectSupervisor": "Select supervisor...",
+      "subject": "Subject",
+      "subjectPlaceholder": "Brief description of the issue",
+      "details": "Issue Details",
+      "detailsPlaceholder": "Please provide detailed information about the issue, including steps to reproduce, error messages, and any other relevant information...",
+      "submit": "Submit Request",
+      "submitting": "Submitting..."
+    },
+    "information": {
+      "title": "Support Information",
+      "description": "Resources and contact information for getting help.",
+      "quickHelp": "Quick Help Topics",
+      "userManagement": "User Management & Permissions",
+      "formConfiguration": "Form Configuration & Setup",
+      "reportGeneration": "Report Generation & Export",
+      "systemSettings": "System Settings & Configuration",
+      "contactInfo": "Contact Information",
+      "email": "Email",
+      "phone": "Phone",
+      "hours": "Business Hours",
+      "businessHours": "Monday - Friday, 8:00 AM - 6:00 PM EST",
+      "responseTime": "Expected Response Times",
+      "urgent": "Urgent Issues",
+      "urgentTime": "Within 2 hours",
+      "normal": "General Support",
+      "normalTime": "Within 24 hours",
+      "low": "Feature Requests",
+      "lowTime": "Within 3-5 business days"
+    }
   }
 }

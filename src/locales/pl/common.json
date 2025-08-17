@@ -1032,12 +1032,25 @@
       "actionPlaceholder": "Nazwa oficera",
       "incidentChecklist": "Lista Kontrolna Incydentu",
       "checklist": {
-        "reviewReports": "Przejrzyj Raporty Incydentów",
-        "seeForm": "Zobacz Formularz",
-        "getTRIR": "Uzyskaj TRIR lub poprzedni wskaźnik incydentów",
-        "estimateHours": "Oszacuj całkowite godziny pracy dla projektu",
-        "estimateImpact": "Oszacuj wpływ finansowy na incydent",
-        "planTraining": "Zaplanuj szkolenie pracowników i kontrole bezpieczeństwa"
+        "actionHeader": "Działanie",
+        "deadlineHeader": "Termin",
+        "provideMedicalCare": "Zapewnij opiekę medyczną",
+        "supervisorDocuments": "Przełożony dokumentuje incydent",
+        "employeeReports": "Pracownik zgłasza pracodawcy",
+        "fileFROI": "Złóż FROI",
+        "reportOSHA": "Zgłoś do OSHA (jeśli wymagane)",
+        "maintainRecords": "Prowadź dokumentację",
+        "supportClaims": "Wspieraj proces roszczeń",
+        "conductSafetyReview": "Przeprowadź przegląd bezpieczeństwa",
+        "deadlines": {
+          "immediately": "Natychmiast",
+          "within45Days": "W ciągu 45 dni (idealnie 24 - 48 godzin)",
+          "asapWithin30Days": "ASAP (w ciągu 30 dni)",
+          "within8to24Hours": "8 - 24 godziny",
+          "upTo5Years": "Do 5 lat",
+          "ongoing": "Trwające",
+          "within1Week": "W ciągu 1 tygodnia"
+        }
       },
       "save": "Zapisz",
       "saving": "Zapisywanie...",
