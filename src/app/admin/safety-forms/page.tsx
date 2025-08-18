@@ -522,14 +522,88 @@ export default function SafetyFormsPage() {
     t
   ]);
 
-  const getExportData = useCallback((submission: Submission) => {
-    return [
+  // Generate dynamic headers based on all form data in the dataset
+  const generateDynamicHeaders = useCallback((submissions: Submission[]) => {
+    const allFormFields = new Set<string>();
+    const basicHeaders = [t('admin.contractor'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.type')];
+    
+    submissions.forEach(submission => {
+      const formData = submission.formData || {};
+      const flattenFormData = (obj: any, prefix = '') => {
+        Object.keys(obj).forEach(key => {
+          const value = obj[key];
+          const fullKey = prefix ? `${prefix}.${key}` : key;
+          
+          if (value !== null && value !== undefined) {
+            if (typeof value === 'object' && !Array.isArray(value)) {
+              // Check if it's a file object
+              if (value.name || value.fileName || value.originalName) {
+                allFormFields.add(fullKey);
+              } else {
+                flattenFormData(value, fullKey);
+              }
+            } else {
+              allFormFields.add(fullKey);
+            }
+          }
+        });
+      };
+      
+      flattenFormData(formData);
+    });
+    
+    return [...basicHeaders, ...Array.from(allFormFields).sort()];
+  }, [t]);
+
+  const getExportData = useCallback((submission: Submission, allHeaders: string[]) => {
+    const basicData = [
       submission.completedBy,
       submission.company,
       submission.date,
       submission.projectName,
       submission.submissionType
     ];
+
+    // Create a map of all form data
+    const formData = submission.formData || {};
+    const formDataMap = new Map<string, string>();
+    
+    const flattenFormData = (obj: any, prefix = '') => {
+      Object.keys(obj).forEach(key => {
+        const value = obj[key];
+        const fullKey = prefix ? `${prefix}.${key}` : key;
+        
+        if (value !== null && value !== undefined) {
+          if (typeof value === 'object' && !Array.isArray(value)) {
+            // Check if it's a file object
+            if (value.name || value.fileName || value.originalName) {
+              formDataMap.set(fullKey, value.name || value.fileName || value.originalName || 'File uploaded');
+            } else {
+              flattenFormData(value, fullKey);
+            }
+          } else if (Array.isArray(value)) {
+            // Handle arrays, including arrays of file objects
+            const arrayValues = value.map(item => {
+              if (typeof item === 'object' && (item.name || item.fileName || item.originalName)) {
+                return item.name || item.fileName || item.originalName || 'File uploaded';
+              }
+              return String(item);
+            });
+            formDataMap.set(fullKey, arrayValues.join('; '));
+          } else {
+            formDataMap.set(fullKey, String(value));
+          }
+        }
+      });
+    };
+    
+    flattenFormData(formData);
+    
+    // Match the headers (skip basic headers, get form field headers)
+    const formHeaders = allHeaders.slice(5);
+    const formValues = formHeaders.map(header => formDataMap.get(header) || '');
+    
+    return [...basicData, ...formValues];
   }, []);
 
   const renderMobileCard = useCallback((submission: Submission, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
@@ -666,6 +740,7 @@ export default function SafetyFormsPage() {
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
         onExportAll={handleExportAll}
+        generateDynamicHeaders={generateDynamicHeaders}
       />
     </div>
   );
