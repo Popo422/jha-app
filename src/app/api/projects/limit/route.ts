@@ -27,16 +27,16 @@ async function checkProjectLimit(companyId: string): Promise<{
     .where(eq(projects.companyId, companyId))
 
   const currentCount = projectCountResult[0]?.count || 0
-  let limit = 50 // Default limit
+  let limit = 5 // Default limit
 
   if (membershipLevel === '4') {
-    limit = 500
-  } else if (membershipLevel === '3') {
-    limit = 200
-  } else if (membershipLevel === '2') {
-    limit = 100
-  } else if (membershipLevel === '1') {
     limit = 50
+  } else if (membershipLevel === '3') {
+    limit = 25
+  } else if (membershipLevel === '2') {
+    limit = 10
+  } else if (membershipLevel === '1') {
+    limit = 5
   }
 
   return {
