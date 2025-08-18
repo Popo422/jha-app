@@ -555,7 +555,7 @@ export default function SafetyFormsPage() {
     return [...basicHeaders, ...Array.from(allFormFields).sort()];
   }, [t]);
 
-  const getExportData = useCallback((submission: Submission, allHeaders: string[]) => {
+  const getExportData = useCallback((submission: Submission, allHeaders?: string[]) => {
     const basicData = [
       submission.completedBy,
       submission.company,
@@ -600,6 +600,11 @@ export default function SafetyFormsPage() {
     flattenFormData(formData);
     
     // Match the headers (skip basic headers, get form field headers)
+    if (!allHeaders) {
+      // Fallback: return just basic data if no headers provided
+      return basicData;
+    }
+    
     const formHeaders = allHeaders.slice(5);
     const formValues = formHeaders.map(header => formDataMap.get(header) || '');
     
