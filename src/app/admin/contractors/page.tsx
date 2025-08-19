@@ -643,7 +643,7 @@ export default function ContractorsPage() {
                      formData.language === 'es' ? 'Español' :
                      formData.language === 'pl' ? 'Polski' :
                      formData.language === 'zh' ? '中文' : 'English'}
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="ml-2 h-4 w-4 shrink-0" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-full">

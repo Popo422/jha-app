@@ -367,8 +367,10 @@ export default function SafetyFormsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
-              {filters.type ? getSubmissionTypeLabel(filters.type) : t('admin.allTypes')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.type ? getSubmissionTypeLabel(filters.type) : t('admin.allTypes')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -421,8 +423,10 @@ export default function SafetyFormsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
-              {filters.company || t('admin.allCompanies')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.company || t('admin.allCompanies')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
@@ -433,8 +437,11 @@ export default function SafetyFormsPage() {
               <DropdownMenuItem 
                 key={subcontractor.id}
                 onClick={() => setFilters(prev => ({ ...prev, company: subcontractor.name }))}
+                className="max-w-xs"
               >
-                {subcontractor.name}
+                <span className="truncate">
+                  {subcontractor.name}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -446,8 +453,10 @@ export default function SafetyFormsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
-              {filters.contractor || t('admin.allContractors')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.contractor || t('admin.allContractors')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
@@ -458,8 +467,11 @@ export default function SafetyFormsPage() {
               <DropdownMenuItem 
                 key={contractor.id}
                 onClick={() => setFilters(prev => ({ ...prev, contractor: `${contractor.firstName} ${contractor.lastName}` }))}
+                className="max-w-xs"
               >
-                {contractor.firstName} {contractor.lastName}
+                <span className="truncate">
+                  {contractor.firstName} {contractor.lastName}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -471,8 +483,10 @@ export default function SafetyFormsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
-              {filters.project || t('admin.allProjects')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.project || t('admin.allProjects')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
@@ -483,8 +497,11 @@ export default function SafetyFormsPage() {
               <DropdownMenuItem 
                 key={project.id}
                 onClick={() => setFilters(prev => ({ ...prev, project: project.name }))}
+                className="max-w-xs"
               >
-                {project.name}
+                <span className="truncate">
+                  {project.name}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

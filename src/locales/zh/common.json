@@ -652,7 +652,7 @@
     "logoutConfirmation": "您确定要登出吗？您需要重新登录才能访问管理门户。"
   },
   "pages": {
-    "welcome": "欢迎使用 JHA 应用",
+    "welcome": "欢迎使用 Field Safe",
     "welcomeBack": "欢迎回来！",
     "dashboardDescription": "这是您的承包商今天的情况。",
     "mySubmissions": "我的提交",
@@ -716,7 +716,7 @@
     "noActionsRequired": "全部完成！无需操作。"
   },
   "onboarding": {
-    "welcomeToJHA": "欢迎使用 JHA 应用",
+    "welcomeToJHA": "欢迎使用 Field Safe",
     "companyInformation": "公司信息",
     "superAdminAccount": "超级管理员账户",
     "reviewConfirm": "审查和确认",

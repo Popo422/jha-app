@@ -254,7 +254,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               <div key={index} className="space-y-1">
                 <Button
                   variant="ghost"
-                  className="w-full justify-start h-11 px-4 text-left font-normal text-white hover:text-white hover:bg-white/10 text-wrap"
+                  className="w-full justify-start h-11 px-4 text-left font-normal text-white hover:text-white hover:bg-white/10 text-wrap truncate"
                   onClick={() => {
                     setAccordionState(prev => ({
                       ...prev,
@@ -281,7 +281,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                           key={child.href}
                           variant="ghost"
                           className={cn(
-                            "w-full justify-start h-10 px-4 text-left font-normal text-gray-300 hover:text-white hover:bg-white/10 text-sm",
+                            "w-full justify-start h-10 px-4 text-left font-normal text-gray-300 hover:text-white hover:bg-white/10 text-sm truncate",
                             isChildActive 
                               ? "bg-blue-600 text-white hover:bg-blue-600" 
                               : ""

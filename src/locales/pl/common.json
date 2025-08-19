@@ -652,7 +652,7 @@
     "logoutConfirmation": "Czy na pewno chcesz się wylogować? Będziesz musiał zalogować się ponownie, aby uzyskać dostęp do portalu administratora."
   },
   "pages": {
-    "welcome": "Witamy w Aplikacji JHA",
+    "welcome": "Witamy w Field Safe",
     "welcomeBack": "Witamy z powrotem!",
     "dashboardDescription": "Oto co dzieje się z Twoimi kontraktorami dzisiaj.",
     "mySubmissions": "Moje Zgłoszenia",
@@ -716,7 +716,7 @@
     "noActionsRequired": "Wszystko aktualne! Nie są wymagane żadne działania."
   },
   "onboarding": {
-    "welcomeToJHA": "Witamy w Aplikacji JHA",
+    "welcomeToJHA": "Witamy w Field Safe",
     "companyInformation": "Informacje o Firmie",
     "superAdminAccount": "Konto Super-Administratora",
     "reviewConfirm": "Przejrzyj i Potwierdź",

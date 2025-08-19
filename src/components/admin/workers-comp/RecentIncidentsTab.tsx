@@ -156,8 +156,10 @@ export default function RecentIncidentsTab() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
-                {filters.project || t('workersComp.filters.selectProject')}
-                <ChevronDown className="h-3 w-3" />
+                <span className="truncate">
+                  {filters.project || t('workersComp.filters.selectProject')}
+                </span>
+                <ChevronDown className="h-3 w-3 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="max-h-48 overflow-y-auto">
@@ -168,8 +170,11 @@ export default function RecentIncidentsTab() {
                 <DropdownMenuItem 
                   key={project.id}
                   onClick={() => setFilters(prev => ({ ...prev, project: project.name }))}
+                  className="max-w-xs"
                 >
-                  {project.name}
+                  <span className="truncate">
+                    {project.name}
+                  </span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

@@ -610,7 +610,7 @@
     "logoutConfirmation": "Are you sure you want to logout? You will need to login again to access the admin portal."
   },
   "pages": {
-    "welcome": "Welcome to JHA App",
+    "welcome": "Welcome to Field Safe",
     "welcomeBack": "Welcome back!",
     "dashboardDescription": "Here's what's happening with your contractors today.",
     "mySubmissions": "My Submissions",
@@ -674,7 +674,7 @@
     "noActionsRequired": "All caught up! No actions required."
   },
   "onboarding": {
-    "welcomeToJHA": "Welcome to JHA App",
+    "welcomeToJHA": "Welcome to Field Safe",
     "companyInformation": "Company Information",
     "superAdminAccount": "Super-Admin Account",
     "reviewConfirm": "Review & Confirm",
