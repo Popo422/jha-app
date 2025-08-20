@@ -17,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
 import { ContractorBulkUploadModal } from "@/components/admin/ContractorBulkUploadModal";
-import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy, Upload } from "lucide-react";
+import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy, Upload, ChevronDown } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 type ViewMode = 'list' | 'add' | 'edit';
@@ -26,6 +26,7 @@ export default function ContractorsPage() {
   const { t } = useTranslation('common');
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [editingContractor, setEditingContractor] = useState<Contractor | null>(null);
   const [formData, setFormData] = useState({
@@ -48,10 +49,17 @@ export default function ContractorsPage() {
   
   const { data: contractorsData, isLoading, error, refetch } = useGetContractorsQuery({
     search: debouncedSearch || undefined,
+    company: companyFilter !== "all" ? companyFilter : undefined,
     authType: 'admin'
   });
 
   const { data: limitData } = useGetContractorLimitQuery();
+  
+  // Get all contractors for filter options (separate query)
+  const { data: allContractorsData } = useGetContractorsQuery({
+    fetchAll: true,
+    authType: 'admin'
+  });
   
   const [deleteContractor, { isLoading: isDeleting }] = useDeleteContractorMutation();
   const exportAllContractors = useContractorExportAll();
@@ -305,7 +313,8 @@ export default function ContractorsPage() {
   };
 
 
-  const contractors = contractorsData?.contractors || [];
+  const allContractors = contractorsData?.contractors || [];
+  const contractors = allContractors;
 
   // Define table columns
   const columns: ColumnDef<Contractor>[] = [
@@ -771,6 +780,53 @@ export default function ContractorsPage() {
       </div>
 
       <AdminDataTable
+        filters={
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="space-y-1">
+              <div className="text-xs font-medium">Company</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-36 justify-between text-xs">
+                    <span className="truncate">
+                      {companyFilter === "all" ? "All Companies" : 
+                       companyFilter === "no-company" ? "No Company" : companyFilter}
+                    </span>
+                    <ChevronDown className="h-3 w-3 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="max-h-48 overflow-y-auto">
+                  <DropdownMenuItem onClick={() => setCompanyFilter("all")}>
+                    All Companies
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCompanyFilter("no-company")}>
+                    No Company Assigned
+                  </DropdownMenuItem>
+                  {[...new Set((allContractorsData?.contractors || []).map(c => c.companyName).filter(Boolean))].map(company => (
+                    <DropdownMenuItem 
+                      key={company!}
+                      onClick={() => setCompanyFilter(company!)}
+                      className="max-w-xs"
+                    >
+                      <span className="truncate">{company}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {companyFilter !== "all" && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setCompanyFilter("all")}
+                className="gap-1 text-xs"
+              >
+                <X className="h-3 w-3" />
+                Clear Filter
+              </Button>
+            )}
+          </div>
+        }
         data={contractors}
         columns={columns}
         isLoading={isLoading}

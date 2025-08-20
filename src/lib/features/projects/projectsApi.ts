@@ -94,14 +94,20 @@ export const projectsApi = createApi({
   }),
   tagTypes: ['Project'],
   endpoints: (builder) => ({
-    getProjects: builder.query<ProjectsResponse, { search?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin' }>({
-      query: ({ search, page = 1, pageSize = 50, authType } = {} as any) => {
+    getProjects: builder.query<ProjectsResponse, { search?: string; projectManager?: string; location?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin' }>({
+      query: ({ search, projectManager, location, page = 1, pageSize = 50, authType } = {} as any) => {
         const params = new URLSearchParams({
           page: page.toString(),
           pageSize: pageSize.toString(),
         })
         if (search) {
           params.append('search', search)
+        }
+        if (projectManager && projectManager !== 'all') {
+          params.append('projectManager', projectManager)
+        }
+        if (location && location !== 'all') {
+          params.append('location', location)
         }
         params.append('authType', authType)
         return `?${params}`

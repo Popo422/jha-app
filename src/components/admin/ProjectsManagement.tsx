@@ -12,13 +12,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, ArrowUpDown, Building } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, ArrowUpDown, Building, ChevronDown, X } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 export function ProjectsManagement() {
   const { t } = useTranslation('common');
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
+  const [projectManagerFilter, setProjectManagerFilter] = useState<string>("all");
+  const [locationFilter, setLocationFilter] = useState<string>("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -28,25 +31,30 @@ export function ProjectsManagement() {
     location: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [clientPagination, setClientPagination] = useState({
-    currentPage: 1,
-    pageSize: 10
-  });
   const [serverPagination, setServerPagination] = useState({
     page: 1,
-    pageSize: 50
+    pageSize: 10
   });
   
   const { showToast } = useToast();
   
   const { data: projectsData, isLoading, isFetching, refetch } = useGetProjectsQuery({
     search: debouncedSearch || undefined,
+    projectManager: projectManagerFilter !== "all" ? projectManagerFilter : undefined,
+    location: locationFilter !== "all" ? locationFilter : undefined,
     page: serverPagination.page,
     pageSize: serverPagination.pageSize,
     authType: 'admin'
   });
   
   const { data: limitData } = useGetProjectLimitQuery();
+  
+  // Get all projects for filter options (separate query)
+  const { data: allProjectsData } = useGetProjectsQuery({
+    page: 1,
+    pageSize: 100, // Reasonable number to get projects for filter options
+    authType: 'admin'
+  });
   
   
   const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation();
@@ -58,58 +66,28 @@ export function ProjectsManagement() {
 
   const allProjects = projectsData?.projects || [];
   const serverPaginationInfo = projectsData?.pagination;
-
-  // Client-side pagination logic
-  const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
-  const endIndex = startIndex + clientPagination.pageSize;
-  const data = allProjects.slice(startIndex, endIndex);
+  const data = allProjects;
   
-  // Create client pagination info
-  const totalClientPages = Math.ceil(allProjects.length / clientPagination.pageSize);
-  
-  // Calculate total pages considering both client view and server data
-  const estimatedTotalRecords = serverPaginationInfo?.total || allProjects.length;
-  const estimatedTotalPages = Math.ceil(estimatedTotalRecords / clientPagination.pageSize);
-  
-  const paginationInfo = {
-    page: clientPagination.currentPage,
-    pageSize: clientPagination.pageSize,
-    total: estimatedTotalRecords,
-    totalPages: estimatedTotalPages,
-    hasNextPage: clientPagination.currentPage < totalClientPages || (serverPaginationInfo?.hasNextPage || false),
-    hasPreviousPage: clientPagination.currentPage > 1
+  const paginationInfo = serverPaginationInfo || {
+    page: 1,
+    pageSize: serverPagination.pageSize,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPreviousPage: false
   };
 
-  // Check if we need to prefetch next batch
-  const shouldPrefetch = clientPagination.currentPage >= totalClientPages - 2 && serverPaginationInfo?.hasNextPage;
-
   const handlePageChange = useCallback((page: number) => {
-    const totalClientPages = Math.ceil(allProjects.length / clientPagination.pageSize);
-    
-    if (page <= totalClientPages) {
-      // Navigate within current batch
-      setClientPagination(prev => ({ ...prev, currentPage: page }));
-    } else {
-      // Need to fetch next batch
-      const nextServerPage = serverPagination.page + 1;
-      setServerPagination(prev => ({ ...prev, page: nextServerPage }));
-      setClientPagination({ currentPage: 1, pageSize: clientPagination.pageSize });
-    }
-  }, [allProjects.length, clientPagination.pageSize, serverPagination.page]);
-
-  const handlePageSizeChange = useCallback((pageSize: number) => {
-    setClientPagination({ currentPage: 1, pageSize });
+    setServerPagination(prev => ({ ...prev, page }));
   }, []);
 
-  // Prefetch next batch when near end
-  const { data: prefetchData } = useGetProjectsQuery({
-    search: debouncedSearch || undefined,
-    page: serverPagination.page + 1,
-    pageSize: serverPagination.pageSize,
-    authType: 'admin'
-  }, {
-    skip: !shouldPrefetch
-  });
+  const handlePageSizeChange = useCallback((pageSize: number) => {
+    setServerPagination({ page: 1, pageSize });
+  }, []);
+
+  const handleFilterChange = useCallback(() => {
+    setServerPagination(prev => ({ ...prev, page: 1 }));
+  }, []);
 
   const handleEdit = (project: Project) => {
     setEditingProject(project);
@@ -433,6 +411,93 @@ export function ProjectsManagement() {
         </CardHeader>
         <CardContent>
           <AdminDataTable
+            filters={
+              <div className="flex flex-wrap gap-3 items-end">
+                <div className="space-y-1">
+                  <div className="text-xs font-medium">Project Manager</div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-36 justify-between text-xs">
+                        <span className="truncate">
+                          {projectManagerFilter === "all" ? "All Managers" : projectManagerFilter}
+                        </span>
+                        <ChevronDown className="h-3 w-3 shrink-0" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="max-h-48 overflow-y-auto">
+                      <DropdownMenuItem onClick={() => {
+                        setProjectManagerFilter("all");
+                        handleFilterChange();
+                      }}>
+                        All Project Managers
+                      </DropdownMenuItem>
+                      {[...new Set((allProjectsData?.projects || []).map(p => p.projectManager))].map(manager => (
+                        <DropdownMenuItem 
+                          key={manager}
+                          onClick={() => {
+                            setProjectManagerFilter(manager);
+                            handleFilterChange();
+                          }}
+                          className="max-w-xs"
+                        >
+                          <span className="truncate">{manager}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                
+                <div className="space-y-1">
+                  <div className="text-xs font-medium">Location</div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-36 justify-between text-xs">
+                        <span className="truncate">
+                          {locationFilter === "all" ? "All Locations" : locationFilter}
+                        </span>
+                        <ChevronDown className="h-3 w-3 shrink-0" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="max-h-48 overflow-y-auto">
+                      <DropdownMenuItem onClick={() => {
+                        setLocationFilter("all");
+                        handleFilterChange();
+                      }}>
+                        All Locations
+                      </DropdownMenuItem>
+                      {[...new Set((allProjectsData?.projects || []).map(p => p.location))].map(location => (
+                        <DropdownMenuItem 
+                          key={location}
+                          onClick={() => {
+                            setLocationFilter(location);
+                            handleFilterChange();
+                          }}
+                          className="max-w-xs"
+                        >
+                          <span className="truncate">{location}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {(projectManagerFilter !== "all" || locationFilter !== "all") && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setProjectManagerFilter("all");
+                      setLocationFilter("all");
+                      handleFilterChange();
+                    }}
+                    className="gap-1 text-xs"
+                  >
+                    <X className="h-3 w-3" />
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+            }
             data={data}
             columns={columns}
             isLoading={isLoading}

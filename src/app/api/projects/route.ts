@@ -109,8 +109,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get remaining query parameters for pagination
+    // Get remaining query parameters for pagination and filtering
     const search = searchParams.get('search')
+    const projectManager = searchParams.get('projectManager')
+    const location = searchParams.get('location')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const limit = pageSize
@@ -129,6 +131,16 @@ export async function GET(request: NextRequest) {
       if (searchCondition) {
         conditions.push(searchCondition)
       }
+    }
+
+    // Add project manager filter if specified
+    if (projectManager && projectManager !== 'all') {
+      conditions.push(eq(projects.projectManager, projectManager))
+    }
+
+    // Add location filter if specified
+    if (location && location !== 'all') {
+      conditions.push(eq(projects.location, location))
     }
 
     // Get total count for pagination
