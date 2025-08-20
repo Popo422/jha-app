@@ -134,6 +134,7 @@ export async function GET(request: NextRequest) {
     const trir = totalManHoursThisYear.totalHours > 0 
       ? ((incidentsThisYear.count * 200000) / totalManHoursThisYear.totalHours).toFixed(2)
       : '0.00'
+      console.log(totalManHoursThisYear.totalHours, incidentsThisYear.count, trir)
 
     // Calculate compliance rate (simple example - could be more sophisticated)
     const totalExpectedSubmissions = totalContractors.count * 5 // Assuming 5 submissions per week per contractor

@@ -92,16 +92,16 @@ export default function AdminPage() {
         color: 'bg-purple-500'
       },
       {
-        title: 'Daily Man Hours',
+        title: t('status.dailyManHours'),
         value: stats.dailyManHours.toString(),
-        change: 'Sum of all hours today',
+        change: t('status.sumOfAllHoursToday'),
         icon: Calendar,
         color: 'bg-indigo-500'
       },
       {
-        title: 'TRIR',
+        title: t('status.trir'),
         value: stats.trir.toFixed(2),
-        change: 'Total Recordable Incident Rate',
+        change: t('status.totalRecordableIncidentRate'),
         icon: Shield,
         color: 'bg-red-500'
       }

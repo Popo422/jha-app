@@ -298,7 +298,7 @@ export default function ContractTrackerPage() {
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }: { row: any }) => <div className="text-sm text-muted-foreground">{row.getValue('email')}</div>,
+      cell: ({ row }: { row: any }) => <div className="text-sm">{row.getValue('email')}</div>,
     });
 
     return columns;
