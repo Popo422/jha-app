@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import HazardIdentificationSection from "@/components/forms/HazardIdentificationSection";
 import PPERequirementsSection from "@/components/forms/PPERequirementsSection";
 import FallProtectionSection from "@/components/forms/FallProtectionSection";
-import SignatureCanvas from "react-signature-canvas";
+import SignatureModal from "@/components/SignatureModal";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
@@ -140,7 +140,6 @@ export default function JobHazardReportPage() {
   const { contractor } = useAppSelector((state) => state.auth);
   const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
   const router = useRouter();
-  const signatureRef = useRef<SignatureCanvas>(null);
   
   const [formData, setFormData] = useState<JobHazardAnalysisFormData>({
     completedBy: contractor?.name || "",
@@ -364,9 +363,6 @@ export default function JobHazardReportPage() {
       photos: [],
       signature: "",
     });
-    if (signatureRef.current) {
-      signatureRef.current.clear();
-    }
   }, [contractor]);
 
   // Reset form and redirect on successful submission
@@ -438,24 +434,11 @@ export default function JobHazardReportPage() {
     }));
   }, []);
 
-  const handleSignatureClear = useCallback(() => {
-    if (signatureRef.current) {
-      signatureRef.current.clear();
-      setFormData((prev) => ({
-        ...prev,
-        signature: "",
-      }));
-    }
-  }, []);
-
-  const handleSignatureEnd = useCallback(() => {
-    if (signatureRef.current) {
-      const signatureData = signatureRef.current.toDataURL();
-      setFormData((prev) => ({
-        ...prev,
-        signature: signatureData,
-      }));
-    }
+  const handleSignatureChange = useCallback((signature: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      signature,
+    }));
   }, []);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -570,7 +553,7 @@ export default function JobHazardReportPage() {
                 {/* Instructions */}
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    <strong>{t('forms.instructions')}</strong>
+                    
                   </p>
                 </div>
 
@@ -1132,35 +1115,16 @@ export default function JobHazardReportPage() {
                   <CardHeader>
                     <CardTitle className="text-md md:text-xl">{t('forms.digitalSignature')}</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>{t('safetyQuestions.signaturePrompt')}:</Label>
-                      <div className="border border-gray-300 rounded-lg p-2 bg-white">
-                        <SignatureCanvas
-                          ref={signatureRef}
-                          canvasProps={{
-                            width: 400,
-                            height: 200,
-                            className: "signature-canvas w-full max-w-md mx-auto border rounded"
-                          }}
-                          onEnd={handleSignatureEnd}
-                        />
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleSignatureClear}
-                          className="text-sm"
-                        >
-                          {t('forms.clearSignature')}
-                        </Button>
-                      </div>
-                      {!formData.signature && (
-                        <p className="text-sm text-red-600">{t('safetyQuestions.signatureRequired')}.</p>
-                      )}
-                    </div>
+                  <CardContent>
+                    <SignatureModal
+                      signature={formData.signature}
+                      onSignatureChange={handleSignatureChange}
+                      signerName={formData.completedBy || 'Signature'}
+                      modalTitle={t('forms.digitalSignature')}
+                      modalDescription={t('safetyQuestions.signaturePrompt')}
+                      signatureLabel={`${t('safetyQuestions.signaturePrompt')}:`}
+                      required
+                    />
                   </CardContent>
                 </Card>
 

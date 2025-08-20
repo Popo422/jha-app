@@ -131,8 +131,14 @@ export async function GET(request: NextRequest) {
     }
     
     // Add company filter if specified
-    if (company) {
-      conditions.push(ilike(contractors.companyName, `%${company}%`))
+    if (company && company !== 'all') {
+      if (company === 'no-company') {
+        // Filter for contractors with no company assigned
+        conditions.push(sql`${contractors.companyName} IS NULL OR ${contractors.companyName} = ''`)
+      } else {
+        // Exact match for specific company
+        conditions.push(eq(contractors.companyName, company))
+      }
     }
 
     // Get total count for pagination

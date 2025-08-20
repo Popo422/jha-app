@@ -12,19 +12,31 @@ export interface LastUpdatedInfo {
   byUserId: string | null
 }
 
+export interface SubcontractorInfo {
+  id: string
+  name: string
+  enabledModules?: string[]
+  modulesLastUpdatedAt?: string | null
+  modulesLastUpdatedBy?: string | null
+}
+
 export interface ModulesResponse {
   success: boolean
-  enabledModules: string[]
+  subcontractors?: SubcontractorInfo[]
+  subcontractor?: { id: string; name: string }
+  enabledModules?: string[]
   availableModules: Module[]
-  lastUpdated: LastUpdatedInfo
+  lastUpdated?: LastUpdatedInfo
 }
 
 export interface UpdateModulesRequest {
   enabledModules: string[]
+  subcontractorId: string
 }
 
 export interface UpdateModulesResponse {
   success: boolean
+  subcontractor: { id: string; name: string }
   enabledModules: string[]
   message: string
 }
@@ -52,8 +64,11 @@ export const modulesApi = createApi({
   // Keep data cached for 5 minutes since modules don't change frequently
   keepUnusedDataFor: 300,
   endpoints: (builder) => ({
-    getModules: builder.query<ModulesResponse, void>({
-      query: () => '',
+    getModules: builder.query<ModulesResponse, { subcontractorId?: string }>({
+      query: ({ subcontractorId } = {}) => {
+        const params = subcontractorId ? `?subcontractorId=${subcontractorId}` : ''
+        return `${params}`
+      },
       providesTags: ['Modules'],
       // Cache for 5 minutes
       keepUnusedDataFor: 300,

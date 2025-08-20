@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!['end-of-day', 'job-hazard-analysis', 'start-of-day', 'timesheet', 'incident-report', 'quick-incident-report', 'near-miss-report'].includes(submissionType)) {
+    if (!['end-of-day', 'job-hazard-analysis', 'start-of-day', 'timesheet', 'incident-report', 'quick-incident-report', 'near-miss-report', 'vehicle-inspection'].includes(submissionType)) {
       return NextResponse.json(
         { error: 'Invalid submission type' },
         { status: 400 }

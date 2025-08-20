@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, desc, and, or, ilike, sql } from 'drizzle-orm'
+import { eq, desc, and, or, ilike, sql, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { projects } from '@/lib/db/schema'
+import { projects, companies } from '@/lib/db/schema'
 import { authenticateRequest } from '@/lib/auth-utils'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
@@ -45,6 +45,44 @@ interface AdminTokenPayload {
   exp: number
 }
 
+async function checkProjectLimit(companyId: string, additionalCount: number): Promise<{ canAdd: boolean; currentCount: number; limit: number; membershipLevel: string | null }> {
+  const company = await db.select({
+    membershipInfo: companies.membershipInfo
+  }).from(companies).where(eq(companies.id, companyId)).limit(1)
+
+  if (company.length === 0) {
+    throw new Error('Company not found')
+  }
+
+  const membershipInfo = company[0].membershipInfo as any
+  const membershipLevel = membershipInfo?.membershipLevel || '1'
+
+  // Get current project count
+  const projectCountResult = await db.select({ count: count() })
+    .from(projects)
+    .where(eq(projects.companyId, companyId))
+
+  const currentCount = projectCountResult[0]?.count || 0
+  let limit = 5 // Default limit
+  
+  if (membershipLevel === '4') {
+    limit = 50
+  } else if (membershipLevel === '3') {
+    limit = 25
+  } else if (membershipLevel === '2') {
+    limit = 10
+  } else if (membershipLevel === '1') {
+    limit = 5
+  }
+
+  return {
+    canAdd: (currentCount + additionalCount) <= limit,
+    currentCount,
+    limit,
+    membershipLevel
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Get authType from query parameters or default to 'any'
@@ -71,8 +109,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get remaining query parameters for pagination
+    // Get remaining query parameters for pagination and filtering
     const search = searchParams.get('search')
+    const projectManager = searchParams.get('projectManager')
+    const location = searchParams.get('location')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const limit = pageSize
@@ -91,6 +131,16 @@ export async function GET(request: NextRequest) {
       if (searchCondition) {
         conditions.push(searchCondition)
       }
+    }
+
+    // Add project manager filter if specified
+    if (projectManager && projectManager !== 'all') {
+      conditions.push(eq(projects.projectManager, projectManager))
+    }
+
+    // Add location filter if specified
+    if (location && location !== 'all') {
+      conditions.push(eq(projects.location, location))
     }
 
     // Get total count for pagination
@@ -157,6 +207,21 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // Check project limit
+      const limitCheck = await checkProjectLimit(auth.admin.companyId, projectsData.length)
+      if (!limitCheck.canAdd) {
+        return NextResponse.json(
+          { 
+            error: 'Project limit exceeded',
+            message: `Adding ${projectsData.length} projects would exceed your limit of ${limitCheck.limit}. Current count: ${limitCheck.currentCount}`,
+            currentCount: limitCheck.currentCount,
+            limit: limitCheck.limit,
+            membershipLevel: limitCheck.membershipLevel
+          },
+          { status: 403 }
+        )
+      }
+
       // Validate each project
       for (const project of projectsData) {
         if (!project.name || !project.location) {
@@ -214,6 +279,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Missing required fields: name, projectManager, location' },
         { status: 400 }
+      )
+    }
+
+    // Check project limit
+    const limitCheck = await checkProjectLimit(auth.admin.companyId, 1)
+    if (!limitCheck.canAdd) {
+      return NextResponse.json(
+        { 
+          error: 'Project limit exceeded',
+          message: `You have reached your project limit of ${limitCheck.limit}. Current count: ${limitCheck.currentCount}`,
+          currentCount: limitCheck.currentCount,
+          limit: limitCheck.limit,
+          membershipLevel: limitCheck.membershipLevel
+        },
+        { status: 403 }
       )
     }
 

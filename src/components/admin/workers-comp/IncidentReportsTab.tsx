@@ -221,8 +221,10 @@ export default function IncidentReportsTab() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
-              {filters.company || t('workersComp.filters.allCompanies')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.company || t('workersComp.filters.allCompanies')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
@@ -233,8 +235,11 @@ export default function IncidentReportsTab() {
               <DropdownMenuItem 
                 key={subcontractor.id}
                 onClick={() => setFilters(prev => ({ ...prev, company: subcontractor.name }))}
+                className="max-w-xs"
               >
-                {subcontractor.name}
+                <span className="truncate">
+                  {subcontractor.name}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -272,8 +277,10 @@ export default function IncidentReportsTab() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
-              {filters.project || t('workersComp.filters.allProjects')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.project || t('workersComp.filters.allProjects')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
@@ -284,8 +291,11 @@ export default function IncidentReportsTab() {
               <DropdownMenuItem 
                 key={project.id}
                 onClick={() => setFilters(prev => ({ ...prev, project: project.name }))}
+                className="max-w-xs"
               >
-                {project.name}
+                <span className="truncate">
+                  {project.name}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

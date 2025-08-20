@@ -14,6 +14,8 @@ interface AdminStats {
     today: number
   }
   complianceRate: number
+  dailyManHours: number
+  trir: number
   recentActivity: Array<{
     action: string
     contractor: string

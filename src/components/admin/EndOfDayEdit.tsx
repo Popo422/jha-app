@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Toast, useToast } from "@/components/ui/toast";
 import { useUpdateSubmissionMutation, useDeleteAttachmentMutation } from "@/lib/features/submissions/submissionsApi";
 import { ArrowLeft } from "lucide-react";
-import SignatureCanvas from "react-signature-canvas";
+import SignatureModal from "@/components/SignatureModal";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
@@ -43,29 +43,6 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
   const [updateSubmission, { isLoading }] = useUpdateSubmissionMutation();
   const [deleteAttachment] = useDeleteAttachmentMutation();
   const { toast, showToast, hideToast } = useToast();
-  const signatureRef = useRef<SignatureCanvas>(null);
-  const [isLoadingSignature, setIsLoadingSignature] = useState(false);
-
-  // Load main signature into canvas when component mounts
-  useEffect(() => {
-    if (formData.signature && signatureRef.current) {
-      setIsLoadingSignature(true);
-      const canvas = signatureRef.current.getCanvas();
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        const img = new Image();
-        img.onload = () => {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          setIsLoadingSignature(false);
-        };
-        img.onerror = () => {
-          setIsLoadingSignature(false);
-        };
-        img.src = formData.signature;
-      }
-    }
-  }, [formData.signature]);
   
   const auth = useSelector((state: RootState) => state.auth);
 
@@ -86,38 +63,11 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
     }
   };
 
-  const handleSignatureClear = () => {
-    if (signatureRef.current) {
-      signatureRef.current.clear();
-      setFormData((prev: any) => ({
-        ...prev,
-        signature: "",
-      }));
-    }
-  };
-
-  const handleSignatureEnd = () => {
-    if (signatureRef.current && !isLoadingSignature) {
-      try {
-        const signatureData = signatureRef.current.toDataURL();
-        setFormData((prev: any) => ({
-          ...prev,
-          signature: signatureData,
-        }));
-      } catch (error) {
-        console.warn('Could not export signature - canvas may be tainted');
-      }
-    }
-  };
-
-  const handleSignatureStart = () => {
-    // If there's an existing signature URL (not base64), clear it when user starts drawing
-    if (formData.signature && !formData.signature.startsWith('data:image/')) {
-      setFormData((prev: any) => ({
-        ...prev,
-        signature: "",
-      }));
-    }
+  const handleSignatureChange = (signature: string) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      signature,
+    }));
   };
 
   const handleDeleteAttachment = useCallback(async (fileUrl: string, fileName: string) => {
@@ -536,33 +486,16 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
             <CardHeader>
               <CardTitle>{t('forms.digitalSignature')}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>{t('adminEdit.employeeSignature')}:</Label>
-                <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800">
-                  <SignatureCanvas
-                    ref={signatureRef}
-                    canvasProps={{
-                      width: 400,
-                      height: 200,
-                      className: "signature-canvas w-full max-w-md mx-auto border rounded bg-white"
-                    }}
-                    onBegin={handleSignatureStart}
-                    onEnd={handleSignatureEnd}
-                  />
-                </div>
-                <div className="flex space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSignatureClear}
-                    className="text-sm"
-                  >
-                    {t('forms.clearSignature')}
-                  </Button>
-                </div>
-              </div>
+            <CardContent>
+              <SignatureModal
+                signature={formData.signature}
+                onSignatureChange={handleSignatureChange}
+                signerName={formData.completedBy || 'Signature'}
+                modalTitle={`${t('forms.endOfDayReport')} - ${t('forms.digitalSignature')} (Admin Edit)`}
+                modalDescription={t('adminEdit.employeeSignature')}
+                signatureLabel={`${t('adminEdit.employeeSignature')}:`}
+                required
+              />
             </CardContent>
           </Card>
 

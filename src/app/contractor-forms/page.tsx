@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -10,60 +10,65 @@ import { useGetCompanyModulesQuery } from "@/lib/features/company/companyApi";
 import Link from "next/link";
 import { useMemo } from "react";
 
-
 export default function ContractorFormsPage() {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation("common");
   const { data: modulesData, isLoading } = useGetCompanyModulesQuery();
-  
+
   const allForms = [
     {
-      id: "job-hazard-analysis",
-      title: t('forms.jobHazardAnalysis'),
-      href: "/contractor-forms/job-hazard-analysis",
-      description: t('forms.jobHazardAnalysisDescription'),
+      id: "timesheet",
+      title: t("nav.timesheet"),
+      href: "/timesheet",
+      description: t("pages.timesheetDescription"),
     },
     {
       id: "start-of-day",
-      title: t('forms.startOfDayReport'),
+      title: t("forms.startOfDayReport"),
       href: "/contractor-forms/start-of-day-report",
-      description: t('forms.startOfDayReportDescription'),
+      description: t("forms.startOfDayReportDescription"),
     },
     {
       id: "end-of-day",
-      title: t('forms.endOfDayReport'),
+      title: t("forms.endOfDayReport"),
       href: "/contractor-forms/end-of-day-report",
-      description: t('forms.endOfDayReportDescription'),
+      description: t("forms.endOfDayReportDescription"),
+    },
+    {
+      id: "job-hazard-analysis",
+      title: t("forms.jobHazardAnalysis"),
+      href: "/contractor-forms/job-hazard-analysis",
+      description: t("forms.jobHazardAnalysisDescription"),
     },
     {
       id: "incident-report",
-      title: t('forms.incidentReport'),
+      title: t("forms.incidentReport"),
       href: "/contractor-forms/incident-report",
-      description: t('forms.incidentReportDescription'),
+      description: t("forms.incidentReportDescription"),
     },
     {
       id: "quick-incident-report",
-      title: t('forms.quickIncidentReport'),
+      title: t("forms.quickIncidentReport"),
       href: "/contractor-forms/quick-incident-report",
-      description: t('forms.quickIncidentReportDescription'),
+      description: t("forms.quickIncidentReportDescription"),
     },
     {
       id: "near-miss-report",
-      title: t('forms.nearMissReport'),
+      title: t("forms.nearMissReport"),
       href: "/contractor-forms/near-miss-report",
-      description: t('forms.nearMissReportDescription'),
+      description: t("forms.nearMissReportDescription"),
     },
     {
-      id: "timesheet",
-      title: t('nav.timesheet'),
-      href: "/timesheet",
-      description: t('pages.timesheetDescription'),
+      id: "vehicle-inspection",
+      title: t("forms.vehicleInspection"),
+      href: "/contractor-forms/vehicle-inspection",
+      description: t("forms.vehicleInspectionDescription"),
     },
   ];
 
   const availableForms = useMemo(() => {
-    console.log('modulesData', modulesData)
+    console.log("modulesData", modulesData);
     if (!modulesData?.enabledModules) return [];
-    return allForms.filter(form => modulesData.enabledModules.includes(form.id));
+    return allForms.filter((form) => modulesData.enabledModules.includes(form.id));
   }, [modulesData]);
 
   return (
@@ -73,7 +78,7 @@ export default function ContractorFormsPage() {
 
       <main className="p-8">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8 text-foreground text-center">{t('nav.contractorForms')}</h1>
+          <h1 className="text-3xl font-bold mb-8 text-foreground text-center">{t("nav.contractorForms")}</h1>
 
           <div className="grid gap-6">
             {isLoading ? (
@@ -95,9 +100,7 @@ export default function ContractorFormsPage() {
             ) : availableForms.length === 0 ? (
               <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-center">
                 <CardContent className="p-8">
-                  <p className="text-muted-foreground">
-                    {t('forms.noFormsAvailable')}
-                  </p>
+                  <p className="text-muted-foreground">{t("forms.noFormsAvailable")}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -115,7 +118,7 @@ export default function ContractorFormsPage() {
                       asChild
                       className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
                     >
-                      <Link href={form.href}>{t('forms.seeForm')}</Link>
+                      <Link href={form.href}>{t("forms.seeForm")}</Link>
                     </Button>
                   </CardContent>
                 </Card>

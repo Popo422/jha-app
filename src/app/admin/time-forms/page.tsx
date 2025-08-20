@@ -4,6 +4,7 @@ import { useMemo, useCallback, useState } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetTimesheetsQuery, useDeleteTimesheetMutation, type Timesheet, type PaginationInfo } from "@/lib/features/timesheets/timesheetsApi";
+import { useGetSubmissionsQuery, type Submission } from "@/lib/features/submissions/submissionsApi";
 import { useTimesheetExportAll } from "@/hooks/useExportAll";
 import { useGetContractorsQuery } from "@/lib/features/contractors/contractorsApi";
 import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DateInput } from "@/components/ui/date-input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -21,16 +23,30 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X, Check, XCircle, Clock } from "lucide-react";
+import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X, Check, XCircle, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 
 const columnHelper = createColumnHelper<Timesheet>();
 
+interface TimesheetVerification {
+  id: string;
+  contractor: string;
+  date: string;
+  clockInTime: string | null;
+  clockOutTime: string | null;
+  calculatedHours: number;
+  submittedHours: number;
+  status: 'pass' | 'mismatch' | 'incomplete';
+  timesheetId?: string;
+  userId: string;
+}
+
 export default function TimeFormsPage() {
   const { t } = useTranslation('common')
   const [selectedTimesheet, setSelectedTimesheet] = useState<Timesheet | null>(null);
+  const [activeTab, setActiveTab] = useState('review');
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
@@ -54,6 +70,21 @@ export default function TimeFormsPage() {
   const { data: contractorsData } = useGetContractorsQuery({ fetchAll: true, authType: 'admin' });
   const { data: projectsData } = useGetProjectsQuery({ pageSize: 1000, authType: 'admin' });
   const { data: subcontractorsData } = useGetSubcontractorsQuery({ pageSize: 1000, authType: 'admin' });
+
+  // Fetch SOD/EOD submissions for timesheet verification
+  const { data: submissionsData } = useGetSubmissionsQuery({
+    page: 1,
+    pageSize: 1000,
+    dateFrom: filters.dateFrom || undefined,
+    dateTo: filters.dateTo || undefined,
+    company: filters.company || undefined,
+    authType: 'admin'
+  });
+
+  // console.log('Raw submissions data:', submissionsData);
+  // console.log('Raw timesheets response:', timesheetsData);
+  // console.log('Timesheets allData:', allData);
+  // console.log('Contractors data:', contractorsData);
 
   // Build combined search query for contractor and project filters
   const buildSearchQuery = useCallback(() => {
@@ -85,6 +116,121 @@ export default function TimeFormsPage() {
   const allData = timesheetsData?.timesheets || [];
   const contractorRates = timesheetsData?.contractorRates || {};
   const serverPaginationInfo = timesheetsData?.pagination;
+
+  // Create timesheet verification data
+  const timesheetVerifications = useMemo(() => {
+    const verifications: TimesheetVerification[] = [];
+    const submissions = submissionsData?.submissions || [];
+    
+    
+    // Group submissions by user and date
+    const submissionsByUserDate = submissions.reduce((acc: Record<string, { sod?: Submission; eod?: Submission }>, submission) => {
+      if (submission.submissionType === 'start-of-day' || submission.submissionType === 'end-of-day') {
+        const key = `${submission.userId}-${submission.date}`;
+        if (!acc[key]) acc[key] = {};
+        
+        if (submission.submissionType === 'start-of-day') {
+          acc[key].sod = submission;
+        } else {
+          acc[key].eod = submission;
+        }
+      }
+      return acc;
+    }, {});
+
+    // Create a comprehensive set of all user-date combinations from both timesheets and submissions
+    const allUserDateCombos = new Set<string>();
+    
+    // Add all timesheet user-date combos
+    allData.forEach(timesheet => {
+      allUserDateCombos.add(`${timesheet.userId}-${timesheet.date}`);
+    });
+    
+    // Add all SOD/EOD user-date combos
+    Object.keys(submissionsByUserDate).forEach(key => {
+      allUserDateCombos.add(key);
+    });
+    
+    
+    // Process all combinations
+    Array.from(allUserDateCombos).forEach(key => {
+      const date = key.slice(-10); // Last 10 characters are the date
+      const userId = key.slice(0, -11); // Everything except the last 11 characters (-YYYY-MM-DD)
+      
+      // Find timesheet for this user-date combo
+      const timesheet = allData.find(ts => ts.userId === userId && ts.date === date);
+      
+      // Find SOD/EOD submissions for this user-date combo
+      const submissionPair = submissionsByUserDate[key];
+      const sod = submissionPair?.sod;
+      const eod = submissionPair?.eod;
+      
+      // Find contractor info
+      const contractor = contractorsData?.contractors?.find(c => c.id === userId);
+      let contractorName: string;
+      
+      if (contractor) {
+        contractorName = `${contractor.firstName} ${contractor.lastName}`;
+      } else if (timesheet) {
+        contractorName = timesheet.employee;
+      } else if (sod) {
+        contractorName = sod.completedBy;
+      } else if (eod) {
+        contractorName = eod.completedBy;
+      } else {
+        contractorName = `Unknown (${userId})`;
+      }
+
+      // Extract clock times from submissions if they exist
+      const clockInTime = sod?.dateTimeClocked ? new Date(sod.dateTimeClocked).toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }) : null;
+      
+      const clockOutTime = eod?.dateTimeClocked ? new Date(eod.dateTimeClocked).toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }) : null;
+
+      // Calculate hours difference (only if we have both SOD and EOD)
+      let calculatedHours = 0;
+      if (sod?.dateTimeClocked && eod?.dateTimeClocked) {
+        const startTime = new Date(sod.dateTimeClocked);
+        const endTime = new Date(eod.dateTimeClocked);
+        calculatedHours = Math.round(((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)) * 100) / 100;
+      }
+
+      const submittedHours = timesheet ? parseFloat(timesheet.timeSpent) || 0 : 0;
+      
+      // Determine status based on available data
+      let status: 'pass' | 'mismatch' | 'incomplete' = 'incomplete';
+      
+      if (calculatedHours > 0 && submittedHours > 0) {
+        // Both have values, compare them
+        status = Math.abs(calculatedHours - submittedHours) <= 0.25 ? 'pass' : 'mismatch';
+      } else {
+        // Missing data - incomplete
+        status = 'incomplete';
+      }
+
+      verifications.push({
+        id: timesheet ? `${timesheet.id}-verification` : `${key}-verification`,
+        contractor: contractorName,
+        date,
+        clockInTime,
+        clockOutTime,
+        calculatedHours,
+        submittedHours,
+        status,
+        timesheetId: timesheet?.id,
+        userId
+      });
+    });
+
+    return verifications.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [submissionsData, allData, contractorsData]);
 
   // Client-side pagination logic
   const startIndex = (clientPagination.currentPage - 1) * clientPagination.pageSize;
@@ -242,6 +388,17 @@ export default function TimeFormsPage() {
     }
   }, []);
 
+  const getVerificationStatusBadge = useCallback((status: 'pass' | 'mismatch' | 'incomplete') => {
+    switch (status) {
+      case 'pass':
+        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="w-3 h-3 mr-1" />{t('admin.verificationPass')}</Badge>;
+      case 'mismatch':
+        return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" />{t('admin.verificationMismatch')}</Badge>;
+      case 'incomplete':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"><Clock className="w-3 h-3 mr-1" />{t('admin.verificationIncomplete')}</Badge>;
+    }
+  }, []);
+
   const columns = useMemo<ColumnDef<Timesheet>[]>(() => [
     {
       accessorKey: 'employee',
@@ -374,6 +531,108 @@ export default function TimeFormsPage() {
     },
   ], [contractorRates]);
 
+  // Timesheet verification columns
+  const verificationColumns = useMemo<ColumnDef<TimesheetVerification>[]>(() => [
+    {
+      accessorKey: 'status',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('tableHeaders.status')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => getVerificationStatusBadge(row.getValue('status')),
+    },
+    {
+      accessorKey: 'contractor',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('admin.contractor')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="text-sm">{row.getValue('contractor')}</div>,
+    },
+    {
+      accessorKey: 'date',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('tableHeaders.date')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="text-sm">{new Date(row.getValue('date')).toLocaleDateString()}</div>,
+    },
+    {
+      accessorKey: 'clockInTime',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('formFields.timeClockedIn')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="text-sm font-mono">{row.getValue('clockInTime') || 'N/A'}</div>,
+    },
+    {
+      accessorKey: 'clockOutTime',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('adminEdit.timeClockedOut')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="text-sm font-mono">{row.getValue('clockOutTime') || 'N/A'}</div>,
+    },
+    {
+      accessorKey: 'calculatedHours',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('admin.calculatedHours')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="text-sm font-medium">{(row.getValue('calculatedHours') as number).toFixed(2)}</div>,
+    },
+    {
+      accessorKey: 'submittedHours',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('admin.submittedHours')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="text-sm font-medium">{(row.getValue('submittedHours') as number).toFixed(2)}</div>,
+    },
+  ], [getVerificationStatusBadge]);
+
   const filterComponents = useMemo(() => (
     <div className="flex flex-wrap gap-3 items-end">
       <div className="space-y-1">
@@ -397,8 +656,10 @@ export default function TimeFormsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
-              {filters.company || t('admin.allCompanies')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.company || t('admin.allCompanies')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
@@ -409,8 +670,11 @@ export default function TimeFormsPage() {
               <DropdownMenuItem 
                 key={subcontractor.id}
                 onClick={() => setFilters(prev => ({ ...prev, company: subcontractor.name }))}
+                className="max-w-xs"
               >
-                {subcontractor.name}
+                <span className="truncate">
+                  {subcontractor.name}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -422,8 +686,10 @@ export default function TimeFormsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
-              {filters.contractor || t('admin.allContractors')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.contractor || t('admin.allContractors')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
@@ -434,8 +700,11 @@ export default function TimeFormsPage() {
               <DropdownMenuItem 
                 key={contractor.id}
                 onClick={() => setFilters(prev => ({ ...prev, contractor: `${contractor.firstName} ${contractor.lastName}` }))}
+                className="max-w-xs"
               >
-                {contractor.firstName} {contractor.lastName}
+                <span className="truncate">
+                  {contractor.firstName} {contractor.lastName}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -447,8 +716,10 @@ export default function TimeFormsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
-              {filters.project || t('admin.allProjects')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.project || t('admin.allProjects')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
@@ -459,8 +730,11 @@ export default function TimeFormsPage() {
               <DropdownMenuItem 
                 key={project.id}
                 onClick={() => setFilters(prev => ({ ...prev, project: project.name }))}
+                className="max-w-xs"
               >
-                {project.name}
+                <span className="truncate">
+                  {project.name}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -472,11 +746,13 @@ export default function TimeFormsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
-              {filters.status === 'all' ? t('admin.allStatuses') : 
-               filters.status === 'approved' ? t('admin.approvedOnly') :
-               filters.status === 'pending' ? t('admin.pendingOnly') :
-               filters.status === 'rejected' ? t('admin.rejectedOnly') : t('admin.allStatuses')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.status === 'all' ? t('admin.allStatuses') : 
+                 filters.status === 'approved' ? t('admin.approvedOnly') :
+                 filters.status === 'pending' ? t('admin.pendingOnly') :
+                 filters.status === 'rejected' ? t('admin.rejectedOnly') : t('admin.allStatuses')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -722,8 +998,25 @@ export default function TimeFormsPage() {
           {t('admin.timeFormsDescription')}
         </p>
       </div>
-      
-      <AdminDataTable
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="bg-transparent border-0 p-0 h-auto justify-start space-x-8">
+          <TabsTrigger 
+            value="review" 
+            className="bg-transparent border-0 rounded-none px-0 pb-2 border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent text-gray-600 hover:text-blue-600 hover:bg-transparent transition-colors font-medium"
+          >
+            {t('admin.reviewTimeForms')}
+          </TabsTrigger>
+          <TabsTrigger 
+            value="verification" 
+            className="bg-transparent border-0 rounded-none px-0 pb-2 border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent text-gray-600 hover:text-blue-600 hover:bg-transparent transition-colors font-medium"
+          >
+            {t('admin.timesheetVerification')}
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="review" className="mt-6">
+          <AdminDataTable
         data={data}
         columns={columns}
         isLoading={isLoading}
@@ -768,6 +1061,32 @@ export default function TimeFormsPage() {
         ]}
         onExportAll={handleExportAll}
       />
+        </TabsContent>
+
+        <TabsContent value="verification" className="mt-6">
+          <AdminDataTable
+            data={timesheetVerifications}
+            columns={verificationColumns}
+            isLoading={false}
+            isFetching={false}
+            getRowId={(verification) => verification.id}
+            exportFilename="timesheet-verification"
+            exportHeaders={[t('tableHeaders.status'), t('admin.contractor'), t('tableHeaders.date'), t('formFields.timeClockedIn'), t('adminEdit.timeClockedOut'), 'Calculated Hours', t('admin.submittedHours')]}            
+            getExportData={(verification) => [
+              verification.status,
+              verification.contractor,
+              verification.date,
+              verification.clockInTime || 'N/A',
+              verification.clockOutTime || 'N/A',
+              verification.calculatedHours.toFixed(2),
+              verification.submittedHours.toFixed(2)
+            ]}
+            filters={filterComponents}
+            searchValue={searchValue}
+            onSearchChange={setSearchValue}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Approval Dialog */}
       <AlertDialog open={!!approvalDialog} onOpenChange={() => setApprovalDialog(null)}>

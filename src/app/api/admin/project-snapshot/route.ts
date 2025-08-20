@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const offset = fetchAll ? undefined : (page - 1) * pageSize;
     const projectFilter = searchParams.get('project')
     const subcontractorFilter = searchParams.get('subcontractor')
+    const projectManagerFilter = searchParams.get('projectManager')
     const searchFilter = searchParams.get('search')
     const companyId = searchParams.get('companyId')
 
@@ -33,6 +34,10 @@ export async function GET(request: NextRequest) {
     
     if (subcontractorFilter) {
       whereConditions.push(like(timesheets.company, `%${subcontractorFilter}%`))
+    }
+
+    if (projectManagerFilter) {
+      whereConditions.push(like(projects.projectManager, `%${projectManagerFilter}%`))
     }
 
     if (searchFilter) {

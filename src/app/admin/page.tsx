@@ -15,7 +15,9 @@ import {
   Settings, 
   TrendingUp,
   AlertTriangle,
-  CheckCircle 
+  CheckCircle,
+  Calendar,
+  Shield
 } from 'lucide-react'
 
 export default function AdminPage() {
@@ -88,6 +90,20 @@ export default function AdminPage() {
         change: t('status.basedOnSubmissions'),
         icon: CheckCircle,
         color: 'bg-purple-500'
+      },
+      {
+        title: t('status.dailyManHours'),
+        value: stats.dailyManHours.toString(),
+        change: t('status.sumOfAllHoursToday'),
+        icon: Calendar,
+        color: 'bg-indigo-500'
+      },
+      {
+        title: t('status.trir'),
+        value: stats.trir.toFixed(2),
+        change: t('status.totalRecordableIncidentRate'),
+        icon: Shield,
+        color: 'bg-red-500'
       }
     ]
   }
@@ -118,10 +134,10 @@ export default function AdminPage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
           {isLoading ? (
             // Loading skeletons
-            Array.from({ length: 4 }).map((_, index) => (
+            Array.from({ length: 6 }).map((_, index) => (
               <Card key={index}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <Skeleton className="h-4 w-24" />

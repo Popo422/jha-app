@@ -174,6 +174,7 @@ export default function SafetyFormsPage() {
   const handleExportAll = useCallback(async () => {
     return await exportAllSubmissions({
       type: filters.type || undefined,
+      excludeTypes: ['incident-report', 'quick-incident-report'],
       dateFrom: filters.dateFrom || undefined,
       dateTo: filters.dateTo || undefined,
       company: filters.company || undefined,
@@ -217,6 +218,8 @@ export default function SafetyFormsPage() {
         return t('forms.quickIncidentReport');
       case 'near-miss-report':
         return t('forms.nearMissReport');
+      case 'vehicle-inspection':
+        return 'Vehicle Inspection';
       default:
         return type;
     }
@@ -236,6 +239,8 @@ export default function SafetyFormsPage() {
         return 'bg-pink-100 text-pink-800';
       case 'near-miss-report':
         return 'bg-yellow-100 text-yellow-800';
+      case 'vehicle-inspection':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -257,6 +262,12 @@ export default function SafetyFormsPage() {
     // For near-miss reports, redirect to the wizard edit page
     if (submission.submissionType === 'near-miss-report') {
       router.push(`/admin/near-miss-reports/${submission.id}/edit`);
+      return;
+    }
+    
+    // For vehicle inspections, redirect to the vehicle inspection edit page
+    if (submission.submissionType === 'vehicle-inspection') {
+      router.push(`/admin/vehicle-inspections/${submission.id}/edit`);
       return;
     }
     
@@ -356,8 +367,10 @@ export default function SafetyFormsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
-              {filters.type ? getSubmissionTypeLabel(filters.type) : t('admin.allTypes')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.type ? getSubmissionTypeLabel(filters.type) : t('admin.allTypes')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -381,6 +394,9 @@ export default function SafetyFormsPage() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'near-miss-report' }))}>
               {t('forms.nearMissReport')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'vehicle-inspection' }))}>
+              Vehicle Inspection
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -407,8 +423,10 @@ export default function SafetyFormsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
-              {filters.company || t('admin.allCompanies')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.company || t('admin.allCompanies')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
@@ -419,8 +437,11 @@ export default function SafetyFormsPage() {
               <DropdownMenuItem 
                 key={subcontractor.id}
                 onClick={() => setFilters(prev => ({ ...prev, company: subcontractor.name }))}
+                className="max-w-xs"
               >
-                {subcontractor.name}
+                <span className="truncate">
+                  {subcontractor.name}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -432,8 +453,10 @@ export default function SafetyFormsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
-              {filters.contractor || t('admin.allContractors')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.contractor || t('admin.allContractors')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
@@ -444,8 +467,11 @@ export default function SafetyFormsPage() {
               <DropdownMenuItem 
                 key={contractor.id}
                 onClick={() => setFilters(prev => ({ ...prev, contractor: `${contractor.firstName} ${contractor.lastName}` }))}
+                className="max-w-xs"
               >
-                {contractor.firstName} {contractor.lastName}
+                <span className="truncate">
+                  {contractor.firstName} {contractor.lastName}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -457,8 +483,10 @@ export default function SafetyFormsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="w-32 justify-between text-xs">
-              {filters.project || t('admin.allProjects')}
-              <ChevronDown className="h-3 w-3" />
+              <span className="truncate">
+                {filters.project || t('admin.allProjects')}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="max-h-48 overflow-y-auto">
@@ -469,8 +497,11 @@ export default function SafetyFormsPage() {
               <DropdownMenuItem 
                 key={project.id}
                 onClick={() => setFilters(prev => ({ ...prev, project: project.name }))}
+                className="max-w-xs"
               >
-                {project.name}
+                <span className="truncate">
+                  {project.name}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -508,14 +539,93 @@ export default function SafetyFormsPage() {
     t
   ]);
 
-  const getExportData = useCallback((submission: Submission) => {
-    return [
+  // Generate dynamic headers based on all form data in the dataset
+  const generateDynamicHeaders = useCallback((submissions: Submission[]) => {
+    const allFormFields = new Set<string>();
+    const basicHeaders = [t('admin.contractor'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.type')];
+    
+    submissions.forEach(submission => {
+      const formData = submission.formData || {};
+      const flattenFormData = (obj: any, prefix = '') => {
+        Object.keys(obj).forEach(key => {
+          const value = obj[key];
+          const fullKey = prefix ? `${prefix}.${key}` : key;
+          
+          if (value !== null && value !== undefined) {
+            if (typeof value === 'object' && !Array.isArray(value)) {
+              // Check if it's a file object
+              if (value.name || value.fileName || value.originalName) {
+                allFormFields.add(fullKey);
+              } else {
+                flattenFormData(value, fullKey);
+              }
+            } else {
+              allFormFields.add(fullKey);
+            }
+          }
+        });
+      };
+      
+      flattenFormData(formData);
+    });
+    
+    return [...basicHeaders, ...Array.from(allFormFields).sort()];
+  }, [t]);
+
+  const getExportData = useCallback((submission: Submission, allHeaders?: string[]) => {
+    const basicData = [
       submission.completedBy,
       submission.company,
       submission.date,
       submission.projectName,
       submission.submissionType
     ];
+
+    // Create a map of all form data
+    const formData = submission.formData || {};
+    const formDataMap = new Map<string, string>();
+    
+    const flattenFormData = (obj: any, prefix = '') => {
+      Object.keys(obj).forEach(key => {
+        const value = obj[key];
+        const fullKey = prefix ? `${prefix}.${key}` : key;
+        
+        if (value !== null && value !== undefined) {
+          if (typeof value === 'object' && !Array.isArray(value)) {
+            // Check if it's a file object
+            if (value.name || value.fileName || value.originalName) {
+              formDataMap.set(fullKey, value.name || value.fileName || value.originalName || 'File uploaded');
+            } else {
+              flattenFormData(value, fullKey);
+            }
+          } else if (Array.isArray(value)) {
+            // Handle arrays, including arrays of file objects
+            const arrayValues = value.map(item => {
+              if (typeof item === 'object' && (item.name || item.fileName || item.originalName)) {
+                return item.name || item.fileName || item.originalName || 'File uploaded';
+              }
+              return String(item);
+            });
+            formDataMap.set(fullKey, arrayValues.join('; '));
+          } else {
+            formDataMap.set(fullKey, String(value));
+          }
+        }
+      });
+    };
+    
+    flattenFormData(formData);
+    
+    // Match the headers (skip basic headers, get form field headers)
+    if (!allHeaders) {
+      // Fallback: return just basic data if no headers provided
+      return basicData;
+    }
+    
+    const formHeaders = allHeaders.slice(5);
+    const formValues = formHeaders.map(header => formDataMap.get(header) || '');
+    
+    return [...basicData, ...formValues];
   }, []);
 
   const renderMobileCard = useCallback((submission: Submission, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
@@ -652,6 +762,7 @@ export default function SafetyFormsPage() {
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
         onExportAll={handleExportAll}
+        generateDynamicHeaders={generateDynamicHeaders}
       />
     </div>
   );

@@ -21,6 +21,7 @@ interface ChecklistItem {
   id: string;
   label: string;
   completed: boolean;
+  deadline: string;
   link?: string;
 }
 
@@ -39,11 +40,14 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
   const [reviewedBy, setReviewedBy] = useState("");
   const [actionTaken, setActionTaken] = useState("");
   const [checklist, setChecklist] = useState<ChecklistItem[]>([
-    { id: "review", label: t('workersComp.incidentDetails.checklist.reviewReports'), completed: false, link: t('workersComp.incidentDetails.checklist.seeForm') },
-    { id: "trir", label: t('workersComp.incidentDetails.checklist.getTRIR'), completed: false },
-    { id: "labor", label: t('workersComp.incidentDetails.checklist.estimateHours'), completed: false },
-    { id: "financial", label: t('workersComp.incidentDetails.checklist.estimateImpact'), completed: false },
-    { id: "training", label: t('workersComp.incidentDetails.checklist.planTraining'), completed: false },
+    { id: "medical", label: t('workersComp.incidentDetails.checklist.provideMedicalCare'), completed: false, deadline: t('workersComp.incidentDetails.checklist.deadlines.immediately') },
+    { id: "supervisor", label: t('workersComp.incidentDetails.checklist.supervisorDocuments'), completed: false, deadline: t('workersComp.incidentDetails.checklist.deadlines.immediately') },
+    { id: "employee", label: t('workersComp.incidentDetails.checklist.employeeReports'), completed: false, deadline: t('workersComp.incidentDetails.checklist.deadlines.within45Days') },
+    { id: "froi", label: t('workersComp.incidentDetails.checklist.fileFROI'), completed: false, deadline: t('workersComp.incidentDetails.checklist.deadlines.asapWithin30Days') },
+    { id: "osha", label: t('workersComp.incidentDetails.checklist.reportOSHA'), completed: false, deadline: t('workersComp.incidentDetails.checklist.deadlines.within8to24Hours') },
+    { id: "records", label: t('workersComp.incidentDetails.checklist.maintainRecords'), completed: false, deadline: t('workersComp.incidentDetails.checklist.deadlines.upTo5Years') },
+    { id: "claims", label: t('workersComp.incidentDetails.checklist.supportClaims'), completed: false, deadline: t('workersComp.incidentDetails.checklist.deadlines.ongoing') },
+    { id: "safety", label: t('workersComp.incidentDetails.checklist.conductSafetyReview'), completed: false, deadline: t('workersComp.incidentDetails.checklist.deadlines.within1Week') },
   ]);
 
 
@@ -217,33 +221,48 @@ export default function IncidentViewDetails({ incident, onBack, onEditIncident }
           <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
             <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">{t('workersComp.incidentDetails.incidentChecklist')}</h3>
             
-            <div className="space-y-3">
-              {checklist.map((item) => (
-                <div key={item.id} className="flex items-start space-x-3">
-                  <Checkbox
-                    id={item.id}
-                    checked={item.completed}
-                    onCheckedChange={(checked) => handleChecklistChange(item.id, checked as boolean)}
-                    className="mt-0.5"
-                  />
-                  <div className="flex-1">
-                    <label
-                      htmlFor={item.id}
-                      className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer leading-5"
-                    >
-                      {item.label}
-                      {item.link && (
-                        <button
-                          onClick={handleSeeForm}
-                          className="text-blue-600 dark:text-blue-400 ml-1 hover:underline"
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-600">
+                    <th className="text-left pb-2 text-gray-600 dark:text-gray-400 font-medium w-8"></th>
+                    <th className="text-left pb-2 text-gray-600 dark:text-gray-400 font-medium">{t('workersComp.incidentDetails.checklist.actionHeader')}</th>
+                    <th className="text-left pb-2 text-gray-600 dark:text-gray-400 font-medium">{t('workersComp.incidentDetails.checklist.deadlineHeader')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {checklist.map((item) => (
+                    <tr key={item.id} className="border-b border-gray-100 dark:border-gray-700 last:border-0">
+                      <td className="py-3">
+                        <Checkbox
+                          id={item.id}
+                          checked={item.completed}
+                          onCheckedChange={(checked) => handleChecklistChange(item.id, checked as boolean)}
+                        />
+                      </td>
+                      <td className="py-3 pr-4">
+                        <label
+                          htmlFor={item.id}
+                          className="text-gray-700 dark:text-gray-300 cursor-pointer"
                         >
-                          - {item.link}
-                        </button>
-                      )}
-                    </label>
-                  </div>
-                </div>
-              ))}
+                          {item.label}
+                          {item.link && (
+                            <button
+                              onClick={handleSeeForm}
+                              className="text-blue-600 dark:text-blue-400 ml-1 hover:underline"
+                            >
+                              - {item.link}
+                            </button>
+                          )}
+                        </label>
+                      </td>
+                      <td className="py-3 text-gray-600 dark:text-gray-400">
+                        {item.deadline}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
             
             <div className="mt-6">

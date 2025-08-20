@@ -28,6 +28,7 @@ import {
   Lock,
   AlertTriangle
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type Step = 'welcome' | 'company' | 'admin' | 'review' | 'complete'
 
@@ -52,7 +53,7 @@ export default function OnboardingPage() {
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.theme.mode)
   const membership = useAppSelector((state) => state.membership)
-  
+  const { t } = useTranslation('common')
   const [currentStep, setCurrentStep] = useState<Step>('welcome')
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -287,7 +288,7 @@ export default function OnboardingPage() {
           <Sparkles className="w-10 h-10 text-white" />
         </div>
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Welcome to JHA App
+          {t('onboarding.welcomeToJHA')}
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           {`Let's get your company set up with a comprehensive Job Hazard Analysis and safety management system.`}
@@ -652,7 +653,7 @@ export default function OnboardingPage() {
           <CheckCircle className="w-10 h-10 text-white" />
         </div>
         <h1 className="text-4xl font-bold text-green-600">
-          Welcome to JHA App!
+          {t('onboarding.welcomeToJHA')}
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           {`Your company and super-admin account have been created successfully. You'll be redirected to the login page shortly`}.

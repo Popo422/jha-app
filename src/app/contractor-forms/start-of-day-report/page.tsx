@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import SignatureCanvas from "react-signature-canvas";
+import SignatureModal from "@/components/SignatureModal";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
@@ -58,7 +58,6 @@ export default function StartOfDayReportPage() {
     signature: "",
   });
 
-  const signatureRef = useRef<SignatureCanvas>(null);
 
   const [submitForm, { isLoading, isSuccess, isError, error, reset }] = useSubmitFormMutation();
   const router = useRouter();
@@ -80,24 +79,11 @@ export default function StartOfDayReportPage() {
     }
   };
 
-  const handleSignatureClear = () => {
-    if (signatureRef.current) {
-      signatureRef.current.clear();
-      setFormData((prev) => ({
-        ...prev,
-        signature: "",
-      }));
-    }
-  };
-
-  const handleSignatureEnd = () => {
-    if (signatureRef.current) {
-      const signatureData = signatureRef.current.toDataURL();
-      setFormData((prev) => ({
-        ...prev,
-        signature: signatureData,
-      }));
-    }
+  const handleSignatureChange = (signature: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      signature,
+    }));
   };
 
   // Reset form and redirect on successful submission
@@ -124,9 +110,6 @@ export default function StartOfDayReportPage() {
         physicalDistancing: null,
         signature: "",
       });
-      if (signatureRef.current) {
-        signatureRef.current.clear();
-      }
     }
   }, [isSuccess, contractor]);
 
@@ -257,7 +240,7 @@ export default function StartOfDayReportPage() {
                 {/* Instructions */}
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    <strong>{t('forms.instructions')}</strong> {`Any injuries or COVID-19 related symptoms must be reported to your supervisor immediately. Please Answer "${t('adminEdit.yes')}" or "${t('adminEdit.no')}"`}
+                     {`Any injuries or COVID-19 related symptoms must be reported to your supervisor immediately. Please Answer "${t('adminEdit.yes')}" or "${t('adminEdit.no')}"`}
                   </p>
                 </div>
 
@@ -500,32 +483,15 @@ export default function StartOfDayReportPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label>{t('safetyQuestions.signaturePrompt')}:</Label>
-                      <div className="border border-gray-300 rounded-lg p-2 bg-white">
-                        <SignatureCanvas
-                          ref={signatureRef}
-                          canvasProps={{
-                            width: 400,
-                            height: 200,
-                            className: "signature-canvas w-full max-w-md mx-auto border rounded"
-                          }}
-                          onEnd={handleSignatureEnd}
-                        />
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleSignatureClear}
-                          className="text-sm"
-                        >
-                          {t('forms.clearSignature')}
-                        </Button>
-                      </div>
-                      {!formData.signature && (
-                        <p className="text-sm text-red-600">{t('safetyQuestions.signatureRequired')}.</p>
-                      )}
+                      <SignatureModal
+                        signature={formData.signature}
+                        onSignatureChange={handleSignatureChange}
+                        signerName={formData.completedBy || 'Signature'}
+                        modalTitle={`${t('forms.startOfDayReport')} - ${t('forms.digitalSignature')}`}
+                        modalDescription={t('safetyQuestions.signaturePrompt')}
+                        signatureLabel={`${t('safetyQuestions.signaturePrompt')}:`}
+                        required
+                      />
                     </div>
                   </CardContent>
                 </Card>

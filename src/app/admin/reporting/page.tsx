@@ -564,20 +564,20 @@ export default function ReportingPage() {
   }, [statusFilter]);
 
 
-  const handleContractorToggle = (contractorId: string) => {
-    setSelectedContractors(prev => 
-      prev.includes(contractorId) 
-        ? prev.filter(id => id !== contractorId)
-        : [...prev, contractorId]
-    );
+  const handleContractorSelect = (contractorId: string) => {
+    if (contractorId === 'all') {
+      setSelectedContractors([]);
+    } else {
+      setSelectedContractors([contractorId]);
+    }
   };
 
-  const handleProjectNameToggle = (projectName: string) => {
-    setSelectedProjectNames(prev => 
-      prev.includes(projectName) 
-        ? prev.filter(name => name !== projectName)
-        : [...prev, projectName]
-    );
+  const handleProjectNameSelect = (projectName: string) => {
+    if (projectName === 'all') {
+      setSelectedProjectNames([]);
+    } else {
+      setSelectedProjectNames([projectName]);
+    }
   };
 
 
@@ -1237,20 +1237,26 @@ export default function ReportingPage() {
                 />
               </div>
               <DropdownMenuItem
-                onClick={() => setSelectedContractors([])}
-                className="cursor-pointer"
+                onClick={() => handleContractorSelect('all')}
+                className="cursor-pointer flex items-center justify-between"
               >
-                {t('admin.allContractors')}
+                <span>{t('admin.selectAll')}</span>
+                {selectedContractors.length === 0 && (
+                  <Check className="h-4 w-4 text-green-600" />
+                )}
               </DropdownMenuItem>
               <div className="max-h-48 overflow-y-auto">
                 {filteredContractors.map((contractor) => (
-                  <DropdownMenuCheckboxItem
+                  <DropdownMenuItem
                     key={contractor.id}
-                    checked={selectedContractors.includes(contractor.id)}
-                    onCheckedChange={() => handleContractorToggle(contractor.id)}
+                    onClick={() => handleContractorSelect(contractor.id)}
+                    className="cursor-pointer flex items-center justify-between"
                   >
-                    {contractor.firstName} {contractor.lastName}
-                  </DropdownMenuCheckboxItem>
+                    <span>{contractor.firstName} {contractor.lastName}</span>
+                    {selectedContractors.includes(contractor.id) && (
+                      <Check className="h-4 w-4 text-green-600" />
+                    )}
+                  </DropdownMenuItem>
                 ))}
               </div>
             </DropdownMenuContent>
@@ -1293,20 +1299,26 @@ export default function ReportingPage() {
                 />
               </div>
               <DropdownMenuItem
-                onClick={() => setSelectedProjectNames([])}
-                className="cursor-pointer"
+                onClick={() => handleProjectNameSelect('all')}
+                className="cursor-pointer flex items-center justify-between"
               >
-                {t('admin.allProjects')}
+                <span>{t('admin.selectAll')}</span>
+                {selectedProjectNames.length === 0 && (
+                  <Check className="h-4 w-4 text-green-600" />
+                )}
               </DropdownMenuItem>
               <div className="max-h-48 overflow-y-auto">
                 {filteredProjectNames.map((projectName) => (
-                  <DropdownMenuCheckboxItem
+                  <DropdownMenuItem
                     key={projectName}
-                    checked={selectedProjectNames.includes(projectName)}
-                    onCheckedChange={() => handleProjectNameToggle(projectName)}
+                    onClick={() => handleProjectNameSelect(projectName)}
+                    className="cursor-pointer flex items-center justify-between"
                   >
-                    {projectName}
-                  </DropdownMenuCheckboxItem>
+                    <span>{projectName}</span>
+                    {selectedProjectNames.includes(projectName) && (
+                      <Check className="h-4 w-4 text-green-600" />
+                    )}
+                  </DropdownMenuItem>
                 ))}
               </div>
             </DropdownMenuContent>
@@ -1548,26 +1560,26 @@ export default function ReportingPage() {
                       />
                     </div>
                     <DropdownMenuItem
-                      onClick={() => setSelectedContractors([])}
-                      className="cursor-pointer"
+                      onClick={() => handleContractorSelect('all')}
+                      className="cursor-pointer flex items-center justify-between"
                     >
-                      {t('admin.allContractors')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setSelectedContractors(filteredContractors.map(c => c.id))}
-                      className="cursor-pointer"
-                    >
-                      Select All
+                      <span>{t('admin.selectAll')}</span>
+                      {selectedContractors.length === 0 && (
+                        <Check className="h-4 w-4 text-green-600" />
+                      )}
                     </DropdownMenuItem>
                     <div className="max-h-48 overflow-y-auto">
                       {filteredContractors.map((contractor) => (
-                        <DropdownMenuCheckboxItem
+                        <DropdownMenuItem
                           key={contractor.id}
-                          checked={selectedContractors.includes(contractor.id)}
-                          onCheckedChange={() => handleContractorToggle(contractor.id)}
+                          onClick={() => handleContractorSelect(contractor.id)}
+                          className="cursor-pointer flex items-center justify-between"
                         >
-                          {contractor.firstName} {contractor.lastName}
-                        </DropdownMenuCheckboxItem>
+                          <span>{contractor.firstName} {contractor.lastName}</span>
+                          {selectedContractors.includes(contractor.id) && (
+                            <Check className="h-4 w-4 text-green-600" />
+                          )}
+                        </DropdownMenuItem>
                       ))}
                     </div>
                   </DropdownMenuContent>
@@ -1611,26 +1623,26 @@ export default function ReportingPage() {
                       />
                     </div>
                     <DropdownMenuItem
-                      onClick={() => setSelectedProjectNames([])}
-                      className="cursor-pointer"
+                      onClick={() => handleProjectNameSelect('all')}
+                      className="cursor-pointer flex items-center justify-between"
                     >
-                      {t('admin.allProjects')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setSelectedProjectNames(uniqueProjectNames)}
-                      className="cursor-pointer"
-                    >
-                      Select All
+                      <span>{t('admin.selectAll')}</span>
+                      {selectedProjectNames.length === 0 && (
+                        <Check className="h-4 w-4 text-green-600" />
+                      )}
                     </DropdownMenuItem>
                     <div className="max-h-48 overflow-y-auto">
                       {filteredProjectNames.map((projectName) => (
-                        <DropdownMenuCheckboxItem
+                        <DropdownMenuItem
                           key={projectName}
-                          checked={selectedProjectNames.includes(projectName)}
-                          onCheckedChange={() => handleProjectNameToggle(projectName)}
+                          onClick={() => handleProjectNameSelect(projectName)}
+                          className="cursor-pointer flex items-center justify-between"
                         >
-                          {projectName}
-                        </DropdownMenuCheckboxItem>
+                          <span>{projectName}</span>
+                          {selectedProjectNames.includes(projectName) && (
+                            <Check className="h-4 w-4 text-green-600" />
+                          )}
+                        </DropdownMenuItem>
                       ))}
                     </div>
                   </DropdownMenuContent>
@@ -1714,15 +1726,17 @@ export default function ReportingPage() {
               </DropdownMenu>
             </div>
 
-            <Button 
-              variant="outline" 
-              onClick={exportToCSV}
-              disabled={(activeTab === 'burndown' ? burndownData.length === 0 : chartData.length === 0) || timesheetFetching}
-              className="md:ml-auto"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              {t('admin.exportCSV')}
-            </Button>
+            {(activeTab === 'burndown' || activeTab === 'forecast') && (
+              <Button 
+                variant="outline" 
+                onClick={exportToCSV}
+                disabled={(activeTab === 'burndown' ? burndownData.length === 0 : chartData.length === 0) || timesheetFetching}
+                className="md:ml-auto"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {t('admin.exportCSV')}
+              </Button>
+            )}
           </div>
 
 

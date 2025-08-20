@@ -59,7 +59,8 @@ export interface AdminDataTableProps<T> {
   getRowId: (item: T) => string;
   exportFilename: string;
   exportHeaders: string[];
-  getExportData: (item: T) => string[];
+  getExportData: (item: T, headers?: string[]) => string[];
+  generateDynamicHeaders?: (data: T[]) => string[];
   filters?: React.ReactNode;
   renderMobileCard?: (item: T, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => React.ReactNode;
   searchValue?: string;
@@ -73,6 +74,7 @@ export interface AdminDataTableProps<T> {
   onPageSizeChange?: (pageSize: number) => void;
   // Export all data props
   onExportAll?: () => Promise<T[]>;
+  isExportingExternal?: boolean;
 }
 
 export function AdminDataTable<T>({
@@ -98,10 +100,12 @@ export function AdminDataTable<T>({
   onPageChange,
   onPageSizeChange,
   onExportAll,
+  generateDynamicHeaders,
 }: AdminDataTableProps<T>) {
   const { t } = useTranslation('common');
   const [rowSelection, setRowSelection] = useState({});
   const [showCheckboxes, setShowCheckboxes] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const isMobile = useIsMobile();
 
   const handleSingleDelete = useCallback(async (id: string) => {
@@ -267,35 +271,50 @@ export function AdminDataTable<T>({
   });
 
   const exportToCSV = useCallback(async () => {
+    setIsExporting(true);
     let csvData: string[][];
+    let dynamicHeaders: string[] = exportHeaders;
     
-    if (onExportAll) {
-      // Fetch all filtered data from the API
-      try {
-        const allData = await onExportAll();
-        csvData = allData.map(item => getExportData(item));
-      } catch (error) {
-        console.error('Failed to fetch all data for export:', error);
-        // Fallback to table data
-        csvData = table.getFilteredRowModel().rows.map(row => getExportData(row.original));
+    try {
+      // Fetch data for export
+      let exportData: T[];
+      
+      if (onExportAll) {
+        try {
+          exportData = await onExportAll();
+        } catch (error) {
+          console.error('Failed to fetch all data for export:', error);
+          // Fallback to table data
+          exportData = table.getFilteredRowModel().rows.map(row => row.original);
+        }
+      } else {
+        // Use current table view data (old behavior)
+        exportData = table.getFilteredRowModel().rows.map(row => row.original);
       }
-    } else {
-      // Use current table view data (old behavior)
-      csvData = table.getFilteredRowModel().rows.map(row => getExportData(row.original));
+      
+      // Generate dynamic headers if function is provided
+      if (generateDynamicHeaders) {
+        dynamicHeaders = generateDynamicHeaders(exportData);
+      }
+      
+      // Generate CSV data with dynamic headers
+      csvData = exportData.map(item => getExportData(item, dynamicHeaders));
+
+      const csvContent = [dynamicHeaders, ...csvData]
+        .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${exportFilename}_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
     }
-
-    const csvContent = [exportHeaders, ...csvData]
-      .map(row => row.map(field => `"${field}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${exportFilename}_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    window.URL.revokeObjectURL(url);
-  }, [table, exportHeaders, exportFilename, getExportData, onExportAll]);
+  }, [table, exportHeaders, exportFilename, getExportData, onExportAll, generateDynamicHeaders]);
 
   const TableSkeleton = () => (
     <div className="rounded-md border">
@@ -438,10 +457,10 @@ export function AdminDataTable<T>({
                 <Button 
                   variant="outline" 
                   onClick={exportToCSV}
-                  disabled={table.getFilteredRowModel().rows.length === 0 || isFetching}
+                  disabled={table.getFilteredRowModel().rows.length === 0 || isFetching || isExporting}
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  {t('admin.exportCSV')}
+                  <Download className={`h-4 w-4 mr-2 ${isExporting ? 'animate-spin' : ''}`} />
+                  {isExporting ? t('common.loading') : t('admin.exportCSV')}
                 </Button>
               </>
             )}
