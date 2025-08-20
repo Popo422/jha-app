@@ -91,6 +91,50 @@ export async function GET(request: NextRequest) {
         )
       )
 
+    // Calculate Daily Man Hours (sum of approved timesheet hours for today)
+    const [dailyManHoursResult] = await db
+      .select({ totalHours: sql<number>`COALESCE(SUM(${timesheets.timeSpent}), 0)` })
+      .from(timesheets)
+      .where(
+        and(
+          eq(timesheets.companyId, admin.companyId),
+          eq(timesheets.status, 'approved'),
+          sql`DATE(${timesheets.date}) = CURRENT_DATE`
+        )
+      )
+
+    // Calculate TRIR - Get incidents for the year and total approved hours for the year
+    const yearStart = new Date(now.getFullYear(), 0, 1)
+    
+    // Get recordable incidents for the year (incident-report and quick-incident-report)
+    const [incidentsThisYear] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(submissions)
+      .where(
+        and(
+          eq(submissions.companyId, admin.companyId),
+          gte(submissions.createdAt, yearStart),
+          sql`${submissions.submissionType} IN ('incident-report', 'quick-incident-report')`
+        )
+      )
+
+    // Get total approved man hours for the year
+    const [totalManHoursThisYear] = await db
+      .select({ totalHours: sql<number>`COALESCE(SUM(${timesheets.timeSpent}), 0)` })
+      .from(timesheets)
+      .where(
+        and(
+          eq(timesheets.companyId, admin.companyId),
+          eq(timesheets.status, 'approved'),
+          gte(timesheets.createdAt, yearStart)
+        )
+      )
+
+    // Calculate TRIR: (Number of Incidents × 200,000) / total number of hours worked in a year
+    const trir = totalManHoursThisYear.totalHours > 0 
+      ? ((incidentsThisYear.count * 200000) / totalManHoursThisYear.totalHours).toFixed(2)
+      : '0.00'
+
     // Calculate compliance rate (simple example - could be more sophisticated)
     const totalExpectedSubmissions = totalContractors.count * 5 // Assuming 5 submissions per week per contractor
     const actualSubmissions = submissionsThisWeek.count
@@ -185,6 +229,8 @@ export async function GET(request: NextRequest) {
         today: timesheetsToday.count
       },
       complianceRate,
+      dailyManHours: dailyManHoursResult.totalHours,
+      trir: parseFloat(trir),
       recentActivity,
       actionRequired: {
         urgentSafetyForms: urgentSafetyForms[0].count,
