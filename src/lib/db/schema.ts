@@ -90,6 +90,7 @@ export const projects = pgTable('projects', {
   projectManager: text('project_manager').notNull(),
   location: text('location').notNull(),
   companyId: uuid('company_id').notNull(),
+  subcontractorId: uuid('subcontractor_id'), // Optional reference to subcontractor
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({

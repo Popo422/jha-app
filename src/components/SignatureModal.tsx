@@ -260,7 +260,7 @@ export default function SignatureModal({
 
       {/* Signature Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] md:max-w-4xl overflow-auto">
           <DialogHeader>
             <DialogTitle>
               {modalTitle}

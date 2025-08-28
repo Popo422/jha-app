@@ -21,6 +21,7 @@ interface ProjectSelectProps {
   id?: string
   name?: string
   authType?: 'contractor' | 'admin'
+  subcontractorName?: string
 }
 
 export default function ProjectSelect({
@@ -33,7 +34,8 @@ export default function ProjectSelect({
   className,
   id,
   name,
-  authType = 'contractor'
+  authType = 'contractor',
+  subcontractorName
 }: ProjectSelectProps) {
   const { t } = useTranslation('common')
   
@@ -52,7 +54,8 @@ export default function ProjectSelect({
     search: debouncedSearchTerm || undefined,
     pageSize: 1000,
     page: 1,
-    authType: authType
+    authType: authType,
+    subcontractorName: subcontractorName || undefined
   })
 
   const projects = projectsData?.projects || []

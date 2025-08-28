@@ -6,6 +6,7 @@ export interface Project {
   projectManager: string
   location: string
   companyId: string
+  subcontractorId?: string
   createdAt: string
   updatedAt: string
 }
@@ -14,6 +15,7 @@ export interface CreateProjectRequest {
   name: string
   projectManager: string
   location: string
+  subcontractorId?: string
 }
 
 export interface UpdateProjectRequest {
@@ -21,6 +23,7 @@ export interface UpdateProjectRequest {
   name: string
   projectManager: string
   location: string
+  subcontractorId?: string
 }
 
 export interface PaginationInfo {
@@ -51,6 +54,7 @@ export interface BulkProjectData {
   name: string
   location: string
   projectManager?: string
+  subcontractorId?: string
 }
 
 export interface BulkCreateProjectsRequest {
@@ -94,8 +98,8 @@ export const projectsApi = createApi({
   }),
   tagTypes: ['Project'],
   endpoints: (builder) => ({
-    getProjects: builder.query<ProjectsResponse, { search?: string; projectManager?: string; location?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin' }>({
-      query: ({ search, projectManager, location, page = 1, pageSize = 50, authType } = {} as any) => {
+    getProjects: builder.query<ProjectsResponse, { search?: string; projectManager?: string; location?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin'; subcontractorName?: string }>({
+      query: ({ search, projectManager, location, page = 1, pageSize = 50, authType, subcontractorName } = {} as any) => {
         const params = new URLSearchParams({
           page: page.toString(),
           pageSize: pageSize.toString(),
@@ -108,6 +112,9 @@ export const projectsApi = createApi({
         }
         if (location && location !== 'all') {
           params.append('location', location)
+        }
+        if (subcontractorName) {
+          params.append('subcontractorName', subcontractorName)
         }
         params.append('authType', authType)
         return `?${params}`

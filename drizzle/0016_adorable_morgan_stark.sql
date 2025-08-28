@@ -1,0 +1,2 @@
+ALTER TABLE "companies" ALTER COLUMN "membership_info" SET DEFAULT '{"membershipLevel":"3","user":null,"memberships":[],"tokenVerifiedAt":"2025-08-28T14:18:06.828Z"}'::jsonb;--> statement-breakpoint
+ALTER TABLE "projects" ADD COLUMN "subcontractor_id" uuid;

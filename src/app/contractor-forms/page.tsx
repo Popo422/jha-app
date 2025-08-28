@@ -28,6 +28,12 @@ export default function ContractorFormsPage() {
       description: t("forms.startOfDayReportDescription"),
     },
     {
+      id: "start-of-day-v2",
+      title: "Start of Day Report V2",
+      href: "/contractor-forms/start-of-day-v2",
+      description: "Multi-step start of day report with enhanced safety protocol tracking",
+    },
+    {
       id: "end-of-day",
       title: t("forms.endOfDayReport"),
       href: "/contractor-forms/end-of-day-report",
@@ -68,7 +74,13 @@ export default function ContractorFormsPage() {
   const availableForms = useMemo(() => {
     console.log("modulesData", modulesData);
     if (!modulesData?.enabledModules) return [];
-    return allForms.filter((form) => modulesData.enabledModules.includes(form.id));
+    return allForms.filter((form) => {
+      // Show start-of-day-v2 if start-of-day is enabled
+      if (form.id === 'start-of-day-v2') {
+        return modulesData.enabledModules.includes('start-of-day');
+      }
+      return modulesData.enabledModules.includes(form.id);
+    });
   }, [modulesData]);
 
   return (

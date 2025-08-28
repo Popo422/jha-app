@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { eq, desc, and, or, ilike, sql, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { projects, companies } from '@/lib/db/schema'
+import { projects, companies, subcontractors } from '@/lib/db/schema'
 import { authenticateRequest } from '@/lib/auth-utils'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
@@ -113,6 +113,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const projectManager = searchParams.get('projectManager')
     const location = searchParams.get('location')
+    const subcontractorName = searchParams.get('subcontractorName')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const limit = pageSize
@@ -143,13 +144,35 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(projects.location, location))
     }
 
+    // Add subcontractor filter if specified
+    if (subcontractorName) {
+      // Filter by subcontractor name using join
+      const subcontractorCondition = sql`EXISTS (
+        SELECT 1 FROM ${subcontractors} 
+        WHERE ${subcontractors.id} = ${projects.subcontractorId} 
+        AND ${subcontractors.name} = ${subcontractorName}
+      )`;
+      conditions.push(subcontractorCondition);
+    }
+
     // Get total count for pagination
     const countResult = await db.select({ count: sql`count(*)` }).from(projects)
       .where(and(...conditions))
     const totalCount = Number(countResult[0].count)
 
     // Execute query with pagination
-    const result = await db.select().from(projects)
+    const result = await db.select({
+      id: projects.id,
+      name: projects.name,
+      projectManager: projects.projectManager,
+      location: projects.location,
+      companyId: projects.companyId,
+      subcontractorId: projects.subcontractorId,
+      createdAt: projects.createdAt,
+      updatedAt: projects.updatedAt,
+      subcontractorName: subcontractors.name,
+    }).from(projects)
+      .leftJoin(subcontractors, eq(projects.subcontractorId, subcontractors.id))
       .where(and(...conditions))
       .orderBy(desc(projects.createdAt))
       .limit(limit)
@@ -252,13 +275,38 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // Get all subcontractors for name-to-ID mapping
+      const allSubcontractors = await db
+        .select({ id: subcontractors.id, name: subcontractors.name })
+        .from(subcontractors)
+        .where(eq(subcontractors.companyId, auth.admin.companyId))
+
+      const subcontractorMap = new Map(allSubcontractors.map(s => [s.name.toLowerCase(), s.id]))
+
       // Prepare project data with projectManager from first project manager in company or default
-      const preparedProjects = uniqueProjects.map((project: any) => ({
-        name: project.name.trim(),
-        projectManager: 'Project Manager', // Default for onboarding, can be updated later
-        location: project.location.trim(),
-        companyId: auth.admin.companyId,
-      }))
+      const preparedProjects = uniqueProjects.map((project: any) => {
+        let subcontractorId = null
+        
+        // If subcontractorName is provided, try to find matching subcontractor ID
+        if (project.subcontractorName && project.subcontractorName.trim()) {
+          const foundSubcontractorId = subcontractorMap.get(project.subcontractorName.toLowerCase().trim())
+          if (foundSubcontractorId) {
+            subcontractorId = foundSubcontractorId
+          }
+        }
+        // If subcontractorId is directly provided (from forms), use it
+        else if (project.subcontractorId) {
+          subcontractorId = project.subcontractorId
+        }
+
+        return {
+          name: project.name.trim(),
+          projectManager: 'Project Manager', // Default for onboarding, can be updated later
+          location: project.location.trim(),
+          companyId: auth.admin.companyId,
+          subcontractorId,
+        }
+      })
 
       // Create projects
       const createdProjects = await db.insert(projects).values(preparedProjects).returning()
@@ -272,7 +320,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single project creation (existing logic)
-    const { name, projectManager, location } = body
+    const { name, projectManager, location, subcontractorId } = body
 
     // Validate required fields
     if (!name || !projectManager || !location) {
@@ -322,6 +370,7 @@ export async function POST(request: NextRequest) {
       projectManager: projectManager.trim(),
       location: location.trim(),
       companyId: auth.admin.companyId,
+      subcontractorId: subcontractorId || null,
     }
 
     // Create project record
@@ -375,7 +424,7 @@ export async function PUT(request: NextRequest) {
 
 
     const body = await request.json()
-    const { id, name, projectManager, location } = body
+    const { id, name, projectManager, location, subcontractorId } = body
 
     if (!id) {
       return NextResponse.json(
@@ -412,6 +461,7 @@ export async function PUT(request: NextRequest) {
       name: name.trim(),
       projectManager: projectManager.trim(),
       location: location.trim(),
+      subcontractorId: subcontractorId || null,
       updatedAt: new Date()
     }
 

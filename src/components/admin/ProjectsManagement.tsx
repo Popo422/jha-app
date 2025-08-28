@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetProjectsQuery, useDeleteProjectMutation, useCreateProjectMutation, useUpdateProjectMutation, useGetProjectLimitQuery, type Project, type PaginationInfo } from "@/lib/features/projects/projectsApi";
 import SupervisorSelect from "@/components/SupervisorSelect";
+import SubcontractorSelect from "@/components/SubcontractorSelect";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ export function ProjectsManagement() {
     name: "",
     projectManager: "",
     location: "",
+    subcontractorId: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [serverPagination, setServerPagination] = useState({
@@ -95,6 +97,7 @@ export function ProjectsManagement() {
       name: project.name,
       projectManager: project.projectManager,
       location: project.location,
+      subcontractorId: project.subcontractorId || "",
     });
     setFormErrors({});
     setIsEditDialogOpen(true);
@@ -106,6 +109,7 @@ export function ProjectsManagement() {
       name: "",
       projectManager: "",
       location: "",
+      subcontractorId: "",
     });
     setFormErrors({});
     setIsCreateDialogOpen(true);
@@ -115,7 +119,7 @@ export function ProjectsManagement() {
     setIsCreateDialogOpen(false);
     setIsEditDialogOpen(false);
     setEditingProject(null);
-    setFormData({ name: "", projectManager: "", location: "" });
+    setFormData({ name: "", projectManager: "", location: "", subcontractorId: "" });
     setFormErrors({});
   };
 
@@ -228,6 +232,27 @@ export function ProjectsManagement() {
       ),
     },
     {
+      accessorKey: "subcontractorName",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('admin.subcontractor')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const subcontractorName = row.getValue("subcontractorName") as string;
+        return subcontractorName ? (
+          <span className="text-sm">{subcontractorName}</span>
+        ) : (
+          <span className="text-sm text-muted-foreground">Not assigned</span>
+        );
+      },
+    },
+    {
       accessorKey: "createdAt",
       header: ({ column }) => (
         <Button
@@ -298,6 +323,16 @@ export function ProjectsManagement() {
                   <p className="text-sm text-red-500 mt-1">{formErrors.location}</p>
                 )}
               </div>
+              <div>
+                <SubcontractorSelect
+                  label={t('admin.subcontractor')}
+                  value={formData.subcontractorId}
+                  onChange={(value) => setFormData({ ...formData, subcontractorId: value })}
+                  required={false}
+                  authType="admin"
+                  placeholder="Select subcontractor (optional)"
+                />
+              </div>
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">
                   <p className="text-sm text-red-600">
@@ -365,6 +400,16 @@ export function ProjectsManagement() {
                 {formErrors.location && (
                   <p className="text-sm text-red-500 mt-1">{formErrors.location}</p>
                 )}
+              </div>
+              <div>
+                <SubcontractorSelect
+                  label={t('admin.subcontractor')}
+                  value={formData.subcontractorId}
+                  onChange={(value) => setFormData({ ...formData, subcontractorId: value })}
+                  required={false}
+                  authType="admin"
+                  placeholder="Select subcontractor (optional)"
+                />
               </div>
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">
@@ -506,11 +551,12 @@ export function ProjectsManagement() {
             onDelete={handleDelete}
             getRowId={(project) => project.id}
             exportFilename="projects"
-            exportHeaders={[t('tableHeaders.projectName'), t('admin.projectManager'), t('admin.location'), t('admin.created')]}
+            exportHeaders={[t('tableHeaders.projectName'), t('admin.projectManager'), t('admin.location'), t('admin.subcontractor'), t('admin.created')]}
             getExportData={(project) => [
               project.name,
               project.projectManager,
               project.location,
+              (project as any).subcontractorName || 'Not assigned',
               new Date(project.createdAt).toLocaleDateString()
             ]}
             searchValue={search}

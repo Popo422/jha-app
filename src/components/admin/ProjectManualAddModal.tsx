@@ -14,11 +14,13 @@ import {
   AlertDialogFooter 
 } from '@/components/ui/alert-dialog'
 import { Building2, MapPin, FileText, Plus, ArrowRight } from 'lucide-react'
+import SubcontractorSelect from '@/components/SubcontractorSelect'
 
 interface ProjectData {
   name: string
   location: string
   projectManager: string
+  subcontractorId?: string
 }
 
 interface ProjectManualAddModalProps {
@@ -42,7 +44,8 @@ export function ProjectManualAddModal({
   const [currentProject, setCurrentProject] = useState<ProjectData>({
     name: '',
     location: '',
-    projectManager: ''
+    projectManager: '',
+    subcontractorId: ''
   })
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
@@ -72,7 +75,7 @@ export function ProjectManualAddModal({
     onSaveAndAddMore(newProject)
     
     // Reset form
-    setCurrentProject({ name: '', location: '', projectManager: '' })
+    setCurrentProject({ name: '', location: '', projectManager: '', subcontractorId: '' })
     setErrors({})
   }
 
@@ -89,12 +92,12 @@ export function ProjectManualAddModal({
     
     // Reset state
     setTempProjects([])
-    setCurrentProject({ name: '', location: '', projectManager: '' })
+    setCurrentProject({ name: '', location: '', projectManager: '', subcontractorId: '' })
     setErrors({})
   }
 
   const handleClose = () => {
-    setCurrentProject({ name: '', location: '', projectManager: '' })
+    setCurrentProject({ name: '', location: '', projectManager: '', subcontractorId: '' })
     setTempProjects([])
     setErrors({})
     onClose()
@@ -196,6 +199,17 @@ export function ProjectManualAddModal({
                       {errors.location}
                     </p>
                   )}
+                </div>
+                
+                <div className="space-y-2">
+                  <SubcontractorSelect
+                    label={t('admin.subcontractor')}
+                    value={currentProject.subcontractorId || ''}
+                    onChange={(value) => setCurrentProject(prev => ({ ...prev, subcontractorId: value }))}
+                    required={false}
+                    authType="admin"
+                    placeholder="Select subcontractor (optional)"
+                  />
                 </div>
               </div>
             </div>
