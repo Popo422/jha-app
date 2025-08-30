@@ -210,6 +210,8 @@ export default function SafetyFormsPage() {
         return 'JHA';
       case 'start-of-day':
         return t('admin.startOfDay');
+      case 'start-of-day-v2':
+        return 'Start of Day V2';
       case 'end-of-day':
         return t('admin.endOfDay');
       case 'incident-report':
@@ -231,6 +233,8 @@ export default function SafetyFormsPage() {
         return 'bg-blue-100 text-blue-800';
       case 'start-of-day':
         return 'bg-green-100 text-green-800';
+      case 'start-of-day-v2':
+        return 'bg-emerald-100 text-emerald-800';
       case 'end-of-day':
         return 'bg-orange-100 text-orange-800';
       case 'incident-report':
@@ -268,6 +272,12 @@ export default function SafetyFormsPage() {
     // For vehicle inspections, redirect to the vehicle inspection edit page
     if (submission.submissionType === 'vehicle-inspection') {
       router.push(`/admin/vehicle-inspections/${submission.id}/edit`);
+      return;
+    }
+    
+    // For start-of-day-v2 reports, redirect to the wizard edit page
+    if (submission.submissionType === 'start-of-day-v2') {
+      router.push(`/admin/start-of-day-v2/${submission.id}/edit`);
       return;
     }
     
@@ -382,6 +392,9 @@ export default function SafetyFormsPage() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'start-of-day' }))}>
               {t('admin.startOfDay')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'start-of-day-v2' }))}>
+              Start of Day V2
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'end-of-day' }))}>
               {t('admin.endOfDay')}

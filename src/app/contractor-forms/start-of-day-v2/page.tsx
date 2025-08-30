@@ -194,10 +194,13 @@ export default function StartOfDayV2Page() {
 
     try {
       await submitForm({
-        submissionType: 'start-of-day',
+        submissionType: 'start-of-day-v2',
         projectName: formData.projectName,
         date: formData.date,
-        formData,
+        formData: {
+          ...formData,
+          submittedAt: new Date().toISOString(),
+        },
         files: [],
         authType: 'contractor'
       }).unwrap();
