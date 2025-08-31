@@ -214,6 +214,8 @@ export default function SafetyFormsPage() {
         return 'Start of Day V2';
       case 'end-of-day':
         return t('admin.endOfDay');
+      case 'end-of-day-v2':
+        return 'End of Day V2';
       case 'incident-report':
         return t('forms.incidentReport');
       case 'quick-incident-report':
@@ -237,6 +239,8 @@ export default function SafetyFormsPage() {
         return 'bg-emerald-100 text-emerald-800';
       case 'end-of-day':
         return 'bg-orange-100 text-orange-800';
+      case 'end-of-day-v2':
+        return 'bg-amber-100 text-amber-800';
       case 'incident-report':
         return 'bg-red-100 text-red-800';
       case 'quick-incident-report':
@@ -278,6 +282,12 @@ export default function SafetyFormsPage() {
     // For start-of-day-v2 reports, redirect to the wizard edit page
     if (submission.submissionType === 'start-of-day-v2') {
       router.push(`/admin/start-of-day-v2/${submission.id}/edit`);
+      return;
+    }
+    
+    // For end-of-day-v2 reports, redirect to the wizard edit page
+    if (submission.submissionType === 'end-of-day-v2') {
+      router.push(`/admin/end-of-day-v2/${submission.id}/edit`);
       return;
     }
     
@@ -398,6 +408,9 @@ export default function SafetyFormsPage() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'end-of-day' }))}>
               {t('admin.endOfDay')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'end-of-day-v2' }))}>
+              End of Day V2
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'incident-report' }))}>
               {t('forms.incidentReport')}
