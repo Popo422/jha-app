@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!['end-of-day', 'job-hazard-analysis', 'start-of-day', 'start-of-day-v2', 'timesheet', 'incident-report', 'quick-incident-report', 'near-miss-report', 'vehicle-inspection'].includes(submissionType)) {
+    if (!['end-of-day', 'end-of-day-v2', 'job-hazard-analysis', 'start-of-day', 'start-of-day-v2', 'timesheet', 'incident-report', 'quick-incident-report', 'near-miss-report', 'vehicle-inspection'].includes(submissionType)) {
       return NextResponse.json(
         { error: 'Invalid submission type' },
         { status: 400 }

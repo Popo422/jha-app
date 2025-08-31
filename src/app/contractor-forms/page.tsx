@@ -40,6 +40,12 @@ export default function ContractorFormsPage() {
       description: t("forms.endOfDayReportDescription"),
     },
     {
+      id: "end-of-day-v2",
+      title: "End of Day Report V2",
+      href: "/contractor-forms/end-of-day-v2",
+      description: "Multi-step end of day report with enhanced shift review tracking",
+    },
+    {
       id: "job-hazard-analysis",
       title: t("forms.jobHazardAnalysis"),
       href: "/contractor-forms/job-hazard-analysis",
@@ -78,6 +84,10 @@ export default function ContractorFormsPage() {
       // Show start-of-day-v2 if start-of-day is enabled
       if (form.id === 'start-of-day-v2') {
         return modulesData.enabledModules.includes('start-of-day');
+      }
+      // Show end-of-day-v2 if end-of-day is enabled
+      if (form.id === 'end-of-day-v2') {
+        return modulesData.enabledModules.includes('end-of-day');
       }
       return modulesData.enabledModules.includes(form.id);
     });
