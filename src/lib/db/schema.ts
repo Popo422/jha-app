@@ -77,6 +77,7 @@ export const contractors = pgTable('contractors', {
   rate: numeric('rate', { precision: 10, scale: 2 }).default('0.00'), // Hourly rate for contractor
   companyName: text('company_name'), // Optional: contractor's own company name for login token
   language: text('language').default('en'), // Language preference: 'en' or 'es'
+  type: text('type').default('contractor'), // Type: 'contractor' or 'foreman'
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -90,7 +91,7 @@ export const projects = pgTable('projects', {
   projectManager: text('project_manager').notNull(),
   location: text('location').notNull(),
   companyId: uuid('company_id').notNull(),
-  subcontractorId: uuid('subcontractor_id'), // Optional reference to subcontractor
+  projectCost: numeric('project_cost', { precision: 12, scale: 2 }), // Optional project cost
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -103,6 +104,8 @@ export const subcontractors = pgTable('subcontractors', {
   name: text('name').notNull(),
   contractAmount: numeric('contract_amount', { precision: 12, scale: 2 }), // Optional budget/contract amount
   companyId: uuid('company_id').notNull(),
+  projectId: uuid('project_id'), // Optional reference to project
+  foreman: text('foreman'), // Optional foreman name
   enabledModules: jsonb('enabled_modules').$type<string[]>().default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'timesheet']), // Available modules for this subcontractor
   modulesLastUpdatedAt: timestamp('modules_last_updated_at'),
   modulesLastUpdatedBy: text('modules_last_updated_by'), // Admin name who last updated modules

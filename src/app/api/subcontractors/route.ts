@@ -2,13 +2,85 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { eq, desc, and, or, ilike, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { subcontractors } from '@/lib/db/schema'
+import { subcontractors, projects, contractors } from '@/lib/db/schema'
 import { authenticateRequest } from '@/lib/auth-utils'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
 // PostgreSQL error codes
 const PG_UNIQUE_VIOLATION = '23505'
+
+// Generate unique contractor code
+function generateContractorCode(): string {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return code;
+}
+
+// Check if code exists and generate a unique one
+async function generateUniqueCode(): Promise<string> {
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  while (attempts < maxAttempts) {
+    const code = generateContractorCode();
+    
+    // Check if code already exists
+    const existingContractor = await db
+      .select()
+      .from(contractors)
+      .where(eq(contractors.code, code))
+      .limit(1);
+    
+    if (existingContractor.length === 0) {
+      return code;
+    }
+    
+    attempts++;
+  }
+  
+  // Fallback if all attempts failed
+  throw new Error('Unable to generate unique contractor code');
+}
+
+// Helper function to create foreman contractor
+async function createForemanContractor(foremanName: string, subcontractorName: string, companyId: string) {
+  if (!foremanName || !foremanName.trim()) return null;
+  
+  // Split foreman name into first and last name
+  const nameParts = foremanName.trim().split(' ');
+  const firstName = nameParts[0] || 'Foreman';
+  const lastName = nameParts.slice(1).join(' ') || 'User';
+  
+  // Generate a unique code for the foreman
+  const code = await generateUniqueCode();
+  
+  // Create default email
+  const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${subcontractorName.toLowerCase().replace(/[^a-z0-9]/g, '')}.foreman`;
+  
+  try {
+    const [foremanContractor] = await db.insert(contractors).values({
+      firstName,
+      lastName,
+      email,
+      companyId,
+      code,
+      rate: '25.00', // Default foreman rate
+      companyName: subcontractorName,
+      language: 'en',
+      type: 'foreman'
+    }).returning();
+    
+    return foremanContractor;
+  } catch (error: any) {
+    // If contractor creation fails, continue without blocking subcontractor creation
+    console.warn('Failed to create foreman contractor:', error);
+    return null;
+  }
+}
 
 // Helper function to authenticate admin requests
 function authenticateAdmin(request: NextRequest): { admin: any } {
@@ -91,8 +163,19 @@ export async function GET(request: NextRequest) {
       .where(and(...conditions))
     const totalCount = Number(countResult[0].count)
 
-    // Execute query with pagination
-    const result = await db.select().from(subcontractors)
+    // Execute query with pagination including project name
+    const result = await db.select({
+      id: subcontractors.id,
+      name: subcontractors.name,
+      contractAmount: subcontractors.contractAmount,
+      companyId: subcontractors.companyId,
+      projectId: subcontractors.projectId,
+      foreman: subcontractors.foreman,
+      createdAt: subcontractors.createdAt,
+      updatedAt: subcontractors.updatedAt,
+      projectName: projects.name,
+    }).from(subcontractors)
+      .leftJoin(projects, eq(subcontractors.projectId, projects.id))
       .where(and(...conditions))
       .orderBy(desc(subcontractors.createdAt))
       .limit(limit)
@@ -180,12 +263,40 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Prepare subcontractor data
-      const preparedSubcontractors = uniqueSubcontractors.map((subcontractor: any) => ({
-        name: subcontractor.name.trim(),
-        contractAmount: subcontractor.contractAmount ? subcontractor.contractAmount.toString() : null,
-        companyId: auth.admin.companyId,
-      }))
+      // Helper function to resolve project ID from name if needed
+      const resolveProjectId = async (projectIdOrName: string | null): Promise<string | null> => {
+        if (!projectIdOrName) return null;
+        
+        // If it looks like a UUID, assume it's already a project ID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(projectIdOrName)) {
+          return projectIdOrName;
+        }
+        
+        // Otherwise, treat it as a project name and look up the ID
+        const project = await db.select({ id: projects.id })
+          .from(projects)
+          .where(and(
+            eq(projects.name, projectIdOrName),
+            eq(projects.companyId, auth.admin.companyId)
+          ))
+          .limit(1);
+          
+        return project.length > 0 ? project[0].id : null;
+      };
+
+      // Prepare subcontractor data with resolved project IDs
+      const preparedSubcontractors = [];
+      for (const subcontractor of uniqueSubcontractors) {
+        const resolvedProjectId = await resolveProjectId(subcontractor.projectId);
+        preparedSubcontractors.push({
+          name: subcontractor.name.trim(),
+          contractAmount: subcontractor.contractAmount ? subcontractor.contractAmount.toString() : null,
+          companyId: auth.admin.companyId,
+          projectId: resolvedProjectId,
+          foreman: subcontractor.foreman ? subcontractor.foreman.trim() : null,
+        });
+      }
 
       // Create subcontractors with enhanced error handling
       const createdSubcontractors = []
@@ -195,6 +306,11 @@ export async function POST(request: NextRequest) {
         try {
           const [createdSubcontractor] = await db.insert(subcontractors).values(subcontractorData).returning()
           createdSubcontractors.push(createdSubcontractor)
+          
+          // Create foreman contractor if foreman is provided
+          if (subcontractorData.foreman) {
+            await createForemanContractor(subcontractorData.foreman, subcontractorData.name, auth.admin.companyId);
+          }
         } catch (insertError: any) {
           if (insertError.code === '23505') {
             if (insertError.constraint?.includes('company_subcontractor_unique')) {
@@ -231,7 +347,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single subcontractor creation (existing logic)
-    const { name, contractAmount } = body
+    const { name, contractAmount, projectId, foreman } = body
 
     // Validate required fields
     if (!name) {
@@ -260,15 +376,47 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Helper function to resolve project ID from name if needed
+    const resolveProjectId = async (projectIdOrName: string | null): Promise<string | null> => {
+      if (!projectIdOrName) return null;
+      
+      // If it looks like a UUID, assume it's already a project ID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(projectIdOrName)) {
+        return projectIdOrName;
+      }
+      
+      // Otherwise, treat it as a project name and look up the ID
+      const project = await db.select({ id: projects.id })
+        .from(projects)
+        .where(and(
+          eq(projects.name, projectIdOrName),
+          eq(projects.companyId, auth.admin.companyId)
+        ))
+        .limit(1);
+        
+      return project.length > 0 ? project[0].id : null;
+    };
+
+    // Resolve project ID if needed
+    const resolvedProjectId = await resolveProjectId(projectId);
+
     // Prepare subcontractor data
     const subcontractorData = {
       name: name.trim(),
       contractAmount: contractAmount ? contractAmount.toString() : null,
       companyId: auth.admin.companyId,
+      projectId: resolvedProjectId,
+      foreman: foreman ? foreman.trim() : null,
     }
 
     // Create subcontractor record
     const subcontractor = await db.insert(subcontractors).values(subcontractorData).returning()
+
+    // Create foreman contractor if foreman is provided
+    if (foreman && foreman.trim()) {
+      await createForemanContractor(foreman.trim(), name.trim(), auth.admin.companyId);
+    }
 
     return NextResponse.json({
       success: true,
@@ -317,7 +465,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, name, contractAmount } = body
+    const { id, name, contractAmount, projectId, foreman } = body
 
     if (!id) {
       return NextResponse.json(
@@ -358,12 +506,48 @@ export async function PUT(request: NextRequest) {
     if (contractAmount !== undefined) {
       updateData.contractAmount = contractAmount ? contractAmount.toString() : null
     }
+    
+    if (projectId !== undefined) {
+      // Helper function to resolve project ID from name if needed
+      const resolveProjectId = async (projectIdOrName: string | null): Promise<string | null> => {
+        if (!projectIdOrName) return null;
+        
+        // If it looks like a UUID, assume it's already a project ID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(projectIdOrName)) {
+          return projectIdOrName;
+        }
+        
+        // Otherwise, treat it as a project name and look up the ID
+        const project = await db.select({ id: projects.id })
+          .from(projects)
+          .where(and(
+            eq(projects.name, projectIdOrName),
+            eq(projects.companyId, auth.admin.companyId)
+          ))
+          .limit(1);
+          
+        return project.length > 0 ? project[0].id : null;
+      };
+
+      const resolvedProjectId = await resolveProjectId(projectId);
+      updateData.projectId = resolvedProjectId;
+    }
+    
+    if (foreman !== undefined) {
+      updateData.foreman = foreman ? foreman.trim() : null
+    }
 
     // Update subcontractor
     const updatedSubcontractor = await db.update(subcontractors)
       .set(updateData)
       .where(eq(subcontractors.id, id))
       .returning()
+
+    // Create foreman contractor if foreman was added/updated
+    if (foreman && foreman.trim() && updateData.foreman) {
+      await createForemanContractor(foreman.trim(), name.trim(), auth.admin.companyId);
+    }
 
     return NextResponse.json({
       success: true,

@@ -4,6 +4,8 @@ import React, { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetSubcontractorsQuery, useDeleteSubcontractorMutation, useCreateSubcontractorMutation, useUpdateSubcontractorMutation, type Subcontractor, type PaginationInfo } from "@/lib/features/subcontractors/subcontractorsApi";
+import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +26,8 @@ export function SubcontractorsManagement() {
   const [formData, setFormData] = useState({
     name: "",
     contractAmount: "",
+    projectId: "",
+    foreman: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [clientPagination, setClientPagination] = useState({
@@ -41,6 +45,12 @@ export function SubcontractorsManagement() {
     search: debouncedSearch || undefined,
     page: serverPagination.page,
     pageSize: serverPagination.pageSize,
+    authType: 'admin'
+  });
+  
+  const { data: projectsData } = useGetProjectsQuery({
+    page: 1,
+    pageSize: 100,
     authType: 'admin'
   });
   
@@ -111,6 +121,8 @@ export function SubcontractorsManagement() {
     setFormData({
       name: subcontractor.name,
       contractAmount: subcontractor.contractAmount || "",
+      projectId: subcontractor.projectId || "",
+      foreman: subcontractor.foreman || "",
     });
     setFormErrors({});
     setIsEditDialogOpen(true);
@@ -121,6 +133,8 @@ export function SubcontractorsManagement() {
     setFormData({
       name: "",
       contractAmount: "",
+      projectId: "",
+      foreman: "",
     });
     setFormErrors({});
     setIsCreateDialogOpen(true);
@@ -130,7 +144,7 @@ export function SubcontractorsManagement() {
     setIsCreateDialogOpen(false);
     setIsEditDialogOpen(false);
     setEditingSubcontractor(null);
-    setFormData({ name: "", contractAmount: "" });
+    setFormData({ name: "", contractAmount: "", projectId: "", foreman: "" });
     setFormErrors({});
   };
 
@@ -220,6 +234,48 @@ export function SubcontractorsManagement() {
       },
     },
     {
+      accessorKey: "foreman",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Foreman
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const foreman = row.getValue("foreman") as string | null;
+        return foreman ? (
+          <span className="text-sm">{foreman}</span>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        );
+      },
+    },
+    {
+      accessorKey: "projectName",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Project
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const projectName = row.getValue("projectName") as string | null;
+        return projectName ? (
+          <span className="text-sm">{projectName}</span>
+        ) : (
+          <span className="text-sm text-muted-foreground">No project assigned</span>
+        );
+      },
+    },
+    {
       accessorKey: "createdAt",
       header: ({ column }) => (
         <Button
@@ -276,6 +332,37 @@ export function SubcontractorsManagement() {
                   placeholder="Enter contract amount"
                 />
               </div>
+              <div>
+                <Label htmlFor="projectId">Project (Optional)</Label>
+                <Select 
+                  value={formData.projectId || undefined} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, projectId: value === "none" ? "" : value }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a project (optional)" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[9999] max-h-[200px]">
+                    <SelectItem value="none">No project assigned</SelectItem>
+                    {projectsData?.projects?.map(project => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="foreman">Foreman (Optional)</Label>
+                <Input
+                  id="foreman"
+                  value={formData.foreman}
+                  onChange={(e) => setFormData({ ...formData, foreman: e.target.value })}
+                  placeholder="Enter foreman name"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Adding a foreman will automatically create a contractor account
+                </p>
+              </div>
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">
                   <p className="text-sm text-red-600">
@@ -330,6 +417,37 @@ export function SubcontractorsManagement() {
                   placeholder="Enter contract amount"
                 />
               </div>
+              <div>
+                <Label htmlFor="edit-projectId">Project (Optional)</Label>
+                <Select 
+                  value={formData.projectId || undefined} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, projectId: value === "none" ? "" : value }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a project (optional)" />
+                  </SelectTrigger>
+                  <SelectContent className="z-[9999] max-h-[200px]">
+                    <SelectItem value="none">No project assigned</SelectItem>
+                    {projectsData?.projects?.map(project => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-foreman">Foreman (Optional)</Label>
+                <Input
+                  id="edit-foreman"
+                  value={formData.foreman}
+                  onChange={(e) => setFormData({ ...formData, foreman: e.target.value })}
+                  placeholder="Enter foreman name"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Adding/updating a foreman will create a contractor account
+                </p>
+              </div>
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">
                   <p className="text-sm text-red-600">
@@ -372,10 +490,12 @@ export function SubcontractorsManagement() {
             onDelete={handleDelete}
             getRowId={(subcontractor) => subcontractor.id}
             exportFilename="subcontractors"
-            exportHeaders={[t('contractors.companySubcontractor'), 'Contract Amount', t('admin.created')]}
+            exportHeaders={[t('contractors.companySubcontractor'), 'Contract Amount', 'Foreman', 'Project', t('admin.created')]}
             getExportData={(subcontractor) => [
               subcontractor.name,
               subcontractor.contractAmount ? `$${parseFloat(subcontractor.contractAmount).toLocaleString()}` : '',
+              subcontractor.foreman || '',
+              (subcontractor as any).projectName || 'No project assigned',
               new Date(subcontractor.createdAt).toLocaleDateString()
             ]}
             searchValue={search}

@@ -22,6 +22,7 @@ interface SearchableSelectProps {
   searchPlaceholder?: string;
   disabled?: boolean;
   className?: string;
+  inModal?: boolean; // New prop for modal-friendly behavior
 }
 
 export function SearchableSelect({
@@ -33,6 +34,7 @@ export function SearchableSelect({
   searchPlaceholder = "Search...",
   disabled = false,
   className,
+  inModal = false,
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -71,7 +73,19 @@ export function SearchableSelect({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent 
+        className={cn(
+          "w-[var(--radix-popover-trigger-width)] p-0",
+          inModal && "z-[9999]" // Higher z-index for modals
+        )}
+        align="start"
+        onOpenAutoFocus={(e) => {
+          // Prevent auto focus issues in modals
+          if (inModal) {
+            e.preventDefault();
+          }
+        }}
+      >
         <Command>
           <CommandInput
             placeholder={searchPlaceholder}

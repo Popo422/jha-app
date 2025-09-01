@@ -27,6 +27,7 @@ export default function ContractorsPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [editingContractor, setEditingContractor] = useState<Contractor | null>(null);
   const [formData, setFormData] = useState({
@@ -314,7 +315,14 @@ export default function ContractorsPage() {
 
 
   const allContractors = contractorsData?.contractors || [];
-  const contractors = allContractors;
+  
+  // Apply type filter
+  const contractors = typeFilter === "all" 
+    ? allContractors 
+    : allContractors.filter(contractor => {
+        const contractorType = contractor.type || 'contractor';
+        return contractorType === typeFilter;
+      });
 
   // Define table columns
   const columns: ColumnDef<Contractor>[] = [
@@ -420,6 +428,30 @@ export default function ContractorsPage() {
           <div className="text-sm">
             {companyName || ""}
           </div>
+        );
+      },
+    },
+    {
+      accessorKey: "type",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Type
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const type = getValue() as string | null;
+        return (
+          <Badge 
+            variant={type === 'foreman' ? 'default' : 'secondary'}
+            className="text-xs"
+          >
+            {type === 'foreman' ? 'Foreman' : 'Contractor'}
+          </Badge>
         );
       },
     },
@@ -814,15 +846,45 @@ export default function ContractorsPage() {
               </DropdownMenu>
             </div>
 
-            {companyFilter !== "all" && (
+            <div className="space-y-1">
+              <div className="text-xs font-medium">Type</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-28 justify-between text-xs">
+                    <span className="truncate">
+                      {typeFilter === "all" ? "All Types" : 
+                       typeFilter === "contractor" ? "Contractors" : 
+                       typeFilter === "foreman" ? "Foremen" : "All Types"}
+                    </span>
+                    <ChevronDown className="h-3 w-3 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setTypeFilter("all")}>
+                    All Types
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTypeFilter("contractor")}>
+                    Contractors
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTypeFilter("foreman")}>
+                    Foremen
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {(companyFilter !== "all" || typeFilter !== "all") && (
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => setCompanyFilter("all")}
+                onClick={() => {
+                  setCompanyFilter("all");
+                  setTypeFilter("all");
+                }}
                 className="gap-1 text-xs"
               >
                 <X className="h-3 w-3" />
-                Clear Filter
+                Clear Filters
               </Button>
             )}
           </div>
@@ -835,7 +897,7 @@ export default function ContractorsPage() {
         onDelete={handleDelete}
         getRowId={(contractor) => contractor.id}
         exportFilename="contractors"
-        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), 'Language', t('contractors.created')]}
+        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), 'Type', 'Language', t('contractors.created')]}
         getExportData={(contractor) => [
           contractor.firstName,
           contractor.lastName,
@@ -843,6 +905,7 @@ export default function ContractorsPage() {
           contractor.code,
           `$${(contractor.rate ? parseFloat(contractor.rate) : 0).toFixed(2)}${t('contractors.perHour')}`,
           contractor.companyName || "",
+          (contractor as any).type === 'foreman' ? 'Foreman' : 'Contractor',
           contractor.language === 'es' ? 'Español' :
           contractor.language === 'pl' ? 'Polski' :
           contractor.language === 'zh' ? '中文' : 'English',

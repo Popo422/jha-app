@@ -6,7 +6,8 @@ export interface Project {
   projectManager: string
   location: string
   companyId: string
-  subcontractorId?: string
+  projectCost?: string
+  subcontractorCount?: number
   createdAt: string
   updatedAt: string
 }
@@ -15,7 +16,7 @@ export interface CreateProjectRequest {
   name: string
   projectManager: string
   location: string
-  subcontractorId?: string
+  projectCost?: string
 }
 
 export interface UpdateProjectRequest {
@@ -23,7 +24,7 @@ export interface UpdateProjectRequest {
   name: string
   projectManager: string
   location: string
-  subcontractorId?: string
+  projectCost?: string
 }
 
 export interface PaginationInfo {
@@ -54,7 +55,7 @@ export interface BulkProjectData {
   name: string
   location: string
   projectManager?: string
-  subcontractorId?: string
+  projectCost?: string
 }
 
 export interface BulkCreateProjectsRequest {

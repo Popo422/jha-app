@@ -14,7 +14,7 @@ import * as XLSX from 'xlsx';
 interface ProjectRow {
   name: string;
   location: string;
-  subcontractorName?: string;
+  projectCost?: string;
   _fileName?: string;
 }
 
@@ -40,7 +40,7 @@ export function ProjectBulkUploadModal({
   const csvSchema = [
     { field: 'name', label: 'Project Name', required: true, example: 'Downtown Office Building' },
     { field: 'location', label: 'Location', required: true, example: 'New York, NY' },
-    { field: 'subcontractorName', label: 'Subcontractor', required: false, example: 'ABC Construction' },
+    { field: 'projectCost', label: 'Project Cost', required: false, example: '150000.00' },
   ];
 
   const downloadTemplate = (format: 'csv' | 'excel' = 'csv') => {
@@ -104,9 +104,9 @@ export function ProjectBulkUploadModal({
           case 'location':
             row.location = value;
             break;
-          case 'subcontractor':
-          case 'subcontractor name':
-            row.subcontractorName = value;
+          case 'project cost':
+          case 'projectcost':
+            row.projectCost = value;
             break;
         }
       });
@@ -146,9 +146,9 @@ export function ProjectBulkUploadModal({
           case 'location':
             row.location = value;
             break;
-          case 'subcontractor':
-          case 'subcontractor name':
-            row.subcontractorName = value;
+          case 'project cost':
+          case 'projectcost':
+            row.projectCost = value;
             break;
         }
       });
@@ -361,8 +361,8 @@ export function ProjectBulkUploadModal({
                 <div className="space-y-1">
                   <p className="font-medium">{project.name}</p>
                   <p className="text-sm text-muted-foreground">{project.location}</p>
-                  {project.subcontractorName && (
-                    <p className="text-xs text-blue-600 dark:text-blue-400">Subcontractor: {project.subcontractorName}</p>
+                  {project.projectCost && (
+                    <p className="text-xs text-green-600 dark:text-green-400">Cost: ${project.projectCost}</p>
                   )}
                   {project._fileName && (
                     <Badge variant="secondary" className="text-xs">

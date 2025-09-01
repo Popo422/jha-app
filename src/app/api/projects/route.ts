@@ -146,10 +146,10 @@ export async function GET(request: NextRequest) {
 
     // Add subcontractor filter if specified
     if (subcontractorName) {
-      // Filter by subcontractor name using join
+      // Filter by subcontractor name using join (now subcontractors have projectId)
       const subcontractorCondition = sql`EXISTS (
         SELECT 1 FROM ${subcontractors} 
-        WHERE ${subcontractors.id} = ${projects.subcontractorId} 
+        WHERE ${subcontractors.projectId} = ${projects.id} 
         AND ${subcontractors.name} = ${subcontractorName}
       )`;
       conditions.push(subcontractorCondition);
@@ -160,19 +160,21 @@ export async function GET(request: NextRequest) {
       .where(and(...conditions))
     const totalCount = Number(countResult[0].count)
 
-    // Execute query with pagination
+    // Execute query with pagination and subcontractor count
     const result = await db.select({
       id: projects.id,
       name: projects.name,
       projectManager: projects.projectManager,
       location: projects.location,
       companyId: projects.companyId,
-      subcontractorId: projects.subcontractorId,
+      projectCost: projects.projectCost,
       createdAt: projects.createdAt,
       updatedAt: projects.updatedAt,
-      subcontractorName: subcontractors.name,
+      subcontractorCount: sql`(
+        SELECT COUNT(*) FROM ${subcontractors} 
+        WHERE ${subcontractors.projectId} = ${projects.id}
+      )::int`
     }).from(projects)
-      .leftJoin(subcontractors, eq(projects.subcontractorId, subcontractors.id))
       .where(and(...conditions))
       .orderBy(desc(projects.createdAt))
       .limit(limit)
@@ -275,36 +277,15 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Get all subcontractors for name-to-ID mapping
-      const allSubcontractors = await db
-        .select({ id: subcontractors.id, name: subcontractors.name })
-        .from(subcontractors)
-        .where(eq(subcontractors.companyId, auth.admin.companyId))
-
-      const subcontractorMap = new Map(allSubcontractors.map(s => [s.name.toLowerCase(), s.id]))
 
       // Prepare project data with projectManager from first project manager in company or default
       const preparedProjects = uniqueProjects.map((project: any) => {
-        let subcontractorId = null
-        
-        // If subcontractorName is provided, try to find matching subcontractor ID
-        if (project.subcontractorName && project.subcontractorName.trim()) {
-          const foundSubcontractorId = subcontractorMap.get(project.subcontractorName.toLowerCase().trim())
-          if (foundSubcontractorId) {
-            subcontractorId = foundSubcontractorId
-          }
-        }
-        // If subcontractorId is directly provided (from forms), use it
-        else if (project.subcontractorId) {
-          subcontractorId = project.subcontractorId
-        }
-
         return {
           name: project.name.trim(),
           projectManager: 'Project Manager', // Default for onboarding, can be updated later
           location: project.location.trim(),
           companyId: auth.admin.companyId,
-          subcontractorId,
+          projectCost: project.projectCost ? project.projectCost.toString() : null,
         }
       })
 
@@ -320,7 +301,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single project creation (existing logic)
-    const { name, projectManager, location, subcontractorId } = body
+    const { name, projectManager, location, projectCost } = body
 
     // Validate required fields
     if (!name || !projectManager || !location) {
@@ -370,7 +351,7 @@ export async function POST(request: NextRequest) {
       projectManager: projectManager.trim(),
       location: location.trim(),
       companyId: auth.admin.companyId,
-      subcontractorId: subcontractorId || null,
+      projectCost: projectCost ? projectCost.toString() : null,
     }
 
     // Create project record
@@ -424,7 +405,7 @@ export async function PUT(request: NextRequest) {
 
 
     const body = await request.json()
-    const { id, name, projectManager, location, subcontractorId } = body
+    const { id, name, projectManager, location, projectCost } = body
 
     if (!id) {
       return NextResponse.json(
@@ -461,7 +442,7 @@ export async function PUT(request: NextRequest) {
       name: name.trim(),
       projectManager: projectManager.trim(),
       location: location.trim(),
-      subcontractorId: subcontractorId || null,
+      projectCost: projectCost ? projectCost.toString() : null,
       updatedAt: new Date()
     }
 

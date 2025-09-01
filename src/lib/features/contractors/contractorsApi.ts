@@ -10,6 +10,7 @@ export interface Contractor {
   rate?: string | null
   companyName?: string | null
   language?: string | null
+  type?: string | null
   createdAt: string
   updatedAt: string
 }

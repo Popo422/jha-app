@@ -5,6 +5,9 @@ export interface Subcontractor {
   name: string
   contractAmount?: string
   companyId: string
+  projectId?: string
+  projectName?: string
+  foreman?: string
   createdAt: string
   updatedAt: string
 }
@@ -12,12 +15,16 @@ export interface Subcontractor {
 export interface CreateSubcontractorRequest {
   name: string
   contractAmount?: string
+  projectId?: string
+  foreman?: string
 }
 
 export interface UpdateSubcontractorRequest {
   id: string
   name: string
   contractAmount?: string
+  projectId?: string
+  foreman?: string
 }
 
 export interface PaginationInfo {
@@ -47,6 +54,8 @@ export interface DeleteSubcontractorResponse {
 export interface BulkSubcontractorData {
   name: string
   contractAmount?: string
+  projectId?: string
+  foreman?: string
 }
 
 export interface BulkCreateSubcontractorsRequest {

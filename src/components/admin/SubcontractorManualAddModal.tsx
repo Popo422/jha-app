@@ -18,6 +18,7 @@ import { Users, User, Mail, Phone, Plus, ArrowRight } from "lucide-react";
 interface SubcontractorData {
   name: string;
   contractAmount?: string;
+  foreman?: string;
 }
 
 interface SubcontractorManualAddModalProps {
@@ -39,6 +40,7 @@ export function SubcontractorManualAddModal({
   const [currentSubcontractor, setCurrentSubcontractor] = useState<SubcontractorData>({
     name: "",
     contractAmount: "",
+    foreman: "",
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -64,7 +66,7 @@ export function SubcontractorManualAddModal({
     onSaveAndAddMore(newSubcontractor);
 
     // Reset form
-    setCurrentSubcontractor({ name: "", contractAmount: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", foreman: "" });
     setErrors({});
   };
 
@@ -81,12 +83,12 @@ export function SubcontractorManualAddModal({
 
     // Reset state
     setTempSubcontractors([]);
-    setCurrentSubcontractor({ name: "", contractAmount: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", foreman: "" });
     setErrors({});
   };
 
   const handleClose = () => {
-    setCurrentSubcontractor({ name: "", contractAmount: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", foreman: "" });
     setTempSubcontractors([]);
     setErrors({});
     onClose();
@@ -160,6 +162,22 @@ export function SubcontractorManualAddModal({
                     }}
                     placeholder="Enter contract amount"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="foreman" className="text-sm font-medium">
+                    Foreman (Optional)
+                  </Label>
+                  <Input
+                    id="foreman"
+                    value={currentSubcontractor.foreman}
+                    onChange={(e) => {
+                      setCurrentSubcontractor((prev) => ({ ...prev, foreman: e.target.value }));
+                    }}
+                    placeholder="Enter foreman name"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Adding a foreman will automatically create a contractor account
+                  </p>
                 </div>
               </div>
             </div>

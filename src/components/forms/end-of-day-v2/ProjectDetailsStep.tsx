@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useGetProjectsQuery } from '@/lib/features/projects/projectsApi';
 import { useGetAdminUsersQuery } from '@/lib/features/admin-users/adminUsersApi';
+import { useGetSubcontractorsQuery } from '@/lib/features/subcontractors/subcontractorsApi';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 
 interface EndOfDayV2FormData {
@@ -29,15 +30,42 @@ export default function ProjectDetailsStep({ data, updateData }: ProjectDetailsS
     authType: 'contractor'
   });
 
+  const { data: subcontractorsData } = useGetSubcontractorsQuery({
+    page: 1,
+    pageSize: 1000,
+    authType: 'contractor'
+  });
+
   const { data: adminUsersData, isLoading: isLoadingAdmins } = useGetAdminUsersQuery({
     fetchAll: true,
     authType: 'contractor'
   });
 
-  const projectOptions = projectsData?.projects.map(project => ({
+  // Filter projects based on selected subcontractor
+  const getAvailableProjects = () => {
+    if (!data.subcontractorName || !subcontractorsData?.subcontractors) {
+      return projectsData?.projects || [];
+    }
+
+    // Find the selected subcontractor
+    const selectedSubcontractor = subcontractorsData.subcontractors.find(
+      sub => sub.name === data.subcontractorName
+    );
+
+    if (!selectedSubcontractor?.projectId) {
+      // If subcontractor has no project assigned, show all projects
+      return projectsData?.projects || [];
+    }
+
+    // Filter projects to only show the one assigned to this subcontractor
+    return projectsData?.projects.filter(project => project.id === selectedSubcontractor.projectId) || [];
+  };
+
+  const availableProjects = getAvailableProjects();
+  const projectOptions = availableProjects.map(project => ({
     value: project.name,
     label: project.name
-  })) || [];
+  }));
 
   const supervisorOptions = adminUsersData?.adminUsers.map(admin => ({
     value: admin.name,

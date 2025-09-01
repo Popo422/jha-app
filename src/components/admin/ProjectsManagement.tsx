@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetProjectsQuery, useDeleteProjectMutation, useCreateProjectMutation, useUpdateProjectMutation, useGetProjectLimitQuery, type Project, type PaginationInfo } from "@/lib/features/projects/projectsApi";
 import SupervisorSelect from "@/components/SupervisorSelect";
-import SubcontractorSelect from "@/components/SubcontractorSelect";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +29,7 @@ export function ProjectsManagement() {
     name: "",
     projectManager: "",
     location: "",
-    subcontractorId: "",
+    projectCost: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [serverPagination, setServerPagination] = useState({
@@ -97,7 +96,7 @@ export function ProjectsManagement() {
       name: project.name,
       projectManager: project.projectManager,
       location: project.location,
-      subcontractorId: project.subcontractorId || "",
+      projectCost: project.projectCost || "",
     });
     setFormErrors({});
     setIsEditDialogOpen(true);
@@ -109,7 +108,7 @@ export function ProjectsManagement() {
       name: "",
       projectManager: "",
       location: "",
-      subcontractorId: "",
+      projectCost: "",
     });
     setFormErrors({});
     setIsCreateDialogOpen(true);
@@ -119,7 +118,7 @@ export function ProjectsManagement() {
     setIsCreateDialogOpen(false);
     setIsEditDialogOpen(false);
     setEditingProject(null);
-    setFormData({ name: "", projectManager: "", location: "", subcontractorId: "" });
+    setFormData({ name: "", projectManager: "", location: "", projectCost: "" });
     setFormErrors({});
   };
 
@@ -232,23 +231,40 @@ export function ProjectsManagement() {
       ),
     },
     {
-      accessorKey: "subcontractorName",
+      accessorKey: "projectCost",
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          {t('admin.subcontractor')}
+          Project Cost
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => {
-        const subcontractorName = row.getValue("subcontractorName") as string;
-        return subcontractorName ? (
-          <span className="text-sm">{subcontractorName}</span>
-        ) : (
-          <span className="text-sm text-muted-foreground">Not assigned</span>
+        const cost = row.getValue("projectCost") as string | null;
+        return cost ? `$${parseFloat(cost).toLocaleString()}` : "—";
+      },
+    },
+    {
+      accessorKey: "subcontractorCount",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('admin.subcontractors')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const count = row.getValue("subcontractorCount") as number;
+        return (
+          <span className="text-sm">
+            {count ? `${count} assigned` : '—'}
+          </span>
         );
       },
     },
@@ -324,13 +340,15 @@ export function ProjectsManagement() {
                 )}
               </div>
               <div>
-                <SubcontractorSelect
-                  label={t('admin.subcontractor')}
-                  value={formData.subcontractorId}
-                  onChange={(value) => setFormData({ ...formData, subcontractorId: value })}
-                  required={false}
-                  authType="admin"
-                  placeholder="Select subcontractor (optional)"
+                <Label htmlFor="projectCost">Project Cost (Optional)</Label>
+                <Input
+                  id="projectCost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.projectCost}
+                  onChange={(e) => setFormData({ ...formData, projectCost: e.target.value })}
+                  placeholder="Enter project cost"
                 />
               </div>
               {formError && (
@@ -402,13 +420,15 @@ export function ProjectsManagement() {
                 )}
               </div>
               <div>
-                <SubcontractorSelect
-                  label={t('admin.subcontractor')}
-                  value={formData.subcontractorId}
-                  onChange={(value) => setFormData({ ...formData, subcontractorId: value })}
-                  required={false}
-                  authType="admin"
-                  placeholder="Select subcontractor (optional)"
+                <Label htmlFor="edit-projectCost">Project Cost (Optional)</Label>
+                <Input
+                  id="edit-projectCost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.projectCost}
+                  onChange={(e) => setFormData({ ...formData, projectCost: e.target.value })}
+                  placeholder="Enter project cost"
                 />
               </div>
               {formError && (
@@ -551,12 +571,13 @@ export function ProjectsManagement() {
             onDelete={handleDelete}
             getRowId={(project) => project.id}
             exportFilename="projects"
-            exportHeaders={[t('tableHeaders.projectName'), t('admin.projectManager'), t('admin.location'), t('admin.subcontractor'), t('admin.created')]}
+            exportHeaders={[t('tableHeaders.projectName'), t('admin.projectManager'), t('admin.location'), 'Project Cost', t('admin.subcontractors'), t('admin.created')]}
             getExportData={(project) => [
               project.name,
               project.projectManager,
               project.location,
-              (project as any).subcontractorName || 'Not assigned',
+              project.projectCost ? `$${parseFloat(project.projectCost).toLocaleString()}` : '',
+              (project as any).subcontractorCount || '0',
               new Date(project.createdAt).toLocaleDateString()
             ]}
             searchValue={search}

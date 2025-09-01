@@ -14,13 +14,12 @@ import {
   AlertDialogFooter 
 } from '@/components/ui/alert-dialog'
 import { Building2, MapPin, FileText, Plus, ArrowRight } from 'lucide-react'
-import SubcontractorSelect from '@/components/SubcontractorSelect'
 
 interface ProjectData {
   name: string
   location: string
   projectManager: string
-  subcontractorId?: string
+  projectCost?: string
 }
 
 interface ProjectManualAddModalProps {
@@ -45,7 +44,7 @@ export function ProjectManualAddModal({
     name: '',
     location: '',
     projectManager: '',
-    subcontractorId: ''
+    projectCost: ''
   })
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
@@ -75,7 +74,7 @@ export function ProjectManualAddModal({
     onSaveAndAddMore(newProject)
     
     // Reset form
-    setCurrentProject({ name: '', location: '', projectManager: '', subcontractorId: '' })
+    setCurrentProject({ name: '', location: '', projectManager: '', projectCost: '' })
     setErrors({})
   }
 
@@ -92,12 +91,12 @@ export function ProjectManualAddModal({
     
     // Reset state
     setTempProjects([])
-    setCurrentProject({ name: '', location: '', projectManager: '', subcontractorId: '' })
+    setCurrentProject({ name: '', location: '', projectManager: '', projectCost: '' })
     setErrors({})
   }
 
   const handleClose = () => {
-    setCurrentProject({ name: '', location: '', projectManager: '', subcontractorId: '' })
+    setCurrentProject({ name: '', location: '', projectManager: '', projectCost: '' })
     setTempProjects([])
     setErrors({})
     onClose()
@@ -202,15 +201,22 @@ export function ProjectManualAddModal({
                 </div>
                 
                 <div className="space-y-2">
-                  <SubcontractorSelect
-                    label={t('admin.subcontractor')}
-                    value={currentProject.subcontractorId || ''}
-                    onChange={(value) => setCurrentProject(prev => ({ ...prev, subcontractorId: value }))}
-                    required={false}
-                    authType="admin"
-                    placeholder="Select subcontractor (optional)"
+                  <Label htmlFor="projectCost" className="text-sm font-medium">
+                    Project Cost (Optional)
+                  </Label>
+                  <Input
+                    id="projectCost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={currentProject.projectCost}
+                    onChange={(e) => {
+                      setCurrentProject(prev => ({ ...prev, projectCost: e.target.value }))
+                    }}
+                    placeholder="Enter project cost"
                   />
                 </div>
+                
               </div>
             </div>
           </div>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Building2,
   Users,
@@ -32,11 +33,11 @@ import { SubcontractorManualAddModal } from "./SubcontractorManualAddModal";
 import { EmployeeBulkUploadModal } from "./EmployeeBulkUploadModal";
 import { EmployeeManualAddModal } from "./EmployeeManualAddModal";
 import { useCreateAdminUserMutation, useBulkCreateAdminUsersMutation, useGetAdminUsersQuery } from "@/lib/features/admin-users/adminUsersApi";
-import { useBulkCreateProjectsMutation, useGetProjectLimitQuery } from "@/lib/features/projects/projectsApi";
+import { useBulkCreateProjectsMutation, useGetProjectLimitQuery, useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
 import { useBulkCreateSubcontractorsMutation, useGetSubcontractorsQuery } from "@/lib/features/subcontractors/subcontractorsApi";
 import { useBulkCreateContractorsMutation, useGetContractorLimitQuery } from "@/lib/features/contractors/contractorsApi";
 
-type Step = "welcome" | "projectManagers" | "projects" | "subcontractors" | "employees" | "complete";
+type Step = "welcome" | "projectManagers" | "projects" | "subcontractors" | "employees" | "review" | "complete";
 
 interface ProjectManagerData {
   name: string;
@@ -47,11 +48,14 @@ interface ProjectData {
   name: string;
   location: string;
   projectManager: string;
+  projectCost?: string;
 }
 
 interface SubcontractorData {
   name: string; // This maps to the database 'name' field
   contractAmount?: string; // Optional contract amount
+  projectId?: string; // Optional project assignment
+  foreman?: string; // Optional foreman name
 }
 
 interface EmployeeData {
@@ -78,6 +82,7 @@ export default function AdminOnboarding() {
 
   const [currentStep, setCurrentStep] = useState<Step>("welcome");
   const [isLoading, setIsLoading] = useState(false);
+  const [subcontractorProjectAssignments, setSubcontractorProjectAssignments] = useState<Record<string, string>>({});
   const [apiErrors, setApiErrors] = useState<{
     projectManagers?: string[];
     projects?: string[];
@@ -99,6 +104,8 @@ export default function AdminOnboarding() {
   const savedProjectManagers = savedAdminUsersData?.adminUsers.filter(user => user.role === 'admin') || [];
   const { data: savedSubcontractorsData } = useGetSubcontractorsQuery({ authType: 'admin' });
   const savedSubcontractors = savedSubcontractorsData?.subcontractors || [];
+  const { data: savedProjectsData } = useGetProjectsQuery({ authType: 'admin', page: 1, pageSize: 100 });
+  const savedProjects = savedProjectsData?.projects || [];
   const { data: contractorLimitData } = useGetContractorLimitQuery();
   const { data: projectLimitData } = useGetProjectLimitQuery();
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
@@ -384,9 +391,41 @@ export default function AdminOnboarding() {
       return true;
     }
 
+    // Create a map of project names to IDs for quick lookup
+    const allProjects = [...savedProjects, ...onboardingData.projects];
+    const projectNameToIdMap = new Map();
+    
+    // Add saved projects (which have IDs)
+    savedProjects.forEach(project => {
+      projectNameToIdMap.set(project.name, project.id);
+    });
+    
+    // For new projects from onboarding, we don't have IDs yet, so we'll use project names
+    // The backend will need to handle this by looking up project IDs by name
+    onboardingData.projects.forEach(project => {
+      if (!projectNameToIdMap.has(project.name)) {
+        projectNameToIdMap.set(project.name, project.name); // Use name as fallback
+      }
+    });
+
+    // Merge project assignments into subcontractor data
+    const subcontractorsWithProjects = unsavedSubcontractors.map(subcontractor => {
+      const assignedProjectName = subcontractorProjectAssignments[subcontractor.name];
+      let projectId = null;
+      
+      if (assignedProjectName && projectNameToIdMap.has(assignedProjectName)) {
+        projectId = projectNameToIdMap.get(assignedProjectName);
+      }
+      
+      return {
+        ...subcontractor,
+        projectId: projectId
+      };
+    });
+
     try {
       const result = await bulkCreateSubcontractors({
-        subcontractors: unsavedSubcontractors
+        subcontractors: subcontractorsWithProjects
       }).unwrap();
 
       // Mark successfully created subcontractors as saved
@@ -1663,6 +1702,12 @@ export default function AdminOnboarding() {
                         Contract Amount
                       </th>
                       <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
+                        Foreman
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
+                        Project
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         Actions
                       </th>
                     </tr>
@@ -1697,6 +1742,39 @@ export default function AdminOnboarding() {
                                 className="w-full"
                                 placeholder="Contract Amount (optional)"
                                 type="text"
+                              />
+                            </td>
+                            <td className="p-4">
+                              <Input
+                                value={editingSubcontractor?.foreman || ""}
+                                onChange={(e) =>
+                                  setEditingSubcontractor((prev) => (prev ? { ...prev, foreman: e.target.value } : null))
+                                }
+                                className="w-full"
+                                placeholder="Foreman name (optional)"
+                                type="text"
+                              />
+                            </td>
+                            <td className="p-4">
+                              <SearchableSelect
+                                options={[
+                                  ...savedProjects.map((project) => ({
+                                    value: project.name,
+                                    label: project.name
+                                  })),
+                                  ...onboardingData.projects.map((project) => ({
+                                    value: project.name,
+                                    label: project.name
+                                  }))
+                                ]}
+                                value={subcontractorProjectAssignments[subcontractor.name] || ""}
+                                onValueChange={(value) => {
+                                  setSubcontractorProjectAssignments(prev => ({
+                                    ...prev,
+                                    [subcontractor.name]: value
+                                  }));
+                                }}
+                                placeholder="Select a project (optional)"
                               />
                             </td>
                             <td className="p-4">
@@ -1740,6 +1818,16 @@ export default function AdminOnboarding() {
                             <td className="p-4">
                               <span className="text-gray-700 dark:text-gray-300">
                                 {subcontractor.contractAmount || "-"}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {subcontractor.foreman || "-"}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {subcontractorProjectAssignments[subcontractor.name] || "No project assigned"}
                               </span>
                             </td>
                             <td className="p-4">
