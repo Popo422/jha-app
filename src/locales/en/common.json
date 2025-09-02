@@ -469,6 +469,10 @@
     "date": "Date",
     "reportReviewedBy": "Report Reviewed By",
     "followUpActionTaken": "Follow up action taken",
+    "status": "Status",
+    "statusReported": "Reported",
+    "statusInvestigating": "Investigating", 
+    "statusClosed": "Closed",
     "addPhotos": "Add Photos",
     "attachedFiles": "Attached Files",
     "quickReportDetails": "Quick Report Details",
@@ -951,6 +955,26 @@
       "reportIncidentDescription": "See it. Report it.",
       "planSafetyTraining": "Plan Safety Training",
       "planSafetyTrainingDescription": "A safer crew."
+    },
+    "metrics": {
+      "recentIncidents": "Recent Incidents",
+      "needsAttention": "Needs Attention", 
+      "nearMisses": "Near Misses",
+      "trir": "TRIR"
+    },
+    "actionRequired": {
+      "title": "Action Required",
+      "asOf": "as of",
+      "reviewIncidents": "Review Incidents",
+      "reviewIncidentsDesc": "incidents that need attention",
+      "fileInsuranceClaim": "File Insurance Claim", 
+      "fileInsuranceClaimDesc": "high-severity incident(s) may require insurance claims",
+      "followUpRequired": "Follow-up Required",
+      "followUpRequiredDesc": "incident(s) reported over a week ago need investigation updates",
+      "safetyTrainingRecommended": "Safety Training Recommended",
+      "safetyTrainingDesc": "TRIR of {trir} is above industry average. Consider additional safety training.",
+      "noActionItems": "No action items at this time.",
+      "loadingActionItems": "Loading action items..."
     },
     "tabs": {
       "recent": "Recent",

@@ -969,6 +969,26 @@
       "planSafetyTraining": "Zaplanuj Szkolenie BHP",
       "planSafetyTrainingDescription": "Bezpieczniejsza załoga."
     },
+    "metrics": {
+      "recentIncidents": "Ostatnie Incydenty",
+      "needsAttention": "Wymaga Uwagi",
+      "nearMisses": "Nieomal Wypadki",
+      "trir": "TRIR"
+    },
+    "actionRequired": {
+      "title": "Wymagane Działanie",
+      "asOf": "na dzień",
+      "reviewIncidents": "Przejrzyj Incydenty",
+      "reviewIncidentsDesc": "incydenty wymagające uwagi",
+      "fileInsuranceClaim": "Złóż Wniosek Ubezpieczeniowy",
+      "fileInsuranceClaimDesc": "incydenty o wysokiej wadze mogą wymagać wniosków ubezpieczeniowych",
+      "followUpRequired": "Wymagane Działania Następcze",
+      "followUpRequiredDesc": "incydenty zgłoszone ponad tydzień temu wymagają aktualizacji dochodzenia",
+      "safetyTrainingRecommended": "Zalecane Szkolenie BHP",
+      "safetyTrainingDesc": "TRIR wynoszący {trir} jest powyżej średniej branżowej. Rozważ dodatkowe szkolenia BHP.",
+      "noActionItems": "Brak elementów działań w tym czasie.",
+      "loadingActionItems": "Ładowanie elementów działań..."
+    },
     "tabs": {
       "recent": "Ostatnie",
       "recentIncidents": "Ostatnie Incydenty",

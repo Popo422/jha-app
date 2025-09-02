@@ -7,9 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Toast, useToast } from "@/components/ui/toast";
-import { useUpdateSubmissionMutation, useDeleteAttachmentMutation } from "@/lib/features/submissions/submissionsApi";
-import { Incident } from "@/lib/features/incidents/incidentsApi";
+import { useDeleteAttachmentMutation } from "@/lib/features/submissions/submissionsApi";
+import { Incident, useUpdateIncidentMutation } from "@/lib/features/incidents/incidentsApi";
+import { workersCompApi } from "@/lib/features/workers-comp/workersCompApi";
+import { useDispatch } from 'react-redux';
 import { ArrowLeft } from "lucide-react";
 import SignatureModal from "@/components/SignatureModal";
 import AttachmentPreview from "@/components/AttachmentPreview";
@@ -39,9 +42,10 @@ interface IncidentReportEditProps {
 
 export default function IncidentReportEdit({ submission, onBack }: IncidentReportEditProps) {
   const { t } = useTranslation('common');
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState(submission.formData || {});
   const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
-  const [updateSubmission, { isLoading }] = useUpdateSubmissionMutation();
+  const [updateIncident, { isLoading }] = useUpdateIncidentMutation();
   const [deleteAttachment] = useDeleteAttachmentMutation();
   const { toast, showToast, hideToast } = useToast();
 
@@ -99,17 +103,20 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
 
   const handleSave = useCallback(async () => {
     try {
-      const result = await updateSubmission({
+      const result = await updateIncident({
         id: submission.id,
-        completedBy: formData.completedBy,
-        date: formData.reportDate,
-        company: formData.companySubcontractor,
+        reportedBy: formData.completedBy,
+        injuredEmployee: formData.injuredParty,
         projectName: formData.projectName,
+        dateOfIncident: formData.reportDate,
+        company: formData.companySubcontractor,
         formData: formData,
         authType: 'admin'
       }).unwrap();
 
       if (result.success) {
+        // Manually refetch workers-comp data
+        dispatch(workersCompApi.util.invalidateTags(['WorkersCompData']));
         showToast(t('common.changesSavedSuccessfully'), 'success');
       } else {
         showToast(result.error || t('common.failedToSaveChanges'), 'error');
@@ -117,12 +124,18 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
     } catch (error: any) {
       showToast(error?.data?.error || t('common.failedToSaveChanges'), 'error');
     }
-  }, [formData, submission.id, updateSubmission, showToast]);
+  }, [formData, submission.id, updateIncident, showToast, dispatch]);
+
+  const handleBack = useCallback(() => {
+    // Refetch workers-comp data when navigating back (in case changes were made)
+    dispatch(workersCompApi.util.invalidateTags(['WorkersCompData']));
+    onBack();
+  }, [onBack, dispatch]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" onClick={onBack} className="p-2">
+        <Button variant="ghost" onClick={handleBack} className="p-2">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-2xl font-bold">{t('common.edit')} {t('forms.incidentReport')}</h2>
@@ -708,11 +721,28 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
                   rows={4}
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">{t('forms.status')}</Label>
+                <Select
+                  value={formData.status || 'reported'}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="reported">{t('forms.statusReported')}</SelectItem>
+                    <SelectItem value="investigating">{t('forms.statusInvestigating')}</SelectItem>
+                    <SelectItem value="closed">{t('forms.statusClosed')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onBack}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={handleBack}>{t('common.cancel')}</Button>
             <Button onClick={handleSave} disabled={isLoading}>
               {isLoading ? t('common.saving') : t('common.saveChanges')}
             </Button>

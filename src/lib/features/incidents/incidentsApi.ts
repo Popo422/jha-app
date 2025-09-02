@@ -130,7 +130,7 @@ export const incidentsApi = createApi({
       return headers
     },
   }),
-  tagTypes: ['Incident'],
+  tagTypes: ['Incident', 'WorkersCompData'],
   endpoints: (builder) => ({
     createIncident: builder.mutation<IncidentResponse, IncidentData>({
       query: (data) => {
@@ -175,7 +175,7 @@ export const incidentsApi = createApi({
           body: formData,
         }
       },
-      invalidatesTags: ['Incident'],
+      invalidatesTags: ['Incident', 'WorkersCompData'],
     }),
     getIncidents: builder.query<GetIncidentsResponse, { 
       incidentType?: string
@@ -255,7 +255,7 @@ export const incidentsApi = createApi({
           body: data,
         }
       },
-      invalidatesTags: (result, error, { id }) => [{ type: 'Incident', id }],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Incident', id }, 'WorkersCompData'],
     }),
     deleteIncident: builder.mutation<DeleteIncidentResponse, { id: string, authType?: 'contractor' | 'admin' | 'any' }>({
       query: ({ id, authType }) => {
@@ -266,7 +266,7 @@ export const incidentsApi = createApi({
           method: 'DELETE',
         }
       },
-      invalidatesTags: ['Incident'],
+      invalidatesTags: ['Incident', 'WorkersCompData'],
     }),
     exportIncidents: builder.mutation<Blob, { 
       incidentType?: string

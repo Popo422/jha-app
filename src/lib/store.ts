@@ -19,6 +19,7 @@ import { forecastingApi } from './features/forecasting/forecastingApi'
 import { projectManagersApi } from './features/project-managers/projectManagersApi'
 import { incidentsApi } from './features/incidents/incidentsApi'
 import { formTemplatesApi } from './features/form-templates/formTemplatesApi'
+import { workersCompApi } from './features/workers-comp/workersCompApi'
 
 export const store = configureStore({
   reducer: {
@@ -42,6 +43,7 @@ export const store = configureStore({
     [projectManagersApi.reducerPath]: projectManagersApi.reducer,
     [incidentsApi.reducerPath]: incidentsApi.reducer,
     [formTemplatesApi.reducerPath]: formTemplatesApi.reducer,
+    [workersCompApi.reducerPath]: workersCompApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -60,7 +62,8 @@ export const store = configureStore({
       forecastingApi.middleware,
       projectManagersApi.middleware,
       incidentsApi.middleware,
-      formTemplatesApi.middleware
+      formTemplatesApi.middleware,
+      workersCompApi.middleware
     ),
 })
 

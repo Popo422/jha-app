@@ -37,7 +37,7 @@ import { useBulkCreateProjectsMutation, useGetProjectLimitQuery, useGetProjectsQ
 import { useBulkCreateSubcontractorsMutation, useGetSubcontractorsQuery } from "@/lib/features/subcontractors/subcontractorsApi";
 import { useBulkCreateContractorsMutation, useGetContractorLimitQuery } from "@/lib/features/contractors/contractorsApi";
 
-type Step = "welcome" | "projectManagers" | "projects" | "subcontractors" | "employees" | "review" | "complete";
+type Step = "welcome" | "projectManagers" | "projects" | "subcontractors" | "complete";
 
 interface ProjectManagerData {
   name: string;
@@ -150,7 +150,7 @@ export default function AdminOnboarding() {
     language: "en",
   });
 
-  const steps: Step[] = ["welcome", "projectManagers", "projects", "subcontractors", "employees", "complete"];
+  const steps: Step[] = ["welcome", "projectManagers", "projects", "subcontractors", /* "employees", */ "complete"];
   const currentStepIndex = steps.indexOf(currentStep);
   const progress = ((currentStepIndex + 1) / steps.length) * 100;
 
@@ -222,8 +222,8 @@ export default function AdminOnboarding() {
         return duplicateProjectsCount > 0 || (apiErrors.projects && apiErrors.projects.length > 0);
       case 'subcontractors':
         return duplicateSubcontractorsCount > 0 || (apiErrors.subcontractors && apiErrors.subcontractors.length > 0);
-      case 'employees':
-        return duplicateEmployeesCount > 0 || (apiErrors.employees && apiErrors.employees.length > 0);
+      // case 'employees':
+        // return duplicateEmployeesCount > 0 || (apiErrors.employees && apiErrors.employees.length > 0);
       default:
         return false;
     }
@@ -562,8 +562,8 @@ export default function AdminOnboarding() {
       saveSuccess = await handleSaveProjects();
     } else if (currentStep === "subcontractors" && onboardingData.subcontractors.length > 0) {
       saveSuccess = await handleSaveSubcontractors();
-    } else if (currentStep === "employees" && onboardingData.employees.length > 0) {
-      saveSuccess = await handleSaveEmployees();
+    // } else if (currentStep === "employees" && onboardingData.employees.length > 0) {
+      // saveSuccess = await handleSaveEmployees();
     }
 
     // Only proceed to next step if save was successful
@@ -931,7 +931,7 @@ export default function AdminOnboarding() {
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">{t("admin.onboardingDescription")}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
         <div className="text-center space-y-3">
           <div className="w-12 h-12 mx-auto bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center">
             <User className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -956,13 +956,13 @@ export default function AdminOnboarding() {
           <p className="text-sm text-muted-foreground">{t("admin.subcontractorsDescription")}</p>
         </div>
 
-        <div className="text-center space-y-3">
+        {/* <div className="text-center space-y-3">
           <div className="w-12 h-12 mx-auto bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
             <User className="w-6 h-6 text-green-600 dark:text-green-400" />
           </div>
           <h3 className="font-semibold">{t("admin.employeesSetup")}</h3>
           <p className="text-sm text-muted-foreground">{t("admin.employeesDescription")}</p>
-        </div>
+        </div> */}
       </div>
 
       <Button onClick={handleNext} size="lg" className="px-8">
@@ -2452,7 +2452,7 @@ export default function AdminOnboarding() {
           {currentStep === "projectManagers" && renderProjectManagersStep()}
           {currentStep === "projects" && renderProjectsStep()}
           {currentStep === "subcontractors" && renderSubcontractorsStep()}
-          {currentStep === "employees" && renderEmployeesStep()}
+          {/* {currentStep === "employees" && renderEmployeesStep()} */}
           {currentStep === "complete" && renderCompleteStep()}
         </CardContent>
       </Card>
@@ -2464,7 +2464,7 @@ export default function AdminOnboarding() {
             Previous
           </Button>
 
-          {currentStep === "employees" ? (
+          {currentStep === "subcontractors" ? (
             <Button onClick={handleComplete} disabled={isLoading} className="px-8">
               {isLoading ? "Completing Setup..." : "Complete Setup"}
               <CheckCircle className="ml-2 w-4 h-4" />
@@ -2484,10 +2484,9 @@ export default function AdminOnboarding() {
                 className="px-8" 
                 disabled={isLoading || isSavingProjectManagers || isSavingProjects || isSavingSubcontractors || isSavingEmployees || hasDuplicates()}
               >
-                {(isSavingProjectManagers && currentStep === "projectManagers") || 
-                 (isSavingProjects && currentStep === "projects") ||
-                 (isSavingSubcontractors && currentStep === "subcontractors") ||
-                 (isSavingEmployees && (currentStep as Step) === "employees") ? (
+                {((isSavingProjectManagers && (currentStep as Step) === "projectManagers") || 
+                  (isSavingProjects && (currentStep as Step) === "projects") ||
+                  (isSavingSubcontractors && (currentStep as Step) === "subcontractors")) ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
                     Saving...

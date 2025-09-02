@@ -969,6 +969,26 @@
       "planSafetyTraining": "规划安全培训",
       "planSafetyTrainingDescription": "更安全的团队。"
     },
+    "metrics": {
+      "recentIncidents": "最近事故",
+      "needsAttention": "需要关注", 
+      "nearMisses": "险情事故",
+      "trir": "TRIR"
+    },
+    "actionRequired": {
+      "title": "需要采取行动",
+      "asOf": "截至",
+      "reviewIncidents": "审查事故",
+      "reviewIncidentsDesc": "需要关注的事故",
+      "fileInsuranceClaim": "提交保险理赔", 
+      "fileInsuranceClaimDesc": "高严重性事故可能需要保险理赔",
+      "followUpRequired": "需要跟进",
+      "followUpRequiredDesc": "一周前报告的事故需要调查更新",
+      "safetyTrainingRecommended": "建议安全培训",
+      "safetyTrainingDesc": "TRIR为{trir}，高于行业平均水平。建议进行额外的安全培训。",
+      "noActionItems": "目前没有行动项目。",
+      "loadingActionItems": "正在加载行动项目..."
+    },
     "tabs": {
       "recent": "最近",
       "recentIncidents": "最近事故",

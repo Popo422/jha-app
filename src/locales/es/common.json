@@ -988,6 +988,26 @@
       "planSafetyTraining": "Planificar Entrenamiento de Seguridad",
       "planSafetyTrainingDescription": "Un equipo más seguro."
     },
+    "metrics": {
+      "recentIncidents": "Incidentes Recientes",
+      "needsAttention": "Requiere Atención", 
+      "nearMisses": "Casi Accidentes",
+      "trir": "TRIR"
+    },
+    "actionRequired": {
+      "title": "Acción Requerida",
+      "asOf": "al",
+      "reviewIncidents": "Revisar Incidentes",
+      "reviewIncidentsDesc": "incidentes que requieren atención",
+      "fileInsuranceClaim": "Presentar Reclamo de Seguro", 
+      "fileInsuranceClaimDesc": "incidente(s) de alta gravedad pueden requerir reclamos de seguro",
+      "followUpRequired": "Seguimiento Requerido",
+      "followUpRequiredDesc": "incidente(s) reportado(s) hace más de una semana necesitan actualizaciones de investigación",
+      "safetyTrainingRecommended": "Entrenamiento de Seguridad Recomendado",
+      "safetyTrainingDesc": "TRIR de {trir} está por encima del promedio de la industria. Considerar entrenamiento de seguridad adicional.",
+      "noActionItems": "No hay elementos de acción en este momento.",
+      "loadingActionItems": "Cargando elementos de acción..."
+    },
     "tabs": {
       "recent": "Recientes",
       "recentIncidents": "Incidentes Recientes",

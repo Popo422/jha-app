@@ -125,3 +125,25 @@ export function authenticateRequest(request: NextRequest, authType: 'contractor'
 
   throw new Error('No valid authentication token found')
 }
+
+// Simplified admin session validation for API endpoints
+export async function validateAdminSession(request: NextRequest) {
+  try {
+    const auth = authenticateRequest(request, 'admin')
+    if (!auth.isAdmin || !auth.admin?.companyId) {
+      return { success: false, error: 'Admin authentication required', status: 401 }
+    }
+    
+    return { 
+      success: true, 
+      admin: auth.admin,
+      company: { id: auth.admin.companyId }
+    }
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Authentication failed', 
+      status: 401 
+    }
+  }
+}
