@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select-v2";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -18,7 +19,15 @@ import { Users, User, Mail, Phone, Plus, ArrowRight } from "lucide-react";
 interface SubcontractorData {
   name: string;
   contractAmount?: string;
+  projectId?: string;
   foreman?: string;
+}
+
+interface ProjectData {
+  name: string;
+  location: string;
+  projectManager: string;
+  projectCost?: string;
 }
 
 interface SubcontractorManualAddModalProps {
@@ -26,6 +35,7 @@ interface SubcontractorManualAddModalProps {
   onClose: () => void;
   onSaveAndContinue: (subcontractors: SubcontractorData[]) => void;
   onSaveAndAddMore: (subcontractor: SubcontractorData) => void;
+  availableProjects?: ProjectData[];
 }
 
 export function SubcontractorManualAddModal({
@@ -33,6 +43,7 @@ export function SubcontractorManualAddModal({
   onClose,
   onSaveAndContinue,
   onSaveAndAddMore,
+  availableProjects = [],
 }: SubcontractorManualAddModalProps) {
   const { t } = useTranslation("common");
 
@@ -40,6 +51,7 @@ export function SubcontractorManualAddModal({
   const [currentSubcontractor, setCurrentSubcontractor] = useState<SubcontractorData>({
     name: "",
     contractAmount: "",
+    projectId: "",
     foreman: "",
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -66,7 +78,7 @@ export function SubcontractorManualAddModal({
     onSaveAndAddMore(newSubcontractor);
 
     // Reset form
-    setCurrentSubcontractor({ name: "", contractAmount: "", foreman: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", projectId: "", foreman: "" });
     setErrors({});
   };
 
@@ -83,12 +95,12 @@ export function SubcontractorManualAddModal({
 
     // Reset state
     setTempSubcontractors([]);
-    setCurrentSubcontractor({ name: "", contractAmount: "", foreman: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", projectId: "", foreman: "" });
     setErrors({});
   };
 
   const handleClose = () => {
-    setCurrentSubcontractor({ name: "", contractAmount: "", foreman: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", projectId: "", foreman: "" });
     setTempSubcontractors([]);
     setErrors({});
     onClose();
@@ -146,6 +158,28 @@ export function SubcontractorManualAddModal({
                       {errors.name}
                     </p>
                   )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="projectId" className="text-sm font-medium">
+                    Assign to Project (Optional)
+                  </Label>
+                  <SearchableSelect
+                    value={currentSubcontractor.projectId || ""}
+                    onValueChange={(value) => {
+                      setCurrentSubcontractor((prev) => ({ ...prev, projectId: value }));
+                    }}
+                    placeholder="Select a project"
+                    searchPlaceholder="Search projects..."
+                    emptyMessage="No projects found"
+                    options={availableProjects.map((project, index) => ({
+                      value: `${project.name}|${project.location}`,
+                      label: `${project.name} - ${project.location}`
+                    }))}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Assign this subcontractor to a specific project
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="contractAmount" className="text-sm font-medium">

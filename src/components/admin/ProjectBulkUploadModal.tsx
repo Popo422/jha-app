@@ -45,8 +45,8 @@ export function ProjectBulkUploadModal({
 
   const downloadTemplate = (format: 'csv' | 'excel' = 'csv') => {
     if (format === 'csv') {
-      const headers = csvSchema.map(field => field.label).join(',');
-      const example = csvSchema.map(field => field.example).join(',');
+      const headers = csvSchema.map(field => `"${field.label}"`).join(',');
+      const example = csvSchema.map(field => `"${field.example}"`).join(',');
       const csvContent = `${headers}\n${example}`;
       
       const blob = new Blob([csvContent], { type: 'text/csv' });

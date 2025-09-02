@@ -410,11 +410,14 @@ export default function AdminOnboarding() {
 
     // Merge project assignments into subcontractor data
     const subcontractorsWithProjects = unsavedSubcontractors.map(subcontractor => {
-      const assignedProjectName = subcontractorProjectAssignments[subcontractor.name];
       let projectId = null;
       
-      if (assignedProjectName && projectNameToIdMap.has(assignedProjectName)) {
-        projectId = projectNameToIdMap.get(assignedProjectName);
+      // If subcontractor has a projectId, extract the project name from "name|location" format
+      if (subcontractor.projectId) {
+        const projectName = subcontractor.projectId.split('|')[0];
+        if (projectNameToIdMap.has(projectName)) {
+          projectId = projectNameToIdMap.get(projectName);
+        }
       }
       
       return {
@@ -1827,7 +1830,7 @@ export default function AdminOnboarding() {
                             </td>
                             <td className="p-4">
                               <span className="text-gray-700 dark:text-gray-300">
-                                {subcontractorProjectAssignments[subcontractor.name] || "No project assigned"}
+                                {subcontractor.projectId ? subcontractor.projectId.replace('|', ' - ') : "-"}
                               </span>
                             </td>
                             <td className="p-4">
@@ -1887,7 +1890,7 @@ export default function AdminOnboarding() {
                   </>
                 ) : (
                   <>
-                    Finish & Continue to Employees
+                    Finish & Complete Setup
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </>
                 )}
@@ -2399,7 +2402,7 @@ export default function AdminOnboarding() {
         </div>
         <h1 className="text-4xl font-bold text-green-600">Onboarding Complete!</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Your projects, subcontractors, and employees have been successfully set up.
+          Your projects and subcontractors have been successfully set up.
         </p>
       </div>
 
@@ -2417,10 +2420,6 @@ export default function AdminOnboarding() {
           <div className="flex justify-between">
             <span>Subcontractors added:</span>
             <span className="font-medium">{onboardingData.subcontractors.length}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Employees added:</span>
-            <span className="font-medium">{onboardingData.employees.length}</span>
           </div>
         </div>
       </div>
@@ -2552,6 +2551,7 @@ export default function AdminOnboarding() {
         onClose={() => setIsSubcontractorManualAddModalOpen(false)}
         onSaveAndContinue={handleSubcontractorManualAddSaveAndContinue}
         onSaveAndAddMore={handleSubcontractorManualAddSaveAndAddMore}
+        availableProjects={[...savedProjects, ...onboardingData.projects]}
       />
 
       <EmployeeManualAddModal
