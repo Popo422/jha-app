@@ -27,7 +27,8 @@ export default function ProjectDetailsStep({ data, updateData }: ProjectDetailsS
   const { data: projectsData, isLoading: isLoadingProjects } = useGetProjectsQuery({
     page: 1,
     pageSize: 1000,
-    authType: 'contractor'
+    authType: 'contractor',
+    subcontractorName: data.subcontractorName || undefined
   });
 
   const { data: subcontractorsData } = useGetSubcontractorsQuery({
@@ -41,27 +42,8 @@ export default function ProjectDetailsStep({ data, updateData }: ProjectDetailsS
     authType: 'contractor'
   });
 
-  // Filter projects based on selected subcontractor
-  const getAvailableProjects = () => {
-    if (!data.subcontractorName || !subcontractorsData?.subcontractors) {
-      return projectsData?.projects || [];
-    }
-
-    // Find the selected subcontractor
-    const selectedSubcontractor = subcontractorsData.subcontractors.find(
-      sub => sub.name === data.subcontractorName
-    );
-
-    if (!selectedSubcontractor?.projectId) {
-      // If subcontractor has no project assigned, show all projects
-      return projectsData?.projects || [];
-    }
-
-    // Filter projects to only show the one assigned to this subcontractor
-    return projectsData?.projects.filter(project => project.id === selectedSubcontractor.projectId) || [];
-  };
-
-  const availableProjects = getAvailableProjects();
+  // Projects are now filtered server-side based on subcontractorName
+  const availableProjects = projectsData?.projects || [];
   const projectOptions = availableProjects.map(project => ({
     value: project.name,
     label: project.name

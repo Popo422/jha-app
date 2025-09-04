@@ -104,7 +104,6 @@ export const subcontractors = pgTable('subcontractors', {
   name: text('name').notNull(),
   contractAmount: numeric('contract_amount', { precision: 12, scale: 2 }), // Optional budget/contract amount
   companyId: uuid('company_id').notNull(),
-  projectId: uuid('project_id'), // Optional reference to project
   foreman: text('foreman'), // Optional foreman name
   enabledModules: jsonb('enabled_modules').$type<string[]>().default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'timesheet']), // Available modules for this subcontractor
   modulesLastUpdatedAt: timestamp('modules_last_updated_at'),
@@ -115,6 +114,21 @@ export const subcontractors = pgTable('subcontractors', {
 }, (table) => ({
   // Composite unique constraint: same subcontractor name can exist across companies but not within same company
   companySubcontractorUnique: unique().on(table.companyId, table.name),
+}))
+
+// Junction table for many-to-many relationship between subcontractors and projects
+export const subcontractorProjects = pgTable('subcontractor_projects', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  subcontractorId: uuid('subcontractor_id').notNull().references(() => subcontractors.id, { onDelete: 'cascade' }),
+  projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  assignedAt: timestamp('assigned_at').notNull().defaultNow(),
+  assignedBy: text('assigned_by'), // Admin name who made the assignment
+  assignedByUserId: text('assigned_by_user_id'), // Admin user ID for reference
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: prevent duplicate assignments
+  subcontractorProjectUnique: unique().on(table.subcontractorId, table.projectId),
 }))
 
 export const supervisors = pgTable('supervisors', {

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Building2,
@@ -54,7 +55,8 @@ interface ProjectData {
 interface SubcontractorData {
   name: string; // This maps to the database 'name' field
   contractAmount?: string; // Optional contract amount
-  projectId?: string; // Optional project assignment
+  projectId?: string; // Optional project assignment (legacy)
+  projectIds?: string[]; // Optional multiple project assignments
   foreman?: string; // Optional foreman name
 }
 
@@ -82,7 +84,7 @@ export default function AdminOnboarding() {
 
   const [currentStep, setCurrentStep] = useState<Step>("welcome");
   const [isLoading, setIsLoading] = useState(false);
-  const [subcontractorProjectAssignments, setSubcontractorProjectAssignments] = useState<Record<string, string>>({});
+  const [subcontractorProjectAssignments, setSubcontractorProjectAssignments] = useState<Record<string, string[]>>({});
   const [apiErrors, setApiErrors] = useState<{
     projectManagers?: string[];
     projects?: string[];
@@ -410,19 +412,17 @@ export default function AdminOnboarding() {
 
     // Merge project assignments into subcontractor data
     const subcontractorsWithProjects = unsavedSubcontractors.map(subcontractor => {
-      let projectId = null;
+      // Get multiple project assignments from the assignments state
+      const assignedProjectNames = subcontractorProjectAssignments[subcontractor.name] || [];
       
-      // If subcontractor has a projectId, extract the project name from "name|location" format
-      if (subcontractor.projectId) {
-        const projectName = subcontractor.projectId.split('|')[0];
-        if (projectNameToIdMap.has(projectName)) {
-          projectId = projectNameToIdMap.get(projectName);
-        }
-      }
+      // Map project names to IDs
+      const projectIds = assignedProjectNames
+        .map(projectName => projectNameToIdMap.get(projectName))
+        .filter(id => id !== undefined);
       
       return {
         ...subcontractor,
-        projectId: projectId
+        projectIds: projectIds.length > 0 ? projectIds : undefined
       };
     });
 
@@ -836,6 +836,22 @@ export default function AdminOnboarding() {
       ...prev,
       subcontractors: [...prev.subcontractors, ...subcontractors],
     }));
+    
+    // Convert projectIds to subcontractorProjectAssignments state
+    const newAssignments: Record<string, string[]> = {};
+    subcontractors.forEach(subcontractor => {
+      if (subcontractor.projectIds && subcontractor.projectIds.length > 0) {
+        // Convert "ProjectName|Location" format to just "ProjectName"
+        const projectNames = subcontractor.projectIds.map((id: string) => id.split('|')[0]);
+        newAssignments[subcontractor.name] = projectNames;
+      }
+    });
+    
+    setSubcontractorProjectAssignments(prev => ({
+      ...prev,
+      ...newAssignments
+    }));
+    
     setIsSubcontractorManualAddModalOpen(false);
     setShowTable("subcontractors");
   };
@@ -845,6 +861,16 @@ export default function AdminOnboarding() {
       ...prev,
       subcontractors: [...prev.subcontractors, subcontractor],
     }));
+    
+    // Convert projectIds to subcontractorProjectAssignments state
+    if (subcontractor.projectIds && subcontractor.projectIds.length > 0) {
+      // Convert "ProjectName|Location" format to just "ProjectName"
+      const projectNames = subcontractor.projectIds.map((id: string) => id.split('|')[0]);
+      setSubcontractorProjectAssignments(prev => ({
+        ...prev,
+        [subcontractor.name]: projectNames
+      }));
+    }
   };
 
   const handleEmployeeManualAddSaveAndContinue = (employees: EmployeeData[]) => {
@@ -1708,7 +1734,7 @@ export default function AdminOnboarding() {
                         Foreman
                       </th>
                       <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
-                        Project
+                        Projects
                       </th>
                       <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         Actions
@@ -1759,25 +1785,20 @@ export default function AdminOnboarding() {
                               />
                             </td>
                             <td className="p-4">
-                              <SearchableSelect
-                                options={[
-                                  ...savedProjects.map((project) => ({
-                                    value: project.name,
-                                    label: project.name
-                                  })),
-                                  ...onboardingData.projects.map((project) => ({
-                                    value: project.name,
-                                    label: project.name
-                                  }))
-                                ]}
-                                value={subcontractorProjectAssignments[subcontractor.name] || ""}
+                              <MultiSelect
+                                options={[...savedProjects, ...onboardingData.projects].map((project) => ({
+                                  value: project.name,
+                                  label: project.name
+                                }))}
+                                value={subcontractorProjectAssignments[subcontractor.name] || []}
                                 onValueChange={(value) => {
                                   setSubcontractorProjectAssignments(prev => ({
                                     ...prev,
                                     [subcontractor.name]: value
                                   }));
                                 }}
-                                placeholder="Select a project (optional)"
+                                placeholder="Select projects..."
+                                className="min-w-64"
                               />
                             </td>
                             <td className="p-4">
@@ -1829,9 +1850,24 @@ export default function AdminOnboarding() {
                               </span>
                             </td>
                             <td className="p-4">
-                              <span className="text-gray-700 dark:text-gray-300">
-                                {subcontractor.projectId ? subcontractor.projectId.replace('|', ' - ') : "-"}
-                              </span>
+                              <div className="text-gray-700 dark:text-gray-300">
+                                {(subcontractorProjectAssignments[subcontractor.name] || []).length > 0 ? (
+                                  <div className="space-y-1">
+                                    {(subcontractorProjectAssignments[subcontractor.name] || []).slice(0, 2).map((projectName, projIndex) => (
+                                      <div key={projIndex} className="text-sm">
+                                        {projectName}
+                                      </div>
+                                    ))}
+                                    {(subcontractorProjectAssignments[subcontractor.name] || []).length > 2 && (
+                                      <div className="text-xs text-muted-foreground">
+                                        +{(subcontractorProjectAssignments[subcontractor.name] || []).length - 2} more
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span>No projects assigned</span>
+                                )}
+                              </div>
                             </td>
                             <td className="p-4">
                               <div className="flex gap-2">

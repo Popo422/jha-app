@@ -6,6 +6,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetSubcontractorsQuery, useDeleteSubcontractorMutation, useCreateSubcontractorMutation, useUpdateSubcontractorMutation, type Subcontractor, type PaginationInfo } from "@/lib/features/subcontractors/subcontractorsApi";
 import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,7 @@ export function SubcontractorsManagement() {
   const [formData, setFormData] = useState({
     name: "",
     contractAmount: "",
-    projectId: "",
+    projectIds: [] as string[],
     foreman: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -121,7 +122,7 @@ export function SubcontractorsManagement() {
     setFormData({
       name: subcontractor.name,
       contractAmount: subcontractor.contractAmount || "",
-      projectId: subcontractor.projectId || "",
+      projectIds: (subcontractor as any).projectIds || [],
       foreman: subcontractor.foreman || "",
     });
     setFormErrors({});
@@ -133,7 +134,7 @@ export function SubcontractorsManagement() {
     setFormData({
       name: "",
       contractAmount: "",
-      projectId: "",
+      projectIds: [],
       foreman: "",
     });
     setFormErrors({});
@@ -144,7 +145,7 @@ export function SubcontractorsManagement() {
     setIsCreateDialogOpen(false);
     setIsEditDialogOpen(false);
     setEditingSubcontractor(null);
-    setFormData({ name: "", contractAmount: "", projectId: "", foreman: "" });
+    setFormData({ name: "", contractAmount: "", projectIds: [], foreman: "" });
     setFormErrors({});
   };
 
@@ -255,24 +256,34 @@ export function SubcontractorsManagement() {
       },
     },
     {
-      accessorKey: "projectName",
+      accessorKey: "projectNames",
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          Project
+          Projects
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => {
-        const projectName = row.getValue("projectName") as string | null;
-        return projectName ? (
-          <span className="text-sm">{projectName}</span>
-        ) : (
-          <span className="text-sm text-muted-foreground">No project assigned</span>
-        );
+        const subcontractor = row.original;
+        const projectNames = subcontractor.projectNames as string[] | null;
+        
+        if (projectNames && projectNames.length > 0) {
+          const displayText = projectNames.join(', ');
+          return (
+            <div 
+              className="text-sm max-w-[200px] truncate" 
+              title={displayText}
+            >
+              {displayText}
+            </div>
+          );
+        } else {
+          return <span className="text-sm text-muted-foreground">No projects assigned</span>;
+        }
       },
     },
     {
@@ -333,23 +344,22 @@ export function SubcontractorsManagement() {
                 />
               </div>
               <div>
-                <Label htmlFor="projectId">Project (Optional)</Label>
-                <Select 
-                  value={formData.projectId || undefined} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, projectId: value === "none" ? "" : value }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a project (optional)" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[9999] max-h-[200px]">
-                    <SelectItem value="none">No project assigned</SelectItem>
-                    {projectsData?.projects?.map(project => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Projects (Optional)</Label>
+                <MultiSelect
+                  options={projectsData?.projects?.map(project => ({
+                    value: project.id,
+                    label: project.name
+                  })) || []}
+                  value={formData.projectIds}
+                  onValueChange={(value) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      projectIds: value
+                    }));
+                  }}
+                  placeholder="Select projects..."
+                  className="w-full"
+                />
               </div>
               <div>
                 <Label htmlFor="foreman">Foreman (Optional)</Label>
@@ -418,23 +428,22 @@ export function SubcontractorsManagement() {
                 />
               </div>
               <div>
-                <Label htmlFor="edit-projectId">Project (Optional)</Label>
-                <Select 
-                  value={formData.projectId || undefined} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, projectId: value === "none" ? "" : value }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a project (optional)" />
-                  </SelectTrigger>
-                  <SelectContent className="z-[9999] max-h-[200px]">
-                    <SelectItem value="none">No project assigned</SelectItem>
-                    {projectsData?.projects?.map(project => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Projects (Optional)</Label>
+                <MultiSelect
+                  options={projectsData?.projects?.map(project => ({
+                    value: project.id,
+                    label: project.name
+                  })) || []}
+                  value={formData.projectIds}
+                  onValueChange={(value) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      projectIds: value
+                    }));
+                  }}
+                  placeholder="Select projects..."
+                  className="w-full"
+                />
               </div>
               <div>
                 <Label htmlFor="edit-foreman">Foreman (Optional)</Label>
@@ -490,12 +499,12 @@ export function SubcontractorsManagement() {
             onDelete={handleDelete}
             getRowId={(subcontractor) => subcontractor.id}
             exportFilename="subcontractors"
-            exportHeaders={[t('contractors.companySubcontractor'), 'Contract Amount', 'Foreman', 'Project', t('admin.created')]}
+            exportHeaders={[t('contractors.companySubcontractor'), 'Contract Amount', 'Foreman', 'Projects', t('admin.created')]}
             getExportData={(subcontractor) => [
               subcontractor.name,
               subcontractor.contractAmount ? `$${parseFloat(subcontractor.contractAmount).toLocaleString()}` : '',
               subcontractor.foreman || '',
-              (subcontractor as any).projectName || 'No project assigned',
+              (subcontractor as any).projectNames?.join(', ') || 'No projects assigned',
               new Date(subcontractor.createdAt).toLocaleDateString()
             ]}
             searchValue={search}

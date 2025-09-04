@@ -1,0 +1,3 @@
+ALTER TABLE "companies" ALTER COLUMN "membership_info" SET DEFAULT '{"membershipLevel":"3","user":null,"memberships":[],"tokenVerifiedAt":"2025-09-04T15:18:53.971Z"}'::jsonb;--> statement-breakpoint
+ALTER TABLE "subcontractor_projects" ADD CONSTRAINT "subcontractor_projects_subcontractor_id_subcontractors_id_fk" FOREIGN KEY ("subcontractor_id") REFERENCES "public"."subcontractors"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "subcontractor_projects" ADD CONSTRAINT "subcontractor_projects_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE cascade ON UPDATE no action;

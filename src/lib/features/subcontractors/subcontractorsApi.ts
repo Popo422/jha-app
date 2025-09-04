@@ -5,8 +5,10 @@ export interface Subcontractor {
   name: string
   contractAmount?: string
   companyId: string
-  projectId?: string
-  projectName?: string
+  projectId?: string // Legacy field for backward compatibility
+  projectIds?: string[]
+  projectName?: string // Legacy field for backward compatibility  
+  projectNames?: string[]
   foreman?: string
   createdAt: string
   updatedAt: string
@@ -15,7 +17,8 @@ export interface Subcontractor {
 export interface CreateSubcontractorRequest {
   name: string
   contractAmount?: string
-  projectId?: string
+  projectId?: string // Legacy field for backward compatibility
+  projectIds?: string[]
   foreman?: string
 }
 
@@ -23,7 +26,8 @@ export interface UpdateSubcontractorRequest {
   id: string
   name: string
   contractAmount?: string
-  projectId?: string
+  projectId?: string // Legacy field for backward compatibility
+  projectIds?: string[]
   foreman?: string
 }
 

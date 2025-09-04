@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { SearchableSelect } from "@/components/ui/searchable-select-v2";
 import {
   AlertDialog,
@@ -19,7 +20,7 @@ import { Users, User, Mail, Phone, Plus, ArrowRight } from "lucide-react";
 interface SubcontractorData {
   name: string;
   contractAmount?: string;
-  projectId?: string;
+  projectIds?: string[];
   foreman?: string;
 }
 
@@ -51,7 +52,7 @@ export function SubcontractorManualAddModal({
   const [currentSubcontractor, setCurrentSubcontractor] = useState<SubcontractorData>({
     name: "",
     contractAmount: "",
-    projectId: "",
+    projectIds: [],
     foreman: "",
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -78,7 +79,7 @@ export function SubcontractorManualAddModal({
     onSaveAndAddMore(newSubcontractor);
 
     // Reset form
-    setCurrentSubcontractor({ name: "", contractAmount: "", projectId: "", foreman: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", projectIds: [], foreman: "" });
     setErrors({});
   };
 
@@ -95,12 +96,12 @@ export function SubcontractorManualAddModal({
 
     // Reset state
     setTempSubcontractors([]);
-    setCurrentSubcontractor({ name: "", contractAmount: "", projectId: "", foreman: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", projectIds: [], foreman: "" });
     setErrors({});
   };
 
   const handleClose = () => {
-    setCurrentSubcontractor({ name: "", contractAmount: "", projectId: "", foreman: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", projectIds: [], foreman: "" });
     setTempSubcontractors([]);
     setErrors({});
     onClose();
@@ -160,25 +161,26 @@ export function SubcontractorManualAddModal({
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="projectId" className="text-sm font-medium">
-                    Assign to Project (Optional)
+                  <Label className="text-sm font-medium">
+                    Assign to Projects (Optional)
                   </Label>
-                  <SearchableSelect
-                    value={currentSubcontractor.projectId || ""}
-                    onValueChange={(value) => {
-                      setCurrentSubcontractor((prev) => ({ ...prev, projectId: value }));
-                    }}
-                    placeholder="Select a project"
-                    searchPlaceholder="Search projects..."
-                    emptyMessage="No projects found"
-                    options={availableProjects.map((project, index) => ({
+                  <MultiSelect
+                    options={availableProjects.map((project) => ({
                       value: `${project.name}|${project.location}`,
                       label: `${project.name} - ${project.location}`
                     }))}
+                    value={currentSubcontractor.projectIds || []}
+                    onValueChange={(value) => {
+                      setCurrentSubcontractor(prev => ({
+                        ...prev,
+                        projectIds: value
+                      }));
+                    }}
+                    placeholder="Select projects..."
                     className="w-full"
                   />
                   <p className="text-xs text-gray-500">
-                    Assign this subcontractor to a specific project
+                    Assign this subcontractor to specific projects
                   </p>
                 </div>
                 <div className="space-y-2">

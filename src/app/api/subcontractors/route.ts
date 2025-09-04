@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, desc, and, or, ilike, sql } from 'drizzle-orm'
+import { eq, desc, and, or, ilike, sql, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { subcontractors, projects, contractors } from '@/lib/db/schema'
+import { subcontractors, projects, contractors, subcontractorProjects } from '@/lib/db/schema'
 import { authenticateRequest } from '@/lib/auth-utils'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
@@ -163,23 +163,40 @@ export async function GET(request: NextRequest) {
       .where(and(...conditions))
     const totalCount = Number(countResult[0].count)
 
-    // Execute query with pagination including project name
-    const result = await db.select({
+    // First get the basic subcontractor data
+    const basicResult = await db.select({
       id: subcontractors.id,
       name: subcontractors.name,
       contractAmount: subcontractors.contractAmount,
       companyId: subcontractors.companyId,
-      projectId: subcontractors.projectId,
       foreman: subcontractors.foreman,
       createdAt: subcontractors.createdAt,
       updatedAt: subcontractors.updatedAt,
-      projectName: projects.name,
     }).from(subcontractors)
-      .leftJoin(projects, eq(subcontractors.projectId, projects.id))
       .where(and(...conditions))
       .orderBy(desc(subcontractors.createdAt))
       .limit(limit)
       .offset(offset)
+
+    // Then get the many-to-many project relationships for these subcontractors
+    const subcontractorIds = basicResult.map(sub => sub.id)
+    const projectRelations = subcontractorIds.length > 0 ? await db.select({
+      subcontractorId: subcontractorProjects.subcontractorId,
+      projectId: subcontractorProjects.projectId,
+      projectName: projects.name,
+    }).from(subcontractorProjects)
+      .innerJoin(projects, eq(subcontractorProjects.projectId, projects.id))
+      .where(inArray(subcontractorProjects.subcontractorId, subcontractorIds)) : []
+
+    // Combine the data
+    const result = basicResult.map(subcontractor => {
+      const relatedProjects = projectRelations.filter(rel => rel.subcontractorId === subcontractor.id)
+      return {
+        ...subcontractor,
+        projectIds: relatedProjects.map(rel => rel.projectId),
+        projectNames: relatedProjects.map(rel => rel.projectName),
+      }
+    })
 
     const totalPages = Math.ceil(totalCount / pageSize)
     const hasNextPage = page < totalPages
@@ -324,6 +341,33 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Handle many-to-many project relationships for bulk creation
+      for (let i = 0; i < subcontractorsData.length; i++) {
+        const originalSubcontractor = subcontractorsData[i];
+        const createdSubcontractor = createdSubcontractors[i];
+        
+        if (originalSubcontractor.projectIds && Array.isArray(originalSubcontractor.projectIds) && originalSubcontractor.projectIds.length > 0 && createdSubcontractor) {
+          const validProjectIds = []
+          for (const projectIdOrName of originalSubcontractor.projectIds) {
+            const resolvedId = await resolveProjectId(projectIdOrName)
+            if (resolvedId) {
+              validProjectIds.push(resolvedId)
+            }
+          }
+
+          if (validProjectIds.length > 0) {
+            const junctionData = validProjectIds.map(projectId => ({
+              subcontractorId: createdSubcontractor.id,
+              projectId,
+              assignedBy: auth.admin.name,
+              assignedByUserId: auth.admin.id,
+            }))
+            
+            await db.insert(subcontractorProjects).values(junctionData)
+          }
+        }
+      }
+
       const totalSkipped = (subcontractorsData.length - uniqueSubcontractors.length) + errors.length
 
       if (errors.length > 0 && createdSubcontractors.length === 0) {
@@ -347,7 +391,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single subcontractor creation (existing logic)
-    const { name, contractAmount, projectId, foreman } = body
+    const { name, contractAmount, projectIds, foreman } = body
 
     // Validate required fields
     if (!name) {
@@ -398,20 +442,39 @@ export async function POST(request: NextRequest) {
       return project.length > 0 ? project[0].id : null;
     };
 
-    // Resolve project ID if needed
-    const resolvedProjectId = await resolveProjectId(projectId);
-
     // Prepare subcontractor data
     const subcontractorData = {
       name: name.trim(),
       contractAmount: contractAmount ? contractAmount.toString() : null,
       companyId: auth.admin.companyId,
-      projectId: resolvedProjectId,
       foreman: foreman ? foreman.trim() : null,
     }
 
     // Create subcontractor record
     const subcontractor = await db.insert(subcontractors).values(subcontractorData).returning()
+
+    // Handle many-to-many project relationships if projectIds is provided
+    if (projectIds && Array.isArray(projectIds) && projectIds.length > 0) {
+      const validProjectIds = []
+      for (const projectIdOrName of projectIds) {
+        const resolvedId = await resolveProjectId(projectIdOrName)
+        if (resolvedId) {
+          validProjectIds.push(resolvedId)
+        }
+      }
+
+      // Create junction table entries
+      if (validProjectIds.length > 0) {
+        const junctionData = validProjectIds.map(projectId => ({
+          subcontractorId: subcontractor[0].id,
+          projectId,
+          assignedBy: auth.admin.name,
+          assignedByUserId: auth.admin.id,
+        }))
+        
+        await db.insert(subcontractorProjects).values(junctionData)
+      }
+    }
 
     // Create foreman contractor if foreman is provided
     if (foreman && foreman.trim()) {
@@ -465,7 +528,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, name, contractAmount, projectId, foreman } = body
+    const { id, name, contractAmount, projectIds, foreman } = body
 
     if (!id) {
       return NextResponse.json(
@@ -507,32 +570,6 @@ export async function PUT(request: NextRequest) {
       updateData.contractAmount = contractAmount ? contractAmount.toString() : null
     }
     
-    if (projectId !== undefined) {
-      // Helper function to resolve project ID from name if needed
-      const resolveProjectId = async (projectIdOrName: string | null): Promise<string | null> => {
-        if (!projectIdOrName) return null;
-        
-        // If it looks like a UUID, assume it's already a project ID
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (uuidRegex.test(projectIdOrName)) {
-          return projectIdOrName;
-        }
-        
-        // Otherwise, treat it as a project name and look up the ID
-        const project = await db.select({ id: projects.id })
-          .from(projects)
-          .where(and(
-            eq(projects.name, projectIdOrName),
-            eq(projects.companyId, auth.admin.companyId)
-          ))
-          .limit(1);
-          
-        return project.length > 0 ? project[0].id : null;
-      };
-
-      const resolvedProjectId = await resolveProjectId(projectId);
-      updateData.projectId = resolvedProjectId;
-    }
     
     if (foreman !== undefined) {
       updateData.foreman = foreman ? foreman.trim() : null
@@ -543,6 +580,58 @@ export async function PUT(request: NextRequest) {
       .set(updateData)
       .where(eq(subcontractors.id, id))
       .returning()
+
+    // Handle many-to-many project relationships if projectIds is provided
+    if (projectIds !== undefined && Array.isArray(projectIds)) {
+      // First, remove all existing relationships for this subcontractor
+      await db.delete(subcontractorProjects)
+        .where(eq(subcontractorProjects.subcontractorId, id))
+
+      // Then create new relationships if any projectIds are provided
+      if (projectIds.length > 0) {
+        // Helper function to resolve project ID from name if needed (reuse from above)
+        const resolveProjectId = async (projectIdOrName: string | null): Promise<string | null> => {
+          if (!projectIdOrName) return null;
+          
+          // If it looks like a UUID, assume it's already a project ID
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (uuidRegex.test(projectIdOrName)) {
+            return projectIdOrName;
+          }
+          
+          // Otherwise, treat it as a project name and look up the ID
+          const project = await db.select({ id: projects.id })
+            .from(projects)
+            .where(and(
+              eq(projects.name, projectIdOrName),
+              eq(projects.companyId, auth.admin.companyId)
+            ))
+            .limit(1);
+            
+          return project.length > 0 ? project[0].id : null;
+        };
+
+        const validProjectIds = []
+        for (const projectIdOrName of projectIds) {
+          const resolvedId = await resolveProjectId(projectIdOrName)
+          if (resolvedId) {
+            validProjectIds.push(resolvedId)
+          }
+        }
+
+        // Create new junction table entries
+        if (validProjectIds.length > 0) {
+          const junctionData = validProjectIds.map(projectId => ({
+            subcontractorId: id,
+            projectId,
+            assignedBy: auth.admin.name,
+            assignedByUserId: auth.admin.id,
+          }))
+          
+          await db.insert(subcontractorProjects).values(junctionData)
+        }
+      }
+    }
 
     // Create foreman contractor if foreman was added/updated
     if (foreman && foreman.trim() && updateData.foreman) {

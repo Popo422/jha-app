@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { eq, desc, and, or, ilike, sql, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { projects, companies, subcontractors } from '@/lib/db/schema'
+import { projects, companies, subcontractors, subcontractorProjects } from '@/lib/db/schema'
 import { authenticateRequest } from '@/lib/auth-utils'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
@@ -146,11 +146,12 @@ export async function GET(request: NextRequest) {
 
     // Add subcontractor filter if specified
     if (subcontractorName) {
-      // Filter by subcontractor name using join (now subcontractors have projectId)
+      // Filter by subcontractor name using junction table
       const subcontractorCondition = sql`EXISTS (
-        SELECT 1 FROM ${subcontractors} 
-        WHERE ${subcontractors.projectId} = ${projects.id} 
-        AND ${subcontractors.name} = ${subcontractorName}
+        SELECT 1 FROM ${subcontractorProjects} sp
+        JOIN ${subcontractors} s ON sp.subcontractor_id = s.id
+        WHERE sp.project_id = ${projects.id} 
+        AND s.name = ${subcontractorName}
       )`;
       conditions.push(subcontractorCondition);
     }
@@ -170,10 +171,10 @@ export async function GET(request: NextRequest) {
       projectCost: projects.projectCost,
       createdAt: projects.createdAt,
       updatedAt: projects.updatedAt,
-      subcontractorCount: sql`(
-        SELECT COUNT(*) FROM ${subcontractors} 
-        WHERE ${subcontractors.projectId} = ${projects.id}
-      )::int`
+      subcontractorCount: sql<number>`(
+        SELECT COALESCE(COUNT(*), 0) FROM subcontractor_projects
+        WHERE subcontractor_projects.project_id = projects.id
+      )`
     }).from(projects)
       .where(and(...conditions))
       .orderBy(desc(projects.createdAt))
