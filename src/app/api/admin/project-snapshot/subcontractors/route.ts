@@ -1,42 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { timesheets, projects } from '@/lib/db/schema'
+import { timesheets, projects, subcontractors, subcontractorProjects } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const companyId = searchParams.get('companyId')
+    const project = searchParams.get('project')
 
     if (!companyId) {
       return NextResponse.json({ error: 'Company ID is required' }, { status: 400 })
     }
 
-    // Get unique subcontractors from approved timesheets that exist in projects table
-    const results = await db
+    // Use junction table to get subcontractors related to projects
+    let query = db
       .select({
-        subcontractor: timesheets.company
+        name: subcontractors.name
       })
-      .from(timesheets)
-      .innerJoin(projects, and(
-        eq(timesheets.projectName, projects.name),
-        eq(projects.companyId, companyId)
-      ))
-      .where(and(
-        eq(timesheets.companyId, companyId),
-        eq(timesheets.status, 'approved')
-      ))
-      .groupBy(timesheets.company)
-      .orderBy(timesheets.company)
+      .from(subcontractors)
+      .where(eq(subcontractors.companyId, companyId))
 
-    const uniqueSubcontractors = results
-      .map(row => row.subcontractor)
+    // If project filter is specified, only get subcontractors assigned to that project
+    if (project) {
+      query = db
+        .select({
+          name: subcontractors.name
+        })
+        .from(subcontractors)
+        .innerJoin(subcontractorProjects, eq(subcontractors.id, subcontractorProjects.subcontractorId))
+        .innerJoin(projects, eq(subcontractorProjects.projectId, projects.id))
+        .where(and(
+          eq(subcontractors.companyId, companyId),
+          eq(projects.name, project)
+        ))
+    }
+
+    const results = await query
+
+    const subcontractorNames = results
+      .map(row => row.name)
       .filter(name => name && name.trim() !== '')
       .sort()
 
-    return NextResponse.json(uniqueSubcontractors)
+    return NextResponse.json(subcontractorNames)
   } catch (error) {
-    console.error('Error fetching unique subcontractors:', error)
+    console.error('Error fetching subcontractors:', error)
     return NextResponse.json({ error: 'Failed to fetch subcontractors' }, { status: 500 })
   }
 }

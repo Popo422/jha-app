@@ -41,6 +41,21 @@ export interface GetProjectSnapshotFiltersParams {
   projectManager?: string;
 }
 
+export interface ProjectSnapshotMetrics {
+  totalIncidents: number;
+  trir: number;
+  manHours: number;
+  activeContractors: number;
+  complianceRate: number;
+  completionRate: number;
+}
+
+export interface GetProjectSnapshotMetricsParams {
+  companyId: string;
+  project?: string;
+  subcontractor?: string;
+}
+
 export const projectSnapshotApi = createApi({
   reducerPath: 'projectSnapshotApi',
   baseQuery: fetchBaseQuery({
@@ -93,7 +108,7 @@ export const projectSnapshotApi = createApi({
       providesTags: ['ProjectSnapshot'],
     }),
     
-    getProjectSnapshotProjects: builder.query<string[], GetProjectSnapshotFiltersParams>({
+    getProjectSnapshotProjects: builder.query<{name: string, location: string}[], GetProjectSnapshotFiltersParams>({
       query: ({ companyId, subcontractor }) => {
         const params = new URLSearchParams({
           companyId,
@@ -122,6 +137,25 @@ export const projectSnapshotApi = createApi({
       },
       providesTags: ['ProjectSnapshotFilters'],
     }),
+    
+    getProjectSnapshotMetrics: builder.query<ProjectSnapshotMetrics, GetProjectSnapshotMetricsParams>({
+      query: ({ companyId, project, subcontractor }) => {
+        const params = new URLSearchParams({
+          companyId,
+        })
+        
+        if (project) {
+          params.append('project', project)
+        }
+        
+        if (subcontractor) {
+          params.append('subcontractor', subcontractor)
+        }
+        
+        return `/metrics?${params}`
+      },
+      providesTags: ['ProjectSnapshot'],
+    }),
 
   }),
 })
@@ -130,7 +164,9 @@ export const {
   useGetProjectSnapshotQuery,
   useGetProjectSnapshotProjectsQuery,
   useGetProjectSnapshotSubcontractorsQuery,
+  useGetProjectSnapshotMetricsQuery,
   useLazyGetProjectSnapshotQuery,
   useLazyGetProjectSnapshotProjectsQuery,
-  useLazyGetProjectSnapshotSubcontractorsQuery
+  useLazyGetProjectSnapshotSubcontractorsQuery,
+  useLazyGetProjectSnapshotMetricsQuery
 } = projectSnapshotApi

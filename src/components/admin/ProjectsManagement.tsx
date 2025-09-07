@@ -9,6 +9,7 @@ import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import LocationAutocomplete from "@/components/ui/location-autocomplete";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -327,13 +328,14 @@ export function ProjectsManagement() {
                 )}
               </div>
               <div>
-                <Label htmlFor="location">{t('admin.location')}</Label>
-                <Input
-                  id="location"
+                <LocationAutocomplete
+                  label={t('admin.location')}
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="Enter project location"
+                  onChange={(value) => setFormData({ ...formData, location: value })}
+                  placeholder="Search project location..."
                   className={formErrors.location ? "border-red-500" : ""}
+                  required={true}
+                  id="location"
                 />
                 {formErrors.location && (
                   <p className="text-sm text-red-500 mt-1">{formErrors.location}</p>
@@ -407,13 +409,14 @@ export function ProjectsManagement() {
                 )}
               </div>
               <div>
-                <Label htmlFor="edit-location">{t('admin.location')}</Label>
-                <Input
-                  id="edit-location"
+                <LocationAutocomplete
+                  label={t('admin.location')}
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="Enter project location"
+                  onChange={(value) => setFormData({ ...formData, location: value })}
+                  placeholder="Search project location..."
                   className={formErrors.location ? "border-red-500" : ""}
+                  required={true}
+                  id="edit-location"
                 />
                 {formErrors.location && (
                   <p className="text-sm text-red-500 mt-1">{formErrors.location}</p>
