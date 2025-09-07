@@ -89,17 +89,26 @@ export async function GET(request: NextRequest) {
 
     const activeContractors = activeContractorsResult[0]?.count || 0
 
-    // 5. Compliance Rate (form submissions - all submissions are considered compliant)
-    const totalSubmissionsResult = await db
+    // 5. Compliance Rate (expected vs actual submissions)
+    // Get submissions this week
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    const submissionsThisWeekResult = await db
       .select({
         count: sql<number>`count(*)`
       })
       .from(submissions)
-      .where(buildSubmissionWhere())
+      .where(and(
+        buildSubmissionWhere(),
+        gte(submissions.createdAt, oneWeekAgo)
+      ))
 
-    const totalSubmissions = totalSubmissionsResult[0]?.count || 0
-    // Since submissions don't have status, we consider all submissions as compliant
-    const complianceRate = totalSubmissions > 0 ? 100 : 0
+    const submissionsThisWeek = submissionsThisWeekResult[0]?.count || 0
+    
+    // Calculate expected submissions: activeContractors * 5 submissions per week
+    const totalExpectedSubmissions = activeContractors * 5 // Assuming 5 submissions per week per contractor
+    const complianceRate = totalExpectedSubmissions > 0 
+      ? Math.round((submissionsThisWeek / totalExpectedSubmissions) * 100)
+      : 100
 
     // 6. Completion Rate (approved timesheets vs total timesheets)
     const totalTimesheetsResult = await db

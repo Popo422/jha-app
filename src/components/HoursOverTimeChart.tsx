@@ -138,23 +138,6 @@ export default function HoursOverTimeChart({
     );
   }
 
-  if (!data || chartData.length === 0) {
-    return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Clock className="mr-2 h-5 w-5" />
-            Hours Worked Over Time
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center text-gray-500 py-8">
-            No hours data available for the selected filters and time period.
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className={className}>
@@ -191,70 +174,76 @@ export default function HoursOverTimeChart({
       </CardHeader>
       
       <CardContent>
-        {/* Hours Chart */}
-        <div className="h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-              <XAxis 
-                dataKey="date" 
-                tick={{ fontSize: 10 }}
-                interval="preserveStartEnd"
-              />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip
-                formatter={(value: number, name: string) => {
-                  if (name === 'totalHours') return [`${value.toFixed(1)} hrs`, 'Total Hours'];
-                  if (name === 'uniqueEmployees') return [`${value} people`, 'Employees'];
-                  if (name === 'avgHoursPerEmployee') return [`${value.toFixed(1)} hrs`, 'Avg per Employee'];
-                  return [value, name];
-                }}
-                contentStyle={{ fontSize: '12px' }}
-              />
-              <Legend wrapperStyle={{ fontSize: '12px' }} />
-              
-              {/* Total Hours Area */}
-              <Area
-                type="monotone"
-                dataKey="totalHours"
-                stroke="#3b82f6"
-                fill="#3b82f6"
-                fillOpacity={0.1}
-                strokeWidth={2}
-                name="Total Hours"
-              />
-              
-              {/* Total Hours Line */}
-              <Line
-                type="monotone"
-                dataKey="totalHours"
-                stroke="#3b82f6"
-                strokeWidth={3}
-                dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6 }}
-                name="Total Hours"
-              />
+        {!data || chartData.length === 0 ? (
+          <div className="text-center text-gray-500 py-8">
+            No hours data available for the selected filters and time period.
+          </div>
+        ) : (
+          /* Hours Chart */
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 10 }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip
+                  formatter={(value: number, name: string) => {
+                    if (name === 'totalHours') return [`${value.toFixed(1)} hrs`, 'Total Hours'];
+                    if (name === 'uniqueEmployees') return [`${value} people`, 'Employees'];
+                    if (name === 'avgHoursPerEmployee') return [`${value.toFixed(1)} hrs`, 'Avg per Employee'];
+                    return [value, name];
+                  }}
+                  contentStyle={{ fontSize: '12px' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                
+                {/* Total Hours Area */}
+                <Area
+                  type="monotone"
+                  dataKey="totalHours"
+                  stroke="#3b82f6"
+                  fill="#3b82f6"
+                  fillOpacity={0.1}
+                  strokeWidth={2}
+                  name="Total Hours"
+                />
+                
+                {/* Total Hours Line */}
+                <Line
+                  type="monotone"
+                  dataKey="totalHours"
+                  stroke="#3b82f6"
+                  strokeWidth={3}
+                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
+                  name="Total Hours"
+                />
 
-              {/* Employee Count Line */}
-              <Line
-                type="monotone"
-                dataKey="uniqueEmployees"
-                stroke="#10b981"
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                dot={{ fill: '#10b981', strokeWidth: 2, r: 3 }}
-                name="Employees"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+                {/* Employee Count Line */}
+                <Line
+                  type="monotone"
+                  dataKey="uniqueEmployees"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  dot={{ fill: '#10b981', strokeWidth: 2, r: 3 }}
+                  name="Employees"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
 
-        {/* Period Controls */}
+        {/* Period Controls - Always visible */}
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-2">
             <Calendar className="h-4 w-4 text-gray-500" />
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              Showing {period} data for {data.summary.totalDays} periods
+              Showing {period} data for {data?.summary?.totalDays || 0} periods
             </span>
           </div>
           
@@ -271,6 +260,7 @@ export default function HoursOverTimeChart({
             ))}
           </div>
         </div>
+
       </CardContent>
     </Card>
   );
