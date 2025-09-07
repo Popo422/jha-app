@@ -9,12 +9,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Eye, EyeOff } from 'lucide-react'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
   const dispatch = useAppDispatch()
   const [adminLogin, { isLoading }] = useAdminLoginMutation()
@@ -25,7 +27,7 @@ export default function AdminLoginPage() {
     setError('')
 
     try {
-      const result = await adminLogin({ email, password }).unwrap()
+      const result = await adminLogin({ email, password, rememberMe }).unwrap()
       
       // Update Redux state with admin login data
       dispatch(adminLoginSuccess(result))
@@ -89,6 +91,16 @@ export default function AdminLoginPage() {
                 {error && (
                   <p className="text-sm text-destructive">{error}</p>
                 )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
+                />
+                <Label htmlFor="rememberMe" className="text-sm cursor-pointer">
+                  Remember me for 30 days
+                </Label>
               </div>
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
                 {isLoading ? 'Logging in...' : 'Login'}
