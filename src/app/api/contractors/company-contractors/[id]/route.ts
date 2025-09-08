@@ -4,9 +4,9 @@ import { db } from '@/lib/db';
 import { contractors } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const contractorToUpdateId = params.id;
+    const { id: contractorToUpdateId } = await params;
 
     // Validate contractor session and ensure they are a foreman
     const validation = await validateContractorSession(request);
@@ -131,9 +131,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const contractorToDeleteId = params.id;
+    const { id: contractorToDeleteId } = await params;
 
     // Validate contractor session and ensure they are a foreman
     const validation = await validateContractorSession(request);
