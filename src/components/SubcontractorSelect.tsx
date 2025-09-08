@@ -21,6 +21,7 @@ interface SubcontractorSelectProps {
   id?: string;
   name?: string;
   authType?: 'contractor' | 'admin';
+  returnValue?: 'id' | 'name'; // What to return when selecting - defaults to 'id'
 }
 
 export default function SubcontractorSelect({
@@ -34,6 +35,7 @@ export default function SubcontractorSelect({
   id,
   name,
   authType = 'contractor',
+  returnValue = 'id',
 }: SubcontractorSelectProps) {
   const { t } = useTranslation("common");
 
@@ -94,7 +96,7 @@ export default function SubcontractorSelect({
     );
     
     if (matchingSubcontractor) {
-      onChange(matchingSubcontractor.id);
+      onChange(returnValue === 'name' ? matchingSubcontractor.name : matchingSubcontractor.id);
     } else {
       // If no match, clear the selection
       onChange('');
@@ -109,7 +111,7 @@ export default function SubcontractorSelect({
   const handleSubcontractorSelect = (subcontractor: any) => {
     const subcontractorName = subcontractor.name;
     setInputValue(subcontractorName);
-    onChange(subcontractor.id); // Pass ID instead of name
+    onChange(returnValue === 'name' ? subcontractor.name : subcontractor.id);
     setIsOpen(false);
     setSearchTerm("");
   };

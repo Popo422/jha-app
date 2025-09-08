@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { DateInput } from "@/components/ui/date-input";
 import { Card, CardContent } from "@/components/ui/card";
 import QuickIncidentReportEdit from "@/components/admin/QuickIncidentReportEdit";
+import CreateQuickIncidentReport from "@/components/admin/incidents/CreateQuickIncidentReport";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -53,6 +54,7 @@ const columnHelper = createColumnHelper<Incident>();
 export default function QuickIncidentReportsTab() {
   const { t } = useTranslation('common');
   const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
+  const [isCreatingIncident, setIsCreatingIncident] = useState(false);
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
@@ -411,6 +413,21 @@ export default function QuickIncidentReportsTab() {
     </Card>
   ), [handleEdit, handleSingleDelete]);
 
+  // Render create form if creating
+  if (isCreatingIncident) {
+    return (
+      <div className="p-4 md:p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="p-4 md:p-6">
+            <CreateQuickIncidentReport 
+              onBack={() => setIsCreatingIncident(false)} 
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Render edit form if editing
   if (editingIncident) {
     return (
@@ -428,32 +445,41 @@ export default function QuickIncidentReportsTab() {
   }
 
   return (
-    <AdminDataTable
-      data={allData}
-      columns={columns}
-      isLoading={isLoading}
-      isFetching={isFetching}
-      onEdit={handleEdit}
-      onDelete={handleSingleDelete}
-      onBulkDelete={handleBulkDelete}
-      getRowId={(incident) => incident.id}
-      exportFilename="quick_incident_reports"
-      exportHeaders={[
-        t('workersComp.export.injuredEmployee'), 
-        t('workersComp.export.subcontractorCompany'), 
-        t('workersComp.export.reportedBy'), 
-        t('workersComp.export.dateReported'), 
-        t('workersComp.export.projectName')
-      ]}
-      getExportData={getExportData}
-      filters={filterComponents}
-      renderMobileCard={renderMobileCard}
-      searchValue={searchValue}
-      onSearchChange={setSearchValue}
-      serverSide={true}
-      pagination={paginationInfo || undefined}
-      onPageChange={handlePageChange}
-      onPageSizeChange={handlePageSizeChange}
-    />
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Quick Incident Reports</h3>
+        <Button onClick={() => setIsCreatingIncident(true)} className="bg-blue-600 hover:bg-blue-700">
+          Create Quick Incident
+        </Button>
+      </div>
+      
+      <AdminDataTable
+        data={allData}
+        columns={columns}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        onEdit={handleEdit}
+        onDelete={handleSingleDelete}
+        onBulkDelete={handleBulkDelete}
+        getRowId={(incident) => incident.id}
+        exportFilename="quick_incident_reports"
+        exportHeaders={[
+          t('workersComp.export.injuredEmployee'), 
+          t('workersComp.export.subcontractorCompany'), 
+          t('workersComp.export.reportedBy'), 
+          t('workersComp.export.dateReported'), 
+          t('workersComp.export.projectName')
+        ]}
+        getExportData={getExportData}
+        filters={filterComponents}
+        renderMobileCard={renderMobileCard}
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
+        serverSide={true}
+        pagination={paginationInfo || undefined}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+      />
+    </div>
   );
 }

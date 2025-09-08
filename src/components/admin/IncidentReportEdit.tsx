@@ -196,6 +196,7 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
                 value={formData.companySubcontractor || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, companySubcontractor: value }))}
                 authType="admin"
+                returnValue="name"
               />
             </div>
             <div className="space-y-2">
