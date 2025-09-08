@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import Link from 'next/link'
 import { useMemo } from 'react'
+import ForemanContractorEditor from './ForemanContractorEditor'
 
 
 export default function AppSidebar() {
@@ -106,6 +107,9 @@ export default function AppSidebar() {
                 </Button>
               )
             })}
+            
+            {/* Foreman-only contractor editor */}
+            <ForemanContractorEditor onLinkClick={handleLinkClick} />
           </nav>
 
           <Separator className="my-6 bg-slate-600 dark:bg-border" />
