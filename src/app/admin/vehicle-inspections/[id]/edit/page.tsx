@@ -384,6 +384,7 @@ export default function AdminEditVehicleInspectionPage() {
                         label={t('forms.companySubcontractor')}
                         value={formData.company}
                         onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
+                        returnValue="name"
                       />
                     </div>
                   </div>

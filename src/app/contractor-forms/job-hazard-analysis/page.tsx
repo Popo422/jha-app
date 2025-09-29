@@ -546,6 +546,7 @@ export default function JobHazardReportPage() {
                       onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
                       label={t('admin.companySubcontractor')}
                       required
+                      returnValue="name"
                     />
                   </div>
                 </div>

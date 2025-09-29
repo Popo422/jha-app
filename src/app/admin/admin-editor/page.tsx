@@ -413,6 +413,7 @@ export default function AdminEditorPage() {
                 disabled={isCreating || isUpdating}
                 className={errors.companyName ? 'border-red-500' : ''}
                 authType="admin"
+                returnValue="name"
               />
               {errors.companyName && (
                 <p className="text-sm text-red-500">{errors.companyName}</p>

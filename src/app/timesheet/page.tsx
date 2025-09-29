@@ -156,6 +156,7 @@ export default function TimesheetPage() {
                       label={t('admin.companySubcontractor')}
                       placeholder={t('placeholders.clientCompanyName')}
                       required
+                      returnValue="name"
                     />
                   </div>
                   <div className="space-y-2">

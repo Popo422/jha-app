@@ -537,6 +537,7 @@ export default function ContractorsPage() {
                     placeholder={t('contractors.companyNamePlaceholder')}
                     disabled={isFormLoading}
                     authType="admin"
+                    returnValue="name"
                   />
                 </div>
                 <div className="flex items-end">

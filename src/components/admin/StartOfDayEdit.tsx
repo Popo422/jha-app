@@ -183,6 +183,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
                 label={t('admin.companySubcontractor')}
                 authType="admin"
+                returnValue="name"
               />
             </div>
             <div className="space-y-2">

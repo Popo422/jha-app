@@ -108,6 +108,7 @@ export default function GeneralInformationStep({ data, updateData }: GeneralInfo
             label="Company/Subcontractor"
             value={data.companySubcontractor}
             onChange={(value) => handleInputChange('companySubcontractor', value)}
+            returnValue="name"
           />
         </div>
       </div>
