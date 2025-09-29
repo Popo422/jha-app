@@ -35,7 +35,7 @@ export default function SubcontractorSelect({
   id,
   name,
   authType = 'contractor',
-  returnValue = 'id',
+  returnValue = 'name',
 }: SubcontractorSelectProps) {
   const { t } = useTranslation("common");
 
