@@ -19,27 +19,28 @@ interface EndOfDayV2FormData {
 interface ProjectDetailsStepProps {
   data: EndOfDayV2FormData;
   updateData: (updates: Partial<EndOfDayV2FormData>) => void;
+  authType?: 'contractor' | 'admin';
 }
 
-export default function ProjectDetailsStep({ data, updateData }: ProjectDetailsStepProps) {
+export default function ProjectDetailsStep({ data, updateData, authType = 'contractor' }: ProjectDetailsStepProps) {
   const { t } = useTranslation('common');
   
   const { data: projectsData, isLoading: isLoadingProjects } = useGetProjectsQuery({
     page: 1,
     pageSize: 1000,
-    authType: 'contractor',
+    authType,
     subcontractorName: data.subcontractorName || undefined
   });
 
   const { data: subcontractorsData } = useGetSubcontractorsQuery({
     page: 1,
     pageSize: 1000,
-    authType: 'contractor'
+    authType
   });
 
   const { data: adminUsersData, isLoading: isLoadingAdmins } = useGetAdminUsersQuery({
     fetchAll: true,
-    authType: 'contractor'
+    authType
   });
 
   // Projects are now filtered server-side based on subcontractorName

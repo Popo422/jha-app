@@ -15,15 +15,16 @@ interface EndOfDayV2FormData {
 interface SelectSubcontractorStepProps {
   data: EndOfDayV2FormData;
   updateData: (updates: Partial<EndOfDayV2FormData>) => void;
+  authType?: 'contractor' | 'admin';
 }
 
-export default function SelectSubcontractorStep({ data, updateData }: SelectSubcontractorStepProps) {
+export default function SelectSubcontractorStep({ data, updateData, authType = 'contractor' }: SelectSubcontractorStepProps) {
   const { t } = useTranslation('common');
   
   const { data: subcontractorsData, isLoading } = useGetSubcontractorsQuery({
     page: 1,
     pageSize: 1000,
-    authType: 'contractor'
+    authType
   });
 
   const subcontractorOptions = subcontractorsData?.subcontractors.map(subcontractor => ({

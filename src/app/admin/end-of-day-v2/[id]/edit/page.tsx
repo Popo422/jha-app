@@ -166,15 +166,15 @@ export default function AdminEditEndOfDayV2Page() {
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 1:
-        return <SelectSubcontractorStep data={formData} updateData={updateData} />;
+        return <SelectSubcontractorStep data={formData} updateData={updateData} authType="admin" />;
       case 2:
-        return <ProjectDetailsStep data={formData} updateData={updateData} />;
+        return <ProjectDetailsStep data={formData} updateData={updateData} authType="admin" />;
       case 3:
         return <FieldEmployeesStep data={formData} updateData={updateData} />;
       case 4:
         return <EndOfShiftReviewStep data={formData} updateData={updateData} onSubmit={handleSave} />;
       default:
-        return <SelectSubcontractorStep data={formData} updateData={updateData} />;
+        return <SelectSubcontractorStep data={formData} updateData={updateData} authType="admin" />;
     }
   };
 

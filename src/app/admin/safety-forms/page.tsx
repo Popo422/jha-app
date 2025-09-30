@@ -19,6 +19,7 @@ import JobHazardAnalysisEdit from "@/components/admin/JobHazardAnalysisEdit";
 import StartOfDayEdit from "@/components/admin/StartOfDayEdit";
 import EndOfDayEdit from "@/components/admin/EndOfDayEdit";
 import StartOfDayV2PdfExport, { generateAndDownloadPDF } from "@/components/admin/StartOfDayV2PdfExport";
+import EndOfDayV2PdfExport, { generateAndDownloadEndOfDayV2PDF } from "@/components/admin/EndOfDayV2PdfExport";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -670,9 +671,17 @@ export default function SafetyFormsPage() {
             console.error('Failed to generate PDF:', error);
             alert('Failed to generate PDF. Please try again.');
           }
+        } else if (submission.submissionType === 'end-of-day-v2') {
+          const fileName = `end-of-day-v2-${submission.completedBy.replace(/\s+/g, '-')}-${submission.date}.pdf`;
+          try {
+            await generateAndDownloadEndOfDayV2PDF(submission.formData as any, fileName);
+          } catch (error) {
+            console.error('Failed to generate PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+          }
         }
       },
-      show: (submission: Submission) => submission.submissionType === 'start-of-day-v2',
+      show: (submission: Submission) => submission.submissionType === 'start-of-day-v2' || submission.submissionType === 'end-of-day-v2',
     }
   ], []);
 
