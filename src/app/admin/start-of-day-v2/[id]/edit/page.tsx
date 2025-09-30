@@ -231,7 +231,7 @@ export default function AdminEditStartOfDayV2Page() {
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 1:
-        return <SelectSubcontractorStep data={formData} updateData={updateData} />;
+        return <SelectSubcontractorStep data={formData} updateData={updateData} authType="admin" />;
       case 2:
         return <ProjectDetailsStep data={formData} updateData={updateData} />;
       case 3:
@@ -241,7 +241,7 @@ export default function AdminEditStartOfDayV2Page() {
       case 5:
         return <SafetyProtocolStepsStep data={formData} updateData={updateData} onSubmit={handleSave} />;
       default:
-        return <SelectSubcontractorStep data={formData} updateData={updateData} />;
+        return <SelectSubcontractorStep data={formData} updateData={updateData} authType="admin" />;
     }
   };
 

@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import JobHazardAnalysisEdit from "@/components/admin/JobHazardAnalysisEdit";
 import StartOfDayEdit from "@/components/admin/StartOfDayEdit";
 import EndOfDayEdit from "@/components/admin/EndOfDayEdit";
+import StartOfDayV2PdfExport, { generateAndDownloadPDF } from "@/components/admin/StartOfDayV2PdfExport";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -33,6 +34,7 @@ import {
   Trash2,
   X,
   Search,
+  FileText,
 } from "lucide-react";
 import {
   createColumnHelper,
@@ -654,6 +656,26 @@ export default function SafetyFormsPage() {
     return [...basicData, ...formValues];
   }, []);
 
+  // Custom actions for the table
+  const customActions = useMemo(() => [
+    {
+      label: 'Export PDF',
+      icon: FileText,
+      onClick: async (submission: Submission) => {
+        if (submission.submissionType === 'start-of-day-v2') {
+          const fileName = `start-of-day-v2-${submission.completedBy.replace(/\s+/g, '-')}-${submission.date}.pdf`;
+          try {
+            await generateAndDownloadPDF(submission.formData, fileName);
+          } catch (error) {
+            console.error('Failed to generate PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+          }
+        }
+      },
+      show: (submission: Submission) => submission.submissionType === 'start-of-day-v2',
+    }
+  ], []);
+
   const renderMobileCard = useCallback((submission: Submission, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
     <Card className="p-4">
       <CardContent className="p-0">
@@ -686,6 +708,20 @@ export default function SafetyFormsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {customActions.map((action, index) => {
+                if (action.show && !action.show(submission)) return null;
+                const Icon = action.icon;
+                return (
+                  <DropdownMenuItem 
+                    key={index}
+                    onClick={() => action.onClick(submission)}
+                    className="cursor-pointer"
+                  >
+                    <Icon className="h-4 w-4 mr-2" />
+                    {action.label}
+                  </DropdownMenuItem>
+                );
+              })}
               <DropdownMenuItem 
                 onClick={() => handleEdit(submission)}
                 className="cursor-pointer"
@@ -726,7 +762,7 @@ export default function SafetyFormsPage() {
         </div>
       </CardContent>
     </Card>
-  ), [getSubmissionTypeBadgeColor, getSubmissionTypeLabel, handleEdit, handleSingleDelete]);
+  ), [getSubmissionTypeBadgeColor, getSubmissionTypeLabel, handleEdit, handleSingleDelete, customActions]);
 
   // Render edit form if editing
   if (editingSubmission) {
@@ -789,6 +825,7 @@ export default function SafetyFormsPage() {
         onPageSizeChange={handlePageSizeChange}
         onExportAll={handleExportAll}
         generateDynamicHeaders={generateDynamicHeaders}
+        customActions={customActions}
       />
     </div>
   );

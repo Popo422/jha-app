@@ -34,7 +34,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 export interface CustomAction<T> {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  onClick: (item: T) => void;
+  onClick: (item: T) => void | Promise<void>;
   className?: string;
   show?: (item: T) => boolean;
 }
