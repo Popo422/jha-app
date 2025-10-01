@@ -14,6 +14,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Card, CardContent } from "@/components/ui/card";
 import QuickIncidentReportEdit from "@/components/admin/QuickIncidentReportEdit";
 import CreateQuickIncidentReport from "@/components/admin/incidents/CreateQuickIncidentReport";
+import QuickIncidentReportPdfExport, { generateAndDownloadQuickIncidentReportPDF } from "@/components/admin/QuickIncidentReportPdfExport";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -28,11 +29,13 @@ import {
   Edit,
   Trash2,
   X,
+  FileText,
 } from "lucide-react";
 import {
   createColumnHelper,
   type ColumnDef,
 } from "@tanstack/react-table";
+
 
 interface Incident {
   id: string;
@@ -47,6 +50,7 @@ interface Incident {
   severity: 'minor' | 'moderate' | 'major' | 'critical';
   createdAt: string;
   updatedAt: string;
+  formData?: Record<string, any>;
 }
 
 const columnHelper = createColumnHelper<Incident>();
@@ -130,6 +134,17 @@ export default function QuickIncidentReportsTab() {
 
   const handleEdit = useCallback((incident: Incident) => {
     setEditingIncident(incident);
+  }, []);
+
+  const handleDownloadPDF = useCallback(async (incident: Incident) => {
+    try {
+      await generateAndDownloadQuickIncidentReportPDF(
+        (incident.formData || incident) as any,
+        `quick-incident-report-${incident.id}.pdf`
+      );
+    } catch (error) {
+      console.error('Error generating Quick Incident Report PDF:', error);
+    }
   }, []);
 
   const columns = useMemo<ColumnDef<Incident>[]>(() => [
@@ -378,6 +393,13 @@ export default function QuickIncidentReportsTab() {
                 <Edit className="h-4 w-4 mr-2" />
                 {t('workersComp.table.edit')}
               </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleDownloadPDF(incident)}
+                className="cursor-pointer"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Export PDF
+              </DropdownMenuItem>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem 
@@ -479,6 +501,14 @@ export default function QuickIncidentReportsTab() {
         pagination={paginationInfo || undefined}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
+        customActions={[
+          {
+            label: 'Export PDF',
+            icon: FileText,
+            onClick: handleDownloadPDF,
+            className: 'cursor-pointer'
+          }
+        ]}
       />
     </div>
   );

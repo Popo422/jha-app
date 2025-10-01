@@ -189,7 +189,7 @@ const EndOfDayV2PDFDocument: React.FC<{ formData: EndOfDayV2FormData }> = ({ for
             <Text style={styles.tableCell}>{employee.statusAtLunch === 'free-of-injury' ? 'Free of Injury' : 'Injured'}</Text>
             <Text style={styles.tableCell}>{employee.statusAtEndOfDay === 'free-of-injury' ? 'Free of Injury' : 'Injured'}</Text>
             <View style={styles.signatureCell}>
-              {employee.signature && employee.signature.startsWith('data:image/') ? (
+              {employee.signature && (employee.signature.startsWith('data:image/') || employee.signature.startsWith('http')) ? (
                 <Image style={styles.signatureImage} src={employee.signature} />
               ) : (
                 <Text>Signature</Text>
@@ -277,7 +277,7 @@ const EndOfDayV2PDFDocument: React.FC<{ formData: EndOfDayV2FormData }> = ({ for
           <Text>Foreman Signature:</Text>
         </View>
         <View style={styles.signatureBox}>
-          {formData.supervisorSignature && formData.supervisorSignature.startsWith('data:image/') ? (
+          {formData.supervisorSignature && (formData.supervisorSignature.startsWith('data:image/') || formData.supervisorSignature.startsWith('http')) ? (
             <Image style={styles.foremanSignatureImage} src={formData.supervisorSignature} />
           ) : (
             <Text>Signature</Text>

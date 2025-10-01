@@ -214,31 +214,78 @@ export async function POST(request: NextRequest) {
     // Add uploaded files to form data
     parsedFormData.uploadedFiles = uploadedFiles
 
-    // Handle signature upload if present
-    if (parsedFormData.signature && parsedFormData.signature.startsWith('data:image/')) {
+    // Helper function to upload signature and return URL
+    const uploadSignature = async (signatureData: string, signatureName: string = 'signature') => {
       try {
-        // Convert base64 signature to blob
-        const base64Data = parsedFormData.signature.split(',')[1]
-        const mimeType = parsedFormData.signature.split(';')[0].split(':')[1]
+        const base64Data = signatureData.split(',')[1]
+        const mimeType = signatureData.split(';')[0].split(':')[1]
         const buffer = Buffer.from(base64Data, 'base64')
         
-        // Create company-specific path for signature
         const timestamp = Date.now()
-        const signaturePath = `${companyId}/${submissionType}/signatures/signature-${decoded.user.id}-${timestamp}.png`
+        const randomSuffix = Math.random().toString(36).substring(2, 8)
+        const signaturePath = `${companyId}/${submissionType}/signatures/${signatureName}-${decoded.user.id}-${timestamp}-${randomSuffix}.png`
         
-        // Upload signature to blob storage
         const signatureBlob = await put(signaturePath, buffer, {
           access: 'public',
           contentType: mimeType,
           addRandomSuffix: false,
         })
         
-        // Replace base64 data with blob URL
-        parsedFormData.signature = signatureBlob.url
+        return signatureBlob.url
       } catch (error) {
-        console.error('Signature upload error:', error)
+        console.error(`${signatureName} upload error:`, error)
+        throw error
+      }
+    }
+
+    // Handle main signature upload if present
+    if (parsedFormData.signature && parsedFormData.signature.startsWith('data:image/')) {
+      try {
+        parsedFormData.signature = await uploadSignature(parsedFormData.signature, 'signature')
+      } catch (error) {
         return NextResponse.json(
-          { error: 'Signature upload failed' },
+          { error: 'Main signature upload failed' },
+          { status: 500 }
+        )
+      }
+    }
+
+    // Handle supervisor signature (end-of-day-v2, near-miss-report)
+    if (parsedFormData.supervisorSignature && parsedFormData.supervisorSignature.startsWith('data:image/')) {
+      try {
+        parsedFormData.supervisorSignature = await uploadSignature(parsedFormData.supervisorSignature, 'supervisor-signature')
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Supervisor signature upload failed' },
+          { status: 500 }
+        )
+      }
+    }
+
+    // Handle reporter signature (near-miss-report)
+    if (parsedFormData.reporterSignature && parsedFormData.reporterSignature.startsWith('data:image/')) {
+      try {
+        parsedFormData.reporterSignature = await uploadSignature(parsedFormData.reporterSignature, 'reporter-signature')
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Reporter signature upload failed' },
+          { status: 500 }
+        )
+      }
+    }
+
+    // Handle field employee signatures (start-of-day-v2, end-of-day-v2)
+    if (parsedFormData.fieldEmployees && Array.isArray(parsedFormData.fieldEmployees)) {
+      try {
+        for (let i = 0; i < parsedFormData.fieldEmployees.length; i++) {
+          const employee = parsedFormData.fieldEmployees[i]
+          if (employee.signature && employee.signature.startsWith('data:image/')) {
+            employee.signature = await uploadSignature(employee.signature, `employee-${i}-signature`)
+          }
+        }
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Employee signature upload failed' },
           { status: 500 }
         )
       }
@@ -575,37 +622,89 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Handle signature upload if present in formData
+    // Handle signature uploads if present in formData
     let processedFormData = formData
-    if (formData && formData.signature && formData.signature.startsWith('data:image/')) {
-      try {
-        // Convert base64 signature to blob
-        const base64Data = formData.signature.split(',')[1]
-        const mimeType = formData.signature.split(';')[0].split(':')[1]
-        const buffer = Buffer.from(base64Data, 'base64')
-        
-        // Create company-specific path for signature
-        const timestamp = Date.now()
-        const userId = auth.userId || existingSubmission[0].userId
-        const companyId = existingSubmission[0].companyId
-        const submissionType = existingSubmission[0].submissionType
-        const signaturePath = `${companyId}/${submissionType}/signatures/signature-${userId}-${timestamp}.png`
-        
-        // Upload signature to blob storage
-        const signatureBlob = await put(signaturePath, buffer, {
-          access: 'public',
-          contentType: mimeType,
-          addRandomSuffix: false,
-        })
-        
-        // Replace base64 data with blob URL
-        processedFormData = { ...formData, signature: signatureBlob.url }
-      } catch (error) {
-        console.error('Signature upload error:', error)
-        return NextResponse.json(
-          { error: 'Signature upload failed' },
-          { status: 500 }
-        )
+    if (formData) {
+      processedFormData = { ...formData }
+      
+      // Helper function to upload signature and return URL (for updates)
+      const uploadSignatureUpdate = async (signatureData: string, signatureName: string = 'signature') => {
+        try {
+          const base64Data = signatureData.split(',')[1]
+          const mimeType = signatureData.split(';')[0].split(':')[1]
+          const buffer = Buffer.from(base64Data, 'base64')
+          
+          const timestamp = Date.now()
+          const randomSuffix = Math.random().toString(36).substring(2, 8)
+          const userId = auth.userId || existingSubmission[0].userId
+          const companyId = existingSubmission[0].companyId
+          const submissionType = existingSubmission[0].submissionType
+          const signaturePath = `${companyId}/${submissionType}/signatures/${signatureName}-${userId}-${timestamp}-${randomSuffix}.png`
+          
+          const signatureBlob = await put(signaturePath, buffer, {
+            access: 'public',
+            contentType: mimeType,
+            addRandomSuffix: false,
+          })
+          
+          return signatureBlob.url
+        } catch (error) {
+          console.error(`${signatureName} upload error:`, error)
+          throw error
+        }
+      }
+
+      // Handle main signature upload if present
+      if (processedFormData.signature && processedFormData.signature.startsWith('data:image/')) {
+        try {
+          processedFormData.signature = await uploadSignatureUpdate(processedFormData.signature, 'signature')
+        } catch (error) {
+          return NextResponse.json(
+            { error: 'Main signature upload failed' },
+            { status: 500 }
+          )
+        }
+      }
+
+      // Handle supervisor signature (end-of-day-v2, near-miss-report)
+      if (processedFormData.supervisorSignature && processedFormData.supervisorSignature.startsWith('data:image/')) {
+        try {
+          processedFormData.supervisorSignature = await uploadSignatureUpdate(processedFormData.supervisorSignature, 'supervisor-signature')
+        } catch (error) {
+          return NextResponse.json(
+            { error: 'Supervisor signature upload failed' },
+            { status: 500 }
+          )
+        }
+      }
+
+      // Handle reporter signature (near-miss-report)
+      if (processedFormData.reporterSignature && processedFormData.reporterSignature.startsWith('data:image/')) {
+        try {
+          processedFormData.reporterSignature = await uploadSignatureUpdate(processedFormData.reporterSignature, 'reporter-signature')
+        } catch (error) {
+          return NextResponse.json(
+            { error: 'Reporter signature upload failed' },
+            { status: 500 }
+          )
+        }
+      }
+
+      // Handle field employee signatures (start-of-day-v2, end-of-day-v2)
+      if (processedFormData.fieldEmployees && Array.isArray(processedFormData.fieldEmployees)) {
+        try {
+          for (let i = 0; i < processedFormData.fieldEmployees.length; i++) {
+            const employee = processedFormData.fieldEmployees[i]
+            if (employee.signature && employee.signature.startsWith('data:image/')) {
+              employee.signature = await uploadSignatureUpdate(employee.signature, `employee-${i}-signature`)
+            }
+          }
+        } catch (error) {
+          return NextResponse.json(
+            { error: 'Employee signature upload failed' },
+            { status: 500 }
+          )
+        }
       }
     }
 

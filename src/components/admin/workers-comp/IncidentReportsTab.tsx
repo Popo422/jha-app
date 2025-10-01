@@ -14,6 +14,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { Card, CardContent } from "@/components/ui/card";
 import IncidentReportEdit from "@/components/admin/IncidentReportEdit";
 import CreateIncidentReport from "@/components/admin/incidents/CreateIncidentReport";
+import IncidentReportPdfExport, { generateAndDownloadIncidentReportPDF } from "@/components/admin/IncidentReportPdfExport";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -28,6 +29,7 @@ import {
   Edit,
   Trash2,
   X,
+  FileText,
 } from "lucide-react";
 import {
   createColumnHelper,
@@ -48,6 +50,7 @@ interface Incident {
   injuryType?: string;
   createdAt: string;
   updatedAt: string;
+  formData?: Record<string, any>;
 }
 
 const columnHelper = createColumnHelper<Incident>();
@@ -131,6 +134,17 @@ export default function IncidentReportsTab() {
 
   const handleEdit = useCallback((incident: Incident) => {
     setEditingIncident(incident);
+  }, []);
+
+  const handleDownloadPDF = useCallback(async (incident: Incident) => {
+    try {
+      await generateAndDownloadIncidentReportPDF(
+        (incident.formData || incident) as any,
+        `incident-report-${incident.id}.pdf`
+      );
+    } catch (error) {
+      console.error('Error generating Incident Report PDF:', error);
+    }
   }, []);
 
   const columns = useMemo<ColumnDef<Incident>[]>(() => [
@@ -379,6 +393,13 @@ export default function IncidentReportsTab() {
                 <Edit className="h-4 w-4 mr-2" />
                 {t('workersComp.table.edit')}
               </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleDownloadPDF(incident)}
+                className="cursor-pointer"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Export PDF
+              </DropdownMenuItem>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem 
@@ -480,6 +501,14 @@ export default function IncidentReportsTab() {
         pagination={paginationInfo || undefined}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
+        customActions={[
+          {
+            label: 'Export PDF',
+            icon: FileText,
+            onClick: handleDownloadPDF,
+            className: 'cursor-pointer'
+          }
+        ]}
       />
     </div>
   );

@@ -44,6 +44,7 @@ interface GeneralInformationStepProps {
     causeOfIncident: string;
     causeOtherExplanation: string;
   }>) => void;
+  authType?: 'contractor' | 'admin';
 }
 
 const INCIDENT_TYPES = [
@@ -64,7 +65,7 @@ const CAUSES_OF_INCIDENT = [
   'Other'
 ];
 
-export default function GeneralInformationStep({ data, updateData }: GeneralInformationStepProps) {
+export default function GeneralInformationStep({ data, updateData, authType = 'contractor' }: GeneralInformationStepProps) {
   const { t } = useTranslation('common');
 
   const handleInputChange = (field: string, value: string) => {
@@ -80,6 +81,7 @@ export default function GeneralInformationStep({ data, updateData }: GeneralInfo
             label="Reported by"
             value={data.reportedBy}
             onChange={(value) => handleInputChange('reportedBy', value)}
+            authType={authType}
             required
           />
         </div>
@@ -89,6 +91,7 @@ export default function GeneralInformationStep({ data, updateData }: GeneralInfo
             label="Supervisor"
             value={data.supervisor}
             onChange={(value) => handleInputChange('supervisor', value)}
+            authType={authType}
           />
         </div>
       </div>
@@ -99,6 +102,7 @@ export default function GeneralInformationStep({ data, updateData }: GeneralInfo
             label="Project Name"
             value={data.projectName}
             onChange={(value) => handleInputChange('projectName', value)}
+            authType={authType}
             required
           />
         </div>
@@ -108,6 +112,7 @@ export default function GeneralInformationStep({ data, updateData }: GeneralInfo
             label="Company/Subcontractor"
             value={data.companySubcontractor}
             onChange={(value) => handleInputChange('companySubcontractor', value)}
+            authType={authType}
             returnValue="name"
           />
         </div>

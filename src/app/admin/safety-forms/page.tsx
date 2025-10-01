@@ -20,6 +20,8 @@ import StartOfDayEdit from "@/components/admin/StartOfDayEdit";
 import EndOfDayEdit from "@/components/admin/EndOfDayEdit";
 import StartOfDayV2PdfExport, { generateAndDownloadPDF } from "@/components/admin/StartOfDayV2PdfExport";
 import EndOfDayV2PdfExport, { generateAndDownloadEndOfDayV2PDF } from "@/components/admin/EndOfDayV2PdfExport";
+import VehicleInspectionPdfExport, { generateAndDownloadVehicleInspectionPDF } from "@/components/admin/VehicleInspectionPdfExport";
+import NearMissReportPdfExport, { generateAndDownloadNearMissReportPDF } from "@/components/admin/NearMissReportPdfExport";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -679,9 +681,25 @@ export default function SafetyFormsPage() {
             console.error('Failed to generate PDF:', error);
             alert('Failed to generate PDF. Please try again.');
           }
+        } else if (submission.submissionType === 'vehicle-inspection') {
+          const fileName = `vehicle-inspection-${submission.completedBy.replace(/\s+/g, '-')}-${submission.date}.pdf`;
+          try {
+            await generateAndDownloadVehicleInspectionPDF(submission.formData as any, fileName);
+          } catch (error) {
+            console.error('Failed to generate PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+          }
+        } else if (submission.submissionType === 'near-miss-report') {
+          const fileName = `near-miss-report-${submission.completedBy.replace(/\s+/g, '-')}-${submission.date}.pdf`;
+          try {
+            await generateAndDownloadNearMissReportPDF(submission.formData as any, fileName);
+          } catch (error) {
+            console.error('Failed to generate PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+          }
         }
       },
-      show: (submission: Submission) => submission.submissionType === 'start-of-day-v2' || submission.submissionType === 'end-of-day-v2',
+      show: (submission: Submission) => submission.submissionType === 'start-of-day-v2' || submission.submissionType === 'end-of-day-v2' || submission.submissionType === 'vehicle-inspection' || submission.submissionType === 'near-miss-report',
     }
   ], []);
 

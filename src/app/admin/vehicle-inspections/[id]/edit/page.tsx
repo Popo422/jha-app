@@ -344,6 +344,7 @@ export default function AdminEditVehicleInspectionPage() {
                         label={t('forms.completedBy')}
                         value={formData.completedBy}
                         onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
+                        authType="admin"
                         required
                       />
                     </div>
@@ -365,6 +366,7 @@ export default function AdminEditVehicleInspectionPage() {
                         label={t('formFields.supervisor')}
                         value={formData.supervisor}
                         onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
+                        authType="admin"
                       />
                     </div>
                   </div>
@@ -374,6 +376,7 @@ export default function AdminEditVehicleInspectionPage() {
                         label={t('formFields.projectName')}
                         value={formData.projectName}
                         onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
+                        authType="admin"
                         required
                       />
                     </div>
@@ -384,6 +387,7 @@ export default function AdminEditVehicleInspectionPage() {
                         label={t('forms.companySubcontractor')}
                         value={formData.company}
                         onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
+                        authType="admin"
                         returnValue="name"
                       />
                     </div>

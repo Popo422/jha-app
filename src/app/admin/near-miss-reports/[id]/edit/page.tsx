@@ -219,6 +219,7 @@ export default function AdminEditNearMissPage() {
           <GeneralInformationStep
             data={formData}
             updateData={updateFormData}
+            authType="admin"
           />
         );
       case 2:

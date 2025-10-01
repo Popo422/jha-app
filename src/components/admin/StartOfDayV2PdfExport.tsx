@@ -332,7 +332,7 @@ const StartOfDayV2PDFDocument: React.FC<{ formData: StartOfDayV2FormData }> = ({
             <Text style={styles.tableCell}>{employee.startTime || ''}</Text>
             <Text style={styles.tableCell}>{employee.status || ''}</Text>
             <View style={styles.signatureCell}>
-              {employee.signature && employee.signature.startsWith('data:image/') ? (
+              {employee.signature && (employee.signature.startsWith('data:image/') || employee.signature.startsWith('http')) ? (
                 <Image style={styles.signatureImage} src={employee.signature} />
               ) : (
                 <Text>Signature</Text>
