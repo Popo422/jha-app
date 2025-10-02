@@ -1,9 +1,10 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, FileText } from 'lucide-react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image, pdf } from '@react-pdf/renderer';
+import { getProjectLocation } from '@/lib/utils/project-location';
 
 interface NearMissFormData {
   // Step 1: General Information
@@ -196,7 +197,7 @@ const styles = StyleSheet.create({
 });
 
 // React PDF Document Component
-const NearMissReportPDFDocument: React.FC<{ formData: NearMissFormData }> = ({ formData }) => {
+const NearMissReportPDFDocument: React.FC<{ formData: NearMissFormData; projectLocation?: string }> = ({ formData, projectLocation }) => {
   // Helper function to render checkboxes for yes/no fields
   const renderYesNoCheckbox = (value: string, label: string) => (
     <View style={styles.checkboxRow}>
@@ -245,7 +246,7 @@ const NearMissReportPDFDocument: React.FC<{ formData: NearMissFormData }> = ({ f
         <View style={styles.fieldRowTwoColumn}>
           <View style={styles.fieldColumn}>
             <Text style={styles.fieldLabel}>Project Location:</Text>
-            <Text style={styles.fieldValue}></Text>
+            <Text style={styles.fieldValue}>{projectLocation || ''}</Text>
           </View>
           <View style={styles.fieldColumn}>
             <Text style={styles.fieldLabel}>Supervisor:</Text>
@@ -430,10 +431,22 @@ const NearMissReportPdfExport: React.FC<NearMissReportPdfExportProps> = ({
   formData, 
   fileName = "near-miss-report.pdf" 
 }) => {
+  const [projectLocation, setProjectLocation] = useState<string>('')
+
+  useEffect(() => {
+    const fetchProjectLocation = async () => {
+      if (formData.projectName) {
+        const location = await getProjectLocation(formData.projectName)
+        setProjectLocation(location)
+      }
+    }
+    fetchProjectLocation()
+  }, [formData.projectName])
+
   return (
     <div className="flex gap-2">
       <PDFDownloadLink
-        document={<NearMissReportPDFDocument formData={formData} />}
+        document={<NearMissReportPDFDocument formData={formData} projectLocation={projectLocation} />}
         fileName={fileName}
         className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
       >
@@ -458,7 +471,8 @@ const NearMissReportPdfExport: React.FC<NearMissReportPdfExportProps> = ({
 // Direct PDF generation function
 export const generateAndDownloadNearMissReportPDF = async (formData: NearMissFormData, fileName: string) => {
   try {
-    const doc = <NearMissReportPDFDocument formData={formData} />;
+    const projectLocation = formData.projectName ? await getProjectLocation(formData.projectName) : ''
+    const doc = <NearMissReportPDFDocument formData={formData} projectLocation={projectLocation} />;
     const asPdf = pdf(doc);
     const blob = await asPdf.toBlob();
     
