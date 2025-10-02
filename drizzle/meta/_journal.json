@@ -148,6 +148,13 @@
       "when": 1757001596355,
       "tag": "0020_cuddly_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1759398235110,
+      "tag": "0021_yellow_killmonger",
+      "breakpoints": true
     }
   ]
 }

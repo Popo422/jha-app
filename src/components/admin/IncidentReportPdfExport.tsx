@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Download, FileText } from 'lucide-react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image, pdf } from '@react-pdf/renderer';
 import { getProjectLocation } from '@/lib/utils/project-location';
+import { formatDateForPDF } from '@/lib/utils/date-formatting';
 
 interface IncidentReportFormData {
   // Basic information
@@ -215,9 +216,7 @@ const IncidentReportPDFDocument: React.FC<{ formData: IncidentReportFormData; pr
           </View>
           <View style={styles.fieldColumn}>
             <Text style={styles.fieldLabel}>Date:</Text>
-            <Text style={styles.fieldValue}>
-              {formData.reportDate ? new Date(formData.reportDate).toLocaleDateString() : ''}
-            </Text>
+            <Text style={styles.fieldValue}>{formatDateForPDF(formData.reportDate)}</Text>
           </View>
         </View>
         
@@ -284,9 +283,7 @@ const IncidentReportPDFDocument: React.FC<{ formData: IncidentReportFormData; pr
         <View style={styles.fieldRowTwoColumn}>
           <View style={styles.fieldColumn}>
             <Text style={styles.fieldLabel}>Date:</Text>
-            <Text style={styles.fieldValue}>
-              {formData.incidentDate ? new Date(formData.incidentDate).toLocaleDateString() : ''}
-            </Text>
+            <Text style={styles.fieldValue}>{formatDateForPDF(formData.incidentDate)}</Text>
           </View>
           <View style={styles.fieldColumn}>
             <Text style={styles.fieldLabel}>Phone:</Text>
@@ -356,9 +353,7 @@ const IncidentReportPDFDocument: React.FC<{ formData: IncidentReportFormData; pr
           </View>
           <View style={styles.reportDetailsColumn}>
             <Text style={styles.fieldLabel}>Date:</Text>
-            <Text style={styles.fieldValue}>
-              {formData.reporterDate ? new Date(formData.reporterDate).toLocaleDateString() : ''}
-            </Text>
+            <Text style={styles.fieldValue}>{formatDateForPDF(formData.reporterDate)}</Text>
           </View>
         </View>
 

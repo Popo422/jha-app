@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, jsonb, numeric, unique } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, uuid, jsonb, numeric, unique, boolean } from 'drizzle-orm/pg-core'
 
 export const companies = pgTable('companies', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -196,5 +196,22 @@ export const formTemplates = pgTable('form_templates', {
 }, (table) => ({
   // Composite unique constraint: same template name can exist across companies but not within same company
   companyTemplateUnique: unique().on(table.companyId, table.name),
+}))
+
+export const procoreIntegrations = pgTable('procore_integrations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  procoreCompanyId: text('procore_company_id').notNull(),
+  procoreAccessToken: text('procore_access_token').notNull(),
+  procoreRefreshToken: text('procore_refresh_token').notNull(),
+  tokenExpiresAt: timestamp('token_expires_at').notNull(),
+  isActive: boolean('is_active').notNull().default(true),
+  syncSettings: jsonb('sync_settings').default({}), // Configuration options for sync
+  lastSyncAt: timestamp('last_sync_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: prevent duplicate integrations per company-procore pair
+  companyProcoreUnique: unique().on(table.companyId, table.procoreCompanyId),
 }))
 

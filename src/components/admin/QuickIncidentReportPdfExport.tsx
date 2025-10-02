@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Download, FileText } from 'lucide-react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image, pdf } from '@react-pdf/renderer';
 import { getProjectLocation } from '@/lib/utils/project-location';
+import { formatDateForPDF } from '@/lib/utils/date-formatting';
 
 interface QuickIncidentReportFormData {
   completedBy: string;
@@ -145,7 +146,7 @@ const QuickIncidentReportPDFDocument: React.FC<{ formData: QuickIncidentReportFo
           </View>
           <View style={styles.fieldColumn}>
             <Text style={styles.fieldLabel}>Date:</Text>
-            <Text style={styles.fieldValue}>{formData.reportDate || ''}</Text>
+            <Text style={styles.fieldValue}>{formatDateForPDF(formData.reportDate)}</Text>
           </View>
         </View>
         

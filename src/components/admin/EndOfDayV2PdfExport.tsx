@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Download, FileText } from 'lucide-react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image, pdf } from '@react-pdf/renderer';
 import { getProjectLocation } from '@/lib/utils/project-location';
+import { formatDateForPDF } from '@/lib/utils/date-formatting';
 
 interface FieldEmployee {
   id: string;
@@ -214,7 +215,7 @@ const EndOfDayV2PDFDocument: React.FC<{ formData: EndOfDayV2FormData; projectLoc
         </View>
         <View style={styles.fieldRow}>
           <Text style={styles.fieldLabel}>Date:</Text>
-          <Text style={styles.fieldValue}>{formData.date || ''}</Text>
+          <Text style={styles.fieldValue}>{formatDateForPDF(formData.date)}</Text>
         </View>
         <View style={styles.fieldRow}>
           <Text style={styles.fieldLabel}>Sub Name:</Text>

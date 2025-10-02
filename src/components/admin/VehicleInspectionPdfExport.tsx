@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Download, FileText } from 'lucide-react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image, pdf } from '@react-pdf/renderer';
 import { getProjectLocation } from '@/lib/utils/project-location';
+import { formatDateForPDF } from '@/lib/utils/date-formatting';
 
 interface VehicleInspectionFormData {
   // General Information
@@ -297,7 +298,7 @@ const VehicleInspectionPDFDocument: React.FC<{ formData: VehicleInspectionFormDa
           </View>
           <View style={styles.fieldColumn}>
             <Text style={styles.fieldLabelTwoColumn}>Date:</Text>
-            <Text style={styles.fieldValue}>{formData.date || ''}</Text>
+            <Text style={styles.fieldValue}>{formatDateForPDF(formData.date)}</Text>
           </View>
         </View>
         <View style={styles.fieldRowTwoColumn}>

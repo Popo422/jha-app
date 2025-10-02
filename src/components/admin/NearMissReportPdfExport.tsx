@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Download, FileText } from 'lucide-react';
 import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image, pdf } from '@react-pdf/renderer';
 import { getProjectLocation } from '@/lib/utils/project-location';
+import { formatDateForPDF, formatDateTimeForPDF } from '@/lib/utils/date-formatting';
 
 interface NearMissFormData {
   // Step 1: General Information
@@ -230,7 +231,7 @@ const NearMissReportPDFDocument: React.FC<{ formData: NearMissFormData; projectL
           </View>
           <View style={styles.fieldColumn}>
             <Text style={styles.fieldLabel}>Date of Near Miss:</Text>
-            <Text style={styles.fieldValue}>{formData.dateTimeOfNearMiss || ''}</Text>
+            <Text style={styles.fieldValue}>{formatDateForPDF(formData.dateTimeOfNearMiss)}</Text>
           </View>
         </View>
         <View style={styles.fieldRowTwoColumn}>
@@ -240,7 +241,7 @@ const NearMissReportPDFDocument: React.FC<{ formData: NearMissFormData; projectL
           </View>
           <View style={styles.fieldColumn}>
             <Text style={styles.fieldLabel}>Date Management Notified:</Text>
-            <Text style={styles.fieldValue}>{formData.dateTimeManagementNotified || ''}</Text>
+            <Text style={styles.fieldValue}>{formatDateForPDF(formData.dateTimeManagementNotified)}</Text>
           </View>
         </View>
         <View style={styles.fieldRowTwoColumn}>
@@ -398,7 +399,7 @@ const NearMissReportPDFDocument: React.FC<{ formData: NearMissFormData; projectL
             <View style={styles.dateSection}>
               <Text style={[styles.signatureLabel, { marginBottom: 5 }]}>Date:</Text>
               <View style={styles.dateContainer}>
-                <Text style={styles.dateText}>{formData.reporterDate || ''}</Text>
+                <Text style={styles.dateText}>{formatDateForPDF(formData.reporterDate)}</Text>
               </View>
             </View>
           </View>
@@ -416,7 +417,7 @@ const NearMissReportPDFDocument: React.FC<{ formData: NearMissFormData; projectL
             <View style={styles.dateSection}>
               <Text style={[styles.signatureLabel, { marginBottom: 5 }]}>Date:</Text>
               <View style={styles.dateContainer}>
-                <Text style={styles.dateText}>{formData.supervisorDate || ''}</Text>
+                <Text style={styles.dateText}>{formatDateForPDF(formData.supervisorDate)}</Text>
               </View>
             </View>
           </View>
