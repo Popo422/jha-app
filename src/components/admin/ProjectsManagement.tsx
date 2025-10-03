@@ -538,7 +538,7 @@ export function ProjectsManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>Project Already Exists in Procore</AlertDialogTitle>
             <AlertDialogDescription>
-              The project "{exportingProject?.name}" already exists in Procore.
+              {`The project "${exportingProject?.name}" already exists in Procore.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {existingProcoreProject && (
