@@ -32,6 +32,7 @@ export default function SettingsPage() {
     connected: boolean;
     loading: boolean;
     integration: any;
+    appUrl?: string;
   }>({ connected: false, loading: true, integration: null });
   const { toast, showToast, hideToast } = useToast();
 
@@ -80,7 +81,8 @@ export default function SettingsPage() {
         setProcoreStatus({
           connected: data.connected,
           loading: false,
-          integration: data.integration
+          integration: data.integration,
+          appUrl: data.appUrl
         });
       }
     } catch (error) {
@@ -483,13 +485,7 @@ export default function SettingsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        // Check if we're using sandbox based on last sync URL or default to production
-                        const appUrl = procoreStatus.integration?.lastSyncUrl?.includes('sandbox') 
-                          ? 'https://sandbox.procore.com' 
-                          : 'https://app.procore.com';
-                        window.open(appUrl, '_blank');
-                      }}
+                      onClick={() => window.open(procoreStatus.appUrl || 'https://app.procore.com', '_blank')}
                     >
                       <ExternalLink className="h-4 w-4 mr-1" />
                       Open Procore

@@ -58,9 +58,15 @@ export async function POST(request: NextRequest) {
 
       case 'status':
         const integration = await authService.getActiveIntegration(companyId)
+        const baseUrl = process.env.PROCORE_BASE_URL || 'https://api.procore.com'
+        const appUrl = baseUrl.includes('sandbox') 
+          ? 'https://sandbox.procore.com' 
+          : 'https://app.procore.com'
+        
         return NextResponse.json({ 
           connected: integration.length > 0,
-          integration: integration[0] || null
+          integration: integration[0] || null,
+          appUrl
         })
 
       default:
