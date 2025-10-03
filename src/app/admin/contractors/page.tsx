@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, useGetContractorLimitQuery, type Contractor } from "@/lib/features/contractors/contractorsApi";
+import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, useGetContractorLimitQuery, useSyncToProcoreMutation, type Contractor } from "@/lib/features/contractors/contractorsApi";
 import { useContractorExportAll } from "@/hooks/useExportAll";
 import { useCreateSubcontractorMutation } from "@/lib/features/subcontractors/subcontractorsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
@@ -17,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
 import { ContractorBulkUploadModal } from "@/components/admin/ContractorBulkUploadModal";
-import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy, Upload, ChevronDown } from "lucide-react";
+import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy, Upload, ChevronDown, Building } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 type ViewMode = 'list' | 'add' | 'edit';
@@ -45,6 +45,9 @@ export default function ContractorsPage() {
   const [isSubcontractorModalOpen, setIsSubcontractorModalOpen] = useState(false);
   const [newSubcontractorName, setNewSubcontractorName] = useState("");
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [syncingContractor, setSyncingContractor] = useState<Contractor | null>(null);
+  const [existingProcorePerson, setExistingProcorePerson] = useState<any>(null);
   
   const { toast, showToast, hideToast } = useToast();
   
@@ -67,6 +70,7 @@ export default function ContractorsPage() {
   const [createContractor, { isLoading: isCreating, error: createError }] = useCreateContractorMutation();
   const [updateContractor, { isLoading: isUpdating, error: updateError }] = useUpdateContractorMutation();
   const [createSubcontractor, { isLoading: isCreatingSubcontractor }] = useCreateSubcontractorMutation();
+  const [syncToProcore, { isLoading: isSyncingToProcore }] = useSyncToProcoreMutation();
 
   // Function to fetch all contractors for export
   const handleExportAll = useCallback(async () => {
@@ -313,6 +317,55 @@ export default function ContractorsPage() {
     }
   };
 
+  const handleSyncToProcore = async (contractor: Contractor) => {
+    try {
+      const result = await syncToProcore({ contractorIds: [contractor.id] }).unwrap();
+      
+      if (result.results && result.results.length > 0) {
+        const contractorResult = result.results[0];
+        
+        if (contractorResult.status === 'exists') {
+          // Show modal for existing contractors
+          setSyncingContractor(contractor);
+          setExistingProcorePerson({
+            name: `${contractor.firstName} ${contractor.lastName}`,
+            employee_id: contractor.code,
+            procorePartyId: contractorResult.procorePartyId
+          });
+          setShowSyncModal(true);
+          return;
+        } else if (contractorResult.status === 'created') {
+          showToast(`${contractor.firstName} ${contractor.lastName} synced to Procore successfully`, 'success');
+        }
+      }
+      
+      if (result.errors && result.errors.length > 0) {
+        showToast(result.errors[0].error, 'error');
+      }
+    } catch (error: any) {
+      showToast(error?.data?.error || 'Failed to sync contractor to Procore', 'error');
+    }
+  };
+
+  const handleConfirmSync = async () => {
+    if (!syncingContractor) return;
+    
+    try {
+      const result = await syncToProcore({ contractorIds: [syncingContractor.id] }).unwrap();
+      showToast(`${syncingContractor.firstName} ${syncingContractor.lastName} synced to Procore successfully`, 'success');
+      setShowSyncModal(false);
+      setSyncingContractor(null);
+      setExistingProcorePerson(null);
+    } catch (error: any) {
+      showToast(error?.data?.error || 'Failed to sync contractor to Procore', 'error');
+    }
+  };
+
+  const handleCancelSync = () => {
+    setShowSyncModal(false);
+    setSyncingContractor(null);
+    setExistingProcorePerson(null);
+  };
 
   const allContractors = contractorsData?.contractors || [];
   
@@ -896,6 +949,14 @@ export default function ContractorsPage() {
         isFetching={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        customActions={[
+          {
+            label: "Sync to Procore",
+            icon: Building,
+            onClick: handleSyncToProcore,
+            disabled: isSyncingToProcore,
+          }
+        ]}
         getRowId={(contractor) => contractor.id}
         exportFilename="contractors"
         exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), 'Type', 'Language', t('contractors.created')]}
@@ -922,6 +983,38 @@ export default function ContractorsPage() {
   return (
     <div className="p-4 md:p-6">
       {viewMode === 'list' ? renderListView() : renderFormView()}
+
+      {/* Sync Confirmation Modal */}
+      <AlertDialog open={showSyncModal} onOpenChange={setShowSyncModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Contractor Already Exists in Procore</AlertDialogTitle>
+            <AlertDialogDescription>
+              {`The contractor "${syncingContractor?.firstName} ${syncingContractor?.lastName}" already exists in Procore.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {existingProcorePerson && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Existing Procore Person:</h4>
+              <p className="text-sm font-medium">{existingProcorePerson.name}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Employee ID: {existingProcorePerson.employee_id}</p>
+              {existingProcorePerson.procorePartyId && (
+                <p className="text-sm text-gray-600 dark:text-gray-400">Procore ID: {existingProcorePerson.procorePartyId}</p>
+              )}
+            </div>
+          )}
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+            Do you still want to create a new person in Procore? This will create a duplicate.
+          </p>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelSync}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSync} disabled={isSyncingToProcore}>
+              {isSyncingToProcore ? 'Syncing...' : 'Sync Anyway'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Toast
         message={toast.message}
         type={toast.type}

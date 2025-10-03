@@ -36,6 +36,29 @@ export interface UpdateContractorRequest {
   language?: string
 }
 
+export interface SyncToProcoreRequest {
+  contractorIds: string[]
+}
+
+export interface SyncToProcoreResponse {
+  success: boolean
+  message: string
+  results: Array<{
+    contractorId: string
+    name: string
+    status: 'exists' | 'created' | 'error'
+    procorePartyId?: string
+    message?: string
+    error?: string
+  }>
+  errors?: Array<{
+    contractorId: string
+    name: string
+    status: 'error'
+    error: string
+  }>
+}
+
 export interface PaginationInfo {
   page: number
   pageSize: number
@@ -163,6 +186,13 @@ export const contractorsApi = createApi({
       }),
       invalidatesTags: ['Contractor'],
     }),
+    syncToProcore: builder.mutation<SyncToProcoreResponse, SyncToProcoreRequest>({
+      query: (data) => ({
+        url: 'sync-procore',
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 })
 
@@ -174,6 +204,7 @@ export const {
   useDeleteContractorMutation,
   useGetContractorLimitQuery,
   useBulkCreateContractorsMutation,
+  useSyncToProcoreMutation,
 } = contractorsApi
 
 export type GetContractorsResponse = ContractorsResponse;
