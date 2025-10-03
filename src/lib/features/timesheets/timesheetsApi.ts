@@ -81,6 +81,29 @@ export interface GetTimesheetAggregatesResponse {
   }
 }
 
+export interface SyncToProcoreRequest {
+  timesheetIds: string[]
+  procoreProjectId?: string
+}
+
+export interface SyncToProcoreResponse {
+  success: boolean
+  message: string
+  results: Array<{
+    timesheetId: string
+    employee: string
+    status: 'success' | 'error'
+    procoreEntryId?: string
+    error?: string
+  }>
+  errors?: Array<{
+    timesheetId: string
+    employee: string
+    status: 'error'
+    error: string
+  }>
+}
+
 export interface UpdateTimesheetData {
   id: string
   date: string
@@ -263,6 +286,14 @@ export const timesheetsApi = createApi({
       },
       providesTags: ['Timesheet'],
     }),
+    syncToProcore: builder.mutation<SyncToProcoreResponse, SyncToProcoreRequest>({
+      query: (data) => ({
+        url: 'sync-procore',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Timesheet'],
+    }),
   }),
 })
 
@@ -273,5 +304,6 @@ export const {
   useDeleteTimesheetMutation,
   useUpdateTimesheetMutation,
   useGetTimesheetAggregatesQuery,
-  useLazyGetTimesheetAggregatesQuery
+  useLazyGetTimesheetAggregatesQuery,
+  useSyncToProcoreMutation
 } = timesheetsApi

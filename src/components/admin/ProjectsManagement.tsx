@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetProjectsQuery, useDeleteProjectMutation, useCreateProjectMutation, useUpdateProjectMutation, useGetProjectLimitQuery, type Project, type PaginationInfo } from "@/lib/features/projects/projectsApi";
+import { useGetProjectsQuery, useDeleteProjectMutation, useCreateProjectMutation, useUpdateProjectMutation, useGetProjectLimitQuery, useCheckProcoreMutation, useSyncToProcoreMutation, type Project, type PaginationInfo } from "@/lib/features/projects/projectsApi";
 import SupervisorSelect from "@/components/SupervisorSelect";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import LocationAutocomplete from "@/components/ui/location-autocomplete";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/toast";
+import { useToast, Toast } from "@/components/ui/toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plus, ArrowUpDown, Building, ChevronDown, X } from "lucide-react";
@@ -37,8 +37,11 @@ export function ProjectsManagement() {
     page: 1,
     pageSize: 10
   });
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportingProject, setExportingProject] = useState<Project | null>(null);
+  const [existingProcoreProject, setExistingProcoreProject] = useState<any>(null);
   
-  const { showToast } = useToast();
+  const { toast, showToast, hideToast } = useToast();
   
   const { data: projectsData, isLoading, isFetching, refetch } = useGetProjectsQuery({
     search: debouncedSearch || undefined,
@@ -62,6 +65,9 @@ export function ProjectsManagement() {
   const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation();
   const [createProject, { isLoading: isCreating, error: createError }] = useCreateProjectMutation();
   const [updateProject, { isLoading: isUpdating, error: updateError }] = useUpdateProjectMutation();
+  const [checkProcore, { isLoading: isCheckingProcore }] = useCheckProcoreMutation();
+  const [syncToProcore, { isLoading: isSyncingProcore }] = useSyncToProcoreMutation();
+  
 
   const isFormLoading = isCreating || isUpdating;
   const formError = createError || updateError;
@@ -187,6 +193,79 @@ export function ProjectsManagement() {
       refetch();
     } catch (error: any) {
       showToast(error.data?.error || 'Failed to delete project', 'error');
+    }
+  };
+
+  const handleSyncToProcore = async (project: Project) => {
+    try {
+      const result = await checkProcore({ projectIds: [project.id] }).unwrap();
+      
+      if (result.results && result.results.length > 0) {
+        const projectResult = result.results[0];
+        
+        if (projectResult.procoreStatus === 'found') {
+          setExportingProject(project);
+          setExistingProcoreProject(projectResult.procoreProject);
+          setShowExportModal(true);
+          return;
+        }
+      }
+      
+      const syncResult = await syncToProcore({ 
+        projectIds: [project.id], 
+        createInProcore: true 
+      }).unwrap();
+      
+      console.log('Sync successful:', syncResult);
+      showToast('Project exported to Procore successfully', 'success');
+      
+    } catch (error: any) {
+      showToast(error.data?.error || 'Failed to export project to Procore', 'error');
+    }
+  };
+
+  const handleConfirmExport = async () => {
+    if (!exportingProject) return;
+    
+    try {
+      const syncResult = await syncToProcore({ 
+        projectIds: [exportingProject.id], 
+        createInProcore: true 
+      }).unwrap();
+      
+      console.log('Modal sync successful:', syncResult);
+      showToast('Project exported to Procore successfully', 'success');
+      setShowExportModal(false);
+      setExportingProject(null);
+      setExistingProcoreProject(null);
+      
+    } catch (error: any) {
+      showToast(error.data?.error || 'Failed to export project to Procore', 'error');
+    }
+  };
+
+  const handleCancelExport = () => {
+    setShowExportModal(false);
+    setExportingProject(null);
+    setExistingProcoreProject(null);
+  };
+
+  const handleCreateInProcore = async (projectId: string) => {
+    try {
+      const result = await syncToProcore({ 
+        projectIds: [projectId], 
+        createInProcore: true 
+      }).unwrap();
+      
+      showToast('Project created in Procore successfully', 'success');
+      
+      // Refresh the check results
+      const project = allProjects.find(p => p.id === projectId);
+      if (project) {
+        // No need to refresh check results since we're just creating in Procore
+      }
+    } catch (error: any) {
+      showToast(error.data?.error || 'Failed to create project in Procore', 'error');
     }
   };
 
@@ -452,6 +531,38 @@ export function ProjectsManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
+
+      {/* Export Confirmation Modal */}
+      <AlertDialog open={showExportModal} onOpenChange={setShowExportModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Project Already Exists in Procore</AlertDialogTitle>
+            <AlertDialogDescription>
+              The project "{exportingProject?.name}" already exists in Procore.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {existingProcoreProject && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Existing Procore Project:</h4>
+              <p className="text-sm font-medium">{existingProcoreProject.name}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{existingProcoreProject.address}</p>
+              {existingProcoreProject.project_number && (
+                <p className="text-sm text-gray-600 dark:text-gray-400">Project #: {existingProcoreProject.project_number}</p>
+              )}
+            </div>
+          )}
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+            Do you still want to create a new project in Procore? This will create a duplicate.
+          </p>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelExport}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmExport} disabled={isSyncingProcore}>
+              {isSyncingProcore ? 'Exporting...' : 'Export Anyway'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Main Projects Table */}
       <Card>
         <CardHeader>
@@ -572,6 +683,14 @@ export function ProjectsManagement() {
             isFetching={isFetching}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            customActions={[
+              {
+                label: "Export to Procore",
+                icon: Building,
+                onClick: handleSyncToProcore,
+                disabled: isSyncingProcore || isCheckingProcore,
+              }
+            ]}
             getRowId={(project) => project.id}
             exportFilename="projects"
             exportHeaders={[t('tableHeaders.projectName'), t('admin.projectManager'), t('admin.location'), 'Project Cost', t('admin.subcontractors'), t('admin.created')]}
@@ -592,6 +711,13 @@ export function ProjectsManagement() {
           />
         </CardContent>
       </Card>
+      
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={hideToast}
+      />
     </>
   );
 }

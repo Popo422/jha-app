@@ -51,6 +51,64 @@ export interface DeleteProjectResponse {
   message: string
 }
 
+export interface SyncToProcoreRequest {
+  projectIds: string[]
+  createInProcore?: boolean
+}
+
+export interface SyncToProcoreResponse {
+  success: boolean
+  message: string
+  results: Array<{
+    projectId: string
+    projectName: string
+    procoreProjectId?: string
+    procoreProjectName?: string
+    status: 'created' | 'matched' | 'no_match'
+    suggestion?: string
+  }>
+  errors?: Array<{
+    projectId: string
+    projectName: string
+    error: string
+  }>
+}
+
+export interface CheckProcoreRequest {
+  projectIds?: string[]
+}
+
+export interface CheckProcoreResponse {
+  success: boolean
+  summary: {
+    total: number
+    found: number
+    notFound: number
+    needsReview: number
+  }
+  results: Array<{
+    projectId: string
+    projectName: string
+    location: string
+    projectManager: string
+    procoreStatus: 'found' | 'not_found' | 'multiple_matches'
+    procoreProject?: {
+      id: string
+      name: string
+      address: string
+      project_number?: string
+    }
+    procoreMatches?: Array<{
+      id: string
+      name: string
+      address: string
+      project_number?: string
+      similarity: number
+    }>
+    recommendation: 'use_existing' | 'create_new' | 'manual_review'
+  }>
+}
+
 export interface BulkProjectData {
   name: string
   location: string
@@ -157,6 +215,20 @@ export const projectsApi = createApi({
       query: () => '/limit',
       providesTags: ['Project'],
     }),
+    syncToProcore: builder.mutation<SyncToProcoreResponse, SyncToProcoreRequest>({
+      query: (data) => ({
+        url: 'sync-procore',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    checkProcore: builder.mutation<CheckProcoreResponse, CheckProcoreRequest>({
+      query: (data) => ({
+        url: 'check-procore',
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 })
 
@@ -167,4 +239,6 @@ export const {
   useDeleteProjectMutation,
   useBulkCreateProjectsMutation,
   useGetProjectLimitQuery,
+  useSyncToProcoreMutation,
+  useCheckProcoreMutation,
 } = projectsApi

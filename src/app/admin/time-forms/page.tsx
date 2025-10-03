@@ -3,7 +3,7 @@
 import { useMemo, useCallback, useState } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetTimesheetsQuery, useDeleteTimesheetMutation, type Timesheet, type PaginationInfo } from "@/lib/features/timesheets/timesheetsApi";
+import { useGetTimesheetsQuery, useDeleteTimesheetMutation, useSyncToProcoreMutation, type Timesheet, type PaginationInfo } from "@/lib/features/timesheets/timesheetsApi";
 import { useGetSubmissionsQuery, type Submission } from "@/lib/features/submissions/submissionsApi";
 import { useTimesheetExportAll } from "@/hooks/useExportAll";
 import { useGetContractorsQuery } from "@/lib/features/contractors/contractorsApi";
@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X, Check, XCircle, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X, Check, XCircle, Clock, CheckCircle, AlertTriangle, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
@@ -109,8 +109,11 @@ export default function TimeFormsPage() {
   });
 
   const [deleteTimesheet] = useDeleteTimesheetMutation();
+  const [syncToProcore] = useSyncToProcoreMutation();
   const [approvalDialog, setApprovalDialog] = useState<{ timesheet: Timesheet; action: 'approve' | 'reject' | 'pending' } | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [syncDialog, setSyncDialog] = useState<{ timesheets: Timesheet[] } | null>(null);
+  const [procoreProjectId, setProcoreProjectId] = useState('');
   const exportAllTimesheets = useTimesheetExportAll();
 
   const allData = timesheetsData?.timesheets || [];
@@ -376,6 +379,36 @@ export default function TimeFormsPage() {
       console.error('Error updating timesheet:', error);
     }
   }, [approvalDialog, rejectionReason, refetch]);
+
+  const handleSyncToProcore = useCallback((timesheets: Timesheet[]) => {
+    // Only sync approved timesheets
+    const approvedTimesheets = timesheets.filter(t => t.status === 'approved');
+    if (approvedTimesheets.length === 0) {
+      alert('No approved timesheets selected. Only approved timesheets can be synced to Procore.');
+      return;
+    }
+    setSyncDialog({ timesheets: approvedTimesheets });
+    setProcoreProjectId('');
+  }, []);
+
+  const executeProcoreSync = useCallback(async () => {
+    if (!syncDialog) return;
+    
+    try {
+      const result = await syncToProcore({
+        timesheetIds: syncDialog.timesheets.map(t => t.id),
+        procoreProjectId: procoreProjectId || undefined,
+      }).unwrap();
+      
+      alert(`Successfully synced ${result.results.length} timesheets to Procore!\n\n${result.message}`);
+      setSyncDialog(null);
+      setProcoreProjectId('');
+      refetch();
+    } catch (error: any) {
+      console.error('Error syncing to Procore:', error);
+      alert(`Error syncing to Procore: ${error.data?.error || error.message || 'Unknown error'}`);
+    }
+  }, [syncDialog, procoreProjectId, syncToProcore, refetch]);
 
   const getStatusBadge = useCallback((status: string) => {
     switch (status) {
@@ -1139,6 +1172,62 @@ export default function TimeFormsPage() {
               {approvalDialog?.action === 'approve' ? t('admin.approve') : 
                approvalDialog?.action === 'reject' ? t('admin.reject') : 
                t('admin.setPending')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Procore Sync Dialog */}
+      <AlertDialog open={!!syncDialog} onOpenChange={() => setSyncDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sync Timesheets to Procore</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to sync {syncDialog?.timesheets.length || 0} approved timesheet(s) to Procore.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="procoreProjectId" className="text-sm font-medium">
+                Procore Project ID (Optional)
+              </label>
+              <Input
+                id="procoreProjectId"
+                placeholder="Leave blank to use default project"
+                value={procoreProjectId}
+                onChange={(e) => setProcoreProjectId(e.target.value)}
+              />
+              <p className="text-xs text-gray-500">
+                If left blank, the default project from your Procore integration settings will be used.
+              </p>
+            </div>
+            
+            {syncDialog && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Timesheets to sync:</p>
+                <div className="max-h-32 overflow-y-auto text-xs text-gray-600">
+                  {syncDialog.timesheets.map((timesheet) => (
+                    <div key={timesheet.id} className="flex justify-between">
+                      <span>{timesheet.employee}</span>
+                      <span>{timesheet.timeSpent} hrs on {new Date(timesheet.date).toLocaleDateString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSyncDialog(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={executeProcoreSync}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Sync to Procore
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

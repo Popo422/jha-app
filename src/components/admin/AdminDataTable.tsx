@@ -37,6 +37,7 @@ export interface CustomAction<T> {
   onClick: (item: T) => void | Promise<void>;
   className?: string;
   show?: (item: T) => boolean;
+  disabled?: boolean;
 }
 
 export interface PaginationInfo {
@@ -189,8 +190,9 @@ export function AdminDataTable<T>({
                   return (
                     <DropdownMenuItem 
                       key={index}
-                      onClick={() => action.onClick(item)}
-                      className={`cursor-pointer ${action.className || ''}`}
+                      onClick={() => !action.disabled && action.onClick(item)}
+                      className={`cursor-pointer ${action.className || ''} ${action.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={action.disabled}
                     >
                       <Icon className="h-4 w-4 mr-2" />
                       {action.label}
