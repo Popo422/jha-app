@@ -103,9 +103,13 @@ export class ProcoreAuthService {
 
   // Get Procore company information
   private async getProcoreCompanyInfo(accessToken: string): Promise<ProcoreCompanyInfo> {
-    console.log('Fetching company info from:', `${this.baseUrl}/rest/v1.0/companies`);
+    const apiUrl = this.baseUrl.includes('sandbox') 
+      ? 'https://sandbox.procore.com'
+      : 'https://api.procore.com'
     
-    const response = await fetch(`${this.baseUrl}/rest/v1.0/companies`, {
+    console.log('Fetching company info from:', `${apiUrl}/rest/v1.0/companies`);
+    
+    const response = await fetch(`${apiUrl}/rest/v1.0/companies`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
@@ -281,7 +285,11 @@ export class ProcoreAuthService {
   async makeAuthenticatedRequest(companyId: string, endpoint: string, options: RequestInit = {}) {
     const accessToken = await this.getValidAccessToken(companyId)
     
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const apiUrl = this.baseUrl.includes('sandbox') 
+      ? 'https://sandbox.procore.com'
+      : 'https://api.procore.com'
+    
+    const response = await fetch(`${apiUrl}${endpoint}`, {
       ...options,
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -299,7 +307,7 @@ export class ProcoreAuthService {
       
       const newAccessToken = await this.getValidAccessToken(companyId)
       
-      return fetch(`${this.baseUrl}${endpoint}`, {
+      return fetch(`${apiUrl}${endpoint}`, {
         ...options,
         headers: {
           'Authorization': `Bearer ${newAccessToken}`,
