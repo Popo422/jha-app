@@ -483,7 +483,13 @@ export default function SettingsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open('https://app.procore.com', '_blank')}
+                      onClick={() => {
+                        // Check if we're using sandbox based on last sync URL or default to production
+                        const appUrl = procoreStatus.integration?.lastSyncUrl?.includes('sandbox') 
+                          ? 'https://sandbox.procore.com' 
+                          : 'https://app.procore.com';
+                        window.open(appUrl, '_blank');
+                      }}
                     >
                       <ExternalLink className="h-4 w-4 mr-1" />
                       Open Procore
