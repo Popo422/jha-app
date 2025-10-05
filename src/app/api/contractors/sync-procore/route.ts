@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
           person: {
             first_name: contractor.firstName,
             last_name: contractor.lastName,
-            is_employee: false, // Contractors are not employees
+            is_employee: true, // Mark as employee so they can submit timecards
             employee_id: contractor.code, // Use contractor code as employee ID
             active: true,
             origin_id: contractor.id, // Store our contractor ID for reference
