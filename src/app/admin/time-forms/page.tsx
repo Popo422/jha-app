@@ -114,7 +114,7 @@ export default function TimeFormsPage() {
   const [approvalDialog, setApprovalDialog] = useState<{ timesheet: Timesheet; action: 'approve' | 'reject' | 'pending' } | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [syncDialog, setSyncDialog] = useState<{ timesheets: Timesheet[] } | null>(null);
-  const [procoreProjectId, setProcoreProjectId] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
   const exportAllTimesheets = useTimesheetExportAll();
   const { toast, showToast, hideToast } = useToast();
 
@@ -400,16 +400,17 @@ export default function TimeFormsPage() {
     
     showToast(`Selected ${timesheets.length} timesheets: ${statusMessage}`, 'info');
     setSyncDialog({ timesheets });
-    setProcoreProjectId('');
   }, [showToast]);
 
   const executeProcoreSync = useCallback(async () => {
     if (!syncDialog) return;
     
+    setIsSyncing(true);
     try {
+      showToast(`Syncing ${syncDialog.timesheets.length} timesheets to Procore...`, 'info');
+      
       const result = await syncToProcore({
         timesheetIds: syncDialog.timesheets.map(t => t.id),
-        procoreProjectId: procoreProjectId || undefined,
       }).unwrap();
       
       // Show success message
@@ -422,7 +423,6 @@ export default function TimeFormsPage() {
       }
       
       setSyncDialog(null);
-      setProcoreProjectId('');
       refetch();
     } catch (error: any) {
       console.error('Error syncing to Procore:', error);
@@ -441,8 +441,10 @@ export default function TimeFormsPage() {
       } else {
         showToast(`Error syncing to Procore: ${errorMessage}`, 'error');
       }
+    } finally {
+      setIsSyncing(false);
     }
-  }, [syncDialog, procoreProjectId, syncToProcore, refetch, showToast]);
+  }, [syncDialog, syncToProcore, refetch, showToast]);
 
   const getStatusBadge = useCallback((status: string) => {
     switch (status) {
@@ -1130,7 +1132,8 @@ export default function TimeFormsPage() {
             icon: Upload,
             onClick: (timesheet) => handleSyncToProcore([timesheet]),
             className: 'text-blue-600',
-            show: () => true
+            show: () => true,
+            disabled: isSyncing
           }
         ]}
         onExportAll={handleExportAll}
@@ -1230,46 +1233,66 @@ export default function TimeFormsPage() {
           </AlertDialogHeader>
           
           <div className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="procoreProjectId" className="text-sm font-medium">
-                Procore Project ID (Optional)
-              </label>
-              <Input
-                id="procoreProjectId"
-                placeholder="Leave blank to use default project"
-                value={procoreProjectId}
-                onChange={(e) => setProcoreProjectId(e.target.value)}
-              />
-              <p className="text-xs text-gray-500">
-                If left blank, the default project from your Procore integration settings will be used.
-              </p>
-            </div>
-            
             {syncDialog && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Timesheets to sync:</p>
-                <div className="max-h-32 overflow-y-auto text-xs text-gray-600">
-                  {syncDialog.timesheets.map((timesheet) => (
-                    <div key={timesheet.id} className="flex justify-between">
-                      <span>{timesheet.employee}</span>
-                      <span>{timesheet.timeSpent} hrs on {new Date(timesheet.date).toLocaleDateString()}</span>
-                    </div>
-                  ))}
+              <>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Timesheets to sync:</p>
+                  <div className="max-h-32 overflow-y-auto text-xs text-gray-600">
+                    {syncDialog.timesheets.map((timesheet) => (
+                      <div key={timesheet.id} className="flex justify-between">
+                        <span>{timesheet.employee}</span>
+                        <span>{timesheet.timeSpent} hrs on {new Date(timesheet.date).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+                
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Projects:</p>
+                  <div className="text-xs text-gray-600">
+                    {[...new Set(syncDialog.timesheets.map(t => t.projectName))].map((projectName) => (
+                      <div key={projectName} className="flex items-center gap-2">
+                        <span>📋 {projectName}</span>
+                        <span className="text-green-600">(will auto-match in Procore)</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                  <p className="text-xs text-blue-800 dark:text-blue-200">
+                    <strong>Auto-sync:</strong> Projects will be automatically matched by name in Procore. 
+                    If a project doesn't exist in Procore, you'll need to sync projects first.
+                  </p>
+                </div>
+              </>
             )}
           </div>
           
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSyncDialog(null)}>
+            <AlertDialogCancel 
+              onClick={() => setSyncDialog(null)}
+              disabled={isSyncing}
+              className="disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={executeProcoreSync}
-              className="bg-blue-600 hover:bg-blue-700"
+              disabled={isSyncing}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Upload className="h-4 w-4 mr-2" />
-              Sync to Procore
+              {isSyncing ? (
+                <>
+                  <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Sync to Procore
+                </>
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

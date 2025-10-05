@@ -319,6 +319,7 @@ export default function ContractorsPage() {
 
   const handleSyncToProcore = async (contractor: Contractor) => {
     try {
+      showToast(`Syncing ${contractor.firstName} ${contractor.lastName} to Procore...`, 'info');
       const result = await syncToProcore({ contractorIds: [contractor.id] }).unwrap();
       
       if (result.results && result.results.length > 0) {
@@ -343,7 +344,8 @@ export default function ContractorsPage() {
         showToast(result.errors[0].error, 'error');
       }
     } catch (error: any) {
-      showToast(error?.data?.error || 'Failed to sync contractor to Procore', 'error');
+      const errorMessage = error?.data?.error || 'Failed to sync contractor to Procore';
+      showToast(`Error syncing ${contractor.firstName} ${contractor.lastName}: ${errorMessage}`, 'error');
     }
   };
 
@@ -351,13 +353,15 @@ export default function ContractorsPage() {
     if (!syncingContractor) return;
     
     try {
+      showToast(`Creating new person in Procore for ${syncingContractor.firstName} ${syncingContractor.lastName}...`, 'info');
       const result = await syncToProcore({ contractorIds: [syncingContractor.id] }).unwrap();
       showToast(`${syncingContractor.firstName} ${syncingContractor.lastName} synced to Procore successfully`, 'success');
       setShowSyncModal(false);
       setSyncingContractor(null);
       setExistingProcorePerson(null);
     } catch (error: any) {
-      showToast(error?.data?.error || 'Failed to sync contractor to Procore', 'error');
+      const errorMessage = error?.data?.error || 'Failed to sync contractor to Procore';
+      showToast(`Error syncing ${syncingContractor.firstName} ${syncingContractor.lastName}: ${errorMessage}`, 'error');
     }
   };
 

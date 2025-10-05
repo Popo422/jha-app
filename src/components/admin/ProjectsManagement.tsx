@@ -198,6 +198,7 @@ export function ProjectsManagement() {
 
   const handleSyncToProcore = async (project: Project) => {
     try {
+      showToast(`Checking "${project.name}" in Procore...`, 'info');
       const result = await checkProcore({ projectIds: [project.id] }).unwrap();
       
       if (result.results && result.results.length > 0) {
@@ -211,16 +212,18 @@ export function ProjectsManagement() {
         }
       }
       
+      showToast(`Creating "${project.name}" in Procore...`, 'info');
       const syncResult = await syncToProcore({ 
         projectIds: [project.id], 
         createInProcore: true 
       }).unwrap();
       
       console.log('Sync successful:', syncResult);
-      showToast('Project exported to Procore successfully', 'success');
+      showToast(`"${project.name}" exported to Procore successfully`, 'success');
       
     } catch (error: any) {
-      showToast(error.data?.error || 'Failed to export project to Procore', 'error');
+      const errorMessage = error.data?.error || 'Failed to export project to Procore';
+      showToast(`Error exporting "${project.name}": ${errorMessage}`, 'error');
     }
   };
 
@@ -228,19 +231,21 @@ export function ProjectsManagement() {
     if (!exportingProject) return;
     
     try {
+      showToast(`Creating new project "${exportingProject.name}" in Procore...`, 'info');
       const syncResult = await syncToProcore({ 
         projectIds: [exportingProject.id], 
         createInProcore: true 
       }).unwrap();
       
       console.log('Modal sync successful:', syncResult);
-      showToast('Project exported to Procore successfully', 'success');
+      showToast(`"${exportingProject.name}" exported to Procore successfully`, 'success');
       setShowExportModal(false);
       setExportingProject(null);
       setExistingProcoreProject(null);
       
     } catch (error: any) {
-      showToast(error.data?.error || 'Failed to export project to Procore', 'error');
+      const errorMessage = error.data?.error || 'Failed to export project to Procore';
+      showToast(`Error exporting "${exportingProject.name}": ${errorMessage}`, 'error');
     }
   };
 
@@ -252,20 +257,26 @@ export function ProjectsManagement() {
 
   const handleCreateInProcore = async (projectId: string) => {
     try {
+      const project = allProjects.find(p => p.id === projectId);
+      const projectName = project?.name || 'Project';
+      
+      showToast(`Creating "${projectName}" in Procore...`, 'info');
       const result = await syncToProcore({ 
         projectIds: [projectId], 
         createInProcore: true 
       }).unwrap();
       
-      showToast('Project created in Procore successfully', 'success');
+      showToast(`"${projectName}" created in Procore successfully`, 'success');
       
       // Refresh the check results
-      const project = allProjects.find(p => p.id === projectId);
       if (project) {
         // No need to refresh check results since we're just creating in Procore
       }
     } catch (error: any) {
-      showToast(error.data?.error || 'Failed to create project in Procore', 'error');
+      const project = allProjects.find(p => p.id === projectId);
+      const projectName = project?.name || 'Project';
+      const errorMessage = error.data?.error || 'Failed to create project in Procore';
+      showToast(`Error creating "${projectName}": ${errorMessage}`, 'error');
     }
   };
 
@@ -555,9 +566,22 @@ export function ProjectsManagement() {
             Do you still want to create a new project in Procore? This will create a duplicate.
           </p>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelExport}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel 
+              onClick={handleCancelExport}
+              disabled={isSyncingProcore}
+              className="disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmExport} disabled={isSyncingProcore}>
-              {isSyncingProcore ? 'Exporting...' : 'Export Anyway'}
+              {isSyncingProcore ? (
+                <>
+                  <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Exporting...
+                </>
+              ) : (
+                'Export Anyway'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
