@@ -72,7 +72,9 @@ export async function POST(request: NextRequest) {
         contractor: contractors,
       })
       .from(timesheets)
-      .leftJoin(contractors, sql`${timesheets.userId}::uuid = ${contractors.id}`)
+      .leftJoin(contractors, 
+        sql`LOWER(${timesheets.employee}) = LOWER(CONCAT(${contractors.firstName}, ' ', ${contractors.lastName}))`
+      )
       .where(eq(timesheets.companyId, companyId));
 
     // Get all company projects for mapping
