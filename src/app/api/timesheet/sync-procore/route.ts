@@ -3,7 +3,7 @@ import { validateAdminSession } from '@/lib/auth-utils';
 import { ProcoreAuthService } from '@/lib/integrations/procore/auth';
 import { db } from '@/lib/db';
 import { timesheets, contractors, projects } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 
 interface ProcoreTimecardEntry {
   project_id: number;
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
         contractor: contractors,
       })
       .from(timesheets)
-      .leftJoin(contractors, eq(timesheets.userId, contractors.id))
+      .leftJoin(contractors, sql`${timesheets.userId}::uuid = ${contractors.id}`)
       .where(eq(timesheets.companyId, companyId));
 
     // Get all company projects for mapping
