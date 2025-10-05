@@ -26,6 +26,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X, Check, XCircle, Clock, CheckCircle, AlertTriangle, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Toast, useToast } from "@/components/ui/toast";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 
 const columnHelper = createColumnHelper<Timesheet>();
@@ -115,6 +116,7 @@ export default function TimeFormsPage() {
   const [syncDialog, setSyncDialog] = useState<{ timesheets: Timesheet[] } | null>(null);
   const [procoreProjectId, setProcoreProjectId] = useState('');
   const exportAllTimesheets = useTimesheetExportAll();
+  const { toast, showToast, hideToast } = useToast();
 
   const allData = timesheetsData?.timesheets || [];
   const contractorRates = timesheetsData?.contractorRates || {};
@@ -381,15 +383,25 @@ export default function TimeFormsPage() {
   }, [approvalDialog, rejectionReason, refetch]);
 
   const handleSyncToProcore = useCallback((timesheets: Timesheet[]) => {
-    // Only sync approved timesheets
-    const approvedTimesheets = timesheets.filter(t => t.status === 'approved');
-    if (approvedTimesheets.length === 0) {
-      alert('No approved timesheets selected. Only approved timesheets can be synced to Procore.');
+    if (timesheets.length === 0) {
+      showToast('No timesheets selected for sync.', 'error');
       return;
     }
-    setSyncDialog({ timesheets: approvedTimesheets });
+    
+    // Show status breakdown
+    const statusCounts = timesheets.reduce((acc, t) => {
+      acc[t.status] = (acc[t.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const statusMessage = Object.entries(statusCounts)
+      .map(([status, count]) => `${count} ${status}`)
+      .join(', ');
+    
+    showToast(`Selected ${timesheets.length} timesheets: ${statusMessage}`, 'info');
+    setSyncDialog({ timesheets });
     setProcoreProjectId('');
-  }, []);
+  }, [showToast]);
 
   const executeProcoreSync = useCallback(async () => {
     if (!syncDialog) return;
@@ -400,15 +412,37 @@ export default function TimeFormsPage() {
         procoreProjectId: procoreProjectId || undefined,
       }).unwrap();
       
-      alert(`Successfully synced ${result.results.length} timesheets to Procore!\n\n${result.message}`);
+      // Show success message
+      showToast(`Successfully synced ${result.results.length} timesheets to Procore!`, 'success');
+      
+      // Show error details if any failed
+      if (result.errors && result.errors.length > 0) {
+        const errorMessages = result.errors.map(err => `${err.employee}: ${err.error}`).join('\n');
+        showToast(`Some timesheets failed to sync:\n${errorMessages}`, 'error');
+      }
+      
       setSyncDialog(null);
       setProcoreProjectId('');
       refetch();
     } catch (error: any) {
       console.error('Error syncing to Procore:', error);
-      alert(`Error syncing to Procore: ${error.data?.error || error.message || 'Unknown error'}`);
+      
+      // Extract meaningful error message
+      let errorMessage = 'Unknown error occurred';
+      if (error.data?.error) {
+        errorMessage = error.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Show specific error guidance
+      if (errorMessage.includes('not found in Procore')) {
+        showToast(`Sync failed: ${errorMessage}\n\nPlease sync contractors and projects to Procore first.`, 'error');
+      } else {
+        showToast(`Error syncing to Procore: ${errorMessage}`, 'error');
+      }
     }
-  }, [syncDialog, procoreProjectId, syncToProcore, refetch]);
+  }, [syncDialog, procoreProjectId, syncToProcore, refetch, showToast]);
 
   const getStatusBadge = useCallback((status: string) => {
     switch (status) {
@@ -1090,6 +1124,13 @@ export default function TimeFormsPage() {
             onClick: (timesheet) => handleApprovalAction(timesheet, 'pending'),
             className: 'text-orange-600',
             show: (timesheet) => timesheet.status === 'approved' || timesheet.status === 'rejected'
+          },
+          {
+            label: 'Sync to Procore',
+            icon: Upload,
+            onClick: (timesheet) => handleSyncToProcore([timesheet]),
+            className: 'text-blue-600',
+            show: () => true
           }
         ]}
         onExportAll={handleExportAll}
@@ -1183,7 +1224,8 @@ export default function TimeFormsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Sync Timesheets to Procore</AlertDialogTitle>
             <AlertDialogDescription>
-              You are about to sync {syncDialog?.timesheets.length || 0} approved timesheet(s) to Procore.
+              You are about to sync {syncDialog?.timesheets.length || 0} timesheet(s) to Procore.
+              The approval status will be mapped to Procore's workflow (pending → pending, approved → approved, rejected → pending).
             </AlertDialogDescription>
           </AlertDialogHeader>
           
@@ -1232,6 +1274,15 @@ export default function TimeFormsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Toast Notifications */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={hideToast}
+        duration={5000}
+      />
     </div>
   );
 }
