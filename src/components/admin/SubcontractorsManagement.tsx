@@ -29,6 +29,7 @@ export function SubcontractorsManagement() {
     contractAmount: "",
     projectIds: [] as string[],
     foreman: "",
+    foremanEmail: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [clientPagination, setClientPagination] = useState({
@@ -124,6 +125,7 @@ export function SubcontractorsManagement() {
       contractAmount: subcontractor.contractAmount || "",
       projectIds: (subcontractor as any).projectIds || [],
       foreman: subcontractor.foreman || "",
+      foremanEmail: (subcontractor as any).foremanEmail || "",
     });
     setFormErrors({});
     setIsEditDialogOpen(true);
@@ -136,6 +138,7 @@ export function SubcontractorsManagement() {
       contractAmount: "",
       projectIds: [],
       foreman: "",
+      foremanEmail: "",
     });
     setFormErrors({});
     setIsCreateDialogOpen(true);
@@ -145,7 +148,7 @@ export function SubcontractorsManagement() {
     setIsCreateDialogOpen(false);
     setIsEditDialogOpen(false);
     setEditingSubcontractor(null);
-    setFormData({ name: "", contractAmount: "", projectIds: [], foreman: "" });
+    setFormData({ name: "", contractAmount: "", projectIds: [], foreman: "", foremanEmail: "" });
     setFormErrors({});
   };
 
@@ -154,6 +157,14 @@ export function SubcontractorsManagement() {
 
     if (!formData.name.trim()) {
       errors.name = 'Subcontractor name is required';
+    }
+
+    // Validate foreman email if provided (optional)
+    if (formData.foremanEmail && formData.foremanEmail.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.foremanEmail)) {
+        errors.foremanEmail = 'Please enter a valid email address for the foreman';
+      }
     }
 
     setFormErrors(errors);
@@ -368,11 +379,32 @@ export function SubcontractorsManagement() {
                   value={formData.foreman}
                   onChange={(e) => setFormData({ ...formData, foreman: e.target.value })}
                   placeholder="Enter foreman name"
+                  className={formErrors.foreman ? "border-red-500" : ""}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Adding a foreman will automatically create a contractor account
-                </p>
+                {formErrors.foreman && (
+                  <p className="text-sm text-red-500">{formErrors.foreman}</p>
+                )}
               </div>
+              
+              {formData.foreman && formData.foreman.trim() && (
+                <div>
+                  <Label htmlFor="foremanEmail">Foreman Email (Optional)</Label>
+                  <Input
+                    id="foremanEmail"
+                    type="email"
+                    value={formData.foremanEmail}
+                    onChange={(e) => setFormData({ ...formData, foremanEmail: e.target.value })}
+                    placeholder="Enter foreman email address"
+                    className={formErrors.foremanEmail ? "border-red-500" : ""}
+                  />
+                  {formErrors.foremanEmail && (
+                    <p className="text-sm text-red-500">{formErrors.foremanEmail}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    If no email provided, a default email will be generated. Adding a foreman will automatically create a contractor account.
+                  </p>
+                </div>
+              )}
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">
                   <p className="text-sm text-red-600">
@@ -452,11 +484,32 @@ export function SubcontractorsManagement() {
                   value={formData.foreman}
                   onChange={(e) => setFormData({ ...formData, foreman: e.target.value })}
                   placeholder="Enter foreman name"
+                  className={formErrors.foreman ? "border-red-500" : ""}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Adding/updating a foreman will create a contractor account
-                </p>
+                {formErrors.foreman && (
+                  <p className="text-sm text-red-500">{formErrors.foreman}</p>
+                )}
               </div>
+              
+              {formData.foreman && formData.foreman.trim() && (
+                <div>
+                  <Label htmlFor="edit-foremanEmail">Foreman Email (Optional)</Label>
+                  <Input
+                    id="edit-foremanEmail"
+                    type="email"
+                    value={formData.foremanEmail}
+                    onChange={(e) => setFormData({ ...formData, foremanEmail: e.target.value })}
+                    placeholder="Enter foreman email address"
+                    className={formErrors.foremanEmail ? "border-red-500" : ""}
+                  />
+                  {formErrors.foremanEmail && (
+                    <p className="text-sm text-red-500">{formErrors.foremanEmail}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    If no email provided, a default email will be generated. Adding/updating a foreman will create a contractor account.
+                  </p>
+                </div>
+              )}
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">
                   <p className="text-sm text-red-600">

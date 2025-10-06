@@ -38,6 +38,7 @@ export default function ContractorsPage() {
     rate: "",
     companyName: "",
     language: "en",
+    type: "contractor",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -103,6 +104,7 @@ export default function ContractorsPage() {
       rate: contractor.rate || "0.00",
       companyName: contractor.companyName || "",
       language: contractor.language || "en",
+      type: contractor.type || "contractor",
     });
     setFormErrors({});
     setEmailMessage("");
@@ -119,6 +121,7 @@ export default function ContractorsPage() {
       rate: "0.00",
       companyName: "",
       language: "en",
+      type: "contractor",
     });
     setFormErrors({});
     setEmailMessage("");
@@ -128,7 +131,7 @@ export default function ContractorsPage() {
   const handleCancel = () => {
     setViewMode('list');
     setEditingContractor(null);
-    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en" });
+    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en", type: "contractor" });
     setFormErrors({});
     setEmailMessage("");
   };
@@ -193,13 +196,14 @@ export default function ContractorsPage() {
           code: "", 
           rate: "", 
           companyName: savedCompanyName, 
-          language: "en" 
+          language: "en",
+          type: "contractor"
         });
         setFormErrors({});
       } else {
         setViewMode('list');
         setEditingContractor(null);
-        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en" });
+        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en", type: "contractor" });
       }
     } catch (error: any) {
       console.error('Failed to save contractor:', error);
@@ -727,6 +731,37 @@ export default function ContractorsPage() {
               {formErrors.rate && (
                 <p className="text-sm text-red-500">{formErrors.rate}</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="type">Type</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isFormLoading}
+                    className="w-full justify-between"
+                  >
+                    {formData.type === 'foreman' ? 'Foreman' : 'Contractor'}
+                    <ArrowUpDown className="ml-2 h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full">
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, type: 'contractor' }))}
+                  >
+                    Contractor
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, type: 'foreman' }))}
+                  >
+                    Foreman
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className="text-xs text-muted-foreground">
+                Select whether this person is a contractor or foreman
+              </p>
             </div>
 
             <div className="space-y-2">

@@ -23,6 +23,7 @@ export interface CreateContractorRequest {
   rate?: string
   companyName?: string
   language?: string
+  type?: string
 }
 
 export interface UpdateContractorRequest {
@@ -34,6 +35,7 @@ export interface UpdateContractorRequest {
   rate?: string
   companyName?: string
   language?: string
+  type?: string
 }
 
 export interface SyncToProcoreRequest {
@@ -177,7 +179,7 @@ export const contractorsApi = createApi({
     }),
     bulkCreateContractors: builder.mutation<
       { success: boolean; contractors: Contractor[]; created: number; skipped: number; errors?: string[]; warnings?: string[] },
-      { contractors: Array<{ firstName: string; lastName: string; email: string; rate?: string; companyName?: string; language?: string }> }
+      { contractors: Array<{ firstName: string; lastName: string; email: string; rate?: string; companyName?: string; language?: string; type?: string }> }
     >({
       query: (body) => ({
         url: '',

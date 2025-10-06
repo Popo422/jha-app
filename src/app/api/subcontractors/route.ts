@@ -47,7 +47,7 @@ async function generateUniqueCode(): Promise<string> {
 }
 
 // Helper function to create foreman contractor
-async function createForemanContractor(foremanName: string, subcontractorName: string, companyId: string) {
+async function createForemanContractor(foremanName: string, foremanEmail: string | null, subcontractorName: string, companyId: string) {
   if (!foremanName || !foremanName.trim()) return null;
   
   // Split foreman name into first and last name
@@ -58,8 +58,23 @@ async function createForemanContractor(foremanName: string, subcontractorName: s
   // Generate a unique code for the foreman
   const code = await generateUniqueCode();
   
-  // Create default email
-  const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${subcontractorName.toLowerCase().replace(/[^a-z0-9]/g, '')}.foreman`;
+  let email: string;
+  
+  // Use provided email if available, otherwise generate one
+  if (foremanEmail && foremanEmail.trim()) {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(foremanEmail)) {
+      console.warn('Invalid foreman email format, falling back to auto-generated:', foremanEmail);
+      // Fall back to auto-generated email
+      email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${subcontractorName.toLowerCase().replace(/[^a-z0-9]/g, '')}.foreman`;
+    } else {
+      email = foremanEmail.trim().toLowerCase();
+    }
+  } else {
+    // Auto-generate email if none provided
+    email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${subcontractorName.toLowerCase().replace(/[^a-z0-9]/g, '')}.foreman`;
+  }
   
   try {
     const [foremanContractor] = await db.insert(contractors).values({
@@ -319,14 +334,17 @@ export async function POST(request: NextRequest) {
       const createdSubcontractors = []
       const errors = []
       
-      for (const subcontractorData of preparedSubcontractors) {
+      for (let i = 0; i < preparedSubcontractors.length; i++) {
+        const subcontractorData = preparedSubcontractors[i];
+        const originalSubcontractor = uniqueSubcontractors[i];
+        
         try {
           const [createdSubcontractor] = await db.insert(subcontractors).values(subcontractorData).returning()
           createdSubcontractors.push(createdSubcontractor)
           
           // Create foreman contractor if foreman is provided
           if (subcontractorData.foreman) {
-            await createForemanContractor(subcontractorData.foreman, subcontractorData.name, auth.admin.companyId);
+            await createForemanContractor(subcontractorData.foreman, originalSubcontractor.foremanEmail || null, subcontractorData.name, auth.admin.companyId);
           }
         } catch (insertError: any) {
           if (insertError.code === '23505') {
@@ -391,7 +409,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single subcontractor creation (existing logic)
-    const { name, contractAmount, projectIds, foreman } = body
+    const { name, contractAmount, projectIds, foreman, foremanEmail } = body
 
     // Validate required fields
     if (!name) {
@@ -478,7 +496,7 @@ export async function POST(request: NextRequest) {
 
     // Create foreman contractor if foreman is provided
     if (foreman && foreman.trim()) {
-      await createForemanContractor(foreman.trim(), name.trim(), auth.admin.companyId);
+      await createForemanContractor(foreman.trim(), foremanEmail || null, name.trim(), auth.admin.companyId);
     }
 
     return NextResponse.json({
@@ -528,7 +546,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, name, contractAmount, projectIds, foreman } = body
+    const { id, name, contractAmount, projectIds, foreman, foremanEmail } = body
 
     if (!id) {
       return NextResponse.json(
@@ -635,7 +653,7 @@ export async function PUT(request: NextRequest) {
 
     // Create foreman contractor if foreman was added/updated
     if (foreman && foreman.trim() && updateData.foreman) {
-      await createForemanContractor(foreman.trim(), name.trim(), auth.admin.companyId);
+      await createForemanContractor(foreman.trim(), foremanEmail || null, name.trim(), auth.admin.companyId);
     }
 
     return NextResponse.json({

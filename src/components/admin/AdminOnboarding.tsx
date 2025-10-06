@@ -58,6 +58,7 @@ interface SubcontractorData {
   projectId?: string; // Optional project assignment (legacy)
   projectIds?: string[]; // Optional multiple project assignments
   foreman?: string; // Optional foreman name
+  foremanEmail?: string; // Optional foreman email
 }
 
 interface EmployeeData {
@@ -142,6 +143,7 @@ export default function AdminOnboarding() {
   const [newProject, setNewProject] = useState<ProjectData>({ name: "", location: "", projectManager: "" });
   const [newSubcontractor, setNewSubcontractor] = useState<SubcontractorData>({
     name: "",
+    foremanEmail: "",
   });
   const [newEmployee, setNewEmployee] = useState<EmployeeData>({
     firstName: "",
@@ -627,7 +629,7 @@ export default function AdminOnboarding() {
         ...prev,
         subcontractors: [...prev.subcontractors, newSubcontractor],
       }));
-      setNewSubcontractor({ name: "" });
+      setNewSubcontractor({ name: "", foremanEmail: "" });
       // Clear API errors when adding new data
       setApiErrors(prev => ({ ...prev, subcontractors: undefined }));
     }
@@ -1734,6 +1736,9 @@ export default function AdminOnboarding() {
                         Foreman
                       </th>
                       <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
+                        Foreman Email
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         Projects
                       </th>
                       <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
@@ -1782,6 +1787,17 @@ export default function AdminOnboarding() {
                                 className="w-full"
                                 placeholder="Foreman name (optional)"
                                 type="text"
+                              />
+                            </td>
+                            <td className="p-4">
+                              <Input
+                                value={editingSubcontractor?.foremanEmail || ""}
+                                onChange={(e) =>
+                                  setEditingSubcontractor((prev) => (prev ? { ...prev, foremanEmail: e.target.value } : null))
+                                }
+                                className="w-full"
+                                placeholder="Foreman email (optional)"
+                                type="email"
                               />
                             </td>
                             <td className="p-4">
@@ -1847,6 +1863,11 @@ export default function AdminOnboarding() {
                             <td className="p-4">
                               <span className="text-gray-700 dark:text-gray-300">
                                 {subcontractor.foreman || "-"}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {subcontractor.foremanEmail || "-"}
                               </span>
                             </td>
                             <td className="p-4">

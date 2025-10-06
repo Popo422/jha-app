@@ -303,7 +303,8 @@ export async function POST(request: NextRequest) {
           companyId: auth.admin.companyId,
           language: (contractor.language && (contractor.language === 'en' || contractor.language === 'es')) ? contractor.language : 'en',
           rate: contractor.rate || '0.00',
-          companyName: contractor.companyName || null
+          companyName: contractor.companyName || null,
+          type: (contractor.type && (contractor.type.toLowerCase() === 'contractor' || contractor.type.toLowerCase() === 'foreman')) ? contractor.type.toLowerCase() : 'contractor'
         }
       })
 
@@ -353,7 +354,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single contractor creation (existing logic)
-    const { firstName, lastName, email, code, rate, companyName, language } = body
+    const { firstName, lastName, email, code, rate, companyName, language, type } = body
 
     // Validate required fields
     if (!firstName || !lastName || !email || !code) {
@@ -447,6 +448,13 @@ export async function POST(request: NextRequest) {
       contractorData.language = 'en'
     }
 
+    // Add type if provided, otherwise default to 'contractor'
+    if (type && (type === 'contractor' || type === 'foreman')) {
+      contractorData.type = type
+    } else {
+      contractorData.type = 'contractor'
+    }
+
     // Create contractor record
     const contractor = await db.insert(contractors).values(contractorData).returning()
 
@@ -521,7 +529,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, firstName, lastName, email, code, rate, companyName, language } = body
+    const { id, firstName, lastName, email, code, rate, companyName, language, type } = body
 
     if (!id) {
       return NextResponse.json(
@@ -594,6 +602,13 @@ export async function PUT(request: NextRequest) {
       updateData.language = language
     } else {
       updateData.language = 'en'
+    }
+
+    // Add type if provided, otherwise default to 'contractor'
+    if (type && (type === 'contractor' || type === 'foreman')) {
+      updateData.type = type
+    } else {
+      updateData.type = 'contractor'
     }
 
     // Update contractor

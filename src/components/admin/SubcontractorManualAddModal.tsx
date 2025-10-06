@@ -22,6 +22,7 @@ interface SubcontractorData {
   contractAmount?: string;
   projectIds?: string[];
   foreman?: string;
+  foremanEmail?: string;
 }
 
 interface ProjectData {
@@ -54,6 +55,7 @@ export function SubcontractorManualAddModal({
     contractAmount: "",
     projectIds: [],
     foreman: "",
+    foremanEmail: "",
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -62,6 +64,14 @@ export function SubcontractorManualAddModal({
 
     if (!subcontractor.name.trim()) {
       newErrors.name = t('admin.companyNameRequired');
+    }
+
+    // Validate foreman email if provided (optional)
+    if (subcontractor.foremanEmail && subcontractor.foremanEmail.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(subcontractor.foremanEmail)) {
+        newErrors.foremanEmail = 'Please enter a valid email address for the foreman';
+      }
     }
 
     return newErrors;
@@ -79,7 +89,7 @@ export function SubcontractorManualAddModal({
     onSaveAndAddMore(newSubcontractor);
 
     // Reset form
-    setCurrentSubcontractor({ name: "", contractAmount: "", projectIds: [], foreman: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", projectIds: [], foreman: "", foremanEmail: "" });
     setErrors({});
   };
 
@@ -96,12 +106,12 @@ export function SubcontractorManualAddModal({
 
     // Reset state
     setTempSubcontractors([]);
-    setCurrentSubcontractor({ name: "", contractAmount: "", projectIds: [], foreman: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", projectIds: [], foreman: "", foremanEmail: "" });
     setErrors({});
   };
 
   const handleClose = () => {
-    setCurrentSubcontractor({ name: "", contractAmount: "", projectIds: [], foreman: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", projectIds: [], foreman: "", foremanEmail: "" });
     setTempSubcontractors([]);
     setErrors({});
     onClose();
@@ -210,11 +220,36 @@ export function SubcontractorManualAddModal({
                       setCurrentSubcontractor((prev) => ({ ...prev, foreman: e.target.value }));
                     }}
                     placeholder="Enter foreman name"
+                    className={errors.foreman ? "border-red-500" : ""}
                   />
-                  <p className="text-xs text-gray-500">
-                    Adding a foreman will automatically create a contractor account
-                  </p>
+                  {errors.foreman && (
+                    <p className="text-sm text-red-500">{errors.foreman}</p>
+                  )}
                 </div>
+                
+                {currentSubcontractor.foreman && currentSubcontractor.foreman.trim() && (
+                  <div className="space-y-2">
+                    <Label htmlFor="foremanEmail" className="text-sm font-medium">
+                      Foreman Email (Optional)
+                    </Label>
+                    <Input
+                      id="foremanEmail"
+                      type="email"
+                      value={currentSubcontractor.foremanEmail}
+                      onChange={(e) => {
+                        setCurrentSubcontractor((prev) => ({ ...prev, foremanEmail: e.target.value }));
+                      }}
+                      placeholder="Enter foreman email address"
+                      className={errors.foremanEmail ? "border-red-500" : ""}
+                    />
+                    {errors.foremanEmail && (
+                      <p className="text-sm text-red-500">{errors.foremanEmail}</p>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      If no email provided, a default email will be generated. Adding a foreman will automatically create a contractor account.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
