@@ -198,6 +198,23 @@ export const formTemplates = pgTable('form_templates', {
   companyTemplateUnique: unique().on(table.companyId, table.name),
 }))
 
+// Junction table for many-to-many relationship between contractors and projects
+export const contractorProjects = pgTable('contractor_projects', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  contractorId: uuid('contractor_id').notNull().references(() => contractors.id, { onDelete: 'cascade' }),
+  projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  assignedAt: timestamp('assigned_at').notNull().defaultNow(),
+  assignedBy: text('assigned_by'), // Admin/foreman name who made the assignment
+  assignedByUserId: text('assigned_by_user_id'), // Admin/foreman user ID for reference
+  role: text('role').default('worker'), // Role on project: 'worker', 'lead', 'supervisor'
+  isActive: boolean('is_active').notNull().default(true), // Allow temporary deactivation
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: prevent duplicate assignments
+  contractorProjectUnique: unique().on(table.contractorId, table.projectId),
+}))
+
 export const procoreIntegrations = pgTable('procore_integrations', {
   id: uuid('id').primaryKey().defaultRandom(),
   companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),

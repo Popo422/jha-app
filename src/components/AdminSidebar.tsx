@@ -122,6 +122,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       icon: Sparkles
     },
     {
+      label: 'Project Dashboard',
+      href: '/admin/project-dashboard',
+      icon: FolderOpen
+    },
+    {
       label: 'Settings',
       icon: Settings,
       isAccordion: true,

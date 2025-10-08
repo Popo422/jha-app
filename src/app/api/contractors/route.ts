@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, desc, and, or, ilike, count, sql } from 'drizzle-orm'
+import { eq, desc, and, or, ilike, count, sql, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contractors, companies } from '@/lib/db/schema'
+import { contractors, companies, contractorProjects, projects } from '@/lib/db/schema'
 import { emailService } from '@/lib/email-service'
 import { authenticateRequest } from '@/lib/auth-utils'
 
@@ -155,12 +155,55 @@ export async function GET(request: NextRequest) {
       ? await baseQuery
       : await baseQuery.limit(limit!).offset(offset!)
 
+    // Fetch project assignments for all contractors
+    const contractorIds = result.map(contractor => contractor.id);
+    let projectAssignments: Array<{
+      contractorId: string;
+      projectId: string;
+      projectName: string | null;
+    }> = [];
+    
+    if (contractorIds.length > 0) {
+      projectAssignments = await db
+        .select({
+          contractorId: contractorProjects.contractorId,
+          projectId: contractorProjects.projectId,
+          projectName: projects.name,
+        })
+        .from(contractorProjects)
+        .leftJoin(projects, eq(contractorProjects.projectId, projects.id))
+        .where(and(
+          inArray(contractorProjects.contractorId, contractorIds),
+          eq(contractorProjects.isActive, true)
+        ));
+    }
+
+    // Group projects by contractor
+    const contractorProjectMap = new Map<string, { projectIds: string[]; projectNames: string[] }>();
+    projectAssignments.forEach(assignment => {
+      if (!contractorProjectMap.has(assignment.contractorId)) {
+        contractorProjectMap.set(assignment.contractorId, {
+          projectIds: [],
+          projectNames: []
+        });
+      }
+      contractorProjectMap.get(assignment.contractorId)!.projectIds.push(assignment.projectId);
+      contractorProjectMap.get(assignment.contractorId)!.projectNames.push(assignment.projectName || '');
+    });
+
+    // Add project data to contractors
+    const contractorsWithProjects = result.map(contractor => ({
+      ...contractor,
+      projectIds: contractorProjectMap.get(contractor.id)?.projectIds || [],
+      projectNames: contractorProjectMap.get(contractor.id)?.projectNames || [],
+    }));
+
     const totalPages = Math.ceil(totalCount / pageSize)
     const hasNextPage = page < totalPages
     const hasPreviousPage = page > 1
 
     return NextResponse.json({
-      contractors: result,
+      contractors: contractorsWithProjects,
       pagination: fetchAll ? null : {
         page,
         pageSize,
@@ -354,7 +397,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Single contractor creation (existing logic)
-    const { firstName, lastName, email, code, rate, companyName, language, type } = body
+    console.log('🔍 [API] Single contractor creation - body:', body)
+    const { firstName, lastName, email, code, rate, companyName, language, type, projectIds } = body
+    console.log('🔍 [API] Extracted projectIds:', projectIds)
 
     // Validate required fields
     if (!firstName || !lastName || !email || !code) {
@@ -457,6 +502,27 @@ export async function POST(request: NextRequest) {
 
     // Create contractor record
     const contractor = await db.insert(contractors).values(contractorData).returning()
+    console.log('🔍 [API] Contractor created:', contractor[0])
+
+    // Handle project assignments if provided
+    if (projectIds && Array.isArray(projectIds) && projectIds.length > 0) {
+      console.log('🔍 [API] Creating project assignments for contractor:', projectIds)
+      
+      const assignedBy = auth.admin.name;
+      const assignedByUserId = auth.admin.id;
+      
+      const assignmentData = projectIds.map(projectId => ({
+        contractorId: contractor[0].id,
+        projectId,
+        role: 'worker',
+        assignedBy,
+        assignedByUserId,
+        isActive: true
+      }));
+
+      await db.insert(contractorProjects).values(assignmentData);
+      console.log('🔍 [API] Project assignments created successfully')
+    }
 
     // // Send welcome email (non-blocking)
     // try {
@@ -529,7 +595,9 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, firstName, lastName, email, code, rate, companyName, language, type } = body
+    console.log('🔍 [API] Update contractor body:', body)
+    const { id, firstName, lastName, email, code, rate, companyName, language, type, projectIds } = body
+    console.log('🔍 [API] Update projectIds:', projectIds)
 
     if (!id) {
       return NextResponse.json(
@@ -616,6 +684,33 @@ export async function PUT(request: NextRequest) {
       .set(updateData)
       .where(eq(contractors.id, id))
       .returning()
+
+    // Handle project assignments update
+    if (projectIds !== undefined) {
+      console.log('🔍 [API] Updating project assignments for contractor:', id)
+      
+      // Delete existing assignments
+      await db.delete(contractorProjects)
+        .where(eq(contractorProjects.contractorId, id))
+      
+      // Create new assignments if provided
+      if (Array.isArray(projectIds) && projectIds.length > 0) {
+        const assignedBy = auth.admin.name;
+        const assignedByUserId = auth.admin.id;
+        
+        const assignmentData = projectIds.map(projectId => ({
+          contractorId: id,
+          projectId,
+          role: 'worker',
+          assignedBy,
+          assignedByUserId,
+          isActive: true
+        }));
+
+        await db.insert(contractorProjects).values(assignmentData);
+        console.log('🔍 [API] Updated project assignments successfully')
+      }
+    }
 
     return NextResponse.json({
       success: true,

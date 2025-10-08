@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, desc, and, or, ilike, sql, count } from 'drizzle-orm'
+import { eq, desc, and, or, ilike, sql, count, gte, lte } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { projects, companies, subcontractors, subcontractorProjects } from '@/lib/db/schema'
 import { authenticateRequest } from '@/lib/auth-utils'
@@ -114,6 +114,8 @@ export async function GET(request: NextRequest) {
     const projectManager = searchParams.get('projectManager')
     const location = searchParams.get('location')
     const subcontractorName = searchParams.get('subcontractorName')
+    const dateFrom = searchParams.get('dateFrom')
+    const dateTo = searchParams.get('dateTo')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const limit = pageSize
@@ -154,6 +156,17 @@ export async function GET(request: NextRequest) {
         AND s.name = ${subcontractorName}
       )`;
       conditions.push(subcontractorCondition);
+    }
+
+    // Add date filters if specified
+    if (dateFrom) {
+      conditions.push(gte(projects.createdAt, new Date(dateFrom)))
+    }
+    if (dateTo) {
+      // Add one day to dateTo to include the entire day
+      const dateToEnd = new Date(dateTo)
+      dateToEnd.setDate(dateToEnd.getDate() + 1)
+      conditions.push(lte(projects.createdAt, dateToEnd))
     }
 
     // Get total count for pagination

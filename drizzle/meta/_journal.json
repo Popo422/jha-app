@@ -155,6 +155,13 @@
       "when": 1759398235110,
       "tag": "0021_yellow_killmonger",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1759915758899,
+      "tag": "0022_elite_sasquatch",
+      "breakpoints": true
     }
   ]
 }

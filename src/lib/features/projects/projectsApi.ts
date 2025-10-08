@@ -157,8 +157,8 @@ export const projectsApi = createApi({
   }),
   tagTypes: ['Project'],
   endpoints: (builder) => ({
-    getProjects: builder.query<ProjectsResponse, { search?: string; projectManager?: string; location?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin'; subcontractorName?: string }>({
-      query: ({ search, projectManager, location, page = 1, pageSize = 50, authType, subcontractorName } = {} as any) => {
+    getProjects: builder.query<ProjectsResponse, { search?: string; projectManager?: string; location?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin'; subcontractorName?: string; dateFrom?: string; dateTo?: string }>({
+      query: ({ search, projectManager, location, page = 1, pageSize = 50, authType, subcontractorName, dateFrom, dateTo } = {} as any) => {
         const params = new URLSearchParams({
           page: page.toString(),
           pageSize: pageSize.toString(),
@@ -174,6 +174,12 @@ export const projectsApi = createApi({
         }
         if (subcontractorName) {
           params.append('subcontractorName', subcontractorName)
+        }
+        if (dateFrom) {
+          params.append('dateFrom', dateFrom)
+        }
+        if (dateTo) {
+          params.append('dateTo', dateTo)
         }
         params.append('authType', authType)
         return `?${params}`

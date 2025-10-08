@@ -6,6 +6,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, useGetContractorLimitQuery, useSyncToProcoreMutation, type Contractor } from "@/lib/features/contractors/contractorsApi";
 import { useContractorExportAll } from "@/hooks/useExportAll";
 import { useCreateSubcontractorMutation } from "@/lib/features/subcontractors/subcontractorsApi";
+import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Toast, useToast } from "@/components/ui/toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MultiSelect } from "@/components/ui/multi-select";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
 import { ContractorBulkUploadModal } from "@/components/admin/ContractorBulkUploadModal";
 import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy, Upload, ChevronDown, Building } from "lucide-react";
@@ -39,6 +41,7 @@ export default function ContractorsPage() {
     companyName: "",
     language: "en",
     type: "contractor",
+    projectIds: [] as string[],
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -63,6 +66,13 @@ export default function ContractorsPage() {
   // Get all contractors for filter options (separate query)
   const { data: allContractorsData } = useGetContractorsQuery({
     fetchAll: true,
+    authType: 'admin'
+  });
+
+  // Get projects for assignment
+  const { data: projectsData } = useGetProjectsQuery({
+    page: 1,
+    pageSize: 100,
     authType: 'admin'
   });
   
@@ -105,6 +115,7 @@ export default function ContractorsPage() {
       companyName: contractor.companyName || "",
       language: contractor.language || "en",
       type: contractor.type || "contractor",
+      projectIds: (contractor as any).projectIds || [],
     });
     setFormErrors({});
     setEmailMessage("");
@@ -122,6 +133,7 @@ export default function ContractorsPage() {
       companyName: "",
       language: "en",
       type: "contractor",
+      projectIds: [],
     });
     setFormErrors({});
     setEmailMessage("");
@@ -131,7 +143,7 @@ export default function ContractorsPage() {
   const handleCancel = () => {
     setViewMode('list');
     setEditingContractor(null);
-    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en", type: "contractor" });
+    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en", type: "contractor", projectIds: [] });
     setFormErrors({});
     setEmailMessage("");
   };
@@ -197,13 +209,14 @@ export default function ContractorsPage() {
           rate: "", 
           companyName: savedCompanyName, 
           language: "en",
-          type: "contractor"
+          type: "contractor",
+          projectIds: []
         });
         setFormErrors({});
       } else {
         setViewMode('list');
         setEditingContractor(null);
-        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en", type: "contractor" });
+        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en", type: "contractor", projectIds: [] });
       }
     } catch (error: any) {
       console.error('Failed to save contractor:', error);
@@ -517,6 +530,37 @@ export default function ContractorsPage() {
       },
     },
     {
+      accessorKey: "projectNames",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Projects
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const contractor = row.original;
+        const projectNames = (contractor as any).projectNames as string[] | null;
+        
+        if (projectNames && projectNames.length > 0) {
+          const displayText = projectNames.join(', ');
+          return (
+            <div 
+              className="text-sm max-w-[200px] truncate" 
+              title={displayText}
+            >
+              {displayText}
+            </div>
+          );
+        } else {
+          return <span className="text-sm text-muted-foreground">No projects assigned</span>;
+        }
+      },
+    },
+    {
       accessorKey: "language",
       header: ({ column }) => (
         <Button
@@ -808,6 +852,28 @@ export default function ContractorsPage() {
               </p>
             </div>
 
+            <div className="space-y-2">
+              <Label>Projects (Optional)</Label>
+              <MultiSelect
+                options={projectsData?.projects?.map(project => ({
+                  value: project.id,
+                  label: project.name
+                })) || []}
+                value={formData.projectIds}
+                onValueChange={(value) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    projectIds: value
+                  }));
+                }}
+                placeholder="Select projects..."
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Select which projects this contractor will be assigned to
+              </p>
+            </div>
+
             {formError && (
               <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
                 {getErrorMessage()}
@@ -998,7 +1064,7 @@ export default function ContractorsPage() {
         ]}
         getRowId={(contractor) => contractor.id}
         exportFilename="contractors"
-        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), 'Type', 'Language', t('contractors.created')]}
+        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), 'Type', 'Projects', 'Language', t('contractors.created')]}
         getExportData={(contractor) => [
           contractor.firstName,
           contractor.lastName,
@@ -1007,6 +1073,7 @@ export default function ContractorsPage() {
           `$${(contractor.rate ? parseFloat(contractor.rate) : 0).toFixed(2)}${t('contractors.perHour')}`,
           contractor.companyName || "",
           (contractor as any).type === 'foreman' ? 'Foreman' : 'Contractor',
+          (contractor as any).projectNames?.join(', ') || 'No projects assigned',
           contractor.language === 'es' ? 'Español' :
           contractor.language === 'pl' ? 'Polski' :
           contractor.language === 'zh' ? '中文' : 'English',
