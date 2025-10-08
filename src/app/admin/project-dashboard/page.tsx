@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "next/navigation";
 import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import {
 
 export default function ProjectDashboardPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const [filters, setFilters] = useState({
     search: '',
     manager: '',
@@ -249,8 +251,7 @@ export default function ProjectDashboardPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        // TODO: Add project details view
-                        console.log('View project details:', project.id);
+                        router.push(`/admin/project-dashboard/${project.id}`);
                       }}
                       className="text-blue-600 border-blue-200 hover:bg-blue-50"
                     >
