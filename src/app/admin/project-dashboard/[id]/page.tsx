@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, FolderOpen, CheckSquare, FileText, Users, Building } from "lucide-react";
+import ProjectTasks from "@/components/admin/ProjectTasks";
 
 export default function ProjectDetailsPage() {
   const { t } = useTranslation();
@@ -76,10 +77,7 @@ export default function ProjectDetailsPage() {
         
         <TabsContent value="tasks" className="mt-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold mb-4">Tasks</h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Project tasks content will be implemented here.
-            </p>
+            <ProjectTasks projectId={projectId} />
           </div>
         </TabsContent>
         

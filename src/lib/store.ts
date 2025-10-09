@@ -21,6 +21,7 @@ import { incidentsApi } from './features/incidents/incidentsApi'
 import { formTemplatesApi } from './features/form-templates/formTemplatesApi'
 import { workersCompApi } from './features/workers-comp/workersCompApi'
 import { contractorManagementApi } from './features/contractor-management/contractorManagementApi'
+import { projectTasksApi } from './features/project-tasks/projectTasksApi'
 
 export const store = configureStore({
   reducer: {
@@ -46,6 +47,7 @@ export const store = configureStore({
     [formTemplatesApi.reducerPath]: formTemplatesApi.reducer,
     [workersCompApi.reducerPath]: workersCompApi.reducer,
     [contractorManagementApi.reducerPath]: contractorManagementApi.reducer,
+    [projectTasksApi.reducerPath]: projectTasksApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -66,7 +68,8 @@ export const store = configureStore({
       incidentsApi.middleware,
       formTemplatesApi.middleware,
       workersCompApi.middleware,
-      contractorManagementApi.middleware
+      contractorManagementApi.middleware,
+      projectTasksApi.middleware
     ),
 })
 

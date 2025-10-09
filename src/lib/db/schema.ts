@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, jsonb, numeric, unique, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, uuid, jsonb, numeric, unique, boolean, integer, date } from 'drizzle-orm/pg-core'
 
 export const companies = pgTable('companies', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -230,5 +230,27 @@ export const procoreIntegrations = pgTable('procore_integrations', {
 }, (table) => ({
   // Composite unique constraint: prevent duplicate integrations per company-procore pair
   companyProcoreUnique: unique().on(table.companyId, table.procoreCompanyId),
+}))
+
+// Project Tasks (Gantt-like) Schema
+export const projectTasks = pgTable('project_tasks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+
+  taskNumber: integer('task_number').notNull(), // 1, 2, 3, 4... unique within project
+  name: text('name').notNull(), // e.g. "Mobilize", "Install", etc.
+  durationDays: integer('duration_days'),
+  startDate: date('start_date'),
+  endDate: date('end_date'),
+  predecessors: text('predecessors'), // "1,2,3" or "1FS+5 days" - references taskNumber
+  progress: numeric('progress', { precision: 5, scale: 2 }).default('0'), // e.g. 0–100
+
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Ensure unique task numbers within each project
+  projectTaskNumberUnique: unique().on(table.projectId, table.taskNumber),
 }))
 
