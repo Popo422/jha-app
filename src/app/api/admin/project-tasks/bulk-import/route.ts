@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import { eq, and } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { projectTasks, projects } from '@/lib/db/schema'
+import { del, list } from '@vercel/blob'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -189,6 +190,24 @@ export async function POST(request: NextRequest) {
         } else {
           errors.push(`Database error in batch starting at task ${batch[0].taskNumber}: ${error.message}`)
         }
+      }
+    }
+
+    // Clean up temp files for this company after successful import
+    const companyId = auth.admin?.companyId
+    if (companyId) {
+      try {
+        const tempPrefix = `temp-schedules/${companyId}/`
+        const tempFiles = await list({ prefix: tempPrefix })
+        if (tempFiles.blobs.length > 0) {
+          console.log(`Cleaning up ${tempFiles.blobs.length} temp files after import`)
+          await Promise.all(
+            tempFiles.blobs.map(blob => del(blob.url))
+          )
+        }
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup temp files after import:', cleanupError)
+        // Don't fail the import if cleanup fails
       }
     }
 

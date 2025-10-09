@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { put } from '@vercel/blob'
+import { put, del, list } from '@vercel/blob'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -96,10 +96,25 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Company ID required' }, { status: 400 })
       }
 
-      // Create a unique filename
+      // Clean up any existing temp files for this company before uploading new one
+      const tempPrefix = `temp-schedules/${companyId}/`
+      try {
+        const existingFiles = await list({ prefix: tempPrefix })
+        if (existingFiles.blobs.length > 0) {
+          console.log(`Cleaning up ${existingFiles.blobs.length} existing temp files`)
+          await Promise.all(
+            existingFiles.blobs.map(blob => del(blob.url))
+          )
+        }
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup existing temp files:', cleanupError)
+        // Continue with upload even if cleanup fails
+      }
+
+      // Create a unique filename in temp directory
       const timestamp = Date.now()
       const fileExtension = file.name.split('.').pop()
-      filename = `project-schedules/${companyId}/${timestamp}.${fileExtension}`
+      filename = `temp-schedules/${companyId}/${timestamp}.${fileExtension}`
 
       // Upload to Vercel Blob
       const blob = await put(filename, file, {
