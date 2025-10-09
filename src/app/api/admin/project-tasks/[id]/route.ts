@@ -40,7 +40,7 @@ function authenticateAdmin(request: NextRequest): { admin: any } {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate admin
     let auth: { admin: any }
@@ -53,7 +53,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       )
     }
 
-    const taskId = params.id
+    const resolvedParams = await params
+    const taskId = resolvedParams.id
     const body = await request.json()
     const { 
       name, 
@@ -111,7 +112,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate admin
     let auth: { admin: any }
@@ -124,7 +125,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       )
     }
 
-    const taskId = params.id
+    const resolvedParams = await params
+    const taskId = resolvedParams.id
 
     // Get the existing task and verify it belongs to admin's company
     const existingTask = await db
