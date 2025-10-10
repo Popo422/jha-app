@@ -162,6 +162,13 @@
       "when": 1759915758899,
       "tag": "0022_elite_sasquatch",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1760004704610,
+      "tag": "0023_faithful_crystal",
+      "breakpoints": true
     }
   ]
 }

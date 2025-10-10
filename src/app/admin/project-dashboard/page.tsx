@@ -251,7 +251,7 @@ export default function ProjectDashboardPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        router.push(`/admin/project-dashboard/${project.id}`);
+                        router.push(`/admin/project-dashboard/${project.id}?name=${encodeURIComponent(project.name)}`);
                       }}
                       className="text-blue-600 border-blue-200 hover:bg-blue-50"
                     >
