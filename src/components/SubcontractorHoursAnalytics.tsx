@@ -186,72 +186,6 @@ export default function SubcontractorHoursAnalytics({
   const fetchAllSubcontractors = async () => {
     if (!companyId) return;
     
-    // If there's a project filter, use the subcontractor-hours endpoint which respects project filtering
-    if (projectFilter) {
-      setIsLoadingAll(true);
-      try {
-        const params = new URLSearchParams({
-          companyId,
-          project: projectFilter
-        });
-
-        if (subcontractorFilter) {
-          params.append('subcontractor', subcontractorFilter);
-        }
-
-        const response = await fetch(`/api/admin/project-snapshot/subcontractor-hours?${params}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch project subcontractors data');
-        }
-        
-        const result = await response.json();
-        
-        // Transform the subcontractor-hours data to match the all-subcontractors format
-        // Filter out subcontractors with 0 hours when project filter is applied
-        const filteredSubcontractors = result.subcontractorHours.filter((item: any) => item.totalHours > 0);
-        
-        const transformedData = {
-          allSubcontractors: filteredSubcontractors.map((item: any) => ({
-            subcontractor: item.subcontractor,
-            foreman: item.foreman,
-            totalHours: item.totalHours,
-            totalCost: item.totalHours * 15, // Estimate cost since subcontractor-hours doesn't have cost
-            uniqueContractors: item.uniqueEmployees,
-            entriesCount: item.entriesCount,
-            avgCostPerHour: 15 // Estimate
-          })),
-          summary: {
-            totalHours: result.summary.totalHours,
-            totalCost: result.summary.totalHours * 15,
-            totalSubcontractors: filteredSubcontractors.length,
-            avgCostPerSubcontractor: filteredSubcontractors.length > 0 ? (result.summary.totalHours * 15) / filteredSubcontractors.length : 0,
-            avgCostPerHour: 15,
-            topSubcontractor: filteredSubcontractors.length > 0 ? {
-              name: filteredSubcontractors[0].subcontractor,
-              hours: filteredSubcontractors[0].totalHours,
-              cost: filteredSubcontractors[0].totalHours * 15
-            } : null
-          },
-          pagination: {
-            page: 1,
-            pageSize: filteredSubcontractors.length,
-            total: filteredSubcontractors.length,
-            totalPages: 1,
-            hasNextPage: false,
-            hasPreviousPage: false
-          }
-        };
-        
-        setAllSubcontractorsData(transformedData);
-      } catch (error) {
-        console.error('Error fetching project subcontractors data:', error);
-      } finally {
-        setIsLoadingAll(false);
-      }
-      return;
-    }
-    
-    // Original logic for when no project filter is applied
     const cacheKey = getCacheKey(allSubcontractorsPagination.currentPage, allSubcontractorsPagination.pageSize, debouncedAllSubcontractorsSearch);
     
     // Check if we have this page cached
@@ -311,10 +245,10 @@ export default function SubcontractorHoursAnalytics({
     setPrefetchedPages(new Map());
   }, [debouncedAllSubcontractorsSearch, companyId]);
 
-  // Fetch all subcontractors data when pagination, search, or project filter changes
+  // Fetch all subcontractors data when pagination or search changes
   useEffect(() => {
     fetchAllSubcontractors();
-  }, [companyId, allSubcontractorsPagination.currentPage, allSubcontractorsPagination.pageSize, debouncedAllSubcontractorsSearch, projectFilter, subcontractorFilter]);
+  }, [companyId, allSubcontractorsPagination.currentPage, allSubcontractorsPagination.pageSize, debouncedAllSubcontractorsSearch]);
 
   // Filter data based on search query
   const filteredData = useMemo(() => {
@@ -554,18 +488,13 @@ export default function SubcontractorHoursAnalytics({
         </Card>
       </div>
 
-      {/* All Subcontractors Table - Respects project filter when provided */}
+      {/* All Subcontractors Table - Independent of filters */}
       <div className="w-full">
         <Card>
           <CardHeader>
-            <CardTitle>
-              {projectFilter ? `${projectFilter} - Subcontractors Overview` : 'All Subcontractors Overview'}
-            </CardTitle>
+            <CardTitle>All Subcontractors Overview</CardTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              {projectFilter 
-                ? `Overview of subcontractors working on ${projectFilter}` 
-                : 'Complete overview of all subcontractors with their costs (independent of filters)'
-              }
+              Complete overview of all subcontractors with their costs (independent of filters)
             </p>
           </CardHeader>
           <CardContent>

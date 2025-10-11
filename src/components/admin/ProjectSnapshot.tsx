@@ -10,11 +10,9 @@ import {
   useGetProjectSnapshotProjectsQuery, 
   useGetProjectSnapshotSubcontractorsQuery,
   useGetProjectSnapshotMetricsQuery,
-  useGetProjectTimelineQuery,
   type ProjectSnapshotData as ProjectSnapshotDataType,
   type PaginationInfo
 } from '@/lib/features/project-snapshot/projectSnapshotApi';
-import { useGetProjectsQuery } from '@/lib/features/projects/projectsApi';
 import { useProjectSnapshotExportAll } from '@/hooks/useExportAll';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,8 +22,6 @@ import { ChevronDown, Download, Building, Users, DollarSign, User, Check, X, Ale
 import WeatherWidget from '@/components/WeatherWidget';
 import HoursOverTimeChart from '@/components/HoursOverTimeChart';
 import SubcontractorHoursAnalytics from '@/components/SubcontractorHoursAnalytics';
-import OverallProgress from '@/components/admin/OverallProgress';
-import ProjectTimeline from '@/components/admin/ProjectTimeline';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import { 
   DropdownMenu, 
@@ -40,10 +36,12 @@ type ProjectSnapshotData = ProjectSnapshotDataType;
 
 interface ProjectSnapshotProps {
   projectId: string;
+  projectName: string;
 }
 
-export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
+export default function ProjectSnapshot({ projectId, projectName }: ProjectSnapshotProps) {
   const { t } = useTranslation('common');
+  const [subcontractorFilter, setSubcontractorFilter] = useState('');
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
   const [clientPagination, setClientPagination] = useState({
@@ -58,25 +56,11 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
   const { admin } = useSelector((state: RootState) => state.auth);
   const exportAllProjectSnapshot = useProjectSnapshotExportAll();
   
-  // Fetch project details to get the project name
-  const { data: projectsData, isLoading: isLoadingProject } = useGetProjectsQuery({
-    authType: 'admin'
-  }, {
-    skip: !admin?.companyId
-  });
-  
-  // Find the current project and get its name
-  const currentProject = useMemo(() => {
-    if (!projectsData?.projects) return null;
-    return projectsData.projects.find(p => p.id === projectId);
-  }, [projectsData, projectId]);
-  
-  const projectName = currentProject?.name || '';
-  
   // Fetch metrics data for widgets using the new dedicated API with project filter
   const { data: metricsData, isLoading: isLoadingMetrics, isFetching: isFetchingMetrics, refetch: refetchMetrics } = useGetProjectSnapshotMetricsQuery({
     companyId: admin?.companyId || '',
-    project: projectName
+    project: projectName,
+    subcontractor: subcontractorFilter || undefined
   }, {
     skip: !admin?.companyId,
     refetchOnMountOrArgChange: true
@@ -95,30 +79,29 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
     return project?.location || undefined;
   }, [projectName, availableProjects]);
 
-
-  // Fetch project timeline data
-  const { data: timelineData, isLoading: isLoadingTimeline, isFetching: isFetchingTimeline } = useGetProjectTimelineQuery({
-    projectId: projectId
+  const { data: availableSubcontractors, isLoading: isLoadingSubcontractors } = useGetProjectSnapshotSubcontractorsQuery({
+    companyId: admin?.companyId || '',
+    project: projectName
   }, {
-    skip: !projectId,
-    refetchOnMountOrArgChange: true
+    skip: !admin?.companyId
   });
 
-  // Force refetch metrics when project changes
+  // Force refetch metrics when filters change
   useEffect(() => {
     if (admin?.companyId) {
       refetchMetrics();
     }
-  }, [admin?.companyId, refetchMetrics]);
+  }, [subcontractorFilter, admin?.companyId, refetchMetrics]);
 
   // Function to fetch all project snapshot data for export
   const handleExportAll = useCallback(async () => {
     return await exportAllProjectSnapshot({
       companyId: admin?.companyId || '',
       project: projectName,
+      subcontractor: subcontractorFilter || undefined,
       search: debouncedSearch || undefined,
     });
-  }, [exportAllProjectSnapshot, admin?.companyId, projectName, debouncedSearch]);
+  }, [exportAllProjectSnapshot, admin?.companyId, projectName, subcontractorFilter, debouncedSearch]);
 
   // Redux API hooks
   const { data: projectSnapshotResponse, isLoading, isFetching } = useGetProjectSnapshotQuery(
@@ -127,6 +110,7 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
       page: serverPagination.page,
       pageSize: serverPagination.pageSize,
       project: projectName,
+      ...(subcontractorFilter && { subcontractor: subcontractorFilter }),
       ...(debouncedSearch && { search: debouncedSearch })
     },
     {
@@ -209,13 +193,6 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
         change: 'Approved timesheets',
         icon: Check,
         color: 'bg-indigo-500'
-      },
-      {
-        title: 'Budget Spend',
-        value: `${metricsData.spendPercentage}%`,
-        change: `$${metricsData.totalSpent.toLocaleString()} of $${metricsData.totalProjectCost.toLocaleString()}`,
-        icon: DollarSign,
-        color: 'bg-yellow-500'
       }
     ]
   }
@@ -248,14 +225,15 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
   // Reset pagination when filters change
   useEffect(() => {
     resetPagination();
-  }, [debouncedSearch, resetPagination]);
+  }, [subcontractorFilter, debouncedSearch, resetPagination]);
 
   // Prefetch next batch when near end
   const { data: prefetchData } = useGetProjectSnapshotQuery({
     companyId: admin?.companyId || '',
     page: serverPagination.page + 1,
     pageSize: serverPagination.pageSize,
-    project: projectName
+    project: projectName,
+    ...(subcontractorFilter && { subcontractor: subcontractorFilter })
   }, {
     skip: !shouldPrefetch || !admin?.companyId
   });
@@ -337,63 +315,68 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
     window.URL.revokeObjectURL(url);
   };
 
-  // Show loading skeleton while fetching project details
-  if (isLoadingProject || !projectName) {
-    return (
-      <div className="space-y-4 md:space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <Skeleton className="h-6 w-64" />
-        </div>
-
-        {/* Filter skeleton */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="p-6 space-y-4">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end">
-              <div className="space-y-1">
-                <Skeleton className="h-3 w-24" />
-                <Skeleton className="h-9 w-64" />
-              </div>
-              <Skeleton className="h-9 w-24 md:ml-auto" />
-            </div>
-          </div>
-        </div>
-
-        {/* Metrics widgets skeleton */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
-          {Array.from({ length: 7 }).map((_, index) => (
-            <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-8 w-8 rounded-lg" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-16 mb-2" />
-                <Skeleton className="h-3 w-20" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Chart skeletons */}
-        <Skeleton className="h-80 w-full rounded-lg" />
-        <Skeleton className="h-80 w-full rounded-lg" />
-        <Skeleton className="h-80 w-full rounded-lg" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h3 className="text-lg font-semibold">{projectName} - Project Snapshot</h3>
       </div>
 
+      {/* Subcontractor Filter */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div className="p-6 space-y-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end">
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                {t('admin.subcontractorFilter')}
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-64 justify-between text-sm"
+                    disabled={isLoadingSubcontractors}
+                  >
+                    <span className="truncate">
+                      {isLoadingSubcontractors ? 'Loading...' : (subcontractorFilter || 'All subcontractors')}
+                    </span>
+                    <ChevronDown className="h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64 max-h-48 overflow-y-auto">
+                  <DropdownMenuItem onClick={() => setSubcontractorFilter('')}>
+                    All subcontractors
+                  </DropdownMenuItem>
+                  {availableSubcontractors?.map((subcontractor) => (
+                    <DropdownMenuItem 
+                      key={subcontractor}
+                      onClick={() => setSubcontractorFilter(subcontractor)}
+                      className="max-w-xs"
+                    >
+                      <span className="truncate">{subcontractor}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <Button 
+              variant="outline" 
+              onClick={exportToCSV}
+              disabled={allData.length === 0 || isLoading}
+              className="md:ml-auto"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {t('admin.exportCSV')}
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Metrics Widgets */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {isLoadingMetrics || isFetchingMetrics ? (
           // Loading skeletons
-          Array.from({ length: 7 }).map((_, index) => (
+          Array.from({ length: 6 }).map((_, index) => (
             <Card key={index}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <Skeleton className="h-4 w-24" />
@@ -428,29 +411,6 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
         )}
       </div>
 
-      {/* Project Timeline Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Overall Progress - Left Side */}
-        <div className="lg:col-span-1">
-          <OverallProgress
-            progress={timelineData?.overallProgress || 0}
-            startDate={timelineData?.projectStartDate || null}
-            endDate={timelineData?.projectEndDate || null}
-            totalTasks={timelineData?.totalTasks}
-            isLoading={isLoadingTimeline || isFetchingTimeline}
-          />
-        </div>
-
-        {/* Project Timeline - Right Side */}
-        <div className="lg:col-span-2">
-          <ProjectTimeline
-            weeks={timelineData?.timelineData.weeks || []}
-            taskTimelines={timelineData?.timelineData.taskTimelines || []}
-            isLoading={isLoadingTimeline || isFetchingTimeline}
-          />
-        </div>
-      </div>
-
       {/* Weather Widget */}
       <div className="w-full">
         <WeatherWidget 
@@ -463,6 +423,7 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
         <HoursOverTimeChart 
           companyId={admin?.companyId || ''}
           projectFilter={projectName}
+          subcontractorFilter={subcontractorFilter}
         />
       </div>
 
@@ -471,6 +432,7 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
         <SubcontractorHoursAnalytics 
           companyId={admin?.companyId || ''}
           projectFilter={projectName}
+          subcontractorFilter={subcontractorFilter}
         />
       </div>
     </div>

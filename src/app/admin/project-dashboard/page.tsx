@@ -251,9 +251,9 @@ export default function ProjectDashboardPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        router.push(`/admin/project-dashboard/${project.id}`);
+                        router.push(`/admin/project-dashboard/${project.id}?name=${encodeURIComponent(project.name)}`);
                       }}
-                      className="text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50 hover:text-blue-700 dark:hover:text-blue-300"
+                      className="text-blue-600 border-blue-200 hover:bg-blue-50"
                     >
                       View Details
                     </Button>

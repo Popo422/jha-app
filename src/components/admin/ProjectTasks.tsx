@@ -1,10 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +11,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { 
   useGetProjectTasksQuery, 
   useDeleteProjectTaskMutation,
-  useUpdateProjectTaskMutation,
   type ProjectTask 
 } from "@/lib/features/project-tasks/projectTasksApi";
 import { useToast } from "@/components/ui/toast";
@@ -28,15 +23,6 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
   const { t } = useTranslation('common');
   const [searchValue, setSearchValue] = useState("");
   const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<ProjectTask | null>(null);
-  const [editForm, setEditForm] = useState({
-    name: '',
-    durationDays: '',
-    startDate: '',
-    endDate: '',
-    progress: '',
-    predecessors: ''
-  });
 
   const { toast, showToast } = useToast();
 
@@ -47,7 +33,6 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
   );
   
   const [deleteTask, { isLoading: isDeleting }] = useDeleteProjectTaskMutation();
-  const [updateTask, { isLoading: isUpdating }] = useUpdateProjectTaskMutation();
 
   const tasks = tasksData?.tasks || [];
 
@@ -172,54 +157,6 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
     }
   };
 
-  // Handle edit
-  const handleEdit = (task: ProjectTask) => {
-    setEditingTask(task);
-    setEditForm({
-      name: task.name,
-      durationDays: task.durationDays?.toString() || '',
-      startDate: task.startDate || '',
-      endDate: task.endDate || '',
-      progress: task.progress || '0',
-      predecessors: task.predecessors || ''
-    });
-  };
-
-  // Handle edit save
-  const handleEditSave = async () => {
-    if (!editingTask) return;
-
-    try {
-      await updateTask({
-        id: editingTask.id,
-        name: editForm.name,
-        durationDays: editForm.durationDays ? parseInt(editForm.durationDays) : undefined,
-        startDate: editForm.startDate || undefined,
-        endDate: editForm.endDate || undefined,
-        progress: parseFloat(editForm.progress) || 0,
-        predecessors: editForm.predecessors || undefined
-      }).unwrap();
-      
-      showToast("Task updated successfully", "success");
-      setEditingTask(null);
-    } catch (error: any) {
-      showToast(error?.data?.error || "Failed to update task", "error");
-    }
-  };
-
-  // Handle edit cancel
-  const handleEditCancel = () => {
-    setEditingTask(null);
-    setEditForm({
-      name: '',
-      durationDays: '',
-      startDate: '',
-      endDate: '',
-      progress: '',
-      predecessors: ''
-    });
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -262,7 +199,7 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
         columns={columns}
         isLoading={isLoading}
         isFetching={isFetching}
-        onEdit={handleEdit}
+        onEdit={undefined}
         onDelete={handleDelete}
         onBulkDelete={handleBulkDelete}
         getRowId={(task) => task.id}
@@ -280,92 +217,6 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
         searchValue={searchValue}
         onSearchChange={setSearchValue}
       />
-
-      {/* Edit Task Dialog */}
-      <Dialog open={!!editingTask} onOpenChange={(open) => !open && handleEditCancel()}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Task #{editingTask?.taskNumber}</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-name">Task Name</Label>
-              <Input
-                id="edit-name"
-                value={editForm.name}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                placeholder="Enter task name"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-duration">Duration (days)</Label>
-                <Input
-                  id="edit-duration"
-                  type="number"
-                  value={editForm.durationDays}
-                  onChange={(e) => setEditForm({ ...editForm, durationDays: e.target.value })}
-                  placeholder="Duration"
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-progress">Progress (%)</Label>
-                <Input
-                  id="edit-progress"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={editForm.progress}
-                  onChange={(e) => setEditForm({ ...editForm, progress: e.target.value })}
-                  placeholder="Progress"
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-start">Start Date</Label>
-                <Input
-                  id="edit-start"
-                  type="date"
-                  value={editForm.startDate}
-                  onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-end">End Date</Label>
-                <Input
-                  id="edit-end"
-                  type="date"
-                  value={editForm.endDate}
-                  onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="edit-predecessors">Predecessors</Label>
-              <Input
-                id="edit-predecessors"
-                value={editForm.predecessors}
-                onChange={(e) => setEditForm({ ...editForm, predecessors: e.target.value })}
-                placeholder="e.g., 1,2 or 3FS+5 days"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={handleEditCancel}>
-              Cancel
-            </Button>
-            <Button onClick={handleEditSave} disabled={isUpdating || !editForm.name.trim()}>
-              {isUpdating ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
