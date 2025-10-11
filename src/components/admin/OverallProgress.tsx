@@ -107,7 +107,6 @@ export default function OverallProgress({
           <Progress 
             value={progress} 
             className="h-3"
-            // @ts-ignore - custom CSS variable for progress color
             style={{ '--progress-background': getProgressBgColor(progress).replace('bg-', '') } as any}
           />
         </div>
