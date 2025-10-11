@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,9 +13,7 @@ export default function ProjectDetailsPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
-  const searchParams = useSearchParams();
   const projectId = params.id as string;
-  const projectName = searchParams.get('name') || '';
   const [activeTab, setActiveTab] = useState('snapshot');
 
   return (
@@ -71,19 +69,7 @@ export default function ProjectDetailsPage() {
         
         <TabsContent value="snapshot" className="mt-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
-            {projectName ? (
-              <ProjectSnapshot 
-                projectId={projectId} 
-                projectName={projectName} 
-              />
-            ) : (
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Project Snapshot</h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Project name not provided in URL parameters.
-                </p>
-              </div>
-            )}
+            <ProjectSnapshot projectId={projectId} />
           </div>
         </TabsContent>
         

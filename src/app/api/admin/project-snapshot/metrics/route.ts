@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { submissions, timesheets, contractors, projects, subcontractors, subcontractorProjects } from '@/lib/db/schema'
+import { submissions, timesheets, contractors, projects, subcontractors, subcontractorProjects, contractorProjects } from '@/lib/db/schema'
 import { eq, and, gte, lte, or, sql } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
@@ -79,13 +79,54 @@ export async function GET(request: NextRequest) {
     // 3. TRIR Calculation (incidents * 200,000 / man hours)
     const trir = manHours > 0 ? (totalIncidents * 200000) / manHours : 0
 
-    // 4. Active Contractors (get contractors through their timesheet activity for the filtered scope)
-    const activeContractorsResult = await db
-      .select({
-        count: sql<number>`count(distinct ${timesheets.userId})`
-      })
-      .from(timesheets)
-      .where(buildTimesheetWhere())
+    // 4. Active Contractors (get contractors through project-contractor junction table)
+    let activeContractorsResult
+    
+    if (project) {
+      // If project filter is applied, get contractors assigned to that specific project
+      const projectResult = await db
+        .select({ id: projects.id })
+        .from(projects)
+        .where(and(
+          eq(projects.companyId, companyId),
+          eq(projects.name, project)
+        ))
+        .limit(1)
+
+      if (projectResult.length > 0) {
+        const projectId = projectResult[0].id
+        
+        activeContractorsResult = await db
+          .select({
+            count: sql<number>`count(distinct ${contractorProjects.contractorId})`
+          })
+          .from(contractorProjects)
+          .innerJoin(contractors, eq(contractorProjects.contractorId, contractors.id))
+          .where(and(
+            eq(contractorProjects.projectId, projectId),
+            eq(contractorProjects.isActive, true),
+            eq(contractors.companyId, companyId),
+            ...(subcontractor ? [eq(contractors.companyName, subcontractor)] : [])
+          ))
+      } else {
+        activeContractorsResult = [{ count: 0 }]
+      }
+    } else {
+      // If no project filter, get all active contractors across all projects
+      activeContractorsResult = await db
+        .select({
+          count: sql<number>`count(distinct ${contractorProjects.contractorId})`
+        })
+        .from(contractorProjects)
+        .innerJoin(contractors, eq(contractorProjects.contractorId, contractors.id))
+        .innerJoin(projects, eq(contractorProjects.projectId, projects.id))
+        .where(and(
+          eq(contractorProjects.isActive, true),
+          eq(contractors.companyId, companyId),
+          eq(projects.companyId, companyId),
+          ...(subcontractor ? [eq(contractors.companyName, subcontractor)] : [])
+        ))
+    }
 
     const activeContractors = activeContractorsResult[0]?.count || 0
 
@@ -132,13 +173,76 @@ export async function GET(request: NextRequest) {
     const approvedTimesheets = approvedTimesheetsResult[0]?.count || 0
     const completionRate = totalTimesheets > 0 ? (approvedTimesheets / totalTimesheets) * 100 : 100
 
+    // 7. Project Spend Calculation
+    let totalProjectCost = 0
+    let totalSpent = 0
+    
+    if (project) {
+      // Get project cost for specific project
+      const projectCostResult = await db
+        .select({
+          projectCost: projects.projectCost
+        })
+        .from(projects)
+        .where(and(
+          eq(projects.companyId, companyId),
+          eq(projects.name, project)
+        ))
+        .limit(1)
+
+      totalProjectCost = parseFloat(projectCostResult[0]?.projectCost || '0')
+
+      // Get total spent for specific project (approved timesheet hours * contractor rates)
+      const projectSpentResult = await db
+        .select({
+          totalSpent: sql<number>`sum(${timesheets.timeSpent} * ${contractors.rate})`
+        })
+        .from(timesheets)
+        .innerJoin(contractors, eq(sql`${timesheets.userId}::uuid`, contractors.id))
+        .where(and(
+          buildTimesheetWhere(),
+          eq(timesheets.status, 'approved')
+        ))
+
+      totalSpent = projectSpentResult[0]?.totalSpent || 0
+    } else {
+      // Get total project costs across all projects
+      const allProjectCostsResult = await db
+        .select({
+          totalCost: sql<number>`sum(${projects.projectCost})`
+        })
+        .from(projects)
+        .where(eq(projects.companyId, companyId))
+
+      totalProjectCost = allProjectCostsResult[0]?.totalCost || 0
+
+      // Get total spent across all projects (approved timesheet hours * contractor rates)
+      const allSpentResult = await db
+        .select({
+          totalSpent: sql<number>`sum(${timesheets.timeSpent} * ${contractors.rate})`
+        })
+        .from(timesheets)
+        .innerJoin(contractors, eq(sql`${timesheets.userId}::uuid`, contractors.id))
+        .where(and(
+          buildTimesheetWhere(),
+          eq(timesheets.status, 'approved')
+        ))
+
+      totalSpent = allSpentResult[0]?.totalSpent || 0
+    }
+
+    const spendPercentage = totalProjectCost > 0 ? (totalSpent / totalProjectCost) * 100 : 0
+
     return NextResponse.json({
       totalIncidents,
       trir: parseFloat(trir.toFixed(2)),
       manHours: Math.round(manHours),
       activeContractors,
       complianceRate: Math.round(complianceRate),
-      completionRate: Math.round(completionRate)
+      completionRate: Math.round(completionRate),
+      totalProjectCost: Math.round(totalProjectCost),
+      totalSpent: Math.round(totalSpent),
+      spendPercentage: Math.round(spendPercentage)
     })
 
   } catch (error) {

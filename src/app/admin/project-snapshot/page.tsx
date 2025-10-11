@@ -212,6 +212,13 @@ export default function ProjectSnapshotPage() {
         change: 'Approved timesheets',
         icon: Check,
         color: 'bg-indigo-500'
+      },
+      {
+        title: 'Budget Spend',
+        value: `${metricsData.spendPercentage}%`,
+        change: `$${metricsData.totalSpent.toLocaleString()} of $${metricsData.totalProjectCost.toLocaleString()}`,
+        icon: DollarSign,
+        color: 'bg-yellow-500'
       }
     ]
   }
@@ -433,10 +440,10 @@ export default function ProjectSnapshotPage() {
       </div>
 
       {/* Metrics Widgets - Moved Below Filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
         {isLoadingMetrics || isFetchingMetrics ? (
           // Loading skeletons
-          Array.from({ length: 6 }).map((_, index) => (
+          Array.from({ length: 7 }).map((_, index) => (
             <Card key={index}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <Skeleton className="h-4 w-24" />

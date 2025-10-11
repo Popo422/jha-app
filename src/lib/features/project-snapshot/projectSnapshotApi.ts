@@ -48,12 +48,64 @@ export interface ProjectSnapshotMetrics {
   activeContractors: number;
   complianceRate: number;
   completionRate: number;
+  totalProjectCost: number;
+  totalSpent: number;
+  spendPercentage: number;
 }
 
 export interface GetProjectSnapshotMetricsParams {
   companyId: string;
   project?: string;
   subcontractor?: string;
+}
+
+export interface ProjectTimelineData {
+  project: {
+    id: string;
+    name: string;
+    companyId: string;
+    createdAt: string;
+  };
+  overallProgress: number;
+  projectStartDate: string | null;
+  projectEndDate: string | null;
+  totalTasks: number;
+  tasks: {
+    id: string;
+    taskNumber: number;
+    name: string;
+    durationDays: number | null;
+    startDate: string | null;
+    endDate: string | null;
+    progress: string;
+    predecessors: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+  timelineData: {
+    weeks: {
+      weekNumber: number;
+      label: string;
+      startDate: string;
+      endDate: string;
+    }[];
+    taskTimelines: {
+      taskId: string;
+      taskNumber: number;
+      name: string;
+      progress: number;
+      startWeek: number | null;
+      endWeek: number | null;
+      duration: number;
+      timeline: boolean[];
+      startDate?: string | null;
+      endDate?: string | null;
+    }[];
+  };
+}
+
+export interface GetProjectTimelineParams {
+  projectId: string;
 }
 
 export const projectSnapshotApi = createApi({
@@ -157,6 +209,17 @@ export const projectSnapshotApi = createApi({
       providesTags: ['ProjectSnapshot'],
     }),
 
+    getProjectTimeline: builder.query<ProjectTimelineData, GetProjectTimelineParams>({
+      query: ({ projectId }) => {
+        const params = new URLSearchParams({
+          projectId,
+        })
+        
+        return `../project-tasks/timeline?${params}`
+      },
+      providesTags: ['ProjectSnapshot'],
+    }),
+
   }),
 })
 
@@ -165,8 +228,10 @@ export const {
   useGetProjectSnapshotProjectsQuery,
   useGetProjectSnapshotSubcontractorsQuery,
   useGetProjectSnapshotMetricsQuery,
+  useGetProjectTimelineQuery,
   useLazyGetProjectSnapshotQuery,
   useLazyGetProjectSnapshotProjectsQuery,
   useLazyGetProjectSnapshotSubcontractorsQuery,
-  useLazyGetProjectSnapshotMetricsQuery
+  useLazyGetProjectSnapshotMetricsQuery,
+  useLazyGetProjectTimelineQuery
 } = projectSnapshotApi
