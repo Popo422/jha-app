@@ -169,6 +169,20 @@
       "when": 1760004704610,
       "tag": "0023_faithful_crystal",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1760231689856,
+      "tag": "0024_purple_white_tiger",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1760232328420,
+      "tag": "0025_flimsy_praxagora",
+      "breakpoints": true
     }
   ]
 }

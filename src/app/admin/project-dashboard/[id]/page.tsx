@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, FolderOpen, CheckSquare, FileText, Users, Building } from "lucide-react";
 import ProjectTasks from "@/components/admin/ProjectTasks";
 import ProjectSnapshot from "@/components/admin/ProjectSnapshot";
+import ProjectDocuments from "@/components/admin/ProjectDocuments";
 
 export default function ProjectDetailsPage() {
   const { t } = useTranslation();
@@ -81,10 +82,7 @@ export default function ProjectDetailsPage() {
         
         <TabsContent value="documents" className="mt-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold mb-4">Documents</h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Project documents content will be implemented here.
-            </p>
+            <ProjectDocuments projectId={projectId} />
           </div>
         </TabsContent>
         
