@@ -33,6 +33,12 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -58,13 +64,13 @@ interface ProjectDocumentsProps {
 
 const DOCUMENT_CATEGORIES = [
   'All Categories',
-  'Contracts',
-  'Safety Reports',
-  'Permits',
-  'Drawings',
+  'Plans & Drawings',
   'Specifications',
-  'Progress Reports',
-  'Invoices',
+  'Permits',
+  'Safety Documents',
+  'Reports',
+  'Photos',
+  'Contracts',
   'Other'
 ];
 
@@ -73,7 +79,6 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
   const { t } = useTranslation('common');
   const { toast, showToast, hideToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const bulkFileInputRef = useRef<HTMLInputElement>(null);
   
   const [filters, setFilters] = useState({
     search: '',
@@ -86,7 +91,11 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
   });
   const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
   const [editingDocument, setEditingDocument] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', description: '' });
+  const [editForm, setEditForm] = useState({ name: '', description: '', category: '' });
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [modalFiles, setModalFiles] = useState<File[]>([]);
+  const [fileDescriptions, setFileDescriptions] = useState<Record<string, string>>({});
+  const [fileCategories, setFileCategories] = useState<Record<string, string>>({});
   
   const { admin } = useSelector((state: RootState) => state.auth);
 
@@ -130,85 +139,6 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
     });
   };
 
-  // Handle single file upload
-  const handleFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
-    setUploadingFiles(prev => [...prev, file.name]);
-
-    try {
-      const uploadResult = await uploadDocument({
-        file,
-        projectId,
-        category: 'Other',
-        description: ''
-      }).unwrap();
-
-      const createResult = await createDocument({
-        projectId,
-        name: uploadResult.fileData.name,
-        description: uploadResult.fileData.description,
-        category: uploadResult.fileData.category,
-        fileType: uploadResult.fileData.fileType,
-        fileSize: uploadResult.fileData.fileSize,
-        url: uploadResult.fileData.url,
-        blobKey: uploadResult.fileData.blobKey
-      }).unwrap();
-
-      showToast(`${file.name} uploaded successfully`, 'success');
-    } catch (error) {
-      console.error('Upload error:', error);
-      showToast(`Failed to upload ${file.name}`, 'error');
-    } finally {
-      setUploadingFiles(prev => prev.filter(name => name !== file.name));
-    }
-  };
-
-  // Handle bulk file upload
-  const handleBulkUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-
-    const fileArray = Array.from(files);
-    const fileNames = fileArray.map(f => f.name);
-    setUploadingFiles(prev => [...prev, ...fileNames]);
-
-    try {
-      const uploadResult = await bulkUploadDocuments({
-        files: fileArray,
-        projectId,
-        category: 'Other',
-        description: ''
-      }).unwrap();
-
-      // Create database records for each uploaded file
-      const createPromises = uploadResult.uploadedFiles.map(fileData =>
-        createDocument({
-          projectId,
-          name: fileData.name,
-          description: fileData.description,
-          category: fileData.category,
-          fileType: fileData.fileType,
-          fileSize: fileData.fileSize,
-          url: fileData.url,
-          blobKey: fileData.blobKey
-        }).unwrap()
-      );
-
-      await Promise.all(createPromises);
-
-      showToast(`${uploadResult.summary.successful} files uploaded successfully`, 'success');
-
-      if (uploadResult.errors && uploadResult.errors.length > 0) {
-        showToast(`Some files failed: ${uploadResult.errors.join(', ')}`, 'error');
-      }
-    } catch (error) {
-      console.error('Bulk upload error:', error);
-      showToast("Failed to upload files", 'error');
-    } finally {
-      setUploadingFiles(prev => prev.filter(name => !fileNames.includes(name)));
-    }
-  };
 
   // Handle document deletion
   const handleDeleteDocument = async (document: ProjectDocument) => {
@@ -224,7 +154,11 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
   // Handle edit functionality
   const handleEditDocument = (document: ProjectDocument) => {
     setEditingDocument(document.id);
-    setEditForm({ name: document.name, description: document.description || '' });
+    setEditForm({ 
+      name: document.name, 
+      description: document.description || '',
+      category: document.category || 'Other'
+    });
   };
 
   const handleSaveEdit = async () => {
@@ -234,11 +168,12 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
       await updateDocument({
         id: editingDocument,
         name: editForm.name,
-        description: editForm.description
+        description: editForm.description,
+        category: editForm.category
       }).unwrap();
 
       setEditingDocument(null);
-      setEditForm({ name: '', description: '' });
+      setEditForm({ name: '', description: '', category: '' });
       showToast('Document updated successfully', 'success');
     } catch (error) {
       console.error('Update error:', error);
@@ -248,7 +183,7 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
 
   const handleCancelEdit = () => {
     setEditingDocument(null);
-    setEditForm({ name: '', description: '' });
+    setEditForm({ name: '', description: '', category: '' });
   };
 
   const getFileIcon = (type: string) => {
@@ -285,12 +220,155 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
     setPagination(prev => ({ ...prev, page }));
   }, []);
 
-  const handleUpload = () => {
-    fileInputRef.current?.click();
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    handleAddFiles(files);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  const getAutoCategoryFromFile = (file: File): string => {
+    const fileName = file.name.toLowerCase();
+    const fileType = file.type.toLowerCase();
+    
+    // Image files
+    if (fileType.startsWith('image/') || /\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i.test(fileName)) {
+      return 'Photos';
+    }
+    
+    // CAD/Drawing files - check filename patterns first for more specific categorization
+    if (/\.(dwg|dxf|cad|step|stp|iges|igs)$/i.test(fileName) || /plan|drawing|blueprint|layout|elevation|section/i.test(fileName)) {
+      return 'Plans & Drawings';
+    }
+    
+    // Safety related files
+    if (/safety|hazard|incident|accident|msds|sds|jha|job.hazard|risk.assessment/i.test(fileName)) {
+      return 'Safety Documents';
+    }
+    
+    // Contract/Legal documents
+    if (/contract|agreement|legal|terms|conditions/i.test(fileName)) {
+      return 'Contracts';
+    }
+    
+    // Permit related files
+    if (/permit|license|approval|authorization/i.test(fileName)) {
+      return 'Permits';
+    }
+    
+    // Specification files
+    if (/spec|specification|standard|requirement|technical.spec/i.test(fileName)) {
+      return 'Specifications';
+    }
+    
+    // PDF documents and other reports (broader category)
+    if (fileType === 'application/pdf' || fileName.endsWith('.pdf') || /report|summary|analysis|inspection|progress|status|update/i.test(fileName)) {
+      return 'Reports';
+    }
+    
+    // Default to Other for unrecognized files
+    return 'Other';
   };
 
-  const handleBulkUploadClick = () => {
-    bulkFileInputRef.current?.click();
+  const handleAddFiles = (files: File[]) => {
+    setModalFiles(prev => [...prev, ...files]);
+    // Initialize descriptions and auto-detect categories for new files
+    files.forEach(file => {
+      setFileDescriptions(prev => ({ ...prev, [file.name]: '' }));
+      setFileCategories(prev => ({ ...prev, [file.name]: getAutoCategoryFromFile(file) }));
+    });
+  };
+
+  const handleRemoveFile = (fileName: string) => {
+    setModalFiles(prev => prev.filter(f => f.name !== fileName));
+    setFileDescriptions(prev => {
+      const { [fileName]: _, ...rest } = prev;
+      return rest;
+    });
+    setFileCategories(prev => {
+      const { [fileName]: _, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const handleModalUpload = async () => {
+    if (modalFiles.length === 0) return;
+
+    const filesToUpload = modalFiles.map(file => ({
+      file,
+      description: fileDescriptions[file.name] || '',
+      category: fileCategories[file.name] || 'Other'
+    }));
+
+    const fileNames = modalFiles.map(f => f.name);
+    setUploadingFiles(prev => [...prev, ...fileNames]);
+
+    try {
+      if (modalFiles.length === 1) {
+        // Single file upload
+        const fileData = filesToUpload[0];
+        const uploadResult = await uploadDocument({
+          file: fileData.file,
+          projectId,
+          category: fileData.category,
+          description: fileData.description
+        }).unwrap();
+
+        await createDocument({
+          projectId,
+          name: uploadResult.fileData.name,
+          description: uploadResult.fileData.description,
+          category: uploadResult.fileData.category,
+          fileType: uploadResult.fileData.fileType,
+          fileSize: uploadResult.fileData.fileSize,
+          url: uploadResult.fileData.url,
+          blobKey: uploadResult.fileData.blobKey
+        }).unwrap();
+
+        showToast(`${fileData.file.name} uploaded successfully`, 'success');
+      } else {
+        // Bulk upload
+        const uploadResult = await bulkUploadDocuments({
+          files: modalFiles,
+          projectId,
+          category: 'Other', // Default, will be overridden by individual file categories
+          description: ''
+        }).unwrap();
+
+        // Create database records for each uploaded file with individual metadata
+        const createPromises = uploadResult.uploadedFiles.map((fileData: any, index: number) => {
+          const originalFile = modalFiles[index];
+          return createDocument({
+            projectId,
+            name: fileData.name,
+            description: fileDescriptions[originalFile.name] || '',
+            category: fileCategories[originalFile.name] || 'Other',
+            fileType: fileData.fileType,
+            fileSize: fileData.fileSize,
+            url: fileData.url,
+            blobKey: fileData.blobKey
+          }).unwrap();
+        });
+
+        await Promise.all(createPromises);
+        showToast(`${uploadResult.summary.successful} files uploaded successfully`, 'success');
+      }
+
+      // Reset modal state
+      setModalFiles([]);
+      setFileDescriptions({});
+      setFileCategories({});
+      setIsUploadModalOpen(false);
+
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      showToast(error?.data?.error || 'Upload failed', 'error');
+    } finally {
+      setUploadingFiles(prev => prev.filter(name => !fileNames.includes(name)));
+    }
   };
 
   const exportToCSV = () => {
@@ -394,38 +472,10 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
           <Badge variant="outline">{paginationInfo?.total || 0} documents</Badge>
         </div>
         <div className="flex gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            onChange={(e) => handleFileUpload(e.target.files)}
-            multiple={false}
-          />
-          <input
-            ref={bulkFileInputRef}
-            type="file"
-            className="hidden"
-            onChange={(e) => handleBulkUpload(e.target.files)}
-            multiple={true}
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Upload className="h-4 w-4" />
-                Upload
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={handleUpload}>
-                <Plus className="mr-2 h-4 w-4" />
-                Single File
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleBulkUploadClick}>
-                <Upload className="mr-2 h-4 w-4" />
-                Multiple Files
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button onClick={() => setIsUploadModalOpen(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Files
+          </Button>
           <Button 
             variant="outline" 
             onClick={exportToCSV}
@@ -517,13 +567,31 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
                   {editingDocument === document.id ? (
                     // Edit mode
                     <div className="space-y-3">
-                      <div>
-                        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Document Name</label>
-                        <Input
-                          value={editForm.name}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                          className="text-sm"
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Document Name</label>
+                          <Input
+                            value={editForm.name}
+                            onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                            className="text-sm mt-1"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Category</label>
+                          <Select
+                            value={editForm.category}
+                            onValueChange={(value) => setEditForm(prev => ({ ...prev, category: value }))}
+                          >
+                            <SelectTrigger className="mt-1 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {DOCUMENT_CATEGORIES.filter(cat => cat !== 'All Categories').map(cat => (
+                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                       <div>
                         <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Description</label>
@@ -531,7 +599,7 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
                           value={editForm.description}
                           onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
                           placeholder="Optional description..."
-                          className="text-sm"
+                          className="text-sm mt-1"
                         />
                       </div>
                       <div className="flex items-center gap-2">
@@ -661,6 +729,153 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
         </div>
       )}
       </div>
+
+      {/* Upload Modal */}
+      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Upload Project Documents
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-auto space-y-6 p-1">
+            {/* Drop Zone */}
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-lg font-medium mb-2">Drop files here or click to browse</p>
+              <p className="text-sm text-gray-500">Support for multiple files, up to 50MB each</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => e.target.files && handleAddFiles(Array.from(e.target.files))}
+              />
+            </div>
+
+            {/* File List */}
+            {modalFiles.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Files to Upload ({modalFiles.length})</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setModalFiles([]);
+                      setFileDescriptions({});
+                      setFileCategories({});
+                    }}
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                <div className="space-y-3 max-h-80 overflow-auto">
+                  {modalFiles.map((file, index) => (
+                    <div key={`${file.name}-${index}`} className="border rounded-lg p-3">
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 mt-1">
+                          {getFileIcon(file.type.split('/')[1] || 'file')}
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium truncate">{file.name}</p>
+                              <p className="text-sm text-gray-500">{formatFileSize(file.size)}</p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleRemoveFile(file.name)}
+                              className="flex-shrink-0"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                Category
+                              </label>
+                              <Select
+                                value={fileCategories[file.name] || 'Other'}
+                                onValueChange={(value) => 
+                                  setFileCategories(prev => ({ ...prev, [file.name]: value }))
+                                }
+                              >
+                                <SelectTrigger className="mt-1 h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {DOCUMENT_CATEGORIES.filter(cat => cat !== 'All Categories').map(cat => (
+                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                Description (optional)
+                              </label>
+                              <Input
+                                value={fileDescriptions[file.name] || ''}
+                                onChange={(e) => 
+                                  setFileDescriptions(prev => ({ ...prev, [file.name]: e.target.value }))
+                                }
+                                placeholder="Add description..."
+                                className="mt-1 h-8 text-xs"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-between items-center pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsUploadModalOpen(false);
+                setModalFiles([]);
+                setFileDescriptions({});
+                setFileCategories({});
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleModalUpload}
+              disabled={modalFiles.length === 0 || uploadingFiles.length > 0}
+              className="flex items-center gap-2"
+            >
+              {uploadingFiles.length > 0 ? (
+                <>
+                  <Upload className="h-4 w-4 animate-pulse" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4" />
+                  Upload {modalFiles.length} file{modalFiles.length !== 1 ? 's' : ''}
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
