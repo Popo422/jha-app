@@ -232,6 +232,23 @@ export const procoreIntegrations = pgTable('procore_integrations', {
   companyProcoreUnique: unique().on(table.companyId, table.procoreCompanyId),
 }))
 
+// Project Documents Schema
+export const projectDocuments = pgTable('project_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(), // Filename
+  description: text('description'), // Optional description
+  category: text('category').notNull().default('Other'), // Document category
+  fileType: text('file_type').notNull(), // File extension
+  fileSize: integer('file_size').notNull(), // File size in bytes
+  url: text('url').notNull(), // Vercel Blob storage URL
+  blobKey: text('blob_key').notNull(), // Vercel Blob key for deletion
+  companyId: uuid('company_id').notNull(),
+  uploadedBy: uuid('uploaded_by').notNull(), // Admin user ID who uploaded
+  uploadedByName: text('uploaded_by_name').notNull(), // Admin name for display
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
 // Project Tasks (Gantt-like) Schema
 export const projectTasks = pgTable('project_tasks', {
   id: uuid('id').primaryKey().defaultRandom(),
