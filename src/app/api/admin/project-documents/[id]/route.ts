@@ -7,7 +7,7 @@ import { validateAdminSession } from '@/lib/auth-utils'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await validateAdminSession(request)
@@ -15,11 +15,12 @@ export async function GET(
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
+    const resolvedParams = await params
     const document = await db
       .select()
       .from(projectDocuments)
       .where(and(
-        eq(projectDocuments.id, params.id),
+        eq(projectDocuments.id, resolvedParams.id),
         eq(projectDocuments.companyId, auth.admin.companyId)
       ))
       .limit(1)
@@ -38,7 +39,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await validateAdminSession(request)
@@ -46,6 +47,7 @@ export async function PUT(
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
+    const resolvedParams = await params
     const body = await request.json()
     const { name, description, category } = body
 
@@ -54,7 +56,7 @@ export async function PUT(
       .select()
       .from(projectDocuments)
       .where(and(
-        eq(projectDocuments.id, params.id),
+        eq(projectDocuments.id, resolvedParams.id),
         eq(projectDocuments.companyId, auth.admin.companyId)
       ))
       .limit(1)
@@ -71,7 +73,7 @@ export async function PUT(
         ...(description !== undefined && { description }),
         ...(category && { category })
       })
-      .where(eq(projectDocuments.id, params.id))
+      .where(eq(projectDocuments.id, resolvedParams.id))
       .returning()
 
     return NextResponse.json({
@@ -95,7 +97,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await validateAdminSession(request)
@@ -103,12 +105,14 @@ export async function DELETE(
       return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
+    const resolvedParams = await params
+
     // Get document to delete from blob storage
     const document = await db
       .select()
       .from(projectDocuments)
       .where(and(
-        eq(projectDocuments.id, params.id),
+        eq(projectDocuments.id, resolvedParams.id),
         eq(projectDocuments.companyId, auth.admin.companyId)
       ))
       .limit(1)
@@ -128,7 +132,7 @@ export async function DELETE(
     // Delete from database
     await db
       .delete(projectDocuments)
-      .where(eq(projectDocuments.id, params.id))
+      .where(eq(projectDocuments.id, resolvedParams.id))
 
     return NextResponse.json({ success: true })
 
