@@ -616,9 +616,11 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
                   ) : (
                     // View mode
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div>
+                      <div className="min-w-0">
                         <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Document Name</div>
-                        <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">{document.name}</div>
+                        <div className="text-sm text-blue-600 dark:text-blue-400 font-medium truncate max-w-full" title={document.name}>
+                          {document.name}
+                        </div>
                         <div className="text-xs text-gray-500 mt-1">{formatFileSize(document.fileSize)}</div>
                       </div>
                       
