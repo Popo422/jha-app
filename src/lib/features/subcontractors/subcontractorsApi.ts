@@ -94,7 +94,7 @@ export const subcontractorsApi = createApi({
       return headers
     },
   }),
-  tagTypes: ['Subcontractor'],
+  tagTypes: ['Subcontractor', 'Contractor'],
   endpoints: (builder) => ({
     getSubcontractors: builder.query<SubcontractorsResponse, { search?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin'; projectId?: string }>({
       query: ({ search, page = 1, pageSize = 50, authType, projectId } = {} as any) => {
