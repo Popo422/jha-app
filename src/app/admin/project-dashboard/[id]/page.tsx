@@ -9,6 +9,8 @@ import { ArrowLeft, FolderOpen, CheckSquare, FileText, Users, Building } from "l
 import ProjectTasks from "@/components/admin/ProjectTasks";
 import ProjectSnapshot from "@/components/admin/ProjectSnapshot";
 import ProjectDocuments from "@/components/admin/ProjectDocuments";
+import ProjectWorkmen from "@/components/admin/ProjectWorkmen";
+import ProjectSubcontractors from "@/components/admin/ProjectSubcontractors";
 
 export default function ProjectDetailsPage() {
   const { t } = useTranslation();
@@ -88,19 +90,13 @@ export default function ProjectDetailsPage() {
         
         <TabsContent value="workmen" className="mt-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold mb-4">Workmen</h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Project workmen content will be implemented here.
-            </p>
+            <ProjectWorkmen projectId={projectId} />
           </div>
         </TabsContent>
         
         <TabsContent value="subcontractors" className="mt-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold mb-4">Subcontractors</h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Project subcontractors content will be implemented here.
-            </p>
+            <ProjectSubcontractors projectId={projectId} />
           </div>
         </TabsContent>
       </Tabs>

@@ -107,6 +107,7 @@ export async function GET(request: NextRequest) {
     // Get remaining query parameters
     const search = searchParams.get('search')
     const company = searchParams.get('company')
+    const projectId = searchParams.get('projectId')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const fetchAll = searchParams.get('fetchAll') === 'true'
@@ -141,19 +142,51 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get total count for pagination
-    const countResult = await db.select({ count: sql`count(*)` }).from(contractors)
-      .where(and(...conditions))
+    // Get total count for pagination - adjust for project filtering
+    let countResult;
+    if (projectId) {
+      countResult = await db.select({ count: sql`count(DISTINCT ${contractors.id})` })
+        .from(contractors)
+        .innerJoin(contractorProjects, and(
+          eq(contractorProjects.contractorId, contractors.id),
+          eq(contractorProjects.projectId, projectId),
+          eq(contractorProjects.isActive, true)
+        ))
+        .where(and(...conditions))
+    } else {
+      countResult = await db.select({ count: sql`count(*)` })
+        .from(contractors)
+        .where(and(...conditions))
+    }
     const totalCount = Number(countResult[0].count)
 
-    // Execute query
-    const baseQuery = db.select().from(contractors)
-      .where(and(...conditions))
-      .orderBy(desc(contractors.createdAt))
-    
-    const result = fetchAll
-      ? await baseQuery
-      : await baseQuery.limit(limit!).offset(offset!)
+    // Execute query - adjust for project filtering
+    let result;
+    if (projectId) {
+      const baseQuery = db.select().from(contractors)
+        .innerJoin(contractorProjects, and(
+          eq(contractorProjects.contractorId, contractors.id),
+          eq(contractorProjects.projectId, projectId),
+          eq(contractorProjects.isActive, true)
+        ))
+        .where(and(...conditions))
+        .orderBy(desc(contractors.createdAt))
+      
+      result = fetchAll
+        ? await baseQuery
+        : await baseQuery.limit(limit!).offset(offset!)
+      
+      // Extract just the contractor data since we joined
+      result = result.map(row => row.contractors)
+    } else {
+      const baseQuery = db.select().from(contractors)
+        .where(and(...conditions))
+        .orderBy(desc(contractors.createdAt))
+      
+      result = fetchAll
+        ? await baseQuery
+        : await baseQuery.limit(limit!).offset(offset!)
+    }
 
     // Fetch project assignments for all contractors
     const contractorIds = result.map(contractor => contractor.id);

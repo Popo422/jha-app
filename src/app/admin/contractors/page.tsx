@@ -589,23 +589,6 @@ export default function ContractorsPage() {
         );
       },
     },
-    {
-      accessorKey: "createdAt",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium text-sm"
-        >
-{t('contractors.created')}
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ getValue }) => {
-        const date = new Date(getValue() as string);
-        return date.toLocaleDateString();
-      },
-    },
   ];
 
   // Render form view (add/edit)
@@ -1064,7 +1047,7 @@ export default function ContractorsPage() {
         ]}
         getRowId={(contractor) => contractor.id}
         exportFilename="contractors"
-        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), 'Type', 'Projects', 'Language', t('contractors.created')]}
+        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), 'Type', 'Projects', 'Language']}
         getExportData={(contractor) => [
           contractor.firstName,
           contractor.lastName,
@@ -1076,8 +1059,7 @@ export default function ContractorsPage() {
           (contractor as any).projectNames?.join(', ') || 'No projects assigned',
           contractor.language === 'es' ? 'Español' :
           contractor.language === 'pl' ? 'Polski' :
-          contractor.language === 'zh' ? '中文' : 'English',
-          new Date(contractor.createdAt).toLocaleDateString()
+          contractor.language === 'zh' ? '中文' : 'English'
         ]}
         searchValue={search}
         onSearchChange={setSearch}

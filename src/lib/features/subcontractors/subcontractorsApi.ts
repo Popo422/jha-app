@@ -96,14 +96,17 @@ export const subcontractorsApi = createApi({
   }),
   tagTypes: ['Subcontractor'],
   endpoints: (builder) => ({
-    getSubcontractors: builder.query<SubcontractorsResponse, { search?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin' }>({
-      query: ({ search, page = 1, pageSize = 50, authType } = {} as any) => {
+    getSubcontractors: builder.query<SubcontractorsResponse, { search?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin'; projectId?: string }>({
+      query: ({ search, page = 1, pageSize = 50, authType, projectId } = {} as any) => {
         const params = new URLSearchParams({
           page: page.toString(),
           pageSize: pageSize.toString(),
         })
         if (search) {
           params.append('search', search)
+        }
+        if (projectId) {
+          params.append('projectId', projectId)
         }
         params.append('authType', authType)
         return `?${params}`

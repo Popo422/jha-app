@@ -24,6 +24,7 @@ export interface CreateContractorRequest {
   companyName?: string
   language?: string
   type?: string
+  projectIds?: string[]
 }
 
 export interface UpdateContractorRequest {
@@ -36,6 +37,7 @@ export interface UpdateContractorRequest {
   companyName?: string
   language?: string
   type?: string
+  projectIds?: string[]
 }
 
 export interface SyncToProcoreRequest {
@@ -119,8 +121,8 @@ export const contractorsApi = createApi({
   }),
   tagTypes: ['Contractor'],
   endpoints: (builder) => ({
-    getContractors: builder.query<ContractorsResponse, { search?: string; company?: string; page?: number; pageSize?: number; limit?: number; offset?: number; fetchAll?: boolean; authType: 'contractor' | 'admin' }>({
-      query: ({ search, company, page, pageSize, limit, offset, fetchAll, authType } = {} as any) => {
+    getContractors: builder.query<ContractorsResponse, { search?: string; company?: string; page?: number; pageSize?: number; limit?: number; offset?: number; fetchAll?: boolean; authType: 'contractor' | 'admin'; projectId?: string }>({
+      query: ({ search, company, page, pageSize, limit, offset, fetchAll, authType, projectId } = {} as any) => {
         const params = new URLSearchParams()
         
         if (fetchAll) {
@@ -142,6 +144,10 @@ export const contractorsApi = createApi({
         
         if (company) {
           params.append('company', company)
+        }
+        
+        if (projectId) {
+          params.append('projectId', projectId)
         }
         
         params.append('authType', authType)

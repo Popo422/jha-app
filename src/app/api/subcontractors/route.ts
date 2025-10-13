@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { eq, desc, and, or, ilike, sql, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { subcontractors, projects, contractors, subcontractorProjects } from '@/lib/db/schema'
+import { subcontractors, projects, contractors, subcontractorProjects, contractorProjects } from '@/lib/db/schema'
 import { authenticateRequest } from '@/lib/auth-utils'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
@@ -47,7 +47,7 @@ async function generateUniqueCode(): Promise<string> {
 }
 
 // Helper function to create foreman contractor
-async function createForemanContractor(foremanName: string, foremanEmail: string | null, subcontractorName: string, companyId: string) {
+async function createForemanContractor(foremanName: string, foremanEmail: string | null, subcontractorName: string, companyId: string, projectId?: string, adminName?: string, adminId?: string) {
   if (!foremanName || !foremanName.trim()) return null;
   
   // Split foreman name into first and last name
@@ -88,6 +88,24 @@ async function createForemanContractor(foremanName: string, foremanEmail: string
       language: 'en',
       type: 'foreman'
     }).returning();
+    
+    // If projectId is provided, automatically assign the foreman to the project
+    if (projectId && adminName && adminId) {
+      try {
+        await db.insert(contractorProjects).values({
+          contractorId: foremanContractor.id,
+          projectId,
+          role: 'foreman',
+          assignedBy: adminName,
+          assignedByUserId: adminId,
+          isActive: true
+        });
+        console.log(`✅ Foreman ${foremanName} automatically assigned to project ${projectId}`);
+      } catch (assignmentError: any) {
+        // Don't fail foreman creation if project assignment fails
+        console.warn('Failed to assign foreman to project:', assignmentError);
+      }
+    }
     
     return foremanContractor;
   } catch (error: any) {
@@ -159,6 +177,7 @@ export async function GET(request: NextRequest) {
 
     // Get remaining query parameters for pagination
     const search = searchParams.get('search')
+    const projectId = searchParams.get('projectId')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const limit = pageSize
@@ -173,25 +192,58 @@ export async function GET(request: NextRequest) {
       conditions.push(searchCondition)
     }
 
-    // Get total count for pagination
-    const countResult = await db.select({ count: sql`count(*)` }).from(subcontractors)
-      .where(and(...conditions))
+    // Get total count for pagination - adjust for project filtering
+    let countResult;
+    if (projectId) {
+      countResult = await db.select({ count: sql`count(DISTINCT ${subcontractors.id})` })
+        .from(subcontractors)
+        .innerJoin(subcontractorProjects, eq(subcontractorProjects.subcontractorId, subcontractors.id))
+        .where(and(
+          ...conditions,
+          eq(subcontractorProjects.projectId, projectId)
+        ))
+    } else {
+      countResult = await db.select({ count: sql`count(*)` })
+        .from(subcontractors)
+        .where(and(...conditions))
+    }
     const totalCount = Number(countResult[0].count)
 
-    // First get the basic subcontractor data
-    const basicResult = await db.select({
-      id: subcontractors.id,
-      name: subcontractors.name,
-      contractAmount: subcontractors.contractAmount,
-      companyId: subcontractors.companyId,
-      foreman: subcontractors.foreman,
-      createdAt: subcontractors.createdAt,
-      updatedAt: subcontractors.updatedAt,
-    }).from(subcontractors)
-      .where(and(...conditions))
-      .orderBy(desc(subcontractors.createdAt))
-      .limit(limit)
-      .offset(offset)
+    // Get subcontractor data - adjust for project filtering
+    let basicResult;
+    if (projectId) {
+      basicResult = await db.select({
+        id: subcontractors.id,
+        name: subcontractors.name,
+        contractAmount: subcontractors.contractAmount,
+        companyId: subcontractors.companyId,
+        foreman: subcontractors.foreman,
+        createdAt: subcontractors.createdAt,
+        updatedAt: subcontractors.updatedAt,
+      }).from(subcontractors)
+        .innerJoin(subcontractorProjects, eq(subcontractorProjects.subcontractorId, subcontractors.id))
+        .where(and(
+          ...conditions,
+          eq(subcontractorProjects.projectId, projectId)
+        ))
+        .orderBy(desc(subcontractors.createdAt))
+        .limit(limit)
+        .offset(offset)
+    } else {
+      basicResult = await db.select({
+        id: subcontractors.id,
+        name: subcontractors.name,
+        contractAmount: subcontractors.contractAmount,
+        companyId: subcontractors.companyId,
+        foreman: subcontractors.foreman,
+        createdAt: subcontractors.createdAt,
+        updatedAt: subcontractors.updatedAt,
+      }).from(subcontractors)
+        .where(and(...conditions))
+        .orderBy(desc(subcontractors.createdAt))
+        .limit(limit)
+        .offset(offset)
+    }
 
     // Then get the many-to-many project relationships for these subcontractors
     const subcontractorIds = basicResult.map(sub => sub.id)
@@ -344,6 +396,7 @@ export async function POST(request: NextRequest) {
           
           // Create foreman contractor if foreman is provided
           if (subcontractorData.foreman) {
+            // For bulk creation, we don't auto-assign to projects since it's not from project dashboard
             await createForemanContractor(subcontractorData.foreman, originalSubcontractor.foremanEmail || null, subcontractorData.name, auth.admin.companyId);
           }
         } catch (insertError: any) {
@@ -496,7 +549,17 @@ export async function POST(request: NextRequest) {
 
     // Create foreman contractor if foreman is provided
     if (foreman && foreman.trim()) {
-      await createForemanContractor(foreman.trim(), foremanEmail || null, name.trim(), auth.admin.companyId);
+      // If projectIds are provided (from project dashboard), assign foreman to the first project
+      const projectIdForForeman = projectIds && projectIds.length > 0 ? projectIds[0] : undefined;
+      await createForemanContractor(
+        foreman.trim(), 
+        foremanEmail || null, 
+        name.trim(), 
+        auth.admin.companyId,
+        projectIdForForeman,
+        auth.admin.name,
+        auth.admin.id
+      );
     }
 
     return NextResponse.json({
@@ -653,7 +716,17 @@ export async function PUT(request: NextRequest) {
 
     // Create foreman contractor if foreman was added/updated
     if (foreman && foreman.trim() && updateData.foreman) {
-      await createForemanContractor(foreman.trim(), foremanEmail || null, name.trim(), auth.admin.companyId);
+      // If projectIds are provided (from project dashboard), assign foreman to the first project
+      const projectIdForForeman = projectIds && projectIds.length > 0 ? projectIds[0] : undefined;
+      await createForemanContractor(
+        foreman.trim(), 
+        foremanEmail || null, 
+        name.trim(), 
+        auth.admin.companyId,
+        projectIdForForeman,
+        auth.admin.name,
+        auth.admin.id
+      );
     }
 
     return NextResponse.json({
