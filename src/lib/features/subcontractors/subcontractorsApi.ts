@@ -119,7 +119,7 @@ export const subcontractorsApi = createApi({
         method: 'POST',
         body: subcontractor,
       }),
-      invalidatesTags: ['Subcontractor'],
+      invalidatesTags: ['Subcontractor', 'Contractor'],
     }),
     updateSubcontractor: builder.mutation<SubcontractorResponse, UpdateSubcontractorRequest>({
       query: (subcontractor) => ({
@@ -127,7 +127,7 @@ export const subcontractorsApi = createApi({
         method: 'PUT',
         body: subcontractor,
       }),
-      invalidatesTags: ['Subcontractor'],
+      invalidatesTags: ['Subcontractor', 'Contractor'],
     }),
     deleteSubcontractor: builder.mutation<DeleteSubcontractorResponse, string>({
       query: (id) => ({
