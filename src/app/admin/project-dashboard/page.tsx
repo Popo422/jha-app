@@ -3,12 +3,15 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
-import { useGetProjectsQuery, useDeleteProjectMutation } from "@/lib/features/projects/projectsApi";
+import { useGetProjectsQuery, useDeleteProjectMutation, useUpdateProjectMutation } from "@/lib/features/projects/projectsApi";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DateInput } from "@/components/ui/date-input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
+import SupervisorSelect from "@/components/SupervisorSelect";
+import LocationAutocomplete from "@/components/ui/location-autocomplete";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +55,15 @@ export default function ProjectDashboardPage() {
   });
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<any>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [projectToEdit, setProjectToEdit] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    projectManager: '',
+    location: '',
+    projectCost: ''
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const { data: projectsData, isLoading, refetch } = useGetProjectsQuery({
     page: pagination.page,
@@ -63,6 +75,7 @@ export default function ProjectDashboardPage() {
   });
 
   const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation();
+  const [updateProject, { isLoading: isUpdating }] = useUpdateProjectMutation();
 
   const projects = projectsData?.projects || [];
   const paginationInfo = projectsData?.pagination;
@@ -107,6 +120,66 @@ export default function ProjectDashboardPage() {
   const cancelDelete = () => {
     setDeleteModalOpen(false);
     setProjectToDelete(null);
+  };
+
+  const handleEditProject = (project: any) => {
+    setProjectToEdit(project);
+    setEditForm({
+      name: project.name,
+      projectManager: project.projectManager,
+      location: project.location,
+      projectCost: project.projectCost || ''
+    });
+    setFormErrors({});
+    setEditModalOpen(true);
+  };
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+
+    if (!editForm.name.trim()) {
+      errors.name = 'Project name is required';
+    }
+    if (!editForm.projectManager.trim()) {
+      errors.projectManager = 'Project manager is required';
+    }
+    if (!editForm.location.trim()) {
+      errors.location = 'Location is required';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleUpdateProject = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    if (!projectToEdit || !validateForm()) return;
+
+    try {
+      await updateProject({
+        id: projectToEdit.id,
+        ...editForm
+      }).unwrap();
+      
+      showToast(`Project "${editForm.name}" updated successfully`, 'success');
+      cancelEdit();
+      refetch();
+    } catch (error: any) {
+      showToast(error?.data?.error || 'Failed to update project', 'error');
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditModalOpen(false);
+    setProjectToEdit(null);
+    setEditForm({
+      name: '',
+      projectManager: '',
+      location: '',
+      projectCost: ''
+    });
+    setFormErrors({});
   };
 
 
@@ -325,10 +398,7 @@ export default function ProjectDashboardPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => {
-                          // TODO: Add edit functionality
-                          showToast('Edit functionality coming soon', 'info');
-                        }}>
+                        <DropdownMenuItem onClick={() => handleEditProject(project)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Project
                         </DropdownMenuItem>
@@ -384,6 +454,80 @@ export default function ProjectDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Project Modal */}
+      <AlertDialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Update the project details below.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <form onSubmit={handleUpdateProject}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Project Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  placeholder="Enter project name"
+                  className={formErrors.name ? "border-red-500" : ""}
+                />
+                {formErrors.name && (
+                  <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>
+                )}
+              </div>
+              <div>
+                <SupervisorSelect
+                  label="Project Manager"
+                  value={editForm.projectManager}
+                  onChange={(value) => setEditForm({ ...editForm, projectManager: value })}
+                  required={true}
+                  authType="admin"
+                  className={formErrors.projectManager ? "border-red-500" : ""}
+                />
+                {formErrors.projectManager && (
+                  <p className="text-sm text-red-500 mt-1">{formErrors.projectManager}</p>
+                )}
+              </div>
+              <div>
+                <LocationAutocomplete
+                  label="Location"
+                  value={editForm.location}
+                  onChange={(value) => setEditForm({ ...editForm, location: value })}
+                  placeholder="Search project location..."
+                  className={formErrors.location ? "border-red-500" : ""}
+                  required={true}
+                  id="edit-location"
+                />
+                {formErrors.location && (
+                  <p className="text-sm text-red-500 mt-1">{formErrors.location}</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="edit-projectCost">Project Cost (Optional)</Label>
+                <Input
+                  id="edit-projectCost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editForm.projectCost}
+                  onChange={(e) => setEditForm({ ...editForm, projectCost: e.target.value })}
+                  placeholder="Enter project cost"
+                />
+              </div>
+            </div>
+            <AlertDialogFooter className="mt-6">
+              <AlertDialogCancel onClick={cancelEdit}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleUpdateProject} disabled={isUpdating}>
+                {isUpdating ? 'Updating...' : 'Update Project'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Modal */}
       <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
