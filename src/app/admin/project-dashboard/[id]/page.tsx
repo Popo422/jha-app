@@ -26,11 +26,11 @@ export default function ProjectDetailsPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => router.back()}
+          onClick={() => router.push('/admin/project-dashboard')}
           className="flex items-center gap-2 mb-4"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back
+          Back to Projects
         </Button>
         <div className="flex items-center gap-2">
           <FolderOpen className="h-6 w-6 text-blue-600" />

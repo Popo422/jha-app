@@ -254,8 +254,8 @@ export default function OnboardingPage() {
           // Update Redux state with admin login data
           dispatch(adminLoginSuccess(result.authData))
           
-          // Redirect to admin dashboard
-          router.push('/admin/onboarding')
+          // Redirect to project dashboard
+          router.push('/admin/project-dashboard')
           return
         }
         

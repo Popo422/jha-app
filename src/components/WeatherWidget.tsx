@@ -34,11 +34,13 @@ interface WeatherData {
     dewPoint: number;
     weatherCode: number;
     description: string;
+    snowDepth: number;
   };
   daily: {
     temperatureMin: number[];
     temperatureMax: number[];
     precipitationSum: number[];
+    snowfallSum: number[];
   };
 }
 
@@ -131,7 +133,7 @@ export default function WeatherWidget({ projectLocation, className = '' }: Weath
     setIsLoadingWeather(true);
     try {
       const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,wind_speed_10m,wind_gusts_10m,relative_humidity_2m,dew_point_2m&daily=temperature_2m_min,temperature_2m_max,precipitation_sum&timezone=auto&past_days=3&forecast_days=1`
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,wind_speed_10m,wind_gusts_10m,relative_humidity_2m,dew_point_2m,snow_depth&daily=temperature_2m_min,temperature_2m_max,precipitation_sum,snowfall_sum&timezone=auto&past_days=3&forecast_days=1`
       );
       const data = await response.json();
       
@@ -146,12 +148,14 @@ export default function WeatherWidget({ projectLocation, className = '' }: Weath
           windGusts: Math.round(current.wind_gusts_10m),
           dewPoint: Math.round(current.dew_point_2m),
           weatherCode: current.weather_code,
-          description: getWeatherDescription(current.weather_code)
+          description: getWeatherDescription(current.weather_code),
+          snowDepth: current.snow_depth || 0
         },
         daily: {
           temperatureMin: daily.temperature_2m_min.map((temp: number) => Math.round(temp)),
           temperatureMax: daily.temperature_2m_max.map((temp: number) => Math.round(temp)),
-          precipitationSum: daily.precipitation_sum
+          precipitationSum: daily.precipitation_sum,
+          snowfallSum: daily.snowfall_sum || []
         }
       });
     } catch (error) {
@@ -274,9 +278,9 @@ export default function WeatherWidget({ projectLocation, className = '' }: Weath
             
             {showDropdown && places.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                {places.map((place) => (
+                {places.map((place, index) => (
                   <button
-                    key={place._id}
+                    key={`${place._id}-${index}`}
                     onClick={() => handlePlaceSelect(place)}
                     className="w-full px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2 text-sm"
                   >
@@ -299,12 +303,12 @@ export default function WeatherWidget({ projectLocation, className = '' }: Weath
           {/* Weather Data */}
           {coordinates ? (
             isLoadingWeather ? (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {Array.from({ length: 4 }).map((_, index) => (
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                {Array.from({ length: 5 }).map((_, index) => (
                   <Card key={index}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                        {index === 0 ? 'Humidity' : index === 1 ? 'Precipitation Stance' : index === 2 ? 'Temperature' : 'Wind Speed'}
+                        {index === 0 ? 'Humidity' : index === 1 ? 'Precipitation Stance' : index === 2 ? 'Snow Conditions' : index === 3 ? 'Temperature' : 'Wind Speed'}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -318,7 +322,7 @@ export default function WeatherWidget({ projectLocation, className = '' }: Weath
                 ))}
               </div>
             ) : weatherData ? (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {/* Humidity Section */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -364,6 +368,48 @@ export default function WeatherWidget({ projectLocation, className = '' }: Weath
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-gray-400">3 Days Ago</span>
                         <span className="text-gray-900 dark:text-gray-100">{weatherData.daily.precipitationSum[0]?.toFixed(1) || '0'}mm</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Snow Conditions Section */}
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center">
+                      <CloudSnow className="w-3 h-3 mr-1" />
+                      Snow Conditions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Current Depth</span>
+                        <span className="text-gray-900 dark:text-gray-100">
+                          {weatherData.current.snowDepth > 0 ? `${(weatherData.current.snowDepth * 100).toFixed(0)}cm` : '0cm'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Yesterday Fall</span>
+                        <span className="text-gray-900 dark:text-gray-100">
+                          {weatherData.daily.snowfallSum[2] ? `${weatherData.daily.snowfallSum[2]?.toFixed(1)}cm` : '0cm'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">2 Days Fall</span>
+                        <span className="text-gray-900 dark:text-gray-100">
+                          {weatherData.daily.snowfallSum[1] ? `${weatherData.daily.snowfallSum[1]?.toFixed(1)}cm` : '0cm'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Condition</span>
+                        <span className={`${[71, 73, 75, 77, 85, 86].includes(weatherData.current.weatherCode) ? 'text-blue-600 dark:text-blue-400' : weatherData.current.snowDepth > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}>
+                          {[71, 73, 75, 77, 85, 86].includes(weatherData.current.weatherCode) 
+                            ? weatherData.current.description 
+                            : weatherData.current.snowDepth > 0 
+                              ? 'Snow on Ground' 
+                              : 'No Snow'}
+                        </span>
                       </div>
                     </div>
                   </CardContent>
@@ -416,7 +462,7 @@ export default function WeatherWidget({ projectLocation, className = '' }: Weath
                 </Card>
               </div>
             ) : (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {/* Humidity Section */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -461,6 +507,36 @@ export default function WeatherWidget({ projectLocation, className = '' }: Weath
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600 dark:text-gray-400">3 Days Ago</span>
+                        <span className="text-gray-900 dark:text-gray-100">N/A</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Snow Conditions Section */}
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center">
+                      <CloudSnow className="w-3 h-3 mr-1" />
+                      Snow Conditions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Current Depth</span>
+                        <span className="text-gray-900 dark:text-gray-100">N/A</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Yesterday Fall</span>
+                        <span className="text-gray-900 dark:text-gray-100">N/A</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">2 Days Fall</span>
+                        <span className="text-gray-900 dark:text-gray-100">N/A</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Condition</span>
                         <span className="text-gray-900 dark:text-gray-100">N/A</span>
                       </div>
                     </div>
@@ -515,7 +591,7 @@ export default function WeatherWidget({ projectLocation, className = '' }: Weath
               </div>
             )
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
               {/* Humidity Section */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -560,6 +636,36 @@ export default function WeatherWidget({ projectLocation, className = '' }: Weath
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">3 Days Ago</span>
+                      <span className="text-gray-900 dark:text-gray-100">N/A</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Snow Conditions Section */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center">
+                    <CloudSnow className="w-3 h-3 mr-1" />
+                    Snow Conditions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Current Depth</span>
+                      <span className="text-gray-900 dark:text-gray-100">N/A</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Yesterday Fall</span>
+                      <span className="text-gray-900 dark:text-gray-100">N/A</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">2 Days Fall</span>
+                      <span className="text-gray-900 dark:text-gray-100">N/A</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Condition</span>
                       <span className="text-gray-900 dark:text-gray-100">N/A</span>
                     </div>
                   </div>

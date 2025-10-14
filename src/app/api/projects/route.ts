@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { eq, desc, and, or, ilike, sql, count, gte, lte } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { projects, companies, subcontractors, subcontractorProjects } from '@/lib/db/schema'
+import { projects, companies, subcontractors, subcontractorProjects, projectDocuments } from '@/lib/db/schema'
 import { authenticateRequest } from '@/lib/auth-utils'
+import { del } from '@vercel/blob'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -538,13 +539,34 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Delete project
+    // Get all project documents to clean up Vercel Blob storage
+    const documents = await db.select({
+      blobKey: projectDocuments.blobKey,
+      url: projectDocuments.url
+    }).from(projectDocuments)
+      .where(eq(projectDocuments.projectId, projectId))
+
+    // Delete files from Vercel Blob storage
+    const blobDeletionPromises = documents.map(async (doc) => {
+      try {
+        await del(doc.url)
+        console.log(`Successfully deleted blob: ${doc.blobKey}`)
+      } catch (error) {
+        console.error(`Failed to delete blob ${doc.blobKey}:`, error)
+        // Continue with deletion even if blob cleanup fails
+      }
+    })
+
+    // Wait for all blob deletions to complete (but don't fail if some fail)
+    await Promise.allSettled(blobDeletionPromises)
+
+    // Delete project (this will cascade delete all related records including project_documents)
     await db.delete(projects)
       .where(eq(projects.id, projectId))
 
     return NextResponse.json({
       success: true,
-      message: 'Project deleted successfully'
+      message: 'Project and all associated files deleted successfully'
     })
 
   } catch (error) {

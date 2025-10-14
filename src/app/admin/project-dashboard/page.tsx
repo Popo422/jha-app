@@ -3,11 +3,22 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
-import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
+import { useGetProjectsQuery, useDeleteProjectMutation } from "@/lib/features/projects/projectsApi";
+import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DateInput } from "@/components/ui/date-input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -18,11 +29,17 @@ import {
   ChevronDown,
   X,
   FolderOpen,
+  Plus,
+  MoreVertical,
+  Edit,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function ProjectDashboardPage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { showToast } = useToast();
   const [filters, setFilters] = useState({
     search: '',
     manager: '',
@@ -33,8 +50,10 @@ export default function ProjectDashboardPage() {
     page: 1,
     pageSize: 10
   });
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<any>(null);
 
-  const { data: projectsData, isLoading } = useGetProjectsQuery({
+  const { data: projectsData, isLoading, refetch } = useGetProjectsQuery({
     page: pagination.page,
     pageSize: pagination.pageSize,
     search: filters.search || undefined,
@@ -42,6 +61,8 @@ export default function ProjectDashboardPage() {
     dateTo: filters.dateTo || undefined,
     authType: 'admin'
   });
+
+  const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation();
 
   const projects = projectsData?.projects || [];
   const paginationInfo = projectsData?.pagination;
@@ -61,6 +82,33 @@ export default function ProjectDashboardPage() {
   const handlePageChange = useCallback((page: number) => {
     setPagination(prev => ({ ...prev, page }));
   }, []);
+
+  const handleDeleteProject = (project: any) => {
+    setProjectToDelete(project);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!projectToDelete) return;
+
+    try {
+      await deleteProject(projectToDelete.id).unwrap();
+      showToast(`Project "${projectToDelete.name}" deleted successfully`, 'success');
+      setDeleteModalOpen(false);
+      setProjectToDelete(null);
+      refetch();
+    } catch (error: any) {
+      showToast(error?.data?.error || 'Failed to delete project', 'error');
+      setDeleteModalOpen(false);
+      setProjectToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModalOpen(false);
+    setProjectToDelete(null);
+  };
+
 
   if (isLoading) {
     return (
@@ -141,12 +189,24 @@ export default function ProjectDashboardPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Project Dashboard
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">
-          Manage and view project overview and analytics
-        </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Project Dashboard
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">
+              Manage and view project overview and analytics
+            </p>
+          </div>
+          <Button
+            onClick={() => router.push('/admin/project-onboarding')}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-base"
+            size="lg"
+          >
+            <Plus className="h-5 w-5" />
+            New Project
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -246,7 +306,7 @@ export default function ProjectDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -257,6 +317,31 @@ export default function ProjectDashboardPage() {
                     >
                       View Details
                     </Button>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => {
+                          // TODO: Add edit functionality
+                          showToast('Edit functionality coming soon', 'info');
+                        }}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Project
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-red-600 focus:text-red-600" 
+                          onClick={() => handleDeleteProject(project)}
+                          disabled={isDeleting}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {isDeleting ? 'Deleting...' : 'Delete Project'}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </div>
@@ -299,6 +384,59 @@ export default function ProjectDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Project
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the project and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          {projectToDelete && (
+            <div className="py-4">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  {projectToDelete.name}
+                </h4>
+                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <div>Location: {projectToDelete.location}</div>
+                  <div>Manager: {projectToDelete.projectManager}</div>
+                </div>
+              </div>
+              
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="font-medium mb-2">This will delete:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>All project tasks and schedules</li>
+                  <li>All uploaded documents and files</li>
+                  <li>All contractor assignments</li>
+                  <li>All subcontractor assignments</li>
+                  <li>All form submissions related to this project</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDelete} disabled={isDeleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Project'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

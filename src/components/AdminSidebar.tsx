@@ -116,11 +116,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       href: '/admin/toolbox-talks',
       icon: MessageSquare
     },
-    {
-      label: t('admin.onboarding'),
-      href: '/admin/onboarding',
-      icon: Sparkles
-    },
+    // {
+    //   label: t('admin.onboarding'),
+    //   href: '/admin/onboarding',
+    //   icon: Sparkles
+    // },
     {
       label: 'Project Dashboard',
       href: '/admin/project-dashboard',

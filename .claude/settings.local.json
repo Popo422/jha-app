@@ -31,7 +31,8 @@
       "Bash(find:*)",
       "Bash(git checkout:*)",
       "Bash(git add:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "WebFetch(domain:open-meteo.com)"
     ],
     "deny": []
   }
