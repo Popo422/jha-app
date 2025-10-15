@@ -9,6 +9,7 @@ import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateInput } from "@/components/ui/date-input";
 import LocationAutocomplete from "@/components/ui/location-autocomplete";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast, Toast } from "@/components/ui/toast";
@@ -31,6 +32,8 @@ export function ProjectsManagement() {
     projectManager: "",
     location: "",
     projectCost: "",
+    startDate: "",
+    endDate: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [serverPagination, setServerPagination] = useState({
@@ -104,6 +107,8 @@ export function ProjectsManagement() {
       projectManager: project.projectManager,
       location: project.location,
       projectCost: project.projectCost || "",
+      startDate: project.startDate || "",
+      endDate: project.endDate || "",
     });
     setFormErrors({});
     setIsEditDialogOpen(true);
@@ -116,6 +121,8 @@ export function ProjectsManagement() {
       projectManager: "",
       location: "",
       projectCost: "",
+      startDate: "",
+      endDate: "",
     });
     setFormErrors({});
     setIsCreateDialogOpen(true);
@@ -125,7 +132,7 @@ export function ProjectsManagement() {
     setIsCreateDialogOpen(false);
     setIsEditDialogOpen(false);
     setEditingProject(null);
-    setFormData({ name: "", projectManager: "", location: "", projectCost: "" });
+    setFormData({ name: "", projectManager: "", location: "", projectCost: "", startDate: "", endDate: "" });
     setFormErrors({});
   };
 
@@ -360,20 +367,40 @@ export function ProjectsManagement() {
       },
     },
     {
-      accessorKey: "createdAt",
+      accessorKey: "dates",
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium text-sm"
         >
-          {t('admin.created')}
+          Project Dates
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => {
-        const date = new Date(row.getValue("createdAt"));
-        return date.toLocaleDateString();
+        const project = row.original;
+        const hasProjectDates = project.startDate || project.endDate;
+        
+        if (hasProjectDates) {
+          return (
+            <div className="text-sm">
+              {project.startDate && project.endDate ? (
+                <>Start: {new Date(project.startDate).toLocaleDateString()} • End: {new Date(project.endDate).toLocaleDateString()}</>
+              ) : project.startDate ? (
+                <>Start: {new Date(project.startDate).toLocaleDateString()}</>
+              ) : project.endDate ? (
+                <>End: {new Date(project.endDate).toLocaleDateString()}</>
+              ) : null}
+            </div>
+          );
+        }
+        
+        return (
+          <div className="text-sm text-gray-500">
+            Created: {new Date(project.createdAt).toLocaleDateString()}
+          </div>
+        );
       },
     },
   ];
@@ -442,6 +469,29 @@ export function ProjectsManagement() {
                   onChange={(e) => setFormData({ ...formData, projectCost: e.target.value })}
                   placeholder="Enter project cost"
                 />
+              </div>
+              <div>
+                <Label className="text-base font-medium">Project Timeline</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate" className="text-sm text-gray-600">Start Date</Label>
+                    <DateInput
+                      id="startDate"
+                      value={formData.startDate}
+                      onChange={(value) => setFormData({ ...formData, startDate: value })}
+                      placeholder="Select start date"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate" className="text-sm text-gray-600">End Date</Label>
+                    <DateInput
+                      id="endDate"
+                      value={formData.endDate}
+                      onChange={(value) => setFormData({ ...formData, endDate: value })}
+                      placeholder="Select end date"
+                    />
+                  </div>
+                </div>
               </div>
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">
@@ -523,6 +573,29 @@ export function ProjectsManagement() {
                   onChange={(e) => setFormData({ ...formData, projectCost: e.target.value })}
                   placeholder="Enter project cost"
                 />
+              </div>
+              <div>
+                <Label className="text-base font-medium">Project Timeline</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-startDate" className="text-sm text-gray-600">Start Date</Label>
+                    <DateInput
+                      id="edit-startDate"
+                      value={formData.startDate}
+                      onChange={(value) => setFormData({ ...formData, startDate: value })}
+                      placeholder="Select start date"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-endDate" className="text-sm text-gray-600">End Date</Label>
+                    <DateInput
+                      id="edit-endDate"
+                      value={formData.endDate}
+                      onChange={(value) => setFormData({ ...formData, endDate: value })}
+                      placeholder="Select end date"
+                    />
+                  </div>
+                </div>
               </div>
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">

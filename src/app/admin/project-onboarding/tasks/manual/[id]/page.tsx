@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   ArrowLeft,
   Plus,
@@ -34,6 +35,7 @@ interface ManualTask {
   endDate?: string;
   predecessors?: string;
   progress: number;
+  completed: boolean;
 }
 
 export default function OnboardingManualTasksPage() {
@@ -50,7 +52,8 @@ export default function OnboardingManualTasksPage() {
     startDate: "",
     endDate: "",
     predecessors: "",
-    progress: "0"
+    progress: "0",
+    completed: false
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -67,7 +70,8 @@ export default function OnboardingManualTasksPage() {
       startDate: "",
       endDate: "",
       predecessors: "",
-      progress: "0"
+      progress: "0",
+      completed: false
     });
   };
 
@@ -93,7 +97,8 @@ export default function OnboardingManualTasksPage() {
         startDate: task.startDate || "",
         endDate: task.endDate || "",
         predecessors: task.predecessors || "",
-        progress: task.progress.toString()
+        progress: task.progress.toString(),
+        completed: task.completed
       });
     }
     setIsDialogOpen(true);
@@ -127,6 +132,7 @@ export default function OnboardingManualTasksPage() {
       return;
     }
 
+    const finalProgress = formData.completed ? 100 : (parseFloat(formData.progress) || 0);
     const newTask: ManualTask = {
       tempId: editingIndex === -1 ? `temp-${Date.now()}` : tasks[editingIndex!].tempId,
       taskNumber,
@@ -135,7 +141,8 @@ export default function OnboardingManualTasksPage() {
       startDate: formData.startDate || undefined,
       endDate: formData.endDate || undefined,
       predecessors: formData.predecessors.trim() || undefined,
-      progress: parseFloat(formData.progress) || 0
+      progress: finalProgress,
+      completed: formData.completed
     };
 
     if (editingIndex === -1) {
@@ -173,7 +180,8 @@ export default function OnboardingManualTasksPage() {
         startDate: task.startDate,
         endDate: task.endDate,
         predecessors: task.predecessors,
-        progress: task.progress
+        progress: task.progress,
+        completed: task.completed
       }));
 
       await bulkImportTasks({
@@ -267,7 +275,7 @@ export default function OnboardingManualTasksPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             <BarChart3 className="h-3 w-3" />
-                            <span>{task.progress}% complete</span>
+                            <span>{task.completed ? '100' : task.progress}% complete</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
@@ -379,7 +387,11 @@ export default function OnboardingManualTasksPage() {
                     value={formData.progress}
                     onChange={(e) => setFormData(prev => ({ ...prev, progress: e.target.value }))}
                     placeholder="0"
+                    disabled={formData.completed}
                   />
+                  {formData.completed && (
+                    <p className="text-xs text-gray-500 mt-1">Progress is automatically set to 100% when marked as completed</p>
+                  )}
                 </div>
               </div>
 
@@ -437,6 +449,21 @@ export default function OnboardingManualTasksPage() {
                 <p className="text-xs text-gray-500 mt-1">
                   Specify which tasks must complete before this one starts
                 </p>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="edit-completed"
+                  checked={formData.completed}
+                  onCheckedChange={(checked) => setFormData(prev => ({ 
+                    ...prev, 
+                    completed: !!checked,
+                    progress: checked ? "100" : prev.progress
+                  }))}
+                />
+                <Label htmlFor="edit-completed" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Mark as Completed
+                </Label>
               </div>
 
               <div className="flex gap-2 pt-4">

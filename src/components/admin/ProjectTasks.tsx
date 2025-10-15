@@ -5,12 +5,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import ProjectTasksChoiceModal from "@/components/admin/ProjectTasksChoiceModal";
-import { Plus, Upload, Brain, Calendar, Clock, BarChart3 } from "lucide-react";
+import { Plus, Upload, Brain, Calendar, Clock, BarChart3, Check, X } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { 
   useGetProjectTasksQuery, 
@@ -35,7 +36,8 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
     startDate: '',
     endDate: '',
     progress: '',
-    predecessors: ''
+    predecessors: '',
+    completed: false
   });
 
   const { toast, showToast } = useToast();
@@ -123,15 +125,29 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
       accessorKey: "progress",
       cell: ({ row }) => {
         const progress = parseFloat(row.original.progress) || 0;
+        const isCompleted = row.original.completed;
         return (
           <div className="flex items-center gap-2">
             <Badge variant="outline" className={getProgressColor(row.original.progress)}>
               <BarChart3 className="h-3 w-3 mr-1" />
-              {progress}%
+              {isCompleted ? '100' : progress}%
             </Badge>
           </div>
         );
       },
+    },
+    {
+      header: "Completed",
+      accessorKey: "completed",
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          {row.original.completed ? (
+            <Check className="h-5 w-5 text-green-600" />
+          ) : (
+            <X className="h-5 w-5 text-gray-400" />
+          )}
+        </div>
+      ),
     },
     {
       header: "Predecessors",
@@ -181,7 +197,8 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
       startDate: task.startDate || '',
       endDate: task.endDate || '',
       progress: task.progress || '0',
-      predecessors: task.predecessors || ''
+      predecessors: task.predecessors || '',
+      completed: task.completed || false
     });
   };
 
@@ -190,13 +207,17 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
     if (!editingTask) return;
 
     try {
+      // If marked as completed, set progress to 100
+      const finalProgress = editForm.completed ? 100 : (parseFloat(editForm.progress) || 0);
+      
       await updateTask({
         id: editingTask.id,
         name: editForm.name,
         durationDays: editForm.durationDays ? parseInt(editForm.durationDays) : undefined,
         startDate: editForm.startDate || undefined,
         endDate: editForm.endDate || undefined,
-        progress: parseFloat(editForm.progress) || 0,
+        progress: finalProgress,
+        completed: editForm.completed,
         predecessors: editForm.predecessors || undefined
       }).unwrap();
       
@@ -216,7 +237,8 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
       startDate: '',
       endDate: '',
       progress: '',
-      predecessors: ''
+      predecessors: '',
+      completed: false
     });
   };
 
@@ -267,14 +289,15 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
         onBulkDelete={handleBulkDelete}
         getRowId={(task) => task.id}
         exportFilename="project-tasks"
-        exportHeaders={["Task #", "Task Name", "Duration", "Start Date", "End Date", "Progress", "Predecessors"]}
+        exportHeaders={["Task #", "Task Name", "Duration", "Start Date", "End Date", "Progress", "Completed", "Predecessors"]}
         getExportData={(task) => [
           task.taskNumber.toString(),
           task.name,
           task.durationDays?.toString() || '',
           formatDate(task.startDate),
           formatDate(task.endDate),
-          `${task.progress}%`,
+          `${task.completed ? '100' : task.progress}%`,
+          task.completed ? 'Yes' : 'No',
           task.predecessors || ''
         ]}
         searchValue={searchValue}
@@ -320,7 +343,11 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
                   value={editForm.progress}
                   onChange={(e) => setEditForm({ ...editForm, progress: e.target.value })}
                   placeholder="Progress"
+                  disabled={editForm.completed}
                 />
+                {editForm.completed && (
+                  <p className="text-xs text-gray-500 mt-1">Progress is automatically set to 100% when marked as completed</p>
+                )}
               </div>
             </div>
             
@@ -353,6 +380,22 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
                 onChange={(e) => setEditForm({ ...editForm, predecessors: e.target.value })}
                 placeholder="e.g., 1,2 or 3FS+5 days"
               />
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="edit-completed"
+                checked={editForm.completed}
+                onCheckedChange={(checked) => setEditForm({ 
+                  ...editForm, 
+                  completed: !!checked,
+                  // If marking as completed, set progress to 100, otherwise keep current value
+                  progress: checked ? '100' : editForm.progress
+                })}
+              />
+              <Label htmlFor="edit-completed" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Mark as Completed
+              </Label>
             </div>
           </div>
           

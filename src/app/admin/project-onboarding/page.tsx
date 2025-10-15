@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateInput } from "@/components/ui/date-input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
@@ -44,6 +45,8 @@ interface ProjectDetailsForm {
   location: string;
   projectManager: string;
   projectCost: string;
+  startDate: string;
+  endDate: string;
 }
 
 interface DocumentUpload {
@@ -78,7 +81,9 @@ export default function ProjectOnboardingPage() {
     name: '',
     location: '',
     projectManager: '',
-    projectCost: ''
+    projectCost: '',
+    startDate: '',
+    endDate: ''
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -174,6 +179,8 @@ export default function ProjectOnboardingPage() {
         location: projectForm.location,
         projectManager: projectForm.projectManager,
         projectCost: projectForm.projectCost || undefined,
+        startDate: projectForm.startDate || undefined,
+        endDate: projectForm.endDate || undefined,
       }).unwrap();
 
       setCreatedProjectId(result.project.id);
@@ -514,6 +521,42 @@ export default function ProjectOnboardingPage() {
             <p className="text-sm text-muted-foreground">
               This helps track spending and budget utilization
             </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="startDate" className="flex items-center gap-2 text-base">
+                <Calendar className="w-5 h-5" />
+                Start Date
+              </Label>
+              <DateInput
+                id="startDate"
+                value={projectForm.startDate}
+                onChange={(value) => setProjectForm(prev => ({ ...prev, startDate: value }))}
+                placeholder="Select start date"
+                className="text-base p-3"
+              />
+              <p className="text-sm text-muted-foreground">
+                When will the project begin?
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="endDate" className="flex items-center gap-2 text-base">
+                <Calendar className="w-5 h-5" />
+                End Date
+              </Label>
+              <DateInput
+                id="endDate"
+                value={projectForm.endDate}
+                onChange={(value) => setProjectForm(prev => ({ ...prev, endDate: value }))}
+                placeholder="Select end date"
+                className="text-base p-3"
+              />
+              <p className="text-sm text-muted-foreground">
+                Expected completion date
+              </p>
+            </div>
           </div>
         </div>
       </Card>

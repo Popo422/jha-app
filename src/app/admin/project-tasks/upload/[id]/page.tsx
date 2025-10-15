@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   ArrowLeft,
   Upload, 
@@ -59,7 +60,8 @@ export default function UploadTasksPage() {
     startDate: "",
     endDate: "",
     predecessors: "",
-    progress: "0"
+    progress: "0",
+    completed: false
   });
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -147,7 +149,8 @@ export default function UploadTasksPage() {
       startDate: "",
       endDate: "",
       predecessors: "",
-      progress: "0"
+      progress: "0",
+      completed: false
     });
   };
 
@@ -166,7 +169,8 @@ export default function UploadTasksPage() {
         startDate: task.startDate?.split('T')[0] || "",
         endDate: task.endDate?.split('T')[0] || "",
         predecessors: task.predecessors || "",
-        progress: task.progress?.toString() || "0"
+        progress: task.progress?.toString() || "0",
+        completed: task.completed || false
       });
       setEditingIndex(index);
     }
@@ -182,6 +186,7 @@ export default function UploadTasksPage() {
 
     if (editingIndex === -1) {
       // Adding new task
+      const finalProgress = formData.completed ? 100 : parseInt(formData.progress);
       const newTask = {
         taskNumber: formData.taskNumber ? parseInt(formData.taskNumber) : extractedTasks.length + 1,
         name: formData.name,
@@ -189,13 +194,15 @@ export default function UploadTasksPage() {
         startDate: formData.startDate || undefined,
         endDate: formData.endDate || undefined,
         predecessors: formData.predecessors || undefined,
-        progress: parseInt(formData.progress)
+        progress: finalProgress,
+        completed: formData.completed
       };
 
       setExtractedTasks([...extractedTasks, newTask]);
       showToast("Task added successfully", "success");
     } else {
       // Editing existing task
+      const finalProgress = formData.completed ? 100 : parseInt(formData.progress);
       const updatedTasks = [...extractedTasks];
       updatedTasks[editingIndex] = {
         ...updatedTasks[editingIndex],
@@ -205,7 +212,8 @@ export default function UploadTasksPage() {
         startDate: formData.startDate || undefined,
         endDate: formData.endDate || undefined,
         predecessors: formData.predecessors || undefined,
-        progress: parseInt(formData.progress)
+        progress: finalProgress,
+        completed: formData.completed
       };
 
       setExtractedTasks(updatedTasks);
@@ -550,7 +558,7 @@ export default function UploadTasksPage() {
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <BarChart3 className="h-3 w-3" />
-                                    <span>{task.progress || 0}% complete</span>
+                                    <span>{task.completed ? 100 : (task.progress || 0)}% complete</span>
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <Calendar className="h-3 w-3" />
@@ -727,7 +735,26 @@ export default function UploadTasksPage() {
                   max="100"
                   value={formData.progress}
                   onChange={(e) => setFormData(prev => ({ ...prev, progress: e.target.value }))}
+                  disabled={formData.completed}
                 />
+                {formData.completed && (
+                  <p className="text-xs text-gray-500 mt-1">Progress is automatically set to 100% when marked as completed</p>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="edit-completed"
+                  checked={formData.completed}
+                  onCheckedChange={(checked) => setFormData(prev => ({ 
+                    ...prev, 
+                    completed: !!checked,
+                    progress: checked ? "100" : prev.progress
+                  }))}
+                />
+                <Label htmlFor="edit-completed" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Mark as Completed
+                </Label>
               </div>
 
               <div className="flex gap-2 pt-4">

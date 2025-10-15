@@ -355,6 +355,15 @@ export async function POST(request: NextRequest) {
 
       const existingCodesSet = new Set(existingCodes.map(c => c.code))
       
+      // Get company name for default use
+      const company = await db
+        .select({ name: companies.name })
+        .from(companies)
+        .where(eq(companies.id, auth.admin.companyId))
+        .limit(1)
+      
+      const defaultCompanyName = company.length > 0 ? company[0].name : null
+      
       // Prepare contractor data
       const preparedContractors = uniqueContractors.map((contractor: any, index: number) => {
         const firstName = contractor.firstName.trim();
@@ -379,7 +388,7 @@ export async function POST(request: NextRequest) {
           companyId: auth.admin.companyId,
           language: (contractor.language && (contractor.language === 'en' || contractor.language === 'es')) ? contractor.language : 'en',
           rate: contractor.rate || '0.00',
-          companyName: contractor.companyName || null,
+          companyName: contractor.companyName || defaultCompanyName,
           type: (contractor.type && (contractor.type.toLowerCase() === 'contractor' || contractor.type.toLowerCase() === 'foreman')) ? contractor.type.toLowerCase() : 'contractor'
         }
       })
@@ -388,10 +397,30 @@ export async function POST(request: NextRequest) {
       const createdContractors = []
       const errors = []
       
-      for (const contractorData of preparedContractors) {
+      for (let i = 0; i < preparedContractors.length; i++) {
+        const contractorData = preparedContractors[i];
+        const originalContractor = uniqueContractors[i];
+        
         try {
           const [createdContractor] = await db.insert(contractors).values(contractorData).returning()
           createdContractors.push(createdContractor)
+          
+          // Handle project assignments if provided in original contractor data
+          if (originalContractor.projectIds && Array.isArray(originalContractor.projectIds) && originalContractor.projectIds.length > 0) {
+            const assignedBy = auth.admin.name;
+            const assignedByUserId = auth.admin.id;
+            
+            const assignmentData = originalContractor.projectIds.map((projectId: string) => ({
+              contractorId: createdContractor.id,
+              projectId,
+              role: 'worker',
+              assignedBy,
+              assignedByUserId,
+              isActive: true
+            }));
+
+            await db.insert(contractorProjects).values(assignmentData);
+          }
         } catch (insertError: any) {
           if (insertError.code === '23505') {
             if (insertError.constraint?.includes('company_email_unique')) {
@@ -497,6 +526,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get company name for default use
+    const company = await db
+      .select({ name: companies.name })
+      .from(companies)
+      .where(eq(companies.id, auth.admin.companyId))
+      .limit(1)
+    
+    const defaultCompanyName = company.length > 0 ? company[0].name : null
+
     // Prepare contractor data
     const contractorData: any = {
       firstName: firstName.trim(),
@@ -514,9 +552,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Add company name if provided
+    // Add company name if provided, otherwise use default company name
     if (companyName && companyName.trim()) {
       contractorData.companyName = companyName.trim()
+    } else if (defaultCompanyName) {
+      contractorData.companyName = defaultCompanyName
     }
 
     // Add language if provided, otherwise default to 'en'

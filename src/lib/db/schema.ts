@@ -92,6 +92,8 @@ export const projects = pgTable('projects', {
   location: text('location').notNull(),
   companyId: uuid('company_id').notNull(),
   projectCost: numeric('project_cost', { precision: 12, scale: 2 }), // Optional project cost
+  startDate: date('start_date'),
+  endDate: date('end_date'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -263,6 +265,7 @@ export const projectTasks = pgTable('project_tasks', {
   endDate: date('end_date'),
   predecessors: text('predecessors'), // "1,2,3" or "1FS+5 days" - references taskNumber
   progress: numeric('progress', { precision: 5, scale: 2 }).default('0'), // e.g. 0–100
+  completed: boolean('completed').default(false), // Whether task is marked as completed
 
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

@@ -396,8 +396,17 @@ export async function POST(request: NextRequest) {
           
           // Create foreman contractor if foreman is provided
           if (subcontractorData.foreman) {
-            // For bulk creation, we don't auto-assign to projects since it's not from project dashboard
-            await createForemanContractor(subcontractorData.foreman, originalSubcontractor.foremanEmail || null, subcontractorData.name, auth.admin.companyId);
+            // For project-specific bulk creation, assign foreman to project if projectIds are provided
+            const projectIdForForeman = originalSubcontractor.projectIds && originalSubcontractor.projectIds.length > 0 ? originalSubcontractor.projectIds[0] : undefined;
+            await createForemanContractor(
+              subcontractorData.foreman, 
+              originalSubcontractor.foremanEmail || null, 
+              subcontractorData.name, 
+              auth.admin.companyId,
+              projectIdForForeman,
+              auth.admin.name,
+              auth.admin.id
+            );
           }
         } catch (insertError: any) {
           if (insertError.code === '23505') {

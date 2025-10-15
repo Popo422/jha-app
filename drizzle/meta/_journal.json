@@ -183,6 +183,20 @@
       "when": 1760232328420,
       "tag": "0025_flimsy_praxagora",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1760499717859,
+      "tag": "0026_serious_sheva_callister",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1760502883573,
+      "tag": "0027_add_completed_to_project_tasks",
+      "breakpoints": true
     }
   ]
 }

@@ -115,7 +115,8 @@ export async function POST(request: NextRequest) {
       startDate, 
       endDate, 
       predecessors,
-      progress = 0
+      progress = 0,
+      completed = false
     } = body;
 
     if (!projectId || !name) {
@@ -161,7 +162,8 @@ export async function POST(request: NextRequest) {
         startDate: startDate || null,
         endDate: endDate || null,
         predecessors,
-        progress: progress.toString()
+        progress: completed ? '100' : progress.toString(),
+        completed
       })
       .returning();
 

@@ -207,8 +207,8 @@ export default function SubcontractorHoursAnalytics({
         const result = await response.json();
         
         // Transform the subcontractor-hours data to match the all-subcontractors format
-        // Filter out subcontractors with 0 hours when project filter is applied
-        const filteredSubcontractors = result.subcontractorHours.filter((item: any) => item.totalHours > 0);
+        // Don't filter out subcontractors with 0 hours anymore - show all assigned subcontractors
+        const filteredSubcontractors = result.subcontractorHours;
         
         const transformedData = {
           allSubcontractors: filteredSubcontractors.map((item: any) => ({
@@ -316,14 +316,21 @@ export default function SubcontractorHoursAnalytics({
     fetchAllSubcontractors();
   }, [companyId, allSubcontractorsPagination.currentPage, allSubcontractorsPagination.pageSize, debouncedAllSubcontractorsSearch, projectFilter, subcontractorFilter]);
 
-  // Filter data based on search query
+  // Filter data based on search query only (no longer filter out 0 hours for project views)
   const filteredData = useMemo(() => {
-    if (!data || !searchQuery.trim()) return data?.subcontractorHours || [];
+    if (!data) return [];
     
-    return data.subcontractorHours.filter(item =>
-      item.subcontractor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.foreman.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    let filtered = data.subcontractorHours;
+    
+    // Apply search query filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(item =>
+        item.subcontractor.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.foreman.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    return filtered;
   }, [data, searchQuery]);
 
   // Prepare pie chart data - only subcontractors with hours > 0

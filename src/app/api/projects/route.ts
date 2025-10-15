@@ -183,6 +183,8 @@ export async function GET(request: NextRequest) {
       location: projects.location,
       companyId: projects.companyId,
       projectCost: projects.projectCost,
+      startDate: projects.startDate,
+      endDate: projects.endDate,
       createdAt: projects.createdAt,
       updatedAt: projects.updatedAt,
       subcontractorCount: sql<number>`(
@@ -301,6 +303,8 @@ export async function POST(request: NextRequest) {
           location: project.location.trim(),
           companyId: auth.admin.companyId,
           projectCost: project.projectCost ? project.projectCost.toString() : null,
+          startDate: project.startDate || null,
+          endDate: project.endDate || null,
         }
       })
 
@@ -316,7 +320,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single project creation (existing logic)
-    const { name, projectManager, location, projectCost } = body
+    const { name, projectManager, location, projectCost, startDate, endDate } = body
 
     // Validate required fields
     if (!name || !projectManager || !location) {
@@ -367,6 +371,8 @@ export async function POST(request: NextRequest) {
       location: location.trim(),
       companyId: auth.admin.companyId,
       projectCost: projectCost ? projectCost.toString() : null,
+      startDate: startDate || null,
+      endDate: endDate || null,
     }
 
     // Create project record
@@ -420,7 +426,7 @@ export async function PUT(request: NextRequest) {
 
 
     const body = await request.json()
-    const { id, name, projectManager, location, projectCost } = body
+    const { id, name, projectManager, location, projectCost, startDate, endDate } = body
 
     if (!id) {
       return NextResponse.json(
@@ -458,6 +464,8 @@ export async function PUT(request: NextRequest) {
       projectManager: projectManager.trim(),
       location: location.trim(),
       projectCost: projectCost ? projectCost.toString() : null,
+      startDate: startDate || null,
+      endDate: endDate || null,
       updatedAt: new Date()
     }
 

@@ -16,7 +16,8 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
-import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy, ChevronDown } from "lucide-react";
+import { ProjectWorkmenBulkUploadModal } from "@/components/admin/ProjectWorkmenBulkUploadModal";
+import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy, ChevronDown, Upload } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 type ViewMode = 'list' | 'add' | 'edit';
@@ -48,6 +49,7 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
   const [emailMessage, setEmailMessage] = useState<string>("");
   const [isSubcontractorModalOpen, setIsSubcontractorModalOpen] = useState(false);
   const [newSubcontractorName, setNewSubcontractorName] = useState("");
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   
   const { toast, showToast, hideToast } = useToast();
   
@@ -802,6 +804,15 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
           </div>
           <div className="flex space-x-2">
             <Button 
+              onClick={() => setIsBulkUploadModalOpen(true)}
+              variant="outline"
+              className="flex items-center space-x-2"
+              size="sm"
+            >
+              <Upload className="h-4 w-4" />
+              <span>Bulk Upload</span>
+            </Button>
+            <Button 
               onClick={handleAdd} 
               className="flex items-center space-x-2"
               size="sm"
@@ -965,6 +976,13 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ProjectWorkmenBulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+        projectId={projectId}
+        onUploadSuccess={() => refetch()}
+      />
     </div>
   );
 }

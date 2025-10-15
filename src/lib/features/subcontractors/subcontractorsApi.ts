@@ -59,7 +59,9 @@ export interface BulkSubcontractorData {
   name: string
   contractAmount?: string
   projectId?: string
+  projectIds?: string[]
   foreman?: string
+  foremanEmail?: string
 }
 
 export interface BulkCreateSubcontractorsRequest {

@@ -62,7 +62,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       startDate, 
       endDate, 
       predecessors,
-      progress
+      progress,
+      completed
     } = body
 
     // Get the existing task and verify it belongs to admin's company
@@ -86,6 +87,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Update the task
+    const finalCompleted = completed !== undefined ? completed : existingTask[0].task.completed;
+    const finalProgress = finalCompleted ? '100' : (progress !== undefined ? progress.toString() : existingTask[0].task.progress);
+
     const updatedTask = await db
       .update(projectTasks)
       .set({
@@ -94,7 +98,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         startDate: startDate || existingTask[0].task.startDate,
         endDate: endDate || existingTask[0].task.endDate,
         predecessors: predecessors !== undefined ? predecessors : existingTask[0].task.predecessors,
-        progress: progress !== undefined ? progress.toString() : existingTask[0].task.progress,
+        progress: finalProgress,
+        completed: finalCompleted,
         updatedAt: new Date()
       })
       .where(eq(projectTasks.id, taskId))

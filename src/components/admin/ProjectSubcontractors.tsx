@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, ArrowUpDown } from "lucide-react";
+import { ProjectSubcontractorsBulkUploadModal } from "@/components/admin/ProjectSubcontractorsBulkUploadModal";
+import { Plus, ArrowUpDown, Upload } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 interface ProjectSubcontractorsProps {
@@ -31,6 +32,7 @@ export default function ProjectSubcontractors({ projectId }: ProjectSubcontracto
     foremanEmail: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   
   const { showToast } = useToast();
   
@@ -396,6 +398,15 @@ export default function ProjectSubcontractors({ projectId }: ProjectSubcontracto
             </div>
             <div className="flex space-x-2">
               <Button 
+                onClick={() => setIsBulkUploadModalOpen(true)}
+                variant="outline"
+                className="flex items-center space-x-2"
+                size="sm"
+              >
+                <Upload className="h-4 w-4" />
+                <span>Bulk Upload</span>
+              </Button>
+              <Button 
                 onClick={handleAdd} 
                 className="flex items-center space-x-2"
                 size="sm"
@@ -426,6 +437,13 @@ export default function ProjectSubcontractors({ projectId }: ProjectSubcontracto
           onSearchChange={setSearch}
         />
       </div>
+
+      <ProjectSubcontractorsBulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+        projectId={projectId}
+        onUploadSuccess={() => refetch()}
+      />
     </>
   );
 }

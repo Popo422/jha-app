@@ -61,7 +61,9 @@ export default function ProjectDashboardPage() {
     name: '',
     projectManager: '',
     location: '',
-    projectCost: ''
+    projectCost: '',
+    startDate: '',
+    endDate: ''
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -128,7 +130,9 @@ export default function ProjectDashboardPage() {
       name: project.name,
       projectManager: project.projectManager,
       location: project.location,
-      projectCost: project.projectCost || ''
+      projectCost: project.projectCost || '',
+      startDate: project.startDate || '',
+      endDate: project.endDate || ''
     });
     setFormErrors({});
     setEditModalOpen(true);
@@ -177,7 +181,9 @@ export default function ProjectDashboardPage() {
       name: '',
       projectManager: '',
       location: '',
-      projectCost: ''
+      projectCost: '',
+      startDate: '',
+      endDate: ''
     });
     setFormErrors({});
   };
@@ -372,9 +378,21 @@ export default function ProjectDashboardPage() {
                     </div>
                     
                     <div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Created</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Project Dates</div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        {new Date(project.createdAt).toLocaleDateString()}
+                        {project.startDate || project.endDate ? (
+                          <div>
+                            {project.startDate && project.endDate ? (
+                              <>Start: {new Date(project.startDate).toLocaleDateString()} • End: {new Date(project.endDate).toLocaleDateString()}</>
+                            ) : project.startDate ? (
+                              <>Start: {new Date(project.startDate).toLocaleDateString()}</>
+                            ) : project.endDate ? (
+                              <>End: {new Date(project.endDate).toLocaleDateString()}</>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div>Created: {new Date(project.createdAt).toLocaleDateString()}</div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -517,6 +535,29 @@ export default function ProjectDashboardPage() {
                   onChange={(e) => setEditForm({ ...editForm, projectCost: e.target.value })}
                   placeholder="Enter project cost"
                 />
+              </div>
+              <div>
+                <Label className="text-base font-medium">Project Timeline</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-startDate" className="text-sm text-gray-600">Start Date</Label>
+                    <DateInput
+                      id="edit-startDate"
+                      value={editForm.startDate}
+                      onChange={(value) => setEditForm({ ...editForm, startDate: value })}
+                      placeholder="Select start date"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-endDate" className="text-sm text-gray-600">End Date</Label>
+                    <DateInput
+                      id="edit-endDate"
+                      value={editForm.endDate}
+                      onChange={(value) => setEditForm({ ...editForm, endDate: value })}
+                      placeholder="Select end date"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             <AlertDialogFooter className="mt-6">

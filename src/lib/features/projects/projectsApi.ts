@@ -7,6 +7,8 @@ export interface Project {
   location: string
   companyId: string
   projectCost?: string
+  startDate?: string
+  endDate?: string
   subcontractorCount?: number
   createdAt: string
   updatedAt: string
@@ -17,6 +19,8 @@ export interface CreateProjectRequest {
   projectManager: string
   location: string
   projectCost?: string
+  startDate?: string
+  endDate?: string
 }
 
 export interface UpdateProjectRequest {
@@ -25,6 +29,8 @@ export interface UpdateProjectRequest {
   projectManager: string
   location: string
   projectCost?: string
+  startDate?: string
+  endDate?: string
 }
 
 export interface PaginationInfo {
@@ -114,6 +120,8 @@ export interface BulkProjectData {
   location: string
   projectManager?: string
   projectCost?: string
+  startDate?: string
+  endDate?: string
 }
 
 export interface BulkCreateProjectsRequest {
