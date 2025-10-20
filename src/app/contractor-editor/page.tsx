@@ -559,7 +559,7 @@ export default function ContractorEditorPage() {
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="contractor">Contractor</SelectItem>
+              <SelectItem value="contractor">Workmen</SelectItem>
               <SelectItem value="foreman">Foreman</SelectItem>
             </SelectContent>
           </Select>
@@ -647,7 +647,7 @@ export default function ContractorEditorPage() {
                   <Button variant="outline" size="sm" className="w-28 justify-between text-xs">
                     <span className="truncate">
                       {typeFilter === "all" ? "All Types" : 
-                       typeFilter === "contractor" ? "Contractors" : 
+                       typeFilter === "contractor" ? "Workmen" : 
                        typeFilter === "foreman" ? "Foremen" : "All Types"}
                     </span>
                     <ChevronDown className="h-3 w-3 shrink-0" />
@@ -658,7 +658,7 @@ export default function ContractorEditorPage() {
                     All Types
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setTypeFilter("contractor")}>
-                    Contractors
+                    Workmen
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setTypeFilter("foreman")}>
                     Foremen

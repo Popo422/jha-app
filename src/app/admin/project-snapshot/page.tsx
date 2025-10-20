@@ -193,7 +193,7 @@ export default function ProjectSnapshotPage() {
         color: 'bg-blue-500'
       },
       {
-        title: 'Active Contractors',
+        title: 'Active Workmen',
         value: metricsData.activeContractors.toString(),
         change: 'Currently active',
         icon: Users,

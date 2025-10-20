@@ -995,7 +995,7 @@ export default function ContractorsPage() {
                   <Button variant="outline" size="sm" className="w-28 justify-between text-xs">
                     <span className="truncate">
                       {typeFilter === "all" ? "All Types" : 
-                       typeFilter === "contractor" ? "Contractors" : 
+                       typeFilter === "contractor" ? "Workmen" : 
                        typeFilter === "foreman" ? "Foremen" : "All Types"}
                     </span>
                     <ChevronDown className="h-3 w-3 shrink-0" />
@@ -1006,7 +1006,7 @@ export default function ContractorsPage() {
                     All Types
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setTypeFilter("contractor")}>
-                    Contractors
+                    Workmen
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setTypeFilter("foreman")}>
                     Foremen
@@ -1076,9 +1076,9 @@ export default function ContractorsPage() {
       <AlertDialog open={showSyncModal} onOpenChange={setShowSyncModal}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Contractor Already Exists in Procore</AlertDialogTitle>
+            <AlertDialogTitle>Workmen Already Exists in Procore</AlertDialogTitle>
             <AlertDialogDescription>
-              {`The contractor "${syncingContractor?.firstName} ${syncingContractor?.lastName}" already exists in Procore.`}
+              {`The workmen "${syncingContractor?.firstName} ${syncingContractor?.lastName}" already exists in Procore.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {existingProcorePerson && (
