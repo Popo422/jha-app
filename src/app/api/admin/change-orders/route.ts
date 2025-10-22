@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where conditions
-    let whereConditions = [
+    const whereConditions = [
       eq(changeOrders.projectId, projectId),
       eq(changeOrders.companyId, companyId)
     ]
