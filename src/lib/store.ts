@@ -23,6 +23,7 @@ import { workersCompApi } from './features/workers-comp/workersCompApi'
 import { contractorManagementApi } from './features/contractor-management/contractorManagementApi'
 import { projectTasksApi } from './features/project-tasks/projectTasksApi'
 import { projectDocumentsApi } from './features/project-documents/projectDocumentsApi'
+import { changeOrdersApi } from './features/change-orders/changeOrdersApi'
 
 export const store = configureStore({
   reducer: {
@@ -50,6 +51,7 @@ export const store = configureStore({
     [contractorManagementApi.reducerPath]: contractorManagementApi.reducer,
     [projectTasksApi.reducerPath]: projectTasksApi.reducer,
     [projectDocumentsApi.reducerPath]: projectDocumentsApi.reducer,
+    [changeOrdersApi.reducerPath]: changeOrdersApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -72,7 +74,8 @@ export const store = configureStore({
       workersCompApi.middleware,
       contractorManagementApi.middleware,
       projectTasksApi.middleware,
-      projectDocumentsApi.middleware
+      projectDocumentsApi.middleware,
+      changeOrdersApi.middleware
     ),
 })
 
