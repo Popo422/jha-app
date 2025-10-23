@@ -127,6 +127,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       icon: FolderOpen
     },
     {
+      label: 'Project Manager',
+      href: '/admin/admin-editor',
+      icon: Shield
+    },
+    {
       label: 'Settings',
       icon: Settings,
       isAccordion: true,
@@ -135,11 +140,6 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           label: t('admin.moduleConfiguration'),
           href: '/admin/modules',
           icon: Puzzle
-        },
-        {
-          label: t('admin.adminEditor'),
-          href: '/admin/admin-editor',
-          icon: Shield
         },
         {
           label: t('admin.contractorsEditor'),
