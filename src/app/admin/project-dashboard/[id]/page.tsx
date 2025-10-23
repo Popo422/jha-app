@@ -1,23 +1,33 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, FolderOpen, CheckSquare, FileText, Users, Building } from "lucide-react";
+import { ArrowLeft, FolderOpen, CheckSquare, FileText, Users, Building, ClipboardList } from "lucide-react";
 import ProjectTasks from "@/components/admin/ProjectTasks";
 import ProjectSnapshot from "@/components/admin/ProjectSnapshot";
 import ProjectDocuments from "@/components/admin/ProjectDocuments";
 import ProjectWorkmen from "@/components/admin/ProjectWorkmen";
 import ProjectSubcontractors from "@/components/admin/ProjectSubcontractors";
+import ProjectChangeOrders from "@/components/admin/ProjectChangeOrders";
 
 export default function ProjectDetailsPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const projectId = params.id as string;
   const [activeTab, setActiveTab] = useState('snapshot');
+
+  // Set active tab from URL parameter
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
 
   return (
     <div className="p-4 md:p-6">
@@ -42,7 +52,7 @@ export default function ProjectDetailsPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="snapshot" className="text-xs sm:text-sm flex items-center gap-1">
             <FolderOpen className="h-4 w-4" />
             <span className="hidden sm:inline">Project Snapshot</span>
@@ -67,6 +77,11 @@ export default function ProjectDetailsPage() {
             <Building className="h-4 w-4" />
             <span className="hidden sm:inline">Subcontractors</span>
             <span className="sm:hidden">Subs</span>
+          </TabsTrigger>
+          <TabsTrigger value="change-orders" className="text-xs sm:text-sm flex items-center gap-1">
+            <ClipboardList className="h-4 w-4" />
+            <span className="hidden sm:inline">Change Orders</span>
+            <span className="sm:hidden">Changes</span>
           </TabsTrigger>
         </TabsList>
         
@@ -97,6 +112,12 @@ export default function ProjectDetailsPage() {
         <TabsContent value="subcontractors" className="mt-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
             <ProjectSubcontractors projectId={projectId} />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="change-orders" className="mt-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
+            <ProjectChangeOrders projectId={projectId} />
           </div>
         </TabsContent>
       </Tabs>

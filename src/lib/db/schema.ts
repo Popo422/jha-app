@@ -274,3 +274,78 @@ export const projectTasks = pgTable('project_tasks', {
   projectTaskNumberUnique: unique().on(table.projectId, table.taskNumber),
 }))
 
+// Change Orders Schema
+export const changeOrders = pgTable('change_orders', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  companyId: uuid('company_id').notNull(),
+
+  // Basic Information
+  title: text('title').notNull(),
+  description: text('description'),
+  changeType: text('change_type').notNull(), // 'Scope', 'Time', 'Cost', 'All'
+  
+  // Cost Impact
+  originalContractAmount: numeric('original_contract_amount', { precision: 12, scale: 2 }),
+  newAmount: numeric('new_amount', { precision: 12, scale: 2 }),
+  costDifference: numeric('cost_difference', { precision: 12, scale: 2 }),
+  
+  // Schedule Impact
+  addedDays: integer('added_days').default(0),
+  originalEndDate: date('original_end_date'),
+  revisedEndDate: date('revised_end_date'),
+  
+  
+  // Request Information
+  requestedBy: text('requested_by').notNull(), // Project Manager name
+  requestedByUserId: uuid('requested_by_user_id'), // Admin user ID
+  submissionDate: timestamp('submission_date').notNull().defaultNow(),
+  notesOrJustification: text('notes_or_justification'),
+  
+  // Admin Approval Section
+  toBeApprovedBy: text('to_be_approved_by'), // Project Manager(s) who need to approve
+  toBeApprovedByUserIds: jsonb('to_be_approved_by_user_ids').$type<string[]>().default([]), // Admin user IDs
+  keyStakeholder: text('key_stakeholder'),
+  status: text('status').notNull().default('Pending'), // 'Pending', 'Approved', 'Rejected'
+  assignedApproverId: uuid('assigned_approver_id'), // Current approver
+  assignedApproverName: text('assigned_approver_name'),
+  
+  // Approval Information
+  approverSignature: text('approver_signature'),
+  dateApproved: timestamp('date_approved'),
+  dateRejected: timestamp('date_rejected'),
+  rejectionReason: text('rejection_reason'),
+  
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Ensure unique change order titles within each project
+  projectChangeOrderTitleUnique: unique().on(table.projectId, table.title),
+}))
+
+// Change Order Documents Schema
+export const changeOrderDocuments = pgTable('change_order_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  changeOrderId: uuid('change_order_id')
+    .notNull()
+    .references(() => changeOrders.id, { onDelete: 'cascade' }),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  companyId: uuid('company_id').notNull(),
+  
+  name: text('name').notNull(), // Filename
+  description: text('description'), // Optional description
+  category: text('category').notNull().default('Supporting Document'), // Document category
+  fileType: text('file_type').notNull(), // File extension
+  fileSize: integer('file_size').notNull(), // File size in bytes
+  url: text('url').notNull(), // Vercel Blob storage URL
+  blobKey: text('blob_key').notNull(), // Vercel Blob key for deletion
+  
+  uploadedBy: uuid('uploaded_by').notNull(), // Admin user ID who uploaded
+  uploadedByName: text('uploaded_by_name').notNull(), // Admin name for display
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
