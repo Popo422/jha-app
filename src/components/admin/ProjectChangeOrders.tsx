@@ -232,16 +232,51 @@ export default function ProjectChangeOrders({ projectId }: ProjectChangeOrdersPr
         onBulkDelete={handleBulkDelete}
         getRowId={(changeOrder) => changeOrder.id}
         exportFilename="change-orders"
-        exportHeaders={["Title", "Change Type", "Cost Impact", "Schedule Impact", "Requested By", "Submission Date", "Status", "Approver"]}
+        exportHeaders={[
+          "Title",
+          "Description", 
+          "Change Type",
+          "Original Contract Amount",
+          "New Amount",
+          "Cost Difference",
+          "Added Days",
+          "Original End Date",
+          "Revised End Date",
+          "Requested By",
+          "Submission Date",
+          "Notes/Justification",
+          "To Be Approved By",
+          "Key Stakeholder",
+          "Status",
+          "Approver Signature",
+          "Date Approved",
+          "Date Rejected",
+          "Rejection Reason",
+          "Created At",
+          "Updated At"
+        ]}
         getExportData={(changeOrder) => [
           changeOrder.title,
+          changeOrder.description || '',
           changeOrder.changeType,
+          formatCurrency(changeOrder.originalContractAmount),
+          formatCurrency(changeOrder.newAmount),
           formatCurrency(changeOrder.costDifference),
-          changeOrder.addedDays > 0 ? `+${changeOrder.addedDays} days` : '0 days',
+          changeOrder.addedDays.toString(),
+          formatDate(changeOrder.originalEndDate),
+          formatDate(changeOrder.revisedEndDate),
           changeOrder.requestedBy,
           formatDate(changeOrder.submissionDate),
+          changeOrder.notesOrJustification || '',
+          changeOrder.toBeApprovedBy || 'Not assigned',
+          changeOrder.keyStakeholder || '',
           changeOrder.status,
-          changeOrder.toBeApprovedBy || 'Not assigned'
+          changeOrder.approverSignature || '',
+          formatDate(changeOrder.dateApproved),
+          formatDate(changeOrder.dateRejected),
+          changeOrder.rejectionReason || '',
+          formatDate(changeOrder.createdAt),
+          formatDate(changeOrder.updatedAt)
         ]}
         searchValue={searchValue}
         onSearchChange={setSearchValue}
