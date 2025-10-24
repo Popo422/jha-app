@@ -168,10 +168,6 @@ export default function NewChangeOrderPage() {
       showToast('Change type is required', 'error');
       return false;
     }
-    if (!formData.approverSignature) {
-      showToast('Approver signature is required', 'error');
-      return false;
-    }
     return true;
   };
 
@@ -195,9 +191,9 @@ export default function NewChangeOrderPage() {
         notesOrJustification: formData.notesOrJustification || undefined,
         toBeApprovedBy: formData.toBeApprovedBy || undefined,
         toBeApprovedByUserIds: formData.toBeApprovedByUserIds,
-        keyStakeholder: formData.keyStakeholder || undefined,
-        status: formData.status,
-        approverSignature: formData.approverSignature || undefined,
+        keyStakeholder: undefined,
+        status: 'Pending',
+        approverSignature: undefined,
       };
 
       const result = await createChangeOrder(changeOrderData).unwrap();
@@ -402,50 +398,6 @@ export default function NewChangeOrderPage() {
                 </CardContent>
               </Card>
 
-              {/* Admin Approval Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Admin Approval Section</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="keyStakeholder">Key Stakeholder</Label>
-                      <Input
-                        id="keyStakeholder"
-                        value={formData.keyStakeholder}
-                        onChange={(e) => updateFormData({ keyStakeholder: e.target.value })}
-                        placeholder="Key stakeholder name"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="status">Status</Label>
-                      <Select value={formData.status} onValueChange={(value) => updateFormData({ status: value as any })}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Pending">Pending</SelectItem>
-                          <SelectItem value="Approved">Approved</SelectItem>
-                          <SelectItem value="Rejected">Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="md:col-span-2">
-                      <Label>Approver Signature *</Label>
-                      <div className="mt-2">
-                        <SignatureButton
-                          signature={formData.approverSignature}
-                          onSignatureChange={(signature) => updateFormData({ approverSignature: signature })}
-                          signerName={formData.toBeApprovedBy || 'Approver'}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Submit Button */}
               <div className="flex justify-end space-x-4">
