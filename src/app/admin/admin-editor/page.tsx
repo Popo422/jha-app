@@ -12,7 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { AdminDataTable } from '@/components/admin/AdminDataTable'
-import { Plus, UserCheck, Shield, Lock, ArrowLeft, Eye, EyeOff, Save, X } from 'lucide-react'
+import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal'
+import { Plus, UserCheck, Shield, Lock, ArrowLeft, Eye, EyeOff, Save, X, Upload } from 'lucide-react'
 import SubcontractorSelect from '@/components/SubcontractorSelect'
 
 // AdminUser interface is now imported from the API
@@ -25,6 +26,7 @@ export default function AdminEditorPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -554,13 +556,27 @@ export default function AdminEditorPage() {
             }
           </p>
         </div>
-        <Button 
-          onClick={() => setCurrentView('add')} 
-          className="flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          {t('admin.addAdmin')}
-        </Button>
+        <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+          <Button 
+            onClick={() => setIsBulkUploadModalOpen(true)} 
+            variant="outline" 
+            className="flex items-center justify-center gap-2 w-full sm:w-auto"
+            size="sm"
+          >
+            <Upload className="w-4 h-4" />
+            <span className="hidden sm:inline">Bulk Upload</span>
+            <span className="sm:hidden">Bulk</span>
+          </Button>
+          <Button 
+            onClick={() => setCurrentView('add')} 
+            className="flex items-center justify-center gap-2 w-full sm:w-auto"
+            size="sm"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('admin.addAdmin')}</span>
+            <span className="sm:hidden">Add</span>
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -606,6 +622,12 @@ export default function AdminEditorPage() {
           />
         </CardContent>
       </Card>
+
+      {/* Admin Bulk Upload Modal */}
+      <AdminBulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+      />
     </div>
   )
 }

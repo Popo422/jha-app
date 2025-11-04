@@ -10,7 +10,6 @@ import {
   useGetProjectSnapshotProjectsQuery, 
   useGetProjectSnapshotSubcontractorsQuery,
   useGetProjectSnapshotMetricsQuery,
-  useGetProjectTimelineQuery,
   type ProjectSnapshotData as ProjectSnapshotDataType,
   type PaginationInfo
 } from '@/lib/features/project-snapshot/projectSnapshotApi';
@@ -24,8 +23,6 @@ import { ChevronDown, Download, Building, Users, DollarSign, User, Check, X, Ale
 import WeatherWidget from '@/components/WeatherWidget';
 import HoursOverTimeChart from '@/components/HoursOverTimeChart';
 import SubcontractorHoursAnalytics from '@/components/SubcontractorHoursAnalytics';
-import OverallProgress from '@/components/admin/OverallProgress';
-import ProjectTimeline from '@/components/admin/ProjectTimeline';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import { 
   DropdownMenu, 
@@ -96,13 +93,6 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
   }, [projectName, availableProjects]);
 
 
-  // Fetch project timeline data
-  const { data: timelineData, isLoading: isLoadingTimeline, isFetching: isFetchingTimeline } = useGetProjectTimelineQuery({
-    projectId: projectId
-  }, {
-    skip: !projectId,
-    refetchOnMountOrArgChange: true
-  });
 
   // Force refetch metrics when project changes
   useEffect(() => {
@@ -428,28 +418,6 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
         )}
       </div>
 
-      {/* Project Timeline Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Overall Progress - Left Side */}
-        <div className="lg:col-span-1">
-          <OverallProgress
-            progress={timelineData?.overallProgress || 0}
-            startDate={timelineData?.projectStartDate || null}
-            endDate={timelineData?.projectEndDate || null}
-            totalTasks={timelineData?.totalTasks}
-            isLoading={isLoadingTimeline || isFetchingTimeline}
-          />
-        </div>
-
-        {/* Project Timeline - Right Side */}
-        <div className="lg:col-span-2">
-          <ProjectTimeline
-            weeks={timelineData?.timelineData.weeks || []}
-            taskTimelines={timelineData?.timelineData.taskTimelines || []}
-            isLoading={isLoadingTimeline || isFetchingTimeline}
-          />
-        </div>
-      </div>
 
       {/* Weather Widget */}
       <div className="w-full">

@@ -68,6 +68,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       icon: Home
     },
     {
+      label: 'Project Dashboard',
+      href: '/admin/project-dashboard',
+      icon: FolderOpen
+    },
+    {
       label: 'Forms',
       icon: FolderOpen,
       isAccordion: true,
@@ -94,11 +99,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       icon: BarChart3,
       isAccordion: true,
       children: [
-        {
-          label: t('admin.projectSnapshot'),
-          href: '/admin/project-snapshot',
-          icon: Camera
-        },
+        // {
+        //   label: t('admin.projectSnapshot'),
+        //   href: '/admin/project-snapshot',
+        //   icon: Camera
+        // },
         {
           label: 'Time and Cost Reports',
           href: '/admin/reporting',
@@ -121,11 +126,6 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     //   href: '/admin/onboarding',
     //   icon: Sparkles
     // },
-    {
-      label: 'Project Dashboard',
-      href: '/admin/project-dashboard',
-      icon: FolderOpen
-    },
     {
       label: 'Project Manager',
       href: '/admin/admin-editor',
