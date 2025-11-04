@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -37,6 +38,26 @@ export default function ProjectTimeline({
   taskTimelines, 
   isLoading = false 
 }: ProjectTimelineProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const scrollToTask = (task: TaskTimeline) => {
+    if (!scrollContainerRef.current || !task.startWeek) return
+    
+    const containerWidth = scrollContainerRef.current.clientWidth
+    const totalWidth = weeks.length * 64 // 4rem = 64px per week
+    const taskStartPosition = ((task.startWeek - 1) / weeks.length) * totalWidth
+    const taskEndPosition = ((task.endWeek || task.startWeek) / weeks.length) * totalWidth
+    const taskCenterPosition = (taskStartPosition + taskEndPosition) / 2
+    
+    // Scroll to center the task in the viewport
+    const scrollPosition = Math.max(0, taskCenterPosition - containerWidth / 2)
+    
+    scrollContainerRef.current.scrollTo({
+      left: scrollPosition,
+      behavior: 'smooth'
+    })
+  }
+
   const getProgressColor = (progress: number) => {
     if (progress >= 100) return "bg-green-500"
     if (progress >= 75) return "bg-blue-500"
@@ -137,7 +158,7 @@ export default function ProjectTimeline({
       <CardContent>
         <div className="space-y-4">
           {/* Scrollable Timeline Container */}
-          <div className="overflow-x-auto overflow-y-auto max-h-96">
+          <div ref={scrollContainerRef} className="overflow-x-auto overflow-y-auto max-h-96">
             <div className="min-w-max space-y-4">
               {/* Timeline Header - Sticky */}
               <div className="flex gap-2 pb-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
@@ -177,7 +198,10 @@ export default function ProjectTimeline({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate cursor-help">
+                              <div 
+                                className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                onClick={() => scrollToTask(task)}
+                              >
                                 {formatTaskName(task.name, 25)}
                               </div>
                             </TooltipTrigger>
@@ -215,6 +239,7 @@ Duration: ${task.duration} days
 Timeline: Week ${task.startWeek} - Week ${task.endWeek}
 Start: ${task.startDate ? new Date(task.startDate).toLocaleDateString() : 'TBD'}
 End: ${task.endDate ? new Date(task.endDate).toLocaleDateString() : 'TBD'}`}
+                          onClick={() => scrollToTask(task)}
                         />
                       )}
                     </div>

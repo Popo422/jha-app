@@ -5,13 +5,16 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, FolderOpen, CheckSquare, FileText, Users, Building, ClipboardList } from "lucide-react";
+import { ArrowLeft, FolderOpen, CheckSquare, FileText, Users, ClipboardList, Calendar } from "lucide-react";
 import ProjectTasks from "@/components/admin/ProjectTasks";
 import ProjectSnapshot from "@/components/admin/ProjectSnapshot";
 import ProjectDocuments from "@/components/admin/ProjectDocuments";
 import ProjectWorkmen from "@/components/admin/ProjectWorkmen";
 import ProjectSubcontractors from "@/components/admin/ProjectSubcontractors";
 import ProjectChangeOrders from "@/components/admin/ProjectChangeOrders";
+import ProjectTimeline from "@/components/admin/ProjectTimeline";
+import OverallProgress from "@/components/admin/OverallProgress";
+import { useGetProjectTimelineQuery } from "@/lib/features/project-snapshot/projectSnapshotApi";
 
 export default function ProjectDetailsPage() {
   const { t } = useTranslation();
@@ -20,6 +23,14 @@ export default function ProjectDetailsPage() {
   const searchParams = useSearchParams();
   const projectId = params.id as string;
   const [activeTab, setActiveTab] = useState('snapshot');
+
+  // Fetch project timeline data
+  const { data: timelineData, isLoading: isLoadingTimeline, isFetching: isFetchingTimeline } = useGetProjectTimelineQuery({
+    projectId: projectId
+  }, {
+    skip: !projectId,
+    refetchOnMountOrArgChange: true
+  });
 
   // Set active tab from URL parameter
   useEffect(() => {
@@ -58,6 +69,11 @@ export default function ProjectDetailsPage() {
             <span className="hidden sm:inline">Project Snapshot</span>
             <span className="sm:hidden">Snapshot</span>
           </TabsTrigger>
+          <TabsTrigger value="timeline" className="text-xs sm:text-sm flex items-center gap-1">
+            <Calendar className="h-4 w-4" />
+            <span className="hidden sm:inline">Timeline</span>
+            <span className="sm:hidden">Timeline</span>
+          </TabsTrigger>
           <TabsTrigger value="tasks" className="text-xs sm:text-sm flex items-center gap-1">
             <CheckSquare className="h-4 w-4" />
             <span className="hidden sm:inline">Tasks</span>
@@ -68,15 +84,10 @@ export default function ProjectDetailsPage() {
             <span className="hidden sm:inline">Documents</span>
             <span className="sm:hidden">Docs</span>
           </TabsTrigger>
-          <TabsTrigger value="workmen" className="text-xs sm:text-sm flex items-center gap-1">
+          <TabsTrigger value="workforce" className="text-xs sm:text-sm flex items-center gap-1">
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Workmen</span>
-            <span className="sm:hidden">Workmen</span>
-          </TabsTrigger>
-          <TabsTrigger value="subcontractors" className="text-xs sm:text-sm flex items-center gap-1">
-            <Building className="h-4 w-4" />
-            <span className="hidden sm:inline">Subcontractors</span>
-            <span className="sm:hidden">Subs</span>
+            <span className="hidden sm:inline">Workforce</span>
+            <span className="sm:hidden">Workforce</span>
           </TabsTrigger>
           <TabsTrigger value="change-orders" className="text-xs sm:text-sm flex items-center gap-1">
             <ClipboardList className="h-4 w-4" />
@@ -88,6 +99,30 @@ export default function ProjectDetailsPage() {
         <TabsContent value="snapshot" className="mt-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
             <ProjectSnapshot projectId={projectId} />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="timeline" className="mt-6">
+          <div className="space-y-6">
+            {/* Overall Progress - Top */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
+              <OverallProgress
+                progress={timelineData?.overallProgress || 0}
+                startDate={timelineData?.projectStartDate || null}
+                endDate={timelineData?.projectEndDate || null}
+                totalTasks={timelineData?.totalTasks}
+                isLoading={isLoadingTimeline || isFetchingTimeline}
+              />
+            </div>
+
+            {/* Project Timeline - Full Width */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6 min-h-[60vh]">
+              <ProjectTimeline
+                weeks={timelineData?.timelineData.weeks || []}
+                taskTimelines={timelineData?.timelineData.taskTimelines || []}
+                isLoading={isLoadingTimeline || isFetchingTimeline}
+              />
+            </div>
           </div>
         </TabsContent>
         
@@ -103,15 +138,14 @@ export default function ProjectDetailsPage() {
           </div>
         </TabsContent>
         
-        <TabsContent value="workmen" className="mt-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
-            <ProjectWorkmen projectId={projectId} />
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="subcontractors" className="mt-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
-            <ProjectSubcontractors projectId={projectId} />
+        <TabsContent value="workforce" className="mt-6">
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
+              <ProjectWorkmen projectId={projectId} />
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
+              <ProjectSubcontractors projectId={projectId} />
+            </div>
           </div>
         </TabsContent>
         
