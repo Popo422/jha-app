@@ -215,7 +215,7 @@ export default function AdminEditStartOfDayV2Page() {
       }).unwrap();
       
       if (result.success) {
-        showToast('Start of Day Report V2 updated successfully!', 'success');
+        showToast('Foreman Start of Day Report updated successfully!', 'success');
         // Add delay to show the toast before redirecting
         setTimeout(() => {
           router.push('/admin/safety-forms');
@@ -293,7 +293,7 @@ export default function AdminEditStartOfDayV2Page() {
               Back to Safety Forms
             </Link>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {readOnly ? 'View Start of Day Report V2' : 'Edit Start of Day Report V2'}
+              {readOnly ? 'View Foreman Start of Day Report' : 'Edit Foreman Start of Day Report'}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               Submitted by {submission.completedBy} on {new Date(submission.createdAt).toLocaleDateString()}

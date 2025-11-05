@@ -140,7 +140,7 @@ export default function EndOfDayV2Page() {
         authType: 'contractor'
       }).unwrap();
 
-      showToast('End of Day Report V2 submitted successfully!', 'success');
+      showToast('Foreman End of Day Report submitted successfully!', 'success');
       router.push('/contractor-forms');
     } catch (error: any) {
       console.error('Form submission error:', error);

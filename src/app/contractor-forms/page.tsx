@@ -57,13 +57,13 @@ export default function ContractorFormsPage() {
   const subcontractorForms = [
     {
       id: "start-of-day-v2",
-      title: "Start of Day Report V2",
+      title: "Foreman Start of Day Report",
       href: "/contractor-forms/start-of-day-v2",
       description: "Multi-step start of day report with enhanced safety protocol tracking",
     },
     {
       id: "end-of-day-v2",
-      title: "End of Day Report V2",
+      title: "Foreman End of Day Report",
       href: "/contractor-forms/end-of-day-v2",
       description: "Multi-step end of day report with enhanced shift review tracking",
     },

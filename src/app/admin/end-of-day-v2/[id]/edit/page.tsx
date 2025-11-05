@@ -150,7 +150,7 @@ export default function AdminEditEndOfDayV2Page() {
       }).unwrap();
       
       if (result.success) {
-        showToast('End of Day Report V2 updated successfully!', 'success');
+        showToast('Foreman End of Day Report updated successfully!', 'success');
         // Add delay to show the toast before redirecting
         setTimeout(() => {
           router.push('/admin/safety-forms');
@@ -226,7 +226,7 @@ export default function AdminEditEndOfDayV2Page() {
               Back to Safety Forms
             </Link>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {readOnly ? 'View End of Day Report V2' : 'Edit End of Day Report V2'}
+              {readOnly ? 'View Foreman End of Day Report' : 'Edit Foreman End of Day Report'}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               Submitted by {submission.completedBy} on {new Date(submission.createdAt).toLocaleDateString()}

@@ -205,7 +205,7 @@ export default function StartOfDayV2Page() {
         authType: 'contractor'
       }).unwrap();
 
-      showToast('Start of Day Report V2 submitted successfully!', 'success');
+      showToast('Foreman Start of Day Report submitted successfully!', 'success');
       router.push('/contractor-forms');
     } catch (error: any) {
       console.error('Form submission error:', error);
@@ -248,7 +248,7 @@ export default function StartOfDayV2Page() {
                 Back to Forms
               </Link>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Start of Day Report V2
+                Foreman Start of Day Report
               </h1>
             </div>
 
