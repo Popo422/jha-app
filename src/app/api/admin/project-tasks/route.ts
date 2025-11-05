@@ -116,6 +116,7 @@ export async function POST(request: NextRequest) {
       endDate, 
       predecessors,
       progress = 0,
+      cost,
       completed = false
     } = body;
 
@@ -163,6 +164,7 @@ export async function POST(request: NextRequest) {
         endDate: endDate || null,
         predecessors,
         progress: completed ? '100' : progress.toString(),
+        cost: cost ? cost.toString() : null,
         completed
       })
       .returning();

@@ -36,6 +36,7 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
     startDate: '',
     endDate: '',
     progress: '',
+    cost: '',
     predecessors: '',
     completed: false
   });
@@ -137,6 +138,15 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
       },
     },
     {
+      header: "Cost",
+      accessorKey: "cost",
+      cell: ({ row }) => (
+        <div className="text-right">
+          {row.original.cost ? `$${parseFloat(row.original.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+        </div>
+      ),
+    },
+    {
       header: "Completed",
       accessorKey: "completed",
       cell: ({ row }) => (
@@ -197,6 +207,7 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
       startDate: task.startDate || '',
       endDate: task.endDate || '',
       progress: task.progress || '0',
+      cost: task.cost || '',
       predecessors: task.predecessors || '',
       completed: task.completed || false
     });
@@ -217,6 +228,7 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
         startDate: editForm.startDate || undefined,
         endDate: editForm.endDate || undefined,
         progress: finalProgress,
+        cost: editForm.cost ? parseFloat(editForm.cost) : undefined,
         completed: editForm.completed,
         predecessors: editForm.predecessors || undefined
       }).unwrap();
@@ -237,6 +249,7 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
       startDate: '',
       endDate: '',
       progress: '',
+      cost: '',
       predecessors: '',
       completed: false
     });
@@ -349,6 +362,19 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
                   <p className="text-xs text-gray-500 mt-1">Progress is automatically set to 100% when marked as completed</p>
                 )}
               </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="edit-cost">Cost (Optional)</Label>
+              <Input
+                id="edit-cost"
+                type="number"
+                step="0.01"
+                min="0"
+                value={editForm.cost}
+                onChange={(e) => setEditForm({ ...editForm, cost: e.target.value })}
+                placeholder="Enter task cost"
+              />
             </div>
             
             <div className="grid grid-cols-2 gap-4">

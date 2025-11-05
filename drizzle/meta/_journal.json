@@ -204,6 +204,13 @@
       "when": 1761137111746,
       "tag": "0028_yummy_alex_power",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1762348410750,
+      "tag": "0029_pink_shocker",
+      "breakpoints": true
     }
   ]
 }

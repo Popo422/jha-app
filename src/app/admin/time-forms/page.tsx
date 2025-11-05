@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X, Check, XCircle, Clock, CheckCircle, AlertTriangle, Upload } from "lucide-react";
+import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X, Check, XCircle, Clock, CheckCircle, AlertTriangle, Upload, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Toast, useToast } from "@/components/ui/toast";
@@ -47,6 +47,7 @@ interface TimesheetVerification {
 export default function TimeFormsPage() {
   const { t } = useTranslation('common')
   const [selectedTimesheet, setSelectedTimesheet] = useState<Timesheet | null>(null);
+  const [viewMode, setViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('review');
   const [filters, setFilters] = useState({
     dateFrom: '',
@@ -330,10 +331,17 @@ export default function TimeFormsPage() {
 
   const handleEdit = useCallback((timesheet: Timesheet) => {
     setSelectedTimesheet(timesheet);
+    setViewMode(false);
+  }, []);
+
+  const handleView = useCallback((timesheet: Timesheet) => {
+    setSelectedTimesheet(timesheet);
+    setViewMode(true);
   }, []);
 
   const handleBackToList = useCallback(() => {
     setSelectedTimesheet(null);
+    setViewMode(false);
     refetch(); // Refresh data when returning to list
   }, [refetch]);
 
@@ -1009,11 +1017,18 @@ export default function TimeFormsPage() {
                 </>
               )}
               <DropdownMenuItem 
+                onClick={() => handleView(timesheet)}
+                className="cursor-pointer"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {t('common.view')}
+              </DropdownMenuItem>
+              <DropdownMenuItem 
                 onClick={() => handleEdit(timesheet)}
                 className="cursor-pointer"
               >
                 <Edit className="h-4 w-4 mr-2" />
-                Edit
+                {t('common.edit')}
               </DropdownMenuItem>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -1048,13 +1063,14 @@ export default function TimeFormsPage() {
         </div>
       </CardContent>
     </Card>
-  ), [handleEdit, handleSingleDelete]);
+  ), [handleView, handleEdit, handleSingleDelete]);
 
   if (selectedTimesheet) {
     return (
       <TimesheetEdit 
         timesheet={selectedTimesheet}
         onBack={handleBackToList}
+        readOnly={viewMode}
       />
     );
   }
@@ -1090,6 +1106,7 @@ export default function TimeFormsPage() {
         columns={columns}
         isLoading={isLoading}
         isFetching={isFetching}
+        onView={handleView}
         onEdit={handleEdit}
         onDelete={handleSingleDelete}
         onBulkDelete={handleBulkDelete}

@@ -8,6 +8,8 @@ export interface Contractor {
   companyId: string
   code: string
   rate?: string | null
+  overtimeRate?: string | null
+  doubleTimeRate?: string | null
   companyName?: string | null
   language?: string | null
   type?: string | null
@@ -21,6 +23,8 @@ export interface CreateContractorRequest {
   email: string
   code: string
   rate?: string
+  overtimeRate?: string
+  doubleTimeRate?: string
   companyName?: string
   language?: string
   type?: string
@@ -34,6 +38,8 @@ export interface UpdateContractorRequest {
   email: string
   code: string
   rate?: string
+  overtimeRate?: string
+  doubleTimeRate?: string
   companyName?: string
   language?: string
   type?: string

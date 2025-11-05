@@ -188,6 +188,7 @@ export async function GET(request: NextRequest) {
         : await baseQuery.limit(limit!).offset(offset!)
     }
 
+
     // Fetch project assignments for all contractors
     const contractorIds = result.map(contractor => contractor.id);
     let projectAssignments: Array<{
@@ -230,6 +231,7 @@ export async function GET(request: NextRequest) {
       projectIds: contractorProjectMap.get(contractor.id)?.projectIds || [],
       projectNames: contractorProjectMap.get(contractor.id)?.projectNames || [],
     }));
+
 
     const totalPages = Math.ceil(totalCount / pageSize)
     const hasNextPage = page < totalPages
@@ -460,7 +462,7 @@ export async function POST(request: NextRequest) {
 
     // Single contractor creation (existing logic)
     console.log('🔍 [API] Single contractor creation - body:', body)
-    const { firstName, lastName, email, code, rate, companyName, language, type, projectIds } = body
+    const { firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, projectIds } = body
     console.log('🔍 [API] Extracted projectIds:', projectIds)
 
     // Validate required fields
@@ -549,6 +551,22 @@ export async function POST(request: NextRequest) {
       const rateValue = parseFloat(rate)
       if (!isNaN(rateValue) && rateValue >= 0 && rateValue <= 9999.99) {
         contractorData.rate = rateValue.toFixed(2)
+      }
+    }
+
+    // Add overtime rate if provided and valid
+    if (overtimeRate !== undefined && overtimeRate !== null && overtimeRate !== '') {
+      const overtimeRateValue = parseFloat(overtimeRate)
+      if (!isNaN(overtimeRateValue) && overtimeRateValue >= 0 && overtimeRateValue <= 9999.99) {
+        contractorData.overtimeRate = overtimeRateValue.toFixed(2)
+      }
+    }
+
+    // Add double time rate if provided and valid
+    if (doubleTimeRate !== undefined && doubleTimeRate !== null && doubleTimeRate !== '') {
+      const doubleTimeRateValue = parseFloat(doubleTimeRate)
+      if (!isNaN(doubleTimeRateValue) && doubleTimeRateValue >= 0 && doubleTimeRateValue <= 9999.99) {
+        contractorData.doubleTimeRate = doubleTimeRateValue.toFixed(2)
       }
     }
 
@@ -669,7 +687,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json()
     console.log('🔍 [API] Update contractor body:', body)
-    const { id, firstName, lastName, email, code, rate, companyName, language, type, projectIds } = body
+    const { id, firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, projectIds } = body
     console.log('🔍 [API] Update projectIds:', projectIds)
 
     if (!id) {
@@ -729,6 +747,28 @@ export async function PUT(request: NextRequest) {
     } else {
       // Set rate to null if empty string is provided
       updateData.rate = null
+    }
+
+    // Add overtime rate if provided and valid
+    if (overtimeRate !== undefined && overtimeRate !== null && overtimeRate !== '') {
+      const overtimeRateValue = parseFloat(overtimeRate)
+      if (!isNaN(overtimeRateValue) && overtimeRateValue >= 0 && overtimeRateValue <= 9999.99) {
+        updateData.overtimeRate = overtimeRateValue.toFixed(2)
+      }
+    } else {
+      // Set overtime rate to null if empty string is provided
+      updateData.overtimeRate = null
+    }
+
+    // Add double time rate if provided and valid
+    if (doubleTimeRate !== undefined && doubleTimeRate !== null && doubleTimeRate !== '') {
+      const doubleTimeRateValue = parseFloat(doubleTimeRate)
+      if (!isNaN(doubleTimeRateValue) && doubleTimeRateValue >= 0 && doubleTimeRateValue <= 9999.99) {
+        updateData.doubleTimeRate = doubleTimeRateValue.toFixed(2)
+      }
+    } else {
+      // Set double time rate to null if empty string is provided
+      updateData.doubleTimeRate = null
     }
 
     // Add company name if provided, otherwise set to null

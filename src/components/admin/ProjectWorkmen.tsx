@@ -40,6 +40,8 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
     email: "",
     code: "",
     rate: "",
+    overtimeRate: "",
+    doubleTimeRate: "",
     companyName: "",
     language: "en",
     type: "contractor",
@@ -102,6 +104,8 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
       email: contractor.email,
       code: contractor.code,
       rate: contractor.rate || "0.00",
+      overtimeRate: contractor.overtimeRate || "",
+      doubleTimeRate: contractor.doubleTimeRate || "",
       companyName: contractor.companyName || "",
       language: contractor.language || "en",
       type: contractor.type || "contractor",
@@ -119,6 +123,8 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
       email: "",
       code: "",
       rate: "0.00",
+      overtimeRate: "",
+      doubleTimeRate: "",
       companyName: "",
       language: "en",
       type: "contractor",
@@ -131,7 +137,7 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
   const handleCancel = () => {
     setViewMode('list');
     setEditingContractor(null);
-    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en", type: "contractor" });
+    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor" });
     setFormErrors({});
     setEmailMessage("");
   };
@@ -202,7 +208,9 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
           lastName: "", 
           email: "", 
           code: "", 
-          rate: "", 
+          rate: "",
+          overtimeRate: "",
+          doubleTimeRate: "", 
           companyName: savedCompanyName, 
           language: "en",
           type: "contractor",
@@ -211,7 +219,7 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
       } else {
         setViewMode('list');
         setEditingContractor(null);
-        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en", type: "contractor" });
+        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "",  overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor" });
       }
     } catch (error: any) {
       console.error('Failed to save contractor:', error);
@@ -231,10 +239,24 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: value,
+      };
+      
+      // Auto-calculate overtime and double time rates when rate changes
+      if (name === 'rate' && value) {
+        const rateValue = parseFloat(value);
+        if (!isNaN(rateValue)) {
+          // Always recalculate when standard rate changes
+          newData.overtimeRate = (rateValue * 1.5).toFixed(2);
+          newData.doubleTimeRate = (rateValue * 2).toFixed(2);
+        }
+      }
+      
+      return newData;
+    });
     
     if (formErrors[name]) {
       setFormErrors(prev => ({
@@ -662,6 +684,52 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
                 <p className="text-sm text-red-500">{formErrors.rate}</p>
               )}
             </div>
+
+            {/* Overtime Rate - Only show when standard rate has value */}
+            {formData.rate && (
+              <div className="space-y-2">
+                <Label htmlFor="overtimeRate">Overtime Rate (1.5x)</Label>
+                <Input
+                  id="overtimeRate"
+                  name="overtimeRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="9999.99"
+                  value={formData.overtimeRate}
+                  onChange={handleInputChange}
+                  placeholder="Auto-calculated as 1.5x standard rate"
+                  className={formErrors.overtimeRate ? "border-red-500" : ""}
+                  disabled={isFormLoading}
+                />
+                {formErrors.overtimeRate && (
+                  <p className="text-sm text-red-500">{formErrors.overtimeRate}</p>
+                )}
+              </div>
+            )}
+
+            {/* Double Time Rate - Only show when standard rate has value */}
+            {formData.rate && (
+              <div className="space-y-2">
+                <Label htmlFor="doubleTimeRate">Double Time Rate (2x)</Label>
+                <Input
+                  id="doubleTimeRate"
+                  name="doubleTimeRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="9999.99"
+                  value={formData.doubleTimeRate}
+                  onChange={handleInputChange}
+                  placeholder="Auto-calculated as 2x standard rate"
+                  className={formErrors.doubleTimeRate ? "border-red-500" : ""}
+                  disabled={isFormLoading}
+                />
+                {formErrors.doubleTimeRate && (
+                  <p className="text-sm text-red-500">{formErrors.doubleTimeRate}</p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>

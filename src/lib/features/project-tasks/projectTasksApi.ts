@@ -10,6 +10,7 @@ export interface ProjectTask {
   endDate?: string
   predecessors?: string
   progress: string
+  cost?: string
   completed?: boolean
   createdAt: string
   updatedAt: string
@@ -23,6 +24,7 @@ export interface CreateProjectTaskRequest {
   endDate?: string
   predecessors?: string
   progress?: number
+  cost?: number
   completed?: boolean
 }
 
@@ -34,6 +36,7 @@ export interface UpdateProjectTaskRequest {
   endDate?: string
   predecessors?: string
   progress?: number
+  cost?: number
   completed?: boolean
 }
 
@@ -47,6 +50,7 @@ export interface BulkImportTasksRequest {
     endDate?: string
     predecessors?: string
     progress?: number
+    cost?: number
   }>
   replaceExisting?: boolean
 }

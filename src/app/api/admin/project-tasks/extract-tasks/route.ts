@@ -69,7 +69,8 @@ Please analyze the provided file and extract all project tasks in the following 
       "durationDays": 126,
       "startDate": "2024-11-01",
       "endDate": "2025-03-28", 
-      "predecessors": "1,2,3" or "3FS+5 days" or null
+      "predecessors": "1,2,3" or "3FS+5 days" or null,
+      "cost": 15000.00
     }
   ]
 }
@@ -80,15 +81,16 @@ IMPORTANT INSTRUCTIONS:
 3. Convert duration to days (weeks * 7, months * 30)
 4. Use YYYY-MM-DD format for dates
 5. Keep predecessors exactly as shown (could be "1,2,3" or "10FS+25 wks" etc.)
-6. If a field is missing or unclear, use null
-7. Ensure taskNumber matches the ID/sequence from the source
-8. Only return valid JSON, no additional text
+6. Extract cost if available (remove currency symbols, use numbers only)
+7. If a field is missing or unclear, use null
+8. Ensure taskNumber matches the ID/sequence from the source
+9. Only return valid JSON, no additional text
 
 The file contains a project schedule similar to this format:
-ID | Task Name | Duration | Start | Finish | Predecessors
-1  | Project Phase 1 | 45 days | Fri 11/1/24 | Wed 12/25/24 | 
-2  | Design Package | 35 days | Wed 12/25/24 | Fri 2/15/25 | 1
-3  | Material Procurement | 10 wks | Wed 3/12/25 | Wed 5/21/25 | 2FS+11 wks
+ID | Task Name | Duration | Start | Finish | Predecessors | Cost
+1  | Project Phase 1 | 45 days | Fri 11/1/24 | Wed 12/25/24 |  | $15,000
+2  | Design Package | 35 days | Wed 12/25/24 | Fri 2/15/25 | 1 | $8,500
+3  | Material Procurement | 10 wks | Wed 3/12/25 | Wed 5/21/25 | 2FS+11 wks | $25,000
 
 Extract every single task from the provided file.
 `

@@ -63,6 +63,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       endDate, 
       predecessors,
       progress,
+      cost,
       completed
     } = body
 
@@ -99,6 +100,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         endDate: endDate || existingTask[0].task.endDate,
         predecessors: predecessors !== undefined ? predecessors : existingTask[0].task.predecessors,
         progress: finalProgress,
+        cost: cost !== undefined ? (cost ? cost.toString() : null) : existingTask[0].task.cost,
         completed: finalCompleted,
         updatedAt: new Date()
       })

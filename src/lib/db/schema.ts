@@ -74,7 +74,9 @@ export const contractors = pgTable('contractors', {
   email: text('email').notNull(),
   companyId: uuid('company_id').notNull(),
   code: text('code').notNull().unique(), // Used for login - still globally unique
-  rate: numeric('rate', { precision: 10, scale: 2 }).default('0.00'), // Hourly rate for contractor
+  rate: numeric('rate', { precision: 10, scale: 2 }).default('0.00'), // Standard hourly rate for contractor
+  overtimeRate: numeric('overtime_rate', { precision: 10, scale: 2 }), // Overtime rate (typically 1.5x standard)
+  doubleTimeRate: numeric('double_time_rate', { precision: 10, scale: 2 }), // Double time rate (typically 2x standard)
   companyName: text('company_name'), // Optional: contractor's own company name for login token
   language: text('language').default('en'), // Language preference: 'en' or 'es'
   type: text('type').default('contractor'), // Type: 'contractor' or 'foreman'
@@ -265,6 +267,7 @@ export const projectTasks = pgTable('project_tasks', {
   endDate: date('end_date'),
   predecessors: text('predecessors'), // "1,2,3" or "1FS+5 days" - references taskNumber
   progress: numeric('progress', { precision: 5, scale: 2 }).default('0'), // e.g. 0–100
+  cost: numeric('cost', { precision: 12, scale: 2 }), // Optional task cost
   completed: boolean('completed').default(false), // Whether task is marked as completed
 
   createdAt: timestamp('created_at').notNull().defaultNow(),

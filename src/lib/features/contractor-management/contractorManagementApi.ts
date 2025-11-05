@@ -7,6 +7,8 @@ export interface Contractor {
   email: string;
   code: string;
   rate: string;
+  overtimeRate?: string;
+  doubleTimeRate?: string;
   companyName?: string;
   language: string;
   type: string;
@@ -20,6 +22,8 @@ export interface CreateContractorRequest {
   email: string;
   code: string;
   rate: string;
+  overtimeRate?: string;
+  doubleTimeRate?: string;
   language: string;
   type: string;
 }
@@ -31,6 +35,8 @@ export interface UpdateContractorRequest {
   email: string;
   code: string;
   rate: string;
+  overtimeRate?: string;
+  doubleTimeRate?: string;
   language: string;
   type: string;
 }

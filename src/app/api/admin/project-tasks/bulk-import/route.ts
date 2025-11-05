@@ -28,6 +28,7 @@ interface TaskImportData {
   endDate?: string
   predecessors?: string
   progress?: number
+  cost?: number
 }
 
 // Helper function to authenticate admin requests
@@ -153,7 +154,8 @@ export async function POST(request: NextRequest) {
           startDate: task.startDate ? parseDate(task.startDate) : null,
           endDate: task.endDate ? parseDate(task.endDate) : null,
           predecessors: task.predecessors || null,
-          progress: task.progress ? task.progress.toString() : '0'
+          progress: task.progress ? task.progress.toString() : '0',
+          cost: task.cost ? task.cost.toString() : null
         }
 
         validTasks.push(processedTask)
