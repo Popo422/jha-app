@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -73,7 +73,9 @@ export default function AdminEditStartOfDayV2Page() {
   const { t } = useTranslation('common');
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const submissionId = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
+  const readOnly = searchParams.get('view') === 'true';
   const { showToast } = useToast();
   
   const { data: submission, isLoading: isLoadingSubmission } = useGetSubmissionQuery(submissionId);
@@ -231,17 +233,17 @@ export default function AdminEditStartOfDayV2Page() {
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 1:
-        return <SelectSubcontractorStep data={formData} updateData={updateData} authType="admin" />;
+        return <SelectSubcontractorStep data={formData} updateData={updateData} authType="admin" readOnly={readOnly} />;
       case 2:
-        return <ProjectDetailsStep data={formData} updateData={updateData} />;
+        return <ProjectDetailsStep data={formData} updateData={updateData} readOnly={readOnly} />;
       case 3:
-        return <FieldEmployeesStep data={formData} updateData={updateData} />;
+        return <FieldEmployeesStep data={formData} updateData={updateData} readOnly={readOnly} />;
       case 4:
-        return <SafetyInformationStep data={formData} updateData={updateData} />;
+        return <SafetyInformationStep data={formData} updateData={updateData} readOnly={readOnly} />;
       case 5:
-        return <SafetyProtocolStepsStep data={formData} updateData={updateData} onSubmit={handleSave} />;
+        return <SafetyProtocolStepsStep data={formData} updateData={updateData} onSubmit={handleSave} readOnly={readOnly} />;
       default:
-        return <SelectSubcontractorStep data={formData} updateData={updateData} authType="admin" />;
+        return <SelectSubcontractorStep data={formData} updateData={updateData} authType="admin" readOnly={readOnly} />;
     }
   };
 
@@ -291,7 +293,7 @@ export default function AdminEditStartOfDayV2Page() {
               Back to Safety Forms
             </Link>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Edit Start of Day Report V2
+              {readOnly ? 'View Start of Day Report V2' : 'Edit Start of Day Report V2'}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               Submitted by {submission.completedBy} on {new Date(submission.createdAt).toLocaleDateString()}
@@ -353,17 +355,19 @@ export default function AdminEditStartOfDayV2Page() {
                     </Button>
 
                     {currentStep === STEPS.length ? (
-                      <Button
-                        onClick={handleSave}
-                        disabled={isUpdating || !validateCurrentStep()}
-                        className="flex items-center"
-                      >
-                        {isUpdating ? 'Saving...' : 'Save Changes'}
-                      </Button>
+                      !readOnly && (
+                        <Button
+                          onClick={handleSave}
+                          disabled={isUpdating || !validateCurrentStep()}
+                          className="flex items-center"
+                        >
+                          {isUpdating ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                      )
                     ) : (
                       <Button
                         onClick={nextStep}
-                        disabled={!validateCurrentStep()}
+                        disabled={readOnly ? false : !validateCurrentStep()}
                         className="flex items-center"
                       >
                         Continue
@@ -379,10 +383,13 @@ export default function AdminEditStartOfDayV2Page() {
           {/* Admin Note */}
           <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
-              Admin Edit Mode
+              {readOnly ? 'Admin View Mode' : 'Admin Edit Mode'}
             </h3>
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              You are editing this submission as an administrator. Changes will be saved and logged for audit purposes.
+              {readOnly 
+                ? 'You are viewing this submission as an administrator in read-only mode.' 
+                : 'You are editing this submission as an administrator. Changes will be saved and logged for audit purposes.'
+              }
             </p>
           </div>
         </div>

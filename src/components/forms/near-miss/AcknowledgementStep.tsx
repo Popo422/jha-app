@@ -27,9 +27,10 @@ interface AcknowledgementStepProps {
     supervisor: string;
   }>) => void;
   onSubmit: () => void;
+  readOnly?: boolean;
 }
 
-export default function AcknowledgementStep({ data, updateData, onSubmit }: AcknowledgementStepProps) {
+export default function AcknowledgementStep({ data, updateData, onSubmit, readOnly = false }: AcknowledgementStepProps) {
   const { t } = useTranslation('common');
   const reporterCanvasRef = useRef<SignatureCanvas>(null);
   const supervisorCanvasRef = useRef<SignatureCanvas>(null);
@@ -218,16 +219,18 @@ export default function AcknowledgementStep({ data, updateData, onSubmit }: Ackn
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Digital Signature</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={openReporterModal}
-                className="text-blue-600 hover:text-blue-700 p-1"
-                title="Expand signature area"
-              >
-                <Expand className="h-4 w-4" />
-              </Button>
+              {!readOnly && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={openReporterModal}
+                  className="text-blue-600 hover:text-blue-700 p-1"
+                  title="Expand signature area"
+                >
+                  <Expand className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800">
               <SignatureCanvas
@@ -243,15 +246,17 @@ export default function AcknowledgementStep({ data, updateData, onSubmit }: Ackn
             <div className="text-sm text-gray-600 dark:text-gray-400 text-center border-t pt-2">
               {data.reportedBy || 'Reporter Name'}
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={clearReporterSignature}
-              className="w-full"
-            >
-              Clear Signature
-            </Button>
+            {!readOnly && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={clearReporterSignature}
+                className="w-full"
+              >
+                Clear Signature
+              </Button>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -262,6 +267,7 @@ export default function AcknowledgementStep({ data, updateData, onSubmit }: Ackn
               value={data.reporterDate}
               onChange={(e) => handleInputChange('reporterDate', e.target.value)}
               required
+              readOnly={readOnly}
               className="text-center"
             />
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
@@ -278,16 +284,18 @@ export default function AcknowledgementStep({ data, updateData, onSubmit }: Ackn
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Digital Signature</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={openSupervisorModal}
-                className="text-blue-600 hover:text-blue-700 p-1"
-                title="Expand signature area"
-              >
-                <Expand className="h-4 w-4" />
-              </Button>
+              {!readOnly && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={openSupervisorModal}
+                  className="text-blue-600 hover:text-blue-700 p-1"
+                  title="Expand signature area"
+                >
+                  <Expand className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800">
               <SignatureCanvas
@@ -303,15 +311,17 @@ export default function AcknowledgementStep({ data, updateData, onSubmit }: Ackn
             <div className="text-sm text-gray-600 dark:text-gray-400 text-center border-t pt-2">
               {data.supervisor || 'Supervisor Name (Optional)'}
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={clearSupervisorSignature}
-              className="w-full"
-            >
-              Clear Signature
-            </Button>
+            {!readOnly && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={clearSupervisorSignature}
+                className="w-full"
+              >
+                Clear Signature
+              </Button>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -321,6 +331,7 @@ export default function AcknowledgementStep({ data, updateData, onSubmit }: Ackn
               type="date"
               value={data.supervisorDate}
               onChange={(e) => handleInputChange('supervisorDate', e.target.value)}
+              readOnly={readOnly}
               className="text-center"
             />
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">

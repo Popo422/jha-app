@@ -16,9 +16,10 @@ interface PPEData {
 interface PPERequirementsSectionProps {
   ppe: PPEData;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readOnly?: boolean;
 }
 
-const PPERequirementsSection = memo(({ ppe, onChange }: PPERequirementsSectionProps) => {
+const PPERequirementsSection = memo(({ ppe, onChange, readOnly = false }: PPERequirementsSectionProps) => {
   const { t } = useTranslation('common');
   
   const ppeItems = [
@@ -51,6 +52,7 @@ const PPERequirementsSection = memo(({ ppe, onChange }: PPERequirementsSectionPr
                   name={`ppe.${ppeItem.key}`}
                   checked={ppe[ppeItem.key as keyof PPEData]}
                   onChange={onChange}
+                  disabled={readOnly}
                   className="w-4 h-4"
                 />
                 <Label htmlFor={ppeItem.key}>{ppeItem.label}</Label>

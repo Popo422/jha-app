@@ -20,9 +20,10 @@ interface ProjectDetailsStepProps {
   data: EndOfDayV2FormData;
   updateData: (updates: Partial<EndOfDayV2FormData>) => void;
   authType?: 'contractor' | 'admin';
+  readOnly?: boolean;
 }
 
-export default function ProjectDetailsStep({ data, updateData, authType = 'contractor' }: ProjectDetailsStepProps) {
+export default function ProjectDetailsStep({ data, updateData, authType = 'contractor', readOnly = false }: ProjectDetailsStepProps) {
   const { t } = useTranslation('common');
   
   const { data: projectsData, isLoading: isLoadingProjects } = useGetProjectsQuery({
@@ -71,6 +72,7 @@ export default function ProjectDetailsStep({ data, updateData, authType = 'contr
             onChange={(e) => updateData({ completedBy: e.target.value })}
             placeholder="Enter Name"
             required
+            readOnly={readOnly}
           />
         </div>
 
@@ -83,7 +85,7 @@ export default function ProjectDetailsStep({ data, updateData, authType = 'contr
             placeholder="Select Supervisor"
             searchPlaceholder="Search supervisors..."
             emptyText={isLoadingAdmins ? "Loading..." : "No supervisors found"}
-            disabled={isLoadingAdmins}
+            disabled={isLoadingAdmins || readOnly}
           />
         </div>
 
@@ -105,7 +107,7 @@ export default function ProjectDetailsStep({ data, updateData, authType = 'contr
             placeholder="Select Project Name"
             searchPlaceholder="Search projects..."
             emptyText={isLoadingProjects ? "Loading..." : "No projects found"}
-            disabled={isLoadingProjects}
+            disabled={isLoadingProjects || readOnly}
           />
         </div>
       </div>

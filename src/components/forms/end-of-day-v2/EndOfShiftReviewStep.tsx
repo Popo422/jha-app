@@ -23,9 +23,10 @@ interface EndOfShiftReviewStepProps {
   data: EndOfDayV2FormData;
   updateData: (updates: Partial<EndOfDayV2FormData>) => void;
   onSubmit: () => void;
+  readOnly?: boolean;
 }
 
-export default function EndOfShiftReviewStep({ data, updateData, onSubmit }: EndOfShiftReviewStepProps) {
+export default function EndOfShiftReviewStep({ data, updateData, onSubmit, readOnly = false }: EndOfShiftReviewStepProps) {
   const { t } = useTranslation('common');
 
   return (
@@ -47,6 +48,7 @@ export default function EndOfShiftReviewStep({ data, updateData, onSubmit }: End
               placeholder="Enter Information"
               rows={3}
               className="resize-none"
+              readOnly={readOnly}
             />
           </div>
 
@@ -58,6 +60,7 @@ export default function EndOfShiftReviewStep({ data, updateData, onSubmit }: End
               placeholder="Enter Information"
               rows={3}
               className="resize-none"
+              readOnly={readOnly}
             />
           </div>
 
@@ -69,6 +72,7 @@ export default function EndOfShiftReviewStep({ data, updateData, onSubmit }: End
               placeholder="Enter Information"
               rows={3}
               className="resize-none"
+              readOnly={readOnly}
             />
           </div>
 
@@ -80,6 +84,7 @@ export default function EndOfShiftReviewStep({ data, updateData, onSubmit }: End
               placeholder="Enter Information"
               rows={3}
               className="resize-none"
+              readOnly={readOnly}
             />
           </div>
         </div>
@@ -99,6 +104,7 @@ export default function EndOfShiftReviewStep({ data, updateData, onSubmit }: End
                   onChange={(e) => updateData({ supervisorName: e.target.value })}
                   placeholder="Enter Your Name"
                   required
+                  readOnly={readOnly}
                 />
               </div>
 
@@ -108,6 +114,7 @@ export default function EndOfShiftReviewStep({ data, updateData, onSubmit }: End
                   signature={data.supervisorSignature}
                   onSignatureChange={(signature) => updateData({ supervisorSignature: signature })}
                   signerName={data.supervisorName}
+                  readOnly={readOnly}
                 />
               </div>
 

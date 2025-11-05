@@ -38,9 +38,10 @@ interface Submission {
 interface IncidentReportEditProps {
   submission: Incident;
   onBack: () => void;
+  readOnly?: boolean;
 }
 
-export default function IncidentReportEdit({ submission, onBack }: IncidentReportEditProps) {
+export default function IncidentReportEdit({ submission, onBack, readOnly = false }: IncidentReportEditProps) {
   const { t } = useTranslation('common');
   const dispatch = useDispatch();
   const [formData, setFormData] = useState(submission.formData || {});
@@ -138,7 +139,9 @@ export default function IncidentReportEdit({ submission, onBack }: IncidentRepor
         <Button variant="ghost" onClick={handleBack} className="p-2">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-2xl font-bold">{t('common.edit')} {t('forms.incidentReport')}</h2>
+        <h2 className="text-2xl font-bold">
+          {readOnly ? t('admin.viewIncidentReport') : `${t('common.edit')} ${t('forms.incidentReport')}`}
+        </h2>
       </div>
 
       <Card>

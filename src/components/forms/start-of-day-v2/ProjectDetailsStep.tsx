@@ -18,9 +18,10 @@ interface StartOfDayV2FormData {
 interface ProjectDetailsStepProps {
   data: StartOfDayV2FormData;
   updateData: (updates: Partial<StartOfDayV2FormData>) => void;
+  readOnly?: boolean;
 }
 
-export default function ProjectDetailsStep({ data, updateData }: ProjectDetailsStepProps) {
+export default function ProjectDetailsStep({ data, updateData, readOnly = false }: ProjectDetailsStepProps) {
   const { t } = useTranslation('common');
 
   // Get today's date in YYYY-MM-DD format
@@ -44,6 +45,7 @@ export default function ProjectDetailsStep({ data, updateData }: ProjectDetailsS
             required={true}
             authType="contractor"
             subcontractorName={data.subcontractorName}
+            disabled={readOnly}
           />
         </div>
 
@@ -58,6 +60,7 @@ export default function ProjectDetailsStep({ data, updateData }: ProjectDetailsS
             onChange={(e) => updateData({ date: e.target.value })}
             max={today}
             required
+            readOnly={readOnly}
           />
         </div>
 
@@ -69,6 +72,7 @@ export default function ProjectDetailsStep({ data, updateData }: ProjectDetailsS
             placeholder="Select Supervisor"
             required={true}
             authType="contractor"
+            disabled={readOnly}
           />
         </div>
 
@@ -83,6 +87,7 @@ export default function ProjectDetailsStep({ data, updateData }: ProjectDetailsS
             onChange={(e) => updateData({ completedBy: e.target.value })}
             placeholder="Enter Name"
             required
+            readOnly={readOnly}
           />
         </div>
       </div>

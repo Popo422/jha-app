@@ -11,9 +11,10 @@ interface SignatureButtonProps {
   signature: string;
   onSignatureChange: (signature: string) => void;
   signerName: string;
+  readOnly?: boolean;
 }
 
-export default function SignatureButton({ signature, onSignatureChange, signerName }: SignatureButtonProps) {
+export default function SignatureButton({ signature, onSignatureChange, signerName, readOnly = false }: SignatureButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -24,6 +25,7 @@ export default function SignatureButton({ signature, onSignatureChange, signerNa
           variant="outline"
           size="sm"
           onClick={() => setIsOpen(true)}
+          disabled={readOnly && !signature}
           className="flex items-center gap-1 text-sm"
         >
           <FileImage className="w-3 h-3" />
@@ -34,7 +36,7 @@ export default function SignatureButton({ signature, onSignatureChange, signerNa
         )}
       </div>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen && (!readOnly || !!signature)} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] md:max-w-4xl overflow-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Signature for {signerName}</DialogTitle>
@@ -47,6 +49,8 @@ export default function SignatureButton({ signature, onSignatureChange, signerNa
             modalDescription="Please sign below to confirm"
             signatureLabel=""
             required={true}
+            onClose={() => setIsOpen(false)}
+            readOnly={readOnly}
           />
         </DialogContent>
       </Dialog>

@@ -25,9 +25,10 @@ interface NearMissDescriptionStepProps {
     wasAnyoneAlmostInjured: string;
     wereSafetyProceduresViolated: string;
   }>) => void;
+  readOnly?: boolean;
 }
 
-export default function NearMissDescriptionStep({ data, updateData }: NearMissDescriptionStepProps) {
+export default function NearMissDescriptionStep({ data, updateData, readOnly = false }: NearMissDescriptionStepProps) {
   const { t } = useTranslation('common');
 
   const handleInputChange = (field: string, value: string) => {
@@ -46,6 +47,7 @@ export default function NearMissDescriptionStep({ data, updateData }: NearMissDe
           onChange={(e) => handleInputChange('taskBeingPerformed', e.target.value)}
           placeholder="Describe the task that was being performed when the near miss occurred (optional)..."
           className="min-h-[100px]"
+          readOnly={readOnly}
         />
       </div>
 
@@ -60,6 +62,7 @@ export default function NearMissDescriptionStep({ data, updateData }: NearMissDe
           placeholder="Describe what almost happened in detail..."
           className="min-h-[100px]"
           required
+          readOnly={readOnly}
         />
       </div>
 
@@ -73,6 +76,7 @@ export default function NearMissDescriptionStep({ data, updateData }: NearMissDe
           onChange={(e) => handleInputChange('potentialConsequences', e.target.value)}
           placeholder="Describe what could have happened if the incident had occurred (optional)..."
           className="min-h-[100px]"
+          readOnly={readOnly}
         />
       </div>
 
@@ -83,6 +87,7 @@ export default function NearMissDescriptionStep({ data, updateData }: NearMissDe
         <RadioGroup
           value={data.anyoneNotEmployed}
           onValueChange={(value) => handleInputChange('anyoneNotEmployed', value)}
+          disabled={readOnly}
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="yes" id="not-employed-yes" />
@@ -105,6 +110,7 @@ export default function NearMissDescriptionStep({ data, updateData }: NearMissDe
               onChange={(e) => handleInputChange('pleaseExplainHow', e.target.value)}
               placeholder="Explain how someone not employed by the company was involved..."
               className="min-h-[80px]"
+              readOnly={readOnly}
             />
           </div>
         )}
@@ -118,6 +124,7 @@ export default function NearMissDescriptionStep({ data, updateData }: NearMissDe
           <RadioGroup
             value={data.wasAnyoneAlmostInjured}
             onValueChange={(value) => handleInputChange('wasAnyoneAlmostInjured', value)}
+            disabled={readOnly}
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="yes" id="almost-injured-yes" />
@@ -137,6 +144,7 @@ export default function NearMissDescriptionStep({ data, updateData }: NearMissDe
           <RadioGroup
             value={data.wereSafetyProceduresViolated}
             onValueChange={(value) => handleInputChange('wereSafetyProceduresViolated', value)}
+            disabled={readOnly}
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="yes" id="procedures-violated-yes" />

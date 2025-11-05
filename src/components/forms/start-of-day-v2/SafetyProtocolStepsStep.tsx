@@ -18,6 +18,7 @@ interface SafetyProtocolStepsStepProps {
   data: StartOfDayV2FormData;
   updateData: (updates: Partial<StartOfDayV2FormData>) => void;
   onSubmit?: () => void;
+  readOnly?: boolean;
 }
 
 interface StepSectionProps {
@@ -25,9 +26,10 @@ interface StepSectionProps {
   steps: string[];
   onUpdateSteps: (steps: string[]) => void;
   placeholder?: string;
+  readOnly?: boolean;
 }
 
-function StepSection({ title, steps, onUpdateSteps, placeholder = "Enter Step" }: StepSectionProps) {
+function StepSection({ title, steps, onUpdateSteps, placeholder = "Enter Step", readOnly = false }: StepSectionProps) {
   const updateStep = (index: number, value: string) => {
     const newSteps = [...steps];
     newSteps[index] = value;
@@ -62,29 +64,34 @@ function StepSection({ title, steps, onUpdateSteps, placeholder = "Enter Step" }
                 onChange={(e) => updateStep(index, e.target.value)}
                 placeholder={placeholder}
                 className="flex-1"
+                readOnly={readOnly}
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => removeStep(index)}
-                className="text-red-600 hover:text-red-800 hover:bg-red-50 flex-shrink-0"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+              {!readOnly && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeStep(index)}
+                  className="text-red-600 hover:text-red-800 hover:bg-red-50 flex-shrink-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           ))}
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={addStep}
-          className="w-full flex items-center justify-center"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Item
-        </Button>
+        {!readOnly && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addStep}
+            className="w-full flex items-center justify-center"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Item
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
@@ -93,7 +100,8 @@ function StepSection({ title, steps, onUpdateSteps, placeholder = "Enter Step" }
 export default function SafetyProtocolStepsStep({ 
   data, 
   updateData, 
-  onSubmit 
+  onSubmit,
+  readOnly = false
 }: SafetyProtocolStepsStepProps) {
   const { t } = useTranslation('common');
 
@@ -134,6 +142,7 @@ export default function SafetyProtocolStepsStep({
             steps={section.steps}
             onUpdateSteps={(steps) => updateData({ [section.key]: steps })}
             placeholder={section.placeholder}
+            readOnly={readOnly}
           />
         ))}
       </div>

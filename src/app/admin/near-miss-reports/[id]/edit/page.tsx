@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -80,7 +80,9 @@ export default function AdminEditNearMissPage() {
   const { t } = useTranslation('common');
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const submissionId = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
+  const readOnly = searchParams.get('view') === 'true';
   const { showToast } = useToast();
   
   const { data: submission, isLoading: isLoadingSubmission } = useGetSubmissionQuery(submissionId);
@@ -220,6 +222,7 @@ export default function AdminEditNearMissPage() {
             data={formData}
             updateData={updateFormData}
             authType="admin"
+            readOnly={readOnly}
           />
         );
       case 2:
@@ -227,6 +230,7 @@ export default function AdminEditNearMissPage() {
           <NearMissDescriptionStep
             data={formData}
             updateData={updateFormData}
+            readOnly={readOnly}
           />
         );
       case 3:
@@ -234,6 +238,7 @@ export default function AdminEditNearMissPage() {
           <ContributingFactorsStep
             data={formData}
             updateData={updateFormData}
+            readOnly={readOnly}
           />
         );
       case 4:
@@ -241,6 +246,7 @@ export default function AdminEditNearMissPage() {
           <CorrectiveActionsStep
             data={formData}
             updateData={updateFormData}
+            readOnly={readOnly}
           />
         );
       case 5:
@@ -248,6 +254,7 @@ export default function AdminEditNearMissPage() {
           <EvidenceStep
             data={formData}
             updateData={updateFormData}
+            readOnly={readOnly}
           />
         );
       case 6:
@@ -256,6 +263,7 @@ export default function AdminEditNearMissPage() {
             data={formData}
             updateData={updateFormData}
             onSubmit={handleSave}
+            readOnly={readOnly}
           />
         );
       default:
@@ -308,7 +316,7 @@ export default function AdminEditNearMissPage() {
               </Link>
             </Button>
             <h1 className="text-3xl font-bold text-foreground text-center">
-              Edit Near Miss Report
+              {readOnly ? 'View Near Miss Report' : 'Edit Near Miss Report'}
             </h1>
             <p className="text-center text-muted-foreground mt-2">
               Submitted by {submission.completedBy} on {new Date(submission.createdAt).toLocaleDateString()}
@@ -390,7 +398,7 @@ export default function AdminEditNearMissPage() {
             </Button>
 
             <div className="flex items-center gap-4">
-              {currentStep < STEPS.length && !validateCurrentStep() && (
+              {!readOnly && currentStep < STEPS.length && !validateCurrentStep() && (
                 <p className="text-sm text-red-500">
                   Please complete all required fields
                 </p>
@@ -399,20 +407,22 @@ export default function AdminEditNearMissPage() {
               {currentStep < STEPS.length ? (
                 <Button
                   onClick={nextStep}
-                  disabled={!validateCurrentStep()}
+                  disabled={readOnly ? false : !validateCurrentStep()}
                   className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   Next
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               ) : (
-                <Button
-                  onClick={handleSave}
-                  disabled={!validateCurrentStep() || isUpdating}
-                  className="bg-green-500 hover:bg-green-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  {isUpdating ? 'Saving...' : 'Save Changes'}
-                </Button>
+                !readOnly && (
+                  <Button
+                    onClick={handleSave}
+                    disabled={!validateCurrentStep() || isUpdating}
+                    className="bg-green-500 hover:bg-green-600 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {isUpdating ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                )
               )}
             </div>
           </div>
@@ -420,10 +430,13 @@ export default function AdminEditNearMissPage() {
           {/* Admin Note */}
           <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
-              Admin Edit Mode
+              {readOnly ? 'Admin View Mode' : 'Admin Edit Mode'}
             </h3>
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              You are editing this submission as an administrator. Changes will be saved and logged for audit purposes.
+              {readOnly 
+                ? 'You are viewing this submission as an administrator in read-only mode.' 
+                : 'You are editing this submission as an administrator. Changes will be saved and logged for audit purposes.'
+              }
             </p>
           </div>
         </div>

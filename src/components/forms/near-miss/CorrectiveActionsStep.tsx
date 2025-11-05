@@ -14,9 +14,10 @@ interface CorrectiveActionsStepProps {
     actionsTaken: string;
     preventionRecommendations: string;
   }>) => void;
+  readOnly?: boolean;
 }
 
-export default function CorrectiveActionsStep({ data, updateData }: CorrectiveActionsStepProps) {
+export default function CorrectiveActionsStep({ data, updateData, readOnly = false }: CorrectiveActionsStepProps) {
   const { t } = useTranslation('common');
 
   const handleInputChange = (field: string, value: string) => {
@@ -35,6 +36,7 @@ export default function CorrectiveActionsStep({ data, updateData }: CorrectiveAc
           onChange={(e) => handleInputChange('actionsTaken', e.target.value)}
           placeholder="Describe the actions that were taken immediately following the near miss incident (optional)..."
           className="min-h-[120px]"
+          readOnly={readOnly}
         />
       </div>
 
@@ -48,6 +50,7 @@ export default function CorrectiveActionsStep({ data, updateData }: CorrectiveAc
           onChange={(e) => handleInputChange('preventionRecommendations', e.target.value)}
           placeholder="Provide recommendations for preventing similar near miss incidents in the future (optional)..."
           className="min-h-[120px]"
+          readOnly={readOnly}
         />
       </div>
 

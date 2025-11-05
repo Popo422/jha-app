@@ -133,6 +133,7 @@ export default function TimesheetPage() {
                       className="w-fit"
                       value={formData.date}
                       onChange={handleInputChange}
+                      max={new Date().toISOString().split("T")[0]}
                       required
                     />
                   </div>

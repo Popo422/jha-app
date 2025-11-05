@@ -36,9 +36,10 @@ interface Submission {
 interface QuickIncidentReportEditProps {
   submission: Incident;
   onBack: () => void;
+  readOnly?: boolean;
 }
 
-export default function QuickIncidentReportEdit({ submission, onBack }: QuickIncidentReportEditProps) {
+export default function QuickIncidentReportEdit({ submission, onBack, readOnly = false }: QuickIncidentReportEditProps) {
   const { t } = useTranslation('common');
   const dispatch = useDispatch();
   const [formData, setFormData] = useState(submission.formData || {});

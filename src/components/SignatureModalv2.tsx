@@ -39,6 +39,14 @@ interface SignatureModalProps {
    * Additional className for the main canvas
    */
   className?: string;
+  /**
+   * Callback when modal should be closed
+   */
+  onClose?: () => void;
+  /**
+   * Whether signature is read-only (can view but not modify)
+   */
+  readOnly?: boolean;
 }
 
 export default function SignatureModalv2({
@@ -50,6 +58,8 @@ export default function SignatureModalv2({
   signatureLabel = "Digital Signature",
   required = false,
   className = "",
+  onClose,
+  readOnly = false,
 }: SignatureModalProps) {
   const mainCanvasRef = useRef<SignatureCanvas>(null);
   const modalCanvasRef = useRef<SignatureCanvas>(null);
@@ -59,6 +69,7 @@ export default function SignatureModalv2({
   const [isLoadingSignature, setIsLoadingSignature] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 300 });
   const [isMobile, setIsMobile] = useState(false);
+  const [tempSignature, setTempSignature] = useState("");
 
   // Calculate responsive canvas size
   useEffect(() => {
@@ -146,11 +157,10 @@ export default function SignatureModalv2({
       try {
         const signatureData = mainCanvasRef.current.toDataURL();
         console.log("Main canvas signature data length:", signatureData.length);
-        onSignatureChange(signatureData);
+        setTempSignature(signatureData);
       } catch (error) {
         console.warn("Could not export signature - canvas may be tainted", error);
-        // Clear the signature if it can't be exported
-        onSignatureChange("");
+        setTempSignature("");
       }
     }
   };
@@ -164,8 +174,35 @@ export default function SignatureModalv2({
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
-      onSignatureChange("");
+      setTempSignature("");
     }
+  };
+
+  const handleSaveSignature = () => {
+    onSignatureChange(tempSignature);
+    onClose?.();
+  };
+
+  const handleCancel = () => {
+    // Reset canvas to original signature
+    setTempSignature("");
+    if (mainCanvasRef.current) {
+      const canvas = mainCanvasRef.current.getCanvas();
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Reload original signature if it exists
+        if (signature) {
+          const img = new Image();
+          img.onload = () => {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          };
+          img.src = signature;
+        }
+      }
+    }
+    onClose?.();
   };
 
   const openModal = () => {
@@ -217,12 +254,9 @@ export default function SignatureModalv2({
   return (
     <>
       {/* Main Signature Area */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            {signatureLabel}
-            {required && <span className="text-red-500 ml-1">*</span>}
-          </label>
+      <div className="space-y-4">
+        <div className="text-center">
+          <p className="text-sm text-gray-600 dark:text-gray-400">{modalDescription}</p>
         </div>
 
         <div 
@@ -241,17 +275,33 @@ export default function SignatureModalv2({
               height: canvasSize.height,
               className: "signature-canvas border rounded bg-white",
             }}
-            onEnd={handleMainSignatureEnd}
+            onEnd={readOnly ? undefined : handleMainSignatureEnd}
           />
+          {readOnly && (
+            <div className="absolute inset-0 bg-transparent cursor-not-allowed" style={{ pointerEvents: 'all' }} />
+          )}
         </div>
 
         <div className="text-sm text-gray-600 dark:text-gray-400 text-center border-t pt-2">{signerName}</div>
 
-        <Button type="button" variant="outline" size="sm" onClick={handleMainSignatureClear} className="w-full">
-          Clear Signature
-        </Button>
+        {!readOnly && (
+          <div className="flex flex-col gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={handleMainSignatureClear} className="w-full">
+              Clear
+            </Button>
+            <Button 
+              type="button" 
+              size="sm" 
+              onClick={handleSaveSignature} 
+              className="w-full"
+              disabled={!tempSignature && !signature}
+            >
+              Sign
+            </Button>
+          </div>
+        )}
 
-        {required && !signature && <p className="text-sm text-red-600">Signature is required.</p>}
+        {required && !signature && !tempSignature && <p className="text-sm text-red-600 text-center">Signature is required.</p>}
       </div>
     </>
   );

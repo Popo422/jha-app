@@ -34,6 +34,7 @@ import {
   ArrowUpDown,
   MoreVertical,
   Edit,
+  Eye,
   Trash2,
   X,
   Search,
@@ -64,6 +65,7 @@ export default function SafetyFormsPage() {
   const { t } = useTranslation('common');
   const router = useRouter();
   const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
+  const [isViewMode, setIsViewMode] = useState(false);
   const [filters, setFilters] = useState({
     type: '',
     dateFrom: '',
@@ -296,6 +298,37 @@ export default function SafetyFormsPage() {
       return;
     }
     
+    setIsViewMode(false);
+    setEditingSubmission(submission);
+  }, [router]);
+
+  const handleView = useCallback((submission: Submission) => {
+    // For near-miss reports, redirect to the wizard view page
+    if (submission.submissionType === 'near-miss-report') {
+      router.push(`/admin/near-miss-reports/${submission.id}/edit?view=true`);
+      return;
+    }
+    
+    // For vehicle inspections, redirect to the vehicle inspection view page
+    if (submission.submissionType === 'vehicle-inspection') {
+      router.push(`/admin/vehicle-inspections/${submission.id}/edit?view=true`);
+      return;
+    }
+    
+    // For start-of-day-v2 reports, redirect to the wizard view page
+    if (submission.submissionType === 'start-of-day-v2') {
+      router.push(`/admin/start-of-day-v2/${submission.id}/edit?view=true`);
+      return;
+    }
+    
+    // For end-of-day-v2 reports, redirect to the wizard view page
+    if (submission.submissionType === 'end-of-day-v2') {
+      router.push(`/admin/end-of-day-v2/${submission.id}/edit?view=true`);
+      return;
+    }
+    
+    // For other submission types, open in edit component with readOnly prop
+    setIsViewMode(true);
     setEditingSubmission(submission);
   }, [router]);
 
@@ -383,7 +416,25 @@ export default function SafetyFormsPage() {
       ),
       cell: ({ row }) => <div className="text-sm">{row.getValue('projectName')}</div>,
     },
-  ], [getSubmissionTypeLabel, getSubmissionTypeBadgeColor]);
+    {
+      id: 'view',
+      header: '',
+      cell: ({ row }) => {
+        const submission = row.original;
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleView(submission)}
+            className="h-8"
+          >
+            <Eye className="h-4 w-4 mr-1" />
+            {t('common.view')}
+          </Button>
+        );
+      },
+    },
+  ], [getSubmissionTypeLabel, getSubmissionTypeBadgeColor, handleView]);
 
   const filterComponents = useMemo(() => (
     <div className="flex flex-wrap gap-3 items-end">
@@ -750,6 +801,13 @@ export default function SafetyFormsPage() {
                 );
               })}
               <DropdownMenuItem 
+                onClick={() => handleView(submission)}
+                className="cursor-pointer"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {t('common.view')}
+              </DropdownMenuItem>
+              <DropdownMenuItem 
                 onClick={() => handleEdit(submission)}
                 className="cursor-pointer"
               >
@@ -789,7 +847,7 @@ export default function SafetyFormsPage() {
         </div>
       </CardContent>
     </Card>
-  ), [getSubmissionTypeBadgeColor, getSubmissionTypeLabel, handleEdit, handleSingleDelete, customActions]);
+  ), [getSubmissionTypeBadgeColor, getSubmissionTypeLabel, handleView, handleEdit, handleSingleDelete, customActions]);
 
   // Render edit form if editing
   if (editingSubmission) {
@@ -801,18 +859,21 @@ export default function SafetyFormsPage() {
               <JobHazardAnalysisEdit 
                 submission={editingSubmission} 
                 onBack={() => setEditingSubmission(null)} 
+                readOnly={isViewMode}
               />
             )}
             {editingSubmission.submissionType === 'start-of-day' && (
               <StartOfDayEdit 
                 submission={editingSubmission} 
                 onBack={() => setEditingSubmission(null)} 
+                readOnly={isViewMode}
               />
             )}
             {editingSubmission.submissionType === 'end-of-day' && (
               <EndOfDayEdit 
                 submission={editingSubmission} 
                 onBack={() => setEditingSubmission(null)} 
+                readOnly={isViewMode}
               />
             )}
           </div>

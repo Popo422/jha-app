@@ -26,9 +26,10 @@ interface FallProtectionSectionProps {
   fallProtection: FallProtectionData;
   siteSpecificSafety: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readOnly?: boolean;
 }
 
-const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChange }: FallProtectionSectionProps) => {
+const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChange, readOnly = false }: FallProtectionSectionProps) => {
   const { t } = useTranslation('common');
   const equipmentItems = [
     { key: "harness", label: 'Harness "Check stitching and buckles, etc"' },
@@ -73,6 +74,7 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
                     },
                   } as any)
                 }
+                disabled={readOnly}
                 className="w-4 h-4"
               />
               <Label htmlFor="fallProtection-yes">{t('common.yes')}</Label>
@@ -95,6 +97,7 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
                     },
                   } as any)
                 }
+                disabled={readOnly}
                 className="w-4 h-4"
               />
               <Label htmlFor="fallProtection-no">{t('common.no')}</Label>
@@ -126,6 +129,7 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
                       value="Yes"
                       checked={fallProtection[equipment.key as keyof FallProtectionData] === "Yes"}
                       onChange={onChange}
+                      disabled={readOnly}
                       className="w-4 h-4"
                     />
                     <Label htmlFor={`${equipment.key}-yes`}>{t('common.yes')}</Label>
@@ -138,6 +142,7 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
                       value="No"
                       checked={fallProtection[equipment.key as keyof FallProtectionData] === "No"}
                       onChange={onChange}
+                      disabled={readOnly}
                       className="w-4 h-4"
                     />
                     <Label htmlFor={`${equipment.key}-no`}>{t('common.no')}</Label>
@@ -150,6 +155,7 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
                       value="Not using"
                       checked={fallProtection[equipment.key as keyof FallProtectionData] === "Not using"}
                       onChange={onChange}
+                      disabled={readOnly}
                       className="w-4 h-4"
                     />
                     <Label htmlFor={`${equipment.key}-notusing`}>{t('safetyItems.notUsing')}</Label>
@@ -183,6 +189,7 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
                     },
                   } as any)
                 }
+                disabled={readOnly}
                 className="w-4 h-4"
               />
               <Label htmlFor="siteSpecific-yes">Yes</Label>
@@ -205,6 +212,7 @@ const FallProtectionSection = memo(({ fallProtection, siteSpecificSafety, onChan
                     },
                   } as any)
                 }
+                disabled={readOnly}
                 className="w-4 h-4"
               />
               <Label htmlFor="siteSpecific-no">No</Label>

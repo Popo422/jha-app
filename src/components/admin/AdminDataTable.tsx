@@ -18,6 +18,7 @@ import {
   Download, 
   Trash2, 
   Edit, 
+  Eye,
   ChevronDown,
 } from "lucide-react";
 import {
@@ -55,6 +56,7 @@ export interface AdminDataTableProps<T> {
   isLoading: boolean;
   isFetching: boolean;
   onEdit?: (item: T) => void;
+  onView?: (item: T) => void;
   onDelete?: (id: string) => void;
   onBulkDelete?: (ids: string[]) => void;
   getRowId: (item: T) => string;
@@ -84,6 +86,7 @@ export function AdminDataTable<T>({
   isLoading,
   isFetching,
   onEdit,
+  onView,
   onDelete,
   onBulkDelete,
   getRowId,
@@ -170,7 +173,7 @@ export function AdminDataTable<T>({
 
     tableColumns.push(...baseColumns);
 
-    if (onEdit || onDelete || customActions.length > 0) {
+    if (onEdit || onView || onDelete || customActions.length > 0) {
       tableColumns.push({
         id: 'actions',
         header: '',
@@ -199,6 +202,15 @@ export function AdminDataTable<T>({
                     </DropdownMenuItem>
                   );
                 })}
+                {onView && (
+                  <DropdownMenuItem 
+                    onClick={() => onView(item)}
+                    className="cursor-pointer"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    {t('common.view')}
+                  </DropdownMenuItem>
+                )}
                 {onEdit && (
                   <DropdownMenuItem 
                     onClick={() => onEdit(item)}
@@ -246,7 +258,7 @@ export function AdminDataTable<T>({
     }
 
     return tableColumns;
-  }, [showCheckboxes, baseColumns, onEdit, onDelete, handleSingleDelete, getRowId]);
+  }, [showCheckboxes, baseColumns, onEdit, onView, onDelete, handleSingleDelete, getRowId]);
 
   const table = useReactTable({
     data,

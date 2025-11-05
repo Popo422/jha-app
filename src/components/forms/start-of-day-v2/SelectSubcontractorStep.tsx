@@ -14,9 +14,10 @@ interface SelectSubcontractorStepProps {
   data: StartOfDayV2FormData;
   updateData: (updates: Partial<StartOfDayV2FormData>) => void;
   authType?: 'contractor' | 'admin';
+  readOnly?: boolean;
 }
 
-export default function SelectSubcontractorStep({ data, updateData, authType = 'contractor' }: SelectSubcontractorStepProps) {
+export default function SelectSubcontractorStep({ data, updateData, authType = 'contractor', readOnly = false }: SelectSubcontractorStepProps) {
   const { t } = useTranslation('common');
   
   const { data: subcontractorsData, isLoading } = useGetSubcontractorsQuery({
@@ -48,10 +49,10 @@ export default function SelectSubcontractorStep({ data, updateData, authType = '
             options={subcontractorOptions}
             value={data.subcontractorName}
             onValueChange={(value) => updateData({ subcontractorName: value })}
+            disabled={readOnly || isLoading}
             placeholder="Select or search subcontractor..."
             searchPlaceholder="Search subcontractors..."
             emptyText={isLoading ? "Loading..." : "No subcontractors found"}
-            disabled={isLoading}
           />
         </div>
       </div>

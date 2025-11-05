@@ -45,6 +45,7 @@ interface GeneralInformationStepProps {
     causeOtherExplanation: string;
   }>) => void;
   authType?: 'contractor' | 'admin';
+  readOnly?: boolean;
 }
 
 const INCIDENT_TYPES = [
@@ -65,7 +66,7 @@ const CAUSES_OF_INCIDENT = [
   'Other'
 ];
 
-export default function GeneralInformationStep({ data, updateData, authType = 'contractor' }: GeneralInformationStepProps) {
+export default function GeneralInformationStep({ data, updateData, authType = 'contractor', readOnly = false }: GeneralInformationStepProps) {
   const { t } = useTranslation('common');
 
   const handleInputChange = (field: string, value: string) => {
@@ -83,6 +84,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
             onChange={(value) => handleInputChange('reportedBy', value)}
             authType={authType}
             required
+            disabled={readOnly}
           />
         </div>
 
@@ -92,6 +94,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
             value={data.supervisor}
             onChange={(value) => handleInputChange('supervisor', value)}
             authType={authType}
+            disabled={readOnly}
           />
         </div>
       </div>
@@ -104,6 +107,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
             onChange={(value) => handleInputChange('projectName', value)}
             authType={authType}
             required
+            disabled={readOnly}
           />
         </div>
 
@@ -114,6 +118,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
             onChange={(value) => handleInputChange('companySubcontractor', value)}
             authType={authType}
             returnValue="name"
+            disabled={readOnly}
           />
         </div>
       </div>
@@ -125,6 +130,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
           value={data.safetyRepresentative}
           onChange={(e) => handleInputChange('safetyRepresentative', e.target.value)}
           placeholder="Enter safety representative name (optional)"
+          readOnly={readOnly}
         />
       </div>
 
@@ -137,6 +143,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
             value={data.dateTimeOfNearMiss}
             onChange={(e) => handleInputChange('dateTimeOfNearMiss', e.target.value)}
             required
+            readOnly={readOnly}
           />
         </div>
 
@@ -147,6 +154,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
             type="datetime-local"
             value={data.dateTimeManagementNotified}
             onChange={(e) => handleInputChange('dateTimeManagementNotified', e.target.value)}
+            readOnly={readOnly}
           />
         </div>
       </div>
@@ -158,6 +166,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
           value={data.whoWasNotified}
           onChange={(e) => handleInputChange('whoWasNotified', e.target.value)}
           placeholder="Enter who was notified (optional)"
+          readOnly={readOnly}
         />
       </div>
 
@@ -169,6 +178,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
           onChange={(e) => handleInputChange('witnessesContactInfo', e.target.value)}
           placeholder="Each witness and contact email/phone on a line"
           className="min-h-[100px]"
+          readOnly={readOnly}
         />
       </div>
 
@@ -178,6 +188,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
           <RadioGroup
             value={data.witnessStatementsTaken}
             onValueChange={(value) => handleInputChange('witnessStatementsTaken', value)}
+            disabled={readOnly}
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="yes" id="statements-taken-yes" />
@@ -195,6 +206,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
           <RadioGroup
             value={data.witnessStatementsAttached}
             onValueChange={(value) => handleInputChange('witnessStatementsAttached', value)}
+            disabled={readOnly}
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="yes" id="statements-attached-yes" />
@@ -211,7 +223,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-base font-semibold">Type of Incident</Label>
-          <Select value={data.typeOfIncident} onValueChange={(value) => handleInputChange('typeOfIncident', value)}>
+          <Select value={data.typeOfIncident} onValueChange={(value) => handleInputChange('typeOfIncident', value)} disabled={readOnly}>
             <SelectTrigger>
               <SelectValue placeholder="Select incident type" />
             </SelectTrigger>
@@ -227,7 +239,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
 
         <div className="space-y-2">
           <Label className="text-base font-semibold">Cause of Incident</Label>
-          <Select value={data.causeOfIncident} onValueChange={(value) => handleInputChange('causeOfIncident', value)}>
+          <Select value={data.causeOfIncident} onValueChange={(value) => handleInputChange('causeOfIncident', value)} disabled={readOnly}>
             <SelectTrigger>
               <SelectValue placeholder="Select cause of incident" />
             </SelectTrigger>
@@ -253,6 +265,7 @@ export default function GeneralInformationStep({ data, updateData, authType = 'c
             onChange={(e) => handleInputChange('causeOtherExplanation', e.target.value)}
             placeholder="Please provide details..."
             className="min-h-[80px]"
+            readOnly={readOnly}
           />
         </div>
       )}

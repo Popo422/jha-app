@@ -29,9 +29,10 @@ interface Timesheet {
 interface TimesheetEditProps {
   timesheet: Timesheet;
   onBack: () => void;
+  readOnly?: boolean;
 }
 
-export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps) {
+export default function TimesheetEdit({ timesheet, onBack, readOnly = false }: TimesheetEditProps) {
   const { t } = useTranslation('common');
   const [formData, setFormData] = useState({
     date: timesheet.date,
@@ -95,7 +96,9 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
         <Button variant="ghost" onClick={onBack} className="p-2">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-2xl font-bold">{t('admin.editTimesheet')}</h2>
+        <h2 className="text-2xl font-bold">
+          {readOnly ? t('admin.viewTimesheet') : t('admin.editTimesheet')}
+        </h2>
       </div>
 
       <Card>
@@ -113,6 +116,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 value={formData.date || ''}
                 onChange={handleInputChange}
                 required
+                readOnly={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -125,6 +129,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 placeholder={t('formFields.employeeName')}
                 required
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -136,6 +141,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 onChange={handleInputChange}
                 placeholder={t('formFields.clientCompanyName')}
                 required
+                readOnly={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -148,6 +154,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 placeholder={t('formFields.projectNamePlaceholder')}
                 required
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-2 md:col-span-1">
@@ -162,6 +169,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 onChange={handleInputChange}
                 placeholder={t('formFields.hoursSpentOnSite')}
                 required
+                readOnly={readOnly}
               />
             </div>
           </div>
@@ -175,17 +183,19 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
               onChange={handleInputChange}
               placeholder={t('formFields.jobDescriptionPlaceholder')}
               className="min-h-[100px]"
-            
+              readOnly={readOnly}
             />
           </div>
 
           <div className="flex gap-3">
             <Button variant="outline" onClick={onBack}>
-              {t('common.cancel')}
+              {readOnly ? t('common.close') : t('common.cancel')}
             </Button>
-            <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? t('common.saving') : t('common.saveChanges')}
-            </Button>
+            {!readOnly && (
+              <Button onClick={handleSave} disabled={isLoading}>
+                {isLoading ? t('common.saving') : t('common.saveChanges')}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

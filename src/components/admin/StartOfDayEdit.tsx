@@ -34,9 +34,10 @@ interface Submission {
 interface StartOfDayEditProps {
   submission: Submission;
   onBack: () => void;
+  readOnly?: boolean;
 }
 
-export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditProps) {
+export default function StartOfDayEdit({ submission, onBack, readOnly = false }: StartOfDayEditProps) {
   const { t } = useTranslation('common');
   const [formData, setFormData] = useState(submission.formData);
   const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
@@ -136,7 +137,9 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
         <Button variant="ghost" onClick={onBack} className="p-2">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-2xl font-bold">{t('admin.editStartOfDayReport')}</h2>
+        <h2 className="text-2xl font-bold">
+          {readOnly ? t('admin.viewStartOfDayReport') : t('admin.editStartOfDayReport')}
+        </h2>
       </div>
 
       <Card>
@@ -153,6 +156,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 value={formData.completedBy || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -163,6 +167,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 type="date"
                 value={formData.date || ''}
                 onChange={handleInputChange}
+                readOnly={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -173,6 +178,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 value={formData.supervisor || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -184,6 +190,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 label={t('admin.companySubcontractor')}
                 authType="admin"
                 returnValue="name"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -196,6 +203,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 placeholder={t('formFields.projectNamePlaceholder')}
                 required
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -206,6 +214,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 type="time"
                 value={formData.timeClocked || ''}
                 onChange={handleInputChange}
+                readOnly={readOnly}
               />
             </div>
           </div>
@@ -236,6 +245,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       checked={formData.freeFromInjury === true}
                       onChange={handleInputChange}
                       className="w-4 h-4"
+                      disabled={readOnly}
                     />
                     <Label htmlFor="injury-yes">{t('adminEdit.yes')}</Label>
                   </div>
@@ -248,6 +258,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       checked={formData.freeFromInjury === false}
                       onChange={handleInputChange}
                       className="w-4 h-4"
+                      disabled={readOnly}
                     />
                     <Label htmlFor="injury-no">{t('adminEdit.no')}</Label>
                   </div>
@@ -403,6 +414,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       placeholder={t('adminEdit.travelDetailsPlaceholder')}
                       rows={3}
                       className="w-full"
+                      readOnly={readOnly}
                     />
                   </div>
                 )}
@@ -423,6 +435,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       checked={formData.physicalDistancing === true}
                       onChange={handleInputChange}
                       className="w-4 h-4"
+                      disabled={readOnly}
                     />
                     <Label htmlFor="distancing-yes">{t('adminEdit.yes')}</Label>
                   </div>
@@ -435,6 +448,7 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                       checked={formData.physicalDistancing === false}
                       onChange={handleInputChange}
                       className="w-4 h-4"
+                      disabled={readOnly}
                     />
                     <Label htmlFor="distancing-no">{t('adminEdit.no')}</Label>
                   </div>
@@ -488,15 +502,20 @@ export default function StartOfDayEdit({ submission, onBack }: StartOfDayEditPro
                 modalDescription={t('adminEdit.employeeSignature')}
                 signatureLabel={`${t('adminEdit.employeeSignature')}:`}
                 required
+                readOnly={readOnly}
               />
             </CardContent>
           </Card>
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onBack}>{t('adminEdit.cancel')}</Button>
-            <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? t('adminEdit.saving') : t('adminEdit.saveChanges')}
+            <Button variant="outline" onClick={onBack}>
+              {readOnly ? t('common.close') : t('adminEdit.cancel')}
             </Button>
+            {!readOnly && (
+              <Button onClick={handleSave} disabled={isLoading}>
+                {isLoading ? t('adminEdit.saving') : t('adminEdit.saveChanges')}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

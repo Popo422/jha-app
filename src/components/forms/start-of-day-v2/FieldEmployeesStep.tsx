@@ -41,9 +41,10 @@ interface StartOfDayV2FormData {
 interface FieldEmployeesStepProps {
   data: StartOfDayV2FormData;
   updateData: (updates: Partial<StartOfDayV2FormData>) => void;
+  readOnly?: boolean;
 }
 
-export default function FieldEmployeesStep({ data, updateData }: FieldEmployeesStepProps) {
+export default function FieldEmployeesStep({ data, updateData, readOnly = false }: FieldEmployeesStepProps) {
   const { t } = useTranslation('common');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalData, setModalData] = useState({
@@ -161,14 +162,16 @@ export default function FieldEmployeesStep({ data, updateData }: FieldEmployeesS
               }
             </p>
           </div>
-          <Button 
-            type="button" 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Worker
-          </Button>
+          {!readOnly && (
+            <Button 
+              type="button" 
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Worker
+            </Button>
+          )}
         </div>
 
         {/* Loading State */}
@@ -210,6 +213,7 @@ export default function FieldEmployeesStep({ data, updateData }: FieldEmployeesS
                       placeholder="Enter Name"
                       required
                       className="text-sm"
+                      readOnly={readOnly}
                     />
                   </div>
 
@@ -220,6 +224,7 @@ export default function FieldEmployeesStep({ data, updateData }: FieldEmployeesS
                       onCheckedChange={(checked) => 
                         updateEmployee(employee.id, { working: checked === true })
                       }
+                      disabled={readOnly}
                     />
                   </div>
 
@@ -228,6 +233,7 @@ export default function FieldEmployeesStep({ data, updateData }: FieldEmployeesS
                     <Select 
                       value={employee.startTime} 
                       onValueChange={(value) => updateEmployee(employee.id, { startTime: value })}
+                      disabled={readOnly}
                     >
                       <SelectTrigger className="text-sm">
                         <SelectValue />
@@ -249,6 +255,7 @@ export default function FieldEmployeesStep({ data, updateData }: FieldEmployeesS
                       onValueChange={(value: 'free-of-injury' | 'injured') => 
                         updateEmployee(employee.id, { status: value })
                       }
+                      disabled={readOnly}
                     >
                       <SelectTrigger className="text-sm">
                         <SelectValue />
@@ -266,20 +273,23 @@ export default function FieldEmployeesStep({ data, updateData }: FieldEmployeesS
                       signature={employee.signature}
                       onSignatureChange={(signature) => updateEmployee(employee.id, { signature })}
                       signerName={employee.name}
+                      readOnly={readOnly}
                     />
                   </div>
 
                   {/* Actions */}
                   <div className="flex items-center justify-center">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeWorker(employee.id)}
-                      className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {!readOnly && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeWorker(employee.id)}
+                        className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -297,7 +307,7 @@ export default function FieldEmployeesStep({ data, updateData }: FieldEmployeesS
       </div>
 
       {/* Add Worker Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog open={isModalOpen && !readOnly} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add Worker</DialogTitle>

@@ -19,9 +19,10 @@ interface ContributingFactorsStepProps {
     weatherEnvironmentIssues: string;
     wasPPEBeingWorn: string;
   }>) => void;
+  readOnly?: boolean;
 }
 
-export default function ContributingFactorsStep({ data, updateData }: ContributingFactorsStepProps) {
+export default function ContributingFactorsStep({ data, updateData, readOnly = false }: ContributingFactorsStepProps) {
   const { t } = useTranslation('common');
 
   const handleInputChange = (field: string, value: string) => {

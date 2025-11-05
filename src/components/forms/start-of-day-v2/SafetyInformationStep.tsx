@@ -26,6 +26,7 @@ interface StartOfDayV2FormData {
 interface SafetyInformationStepProps {
   data: StartOfDayV2FormData;
   updateData: (updates: Partial<StartOfDayV2FormData>) => void;
+  readOnly?: boolean;
 }
 
 interface SafetySectionProps {
@@ -33,9 +34,10 @@ interface SafetySectionProps {
   items: { key: string; label: string }[];
   data: SafetySectionWithCustom;
   onUpdate: (updates: SafetySectionWithCustom) => void;
+  readOnly?: boolean;
 }
 
-function SafetySection({ title, items, data, onUpdate }: SafetySectionProps) {
+function SafetySection({ title, items, data, onUpdate, readOnly = false }: SafetySectionProps) {
   const [newItem, setNewItem] = useState('');
 
   const updateSelection = (key: string, checked: boolean) => {
@@ -88,6 +90,7 @@ function SafetySection({ title, items, data, onUpdate }: SafetySectionProps) {
                 onCheckedChange={(checked) => 
                   updateSelection(item.key, checked === true)
                 }
+                disabled={readOnly}
               />
               <Label 
                 htmlFor={`${title}-${item.key}`}
@@ -115,6 +118,7 @@ function SafetySection({ title, items, data, onUpdate }: SafetySectionProps) {
                       onCheckedChange={(checked) => 
                         updateSelection(`custom_${index}`, checked === true)
                       }
+                      disabled={readOnly}
                     />
                     <Label 
                       htmlFor={`${title}-custom-${index}`}
@@ -123,15 +127,17 @@ function SafetySection({ title, items, data, onUpdate }: SafetySectionProps) {
                       {item}
                     </Label>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeCustomItem(index)}
-                    className="text-red-600 hover:text-red-800 ml-2"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
+                  {!readOnly && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeCustomItem(index)}
+                      className="text-red-600 hover:text-red-800 ml-2"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -150,12 +156,13 @@ function SafetySection({ title, items, data, onUpdate }: SafetySectionProps) {
               onKeyPress={handleKeyPress}
               placeholder="Enter Item"
               className="flex-1"
+              readOnly={readOnly}
             />
             <Button 
               type="button" 
               variant="outline" 
               onClick={addCustomItem}
-              disabled={!newItem.trim()}
+              disabled={!newItem.trim() || readOnly}
               className="flex items-center"
             >
               <Plus className="w-4 h-4 mr-1" />
@@ -168,7 +175,7 @@ function SafetySection({ title, items, data, onUpdate }: SafetySectionProps) {
   );
 }
 
-export default function SafetyInformationStep({ data, updateData }: SafetyInformationStepProps) {
+export default function SafetyInformationStep({ data, updateData, readOnly = false }: SafetyInformationStepProps) {
   const { t } = useTranslation('common');
 
   const safetyCategories = {
@@ -236,6 +243,7 @@ export default function SafetyInformationStep({ data, updateData }: SafetyInform
             items={category.items}
             data={data[key as keyof StartOfDayV2FormData] as SafetySectionWithCustom}
             onUpdate={(updates) => updateData({ [key]: updates })}
+            readOnly={readOnly}
           />
         ))}
       </div>

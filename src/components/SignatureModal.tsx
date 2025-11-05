@@ -39,6 +39,10 @@ interface SignatureModalProps {
    * Additional className for the main canvas
    */
   className?: string;
+  /**
+   * Whether signature is read-only (can view but not modify)
+   */
+  readOnly?: boolean;
 }
 
 export default function SignatureModal({
@@ -49,7 +53,8 @@ export default function SignatureModal({
   modalDescription = 'Sign below to confirm',
   signatureLabel = 'Digital Signature',
   required = false,
-  className = ''
+  className = '',
+  readOnly = false
 }: SignatureModalProps) {
   const mainCanvasRef = useRef<SignatureCanvas>(null);
   const modalCanvasRef = useRef<SignatureCanvas>(null);
@@ -227,7 +232,7 @@ export default function SignatureModal({
           </Button>
         </div>
         
-        <div className={`border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800 ${className}`}>
+        <div className={`border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-800 relative ${className}`}>
           <SignatureCanvas
             ref={mainCanvasRef}
             canvasProps={{
@@ -235,23 +240,28 @@ export default function SignatureModal({
               height: 160,
               className: "signature-canvas w-full max-w-md mx-auto border rounded bg-white"
             }}
-            onEnd={handleMainSignatureEnd}
+            onEnd={readOnly ? undefined : handleMainSignatureEnd}
           />
+          {readOnly && (
+            <div className="absolute inset-0 bg-transparent cursor-not-allowed" style={{ pointerEvents: 'all' }} />
+          )}
         </div>
         
         <div className="text-sm text-gray-600 dark:text-gray-400 text-center border-t pt-2">
           {signerName}
         </div>
         
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleMainSignatureClear}
-          className="w-full"
-        >
-          Clear Signature
-        </Button>
+        {!readOnly && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleMainSignatureClear}
+            className="w-full"
+          >
+            Clear Signature
+          </Button>
+        )}
         
         {required && !signature && (
           <p className="text-sm text-red-600">Signature is required.</p>
@@ -272,7 +282,7 @@ export default function SignatureModal({
               {modalDescription}
             </div>
             
-            <div className="border-2 border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white">
+            <div className="border-2 border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white relative">
               <SignatureCanvas
                 ref={modalCanvasRef}
                 canvasProps={{
@@ -280,7 +290,7 @@ export default function SignatureModal({
                   height: 300,
                   className: "signature-canvas w-full border rounded bg-white"
                 }}
-                onEnd={() => {
+                onEnd={readOnly ? undefined : () => {
                   if (modalCanvasRef.current) {
                     try {
                       const newSignature = modalCanvasRef.current.toDataURL();
@@ -293,6 +303,9 @@ export default function SignatureModal({
                   }
                 }}
               />
+              {readOnly && (
+                <div className="absolute inset-0 bg-transparent cursor-not-allowed" style={{ pointerEvents: 'all' }} />
+              )}
             </div>
             
             <div className="text-center text-sm font-medium border-t pt-2">
@@ -300,19 +313,21 @@ export default function SignatureModal({
             </div>
             
             <div className="flex justify-between items-center pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={clearModalSignature}
-              >
-                Clear Signature
-              </Button>
+              {!readOnly && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={clearModalSignature}
+                >
+                  Clear Signature
+                </Button>
+              )}
               <Button
                 type="button"
                 onClick={closeModal}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white ml-auto"
               >
-                Save & Close
+                {readOnly ? 'Close' : 'Save & Close'}
               </Button>
             </div>
           </div>
