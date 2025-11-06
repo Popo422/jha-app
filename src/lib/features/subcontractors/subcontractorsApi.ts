@@ -10,6 +10,10 @@ export interface Subcontractor {
   projectName?: string // Legacy field for backward compatibility  
   projectNames?: string[]
   foreman?: string
+  address?: string
+  contact?: string
+  email?: string
+  phone?: string
   createdAt: string
   updatedAt: string
 }
@@ -20,6 +24,10 @@ export interface CreateSubcontractorRequest {
   projectId?: string // Legacy field for backward compatibility
   projectIds?: string[]
   foreman?: string
+  address?: string
+  contact?: string
+  email?: string
+  phone?: string
 }
 
 export interface UpdateSubcontractorRequest {
@@ -29,6 +37,10 @@ export interface UpdateSubcontractorRequest {
   projectId?: string // Legacy field for backward compatibility
   projectIds?: string[]
   foreman?: string
+  address?: string
+  contact?: string
+  email?: string
+  phone?: string
 }
 
 export interface PaginationInfo {

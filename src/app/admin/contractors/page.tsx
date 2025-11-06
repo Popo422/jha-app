@@ -43,6 +43,10 @@ export default function ContractorsPage() {
     companyName: "",
     language: "en",
     type: "contractor",
+    address: "",
+    phone: "",
+    race: "",
+    gender: "",
     projectIds: [] as string[],
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -119,6 +123,10 @@ export default function ContractorsPage() {
       companyName: contractor.companyName || "",
       language: contractor.language || "en",
       type: contractor.type || "contractor",
+      address: contractor.address || "",
+      phone: contractor.phone || "",
+      race: contractor.race || "",
+      gender: contractor.gender || "",
       projectIds: (contractor as any).projectIds || [],
     });
     setFormErrors({});
@@ -139,6 +147,10 @@ export default function ContractorsPage() {
       companyName: "",
       language: "en",
       type: "contractor",
+      address: "",
+      phone: "",
+      race: "",
+      gender: "",
       projectIds: [],
     });
     setFormErrors({});
@@ -149,7 +161,7 @@ export default function ContractorsPage() {
   const handleCancel = () => {
     setViewMode('list');
     setEditingContractor(null);
-    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", projectIds: [] });
+    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", phone: "", race: "", gender: "", projectIds: [] });
     setFormErrors({});
     setEmailMessage("");
   };
@@ -218,13 +230,17 @@ export default function ContractorsPage() {
           companyName: savedCompanyName, 
           language: "en",
           type: "contractor",
+          address: "",
+          phone: "",
+          race: "",
+          gender: "",
           projectIds: []
         });
         setFormErrors({});
       } else {
         setViewMode('list');
         setEditingContractor(null);
-        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", projectIds: [] });
+        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", phone: "", race: "", gender: "", projectIds: [] });
       }
     } catch (error: any) {
       console.error('Failed to save contractor:', error);
@@ -901,6 +917,60 @@ export default function ContractorsPage() {
               <p className="text-xs text-muted-foreground">
                 {t('contractors.languagePreferenceHelp')}
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address (Optional)</Label>
+              <Input
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                placeholder="Enter address"
+                disabled={isFormLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Complete address for the contractor
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone (Optional)</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="Enter phone number"
+                  disabled={isFormLoading}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="race">Race (Optional)</Label>
+                <Input
+                  id="race"
+                  name="race"
+                  value={formData.race}
+                  onChange={handleInputChange}
+                  placeholder="Enter race"
+                  disabled={isFormLoading}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender (Optional)</Label>
+              <Input
+                id="gender"
+                name="gender"
+                value={formData.gender}
+                onChange={handleInputChange}
+                placeholder="Enter gender"
+                disabled={isFormLoading}
+              />
             </div>
 
             <div className="space-y-2">

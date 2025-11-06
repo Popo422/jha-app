@@ -30,6 +30,10 @@ export default function ProjectSubcontractors({ projectId }: ProjectSubcontracto
     contractAmount: "",
     foreman: "",
     foremanEmail: "",
+    address: "",
+    contact: "",
+    email: "",
+    phone: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
@@ -60,6 +64,10 @@ export default function ProjectSubcontractors({ projectId }: ProjectSubcontracto
       contractAmount: subcontractor.contractAmount || "",
       foreman: subcontractor.foreman || "",
       foremanEmail: (subcontractor as any).foremanEmail || "",
+      address: subcontractor.address || "",
+      contact: subcontractor.contact || "",
+      email: subcontractor.email || "",
+      phone: subcontractor.phone || "",
     });
     setFormErrors({});
     setIsEditDialogOpen(true);
@@ -72,6 +80,10 @@ export default function ProjectSubcontractors({ projectId }: ProjectSubcontracto
       contractAmount: "",
       foreman: "",
       foremanEmail: "",
+      address: "",
+      contact: "",
+      email: "",
+      phone: "",
     });
     setFormErrors({});
     setIsCreateDialogOpen(true);
@@ -81,7 +93,7 @@ export default function ProjectSubcontractors({ projectId }: ProjectSubcontracto
     setIsCreateDialogOpen(false);
     setIsEditDialogOpen(false);
     setEditingSubcontractor(null);
-    setFormData({ name: "", contractAmount: "", foreman: "", foremanEmail: "" });
+    setFormData({ name: "", contractAmount: "", foreman: "", foremanEmail: "", address: "", contact: "", email: "", phone: "" });
     setFormErrors({});
   };
 
@@ -281,6 +293,55 @@ export default function ProjectSubcontractors({ projectId }: ProjectSubcontracto
                   </p>
                 </div>
               )}
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Address (Optional)</Label>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Enter address"
+                  disabled={isFormLoading}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contact">Contact Person (Optional)</Label>
+                  <Input
+                    id="contact"
+                    value={formData.contact}
+                    onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                    placeholder="Enter contact person"
+                    disabled={isFormLoading}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email-create">Email (Optional)</Label>
+                  <Input
+                    id="email-create"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Enter email address"
+                    disabled={isFormLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone (Optional)</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="Enter phone number"
+                  disabled={isFormLoading}
+                />
+              </div>
+
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">
                   <p className="text-sm text-red-600">
@@ -368,6 +429,55 @@ export default function ProjectSubcontractors({ projectId }: ProjectSubcontracto
                   </p>
                 </div>
               )}
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-address">Address (Optional)</Label>
+                <Input
+                  id="edit-address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Enter address"
+                  disabled={isFormLoading}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-contact">Contact Person (Optional)</Label>
+                  <Input
+                    id="edit-contact"
+                    value={formData.contact}
+                    onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                    placeholder="Enter contact person"
+                    disabled={isFormLoading}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">Email (Optional)</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Enter email address"
+                    disabled={isFormLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone (Optional)</Label>
+                <Input
+                  id="edit-phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="Enter phone number"
+                  disabled={isFormLoading}
+                />
+              </div>
+
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">
                   <p className="text-sm text-red-600">

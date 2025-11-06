@@ -80,6 +80,10 @@ export const contractors = pgTable('contractors', {
   companyName: text('company_name'), // Optional: contractor's own company name for login token
   language: text('language').default('en'), // Language preference: 'en' or 'es'
   type: text('type').default('contractor'), // Type: 'contractor' or 'foreman'
+  address: text('address'),
+  phone: text('phone'),
+  race: text('race'),
+  gender: text('gender'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -109,6 +113,10 @@ export const subcontractors = pgTable('subcontractors', {
   contractAmount: numeric('contract_amount', { precision: 12, scale: 2 }), // Optional budget/contract amount
   companyId: uuid('company_id').notNull(),
   foreman: text('foreman'), // Optional foreman name
+  address: text('address'),
+  contact: text('contact'),
+  email: text('email'),
+  phone: text('phone'),
   enabledModules: jsonb('enabled_modules').$type<string[]>().default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'timesheet']), // Available modules for this subcontractor
   modulesLastUpdatedAt: timestamp('modules_last_updated_at'),
   modulesLastUpdatedBy: text('modules_last_updated_by'), // Admin name who last updated modules

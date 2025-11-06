@@ -104,6 +104,22 @@ export interface SyncToProcoreResponse {
   }>
 }
 
+export interface WorkmenWeeklyData {
+  contractorId: string
+  employeeName: string
+  billingRate: string
+  weeklyHours: Record<string, number> // date -> hours
+  totalHours: number
+  grossPay: number
+}
+
+export interface WorkmenWeeklyResponse {
+  success: boolean
+  data: WorkmenWeeklyData[]
+  weekDates: string[]
+  error?: string
+}
+
 export interface UpdateTimesheetData {
   id: string
   date: string
@@ -294,6 +310,15 @@ export const timesheetsApi = createApi({
       }),
       invalidatesTags: ['Timesheet'],
     }),
+    getWorkmenWeeklyData: builder.query<WorkmenWeeklyResponse, { 
+      projectId: string
+    }>({
+      query: ({ projectId }) => ({
+        url: `workmen-weekly?projectId=${projectId}`,
+        method: 'GET',
+      }),
+      providesTags: ['Timesheet'],
+    }),
   }),
 })
 
@@ -305,5 +330,6 @@ export const {
   useUpdateTimesheetMutation,
   useGetTimesheetAggregatesQuery,
   useLazyGetTimesheetAggregatesQuery,
-  useSyncToProcoreMutation
+  useSyncToProcoreMutation,
+  useGetWorkmenWeeklyDataQuery
 } = timesheetsApi

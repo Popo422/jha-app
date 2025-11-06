@@ -94,23 +94,23 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         }
       ]
     },
-    {
-      label: t('admin.reporting'),
-      icon: BarChart3,
-      isAccordion: true,
-      children: [
-        // {
-        //   label: t('admin.projectSnapshot'),
-        //   href: '/admin/project-snapshot',
-        //   icon: Camera
-        // },
-        {
-          label: 'Time and Cost Reports',
-          href: '/admin/reporting',
-          icon: Clock
-        }
-      ]
-    },
+      // {
+      //   label: t('admin.reporting'),
+      //   icon: BarChart3,
+      //   isAccordion: true,
+      //   children: [
+      //     // {
+      //     //   label: t('admin.projectSnapshot'),
+      //     //   href: '/admin/project-snapshot',
+      //     //   icon: Camera
+      //     // },
+      //     {
+      //       label: 'Time and Cost Reports',
+      //       href: '/admin/reporting',
+      //       icon: Clock
+      //     }
+      //   ]
+      // },
     {
       label: 'Workers Comp',
       href: '/admin/workers-comp',

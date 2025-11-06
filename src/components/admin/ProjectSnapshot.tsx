@@ -19,10 +19,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronDown, Download, Building, Users, DollarSign, User, Check, X, AlertTriangle, Shield, Clock, CheckCircle } from "lucide-react";
 import WeatherWidget from '@/components/WeatherWidget';
 import HoursOverTimeChart from '@/components/HoursOverTimeChart';
 import SubcontractorHoursAnalytics from '@/components/SubcontractorHoursAnalytics';
+import WorkmenWeeklyAnalytics from '@/components/admin/WorkmenWeeklyAnalytics';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import { 
   DropdownMenu, 
@@ -426,20 +428,36 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
         />
       </div>
 
-      {/* Hours Over Time Chart */}
+      {/* Workforce Tabs */}
       <div className="w-full">
-        <HoursOverTimeChart 
-          companyId={admin?.companyId || ''}
-          projectFilter={projectName}
-        />
-      </div>
+        <Tabs defaultValue="workmen" className="w-full">
+          <TabsList className="grid grid-cols-2 w-80">
+            <TabsTrigger value="workmen">Workmen</TabsTrigger>
+            <TabsTrigger value="subcontractor">Subcontractor</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="workmen" className="mt-6">
+            <WorkmenWeeklyAnalytics projectId={projectId} />
+          </TabsContent>
+          
+          <TabsContent value="subcontractor" className="mt-6 space-y-6">
+            {/* Hours Over Time Chart */}
+            <div className="w-full">
+              <HoursOverTimeChart 
+                companyId={admin?.companyId || ''}
+                projectFilter={projectName}
+              />
+            </div>
 
-      {/* Subcontractor Hours Analytics */}
-      <div className="w-full">
-        <SubcontractorHoursAnalytics 
-          companyId={admin?.companyId || ''}
-          projectFilter={projectName}
-        />
+            {/* Subcontractor Hours Analytics */}
+            <div className="w-full">
+              <SubcontractorHoursAnalytics 
+                companyId={admin?.companyId || ''}
+                projectFilter={projectName}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

@@ -471,7 +471,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single subcontractor creation (existing logic)
-    const { name, contractAmount, projectIds, foreman, foremanEmail } = body
+    const { name, contractAmount, projectIds, foreman, foremanEmail, address, contact, email, phone } = body
 
     // Validate required fields
     if (!name) {
@@ -528,6 +528,10 @@ export async function POST(request: NextRequest) {
       contractAmount: contractAmount ? contractAmount.toString() : null,
       companyId: auth.admin.companyId,
       foreman: foreman ? foreman.trim() : null,
+      address: address ? address.trim() : null,
+      contact: contact ? contact.trim() : null,
+      email: email ? email.trim() : null,
+      phone: phone ? phone.trim() : null,
     }
 
     // Create subcontractor record
@@ -618,7 +622,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, name, contractAmount, projectIds, foreman, foremanEmail } = body
+    const { id, name, contractAmount, projectIds, foreman, foremanEmail, address, contact, email, phone } = body
 
     if (!id) {
       return NextResponse.json(
@@ -663,6 +667,22 @@ export async function PUT(request: NextRequest) {
     
     if (foreman !== undefined) {
       updateData.foreman = foreman ? foreman.trim() : null
+    }
+
+    if (address !== undefined) {
+      updateData.address = address ? address.trim() : null
+    }
+
+    if (contact !== undefined) {
+      updateData.contact = contact ? contact.trim() : null
+    }
+
+    if (email !== undefined) {
+      updateData.email = email ? email.trim() : null
+    }
+
+    if (phone !== undefined) {
+      updateData.phone = phone ? phone.trim() : null
     }
 
     // Update subcontractor

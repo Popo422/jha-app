@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,13 +11,13 @@ import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
-import ProjectTasksChoiceModal from "@/components/admin/ProjectTasksChoiceModal";
 import { Plus, Upload, Brain, Calendar, Clock, BarChart3, Check, X } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { 
   useGetProjectTasksQuery, 
   useDeleteProjectTaskMutation,
   useUpdateProjectTaskMutation,
+  useCreateProjectTaskMutation,
   type ProjectTask 
 } from "@/lib/features/project-tasks/projectTasksApi";
 import { useToast } from "@/components/ui/toast";
@@ -27,9 +28,20 @@ interface ProjectTasksProps {
 
 export default function ProjectTasks({ projectId }: ProjectTasksProps) {
   const { t } = useTranslation('common');
+  const router = useRouter();
   const [searchValue, setSearchValue] = useState("");
-  const [isChoiceModalOpen, setIsChoiceModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<ProjectTask | null>(null);
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    durationDays: '',
+    startDate: '',
+    endDate: '',
+    progress: '0',
+    cost: '',
+    predecessors: '',
+    completed: false
+  });
   const [editForm, setEditForm] = useState({
     name: '',
     durationDays: '',
@@ -51,6 +63,7 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
   
   const [deleteTask, { isLoading: isDeleting }] = useDeleteProjectTaskMutation();
   const [updateTask, { isLoading: isUpdating }] = useUpdateProjectTaskMutation();
+  const [createTask, { isLoading: isCreating }] = useCreateProjectTaskMutation();
 
   const tasks = tasksData?.tasks || [];
 
@@ -255,6 +268,48 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
     });
   };
 
+  // Handle create task
+  const handleCreateTask = async () => {
+    if (!createForm.name.trim()) return;
+
+    try {
+      const finalProgress = createForm.completed ? 100 : (parseFloat(createForm.progress) || 0);
+      
+      await createTask({
+        projectId,
+        name: createForm.name,
+        durationDays: createForm.durationDays ? parseInt(createForm.durationDays) : undefined,
+        startDate: createForm.startDate || undefined,
+        endDate: createForm.endDate || undefined,
+        progress: finalProgress,
+        cost: createForm.cost ? parseFloat(createForm.cost) : undefined,
+        completed: createForm.completed,
+        predecessors: createForm.predecessors || undefined
+      }).unwrap();
+      
+      showToast("Task created successfully", "success");
+      handleCreateCancel();
+      refetch();
+    } catch (error: any) {
+      showToast(error?.data?.error || "Failed to create task", "error");
+    }
+  };
+
+  // Handle create cancel
+  const handleCreateCancel = () => {
+    setIsCreatingTask(false);
+    setCreateForm({
+      name: '',
+      durationDays: '',
+      startDate: '',
+      endDate: '',
+      progress: '0',
+      cost: '',
+      predecessors: '',
+      completed: false
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -265,30 +320,21 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
           </p>
         </div>
         <div className="flex gap-2">
-          {tasks.length === 0 ? (
-            <Button 
-              className="flex items-center gap-2"
-              onClick={() => setIsChoiceModalOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-              Add Project Tasks
-            </Button>
-          ) : (
-            <Button 
-              className="flex items-center gap-2"
-              onClick={() => setIsChoiceModalOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-              Add Tasks
-            </Button>
-          )}
-          
-          <ProjectTasksChoiceModal
-            isOpen={isChoiceModalOpen}
-            onOpenChange={setIsChoiceModalOpen}
-            projectId={projectId}
-          />
-
+          <Button 
+            className="flex items-center gap-2"
+            onClick={() => setIsCreatingTask(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Add Task
+          </Button>
+          <Button 
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={() => router.push(`/admin/project-tasks/upload/${projectId}`)}
+          >
+            <Upload className="h-4 w-4" />
+            Bulk Upload
+          </Button>
         </div>
       </div>
 
@@ -431,6 +477,124 @@ export default function ProjectTasks({ projectId }: ProjectTasksProps) {
             </Button>
             <Button onClick={handleEditSave} disabled={isUpdating || !editForm.name.trim()}>
               {isUpdating ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Task Dialog */}
+      <Dialog open={isCreatingTask} onOpenChange={(open) => !open && handleCreateCancel()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Task</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="create-name">Task Name</Label>
+              <Input
+                id="create-name"
+                value={createForm.name}
+                onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                placeholder="Enter task name"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="create-duration">Duration (days)</Label>
+                <Input
+                  id="create-duration"
+                  type="number"
+                  value={createForm.durationDays}
+                  onChange={(e) => setCreateForm({ ...createForm, durationDays: e.target.value })}
+                  placeholder="Duration"
+                />
+              </div>
+              <div>
+                <Label htmlFor="create-progress">Progress (%)</Label>
+                <Input
+                  id="create-progress"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={createForm.progress}
+                  onChange={(e) => setCreateForm({ ...createForm, progress: e.target.value })}
+                  placeholder="Progress"
+                  disabled={createForm.completed}
+                />
+                {createForm.completed && (
+                  <p className="text-xs text-gray-500 mt-1">Progress is automatically set to 100% when marked as completed</p>
+                )}
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="create-cost">Cost (Optional)</Label>
+              <Input
+                id="create-cost"
+                type="number"
+                step="0.01"
+                min="0"
+                value={createForm.cost}
+                onChange={(e) => setCreateForm({ ...createForm, cost: e.target.value })}
+                placeholder="Enter task cost"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="create-start">Start Date</Label>
+                <Input
+                  id="create-start"
+                  type="date"
+                  value={createForm.startDate}
+                  onChange={(e) => setCreateForm({ ...createForm, startDate: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="create-end">End Date</Label>
+                <Input
+                  id="create-end"
+                  type="date"
+                  value={createForm.endDate}
+                  onChange={(e) => setCreateForm({ ...createForm, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="create-predecessors">Predecessors</Label>
+              <Input
+                id="create-predecessors"
+                value={createForm.predecessors}
+                onChange={(e) => setCreateForm({ ...createForm, predecessors: e.target.value })}
+                placeholder="e.g., 1,2 or 3FS+5 days"
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="create-completed"
+                checked={createForm.completed}
+                onCheckedChange={(checked) => setCreateForm({ 
+                  ...createForm, 
+                  completed: !!checked,
+                  progress: checked ? '100' : createForm.progress
+                })}
+              />
+              <Label htmlFor="create-completed" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Mark as Completed
+              </Label>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCreateCancel}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateTask} disabled={isCreating || !createForm.name.trim()}>
+              {isCreating ? 'Creating...' : 'Create Task'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -462,7 +462,7 @@ export async function POST(request: NextRequest) {
 
     // Single contractor creation (existing logic)
     console.log('🔍 [API] Single contractor creation - body:', body)
-    const { firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, projectIds } = body
+    const { firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, address, phone, race, gender, projectIds } = body
     console.log('🔍 [API] Extracted projectIds:', projectIds)
 
     // Validate required fields
@@ -591,6 +591,23 @@ export async function POST(request: NextRequest) {
       contractorData.type = 'contractor'
     }
 
+    // Add optional fields
+    if (address && address.trim()) {
+      contractorData.address = address.trim()
+    }
+
+    if (phone && phone.trim()) {
+      contractorData.phone = phone.trim()
+    }
+
+    if (race && race.trim()) {
+      contractorData.race = race.trim()
+    }
+
+    if (gender && gender.trim()) {
+      contractorData.gender = gender.trim()
+    }
+
     // Create contractor record
     const contractor = await db.insert(contractors).values(contractorData).returning()
     console.log('🔍 [API] Contractor created:', contractor[0])
@@ -687,7 +704,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json()
     console.log('🔍 [API] Update contractor body:', body)
-    const { id, firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, projectIds } = body
+    const { id, firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, address, phone, race, gender, projectIds } = body
     console.log('🔍 [API] Update projectIds:', projectIds)
 
     if (!id) {
@@ -790,6 +807,23 @@ export async function PUT(request: NextRequest) {
       updateData.type = type
     } else {
       updateData.type = 'contractor'
+    }
+
+    // Add optional fields
+    if (address !== undefined) {
+      updateData.address = address && address.trim() ? address.trim() : null
+    }
+
+    if (phone !== undefined) {
+      updateData.phone = phone && phone.trim() ? phone.trim() : null
+    }
+
+    if (race !== undefined) {
+      updateData.race = race && race.trim() ? race.trim() : null
+    }
+
+    if (gender !== undefined) {
+      updateData.gender = gender && gender.trim() ? gender.trim() : null
     }
 
     // Update contractor

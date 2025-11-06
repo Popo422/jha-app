@@ -19,6 +19,10 @@ interface ContractorRow {
   rate?: string;
   companyName?: string;
   type?: string;
+  address?: string;
+  phone?: string;
+  race?: string;
+  gender?: string;
   _fileName?: string;
 }
 
@@ -58,6 +62,10 @@ export function ProjectWorkmenBulkUploadModal({
     { field: 'rate', label: 'Hourly Rate', required: false, example: '25.00' },
     { field: 'companyName', label: 'Company/Subcontractor', required: false, example: 'ABC Construction' },
     { field: 'type', label: 'Type', required: false, example: 'contractor' },
+    { field: 'address', label: 'Address', required: false, example: '123 Main St, City, State' },
+    { field: 'phone', label: 'Phone', required: false, example: '555-123-4567' },
+    { field: 'race', label: 'Race', required: false, example: 'Hispanic' },
+    { field: 'gender', label: 'Gender', required: false, example: 'Male' },
   ];
 
   const downloadTemplate = (format: 'csv' | 'excel' = 'csv') => {

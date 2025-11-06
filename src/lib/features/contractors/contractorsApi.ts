@@ -13,6 +13,10 @@ export interface Contractor {
   companyName?: string | null
   language?: string | null
   type?: string | null
+  address?: string | null
+  phone?: string | null
+  race?: string | null
+  gender?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -28,6 +32,10 @@ export interface CreateContractorRequest {
   companyName?: string
   language?: string
   type?: string
+  address?: string
+  phone?: string
+  race?: string
+  gender?: string
   projectIds?: string[]
 }
 
@@ -43,6 +51,10 @@ export interface UpdateContractorRequest {
   companyName?: string
   language?: string
   type?: string
+  address?: string
+  phone?: string
+  race?: string
+  gender?: string
   projectIds?: string[]
 }
 
@@ -191,7 +203,7 @@ export const contractorsApi = createApi({
     }),
     bulkCreateContractors: builder.mutation<
       { success: boolean; contractors: Contractor[]; created: number; skipped: number; errors?: string[]; warnings?: string[] },
-      { contractors: Array<{ firstName: string; lastName: string; email: string; rate?: string; companyName?: string; language?: string; type?: string; projectIds?: string[] }> }
+      { contractors: Array<{ firstName: string; lastName: string; email: string; rate?: string; companyName?: string; language?: string; type?: string; address?: string; phone?: string; race?: string; gender?: string; projectIds?: string[] }> }
     >({
       query: (body) => ({
         url: '',
