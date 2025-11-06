@@ -950,27 +950,94 @@ export default function ContractorsPage() {
               
               <div className="space-y-2">
                 <Label htmlFor="race">Race (Optional)</Label>
-                <Input
-                  id="race"
-                  name="race"
-                  value={formData.race}
-                  onChange={handleInputChange}
-                  placeholder="Enter race"
-                  disabled={isFormLoading}
-                />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isFormLoading}
+                      className="w-full justify-between"
+                    >
+                      {formData.race || "Select race"}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: '' }))}
+                    >
+                      Not specified
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'American Indian or Alaska Native' }))}
+                    >
+                      American Indian or Alaska Native
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'Asian' }))}
+                    >
+                      Asian
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'Black or African American' }))}
+                    >
+                      Black or African American
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'Native Hawaiian or Other Pacific Islander' }))}
+                    >
+                      Native Hawaiian or Other Pacific Islander
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'White' }))}
+                    >
+                      White
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'Hispanic or Latino' }))}
+                    >
+                      Hispanic or Latino
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="gender">Gender (Optional)</Label>
-              <Input
-                id="gender"
-                name="gender"
-                value={formData.gender}
-                onChange={handleInputChange}
-                placeholder="Enter gender"
-                disabled={isFormLoading}
-              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isFormLoading}
+                    className="w-full justify-between"
+                  >
+                    {formData.gender || "Select gender"}
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full">
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, gender: '' }))}
+                  >
+                    Not specified
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, gender: 'Male' }))}
+                  >
+                    Male
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, gender: 'Female' }))}
+                  >
+                    Female
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, gender: 'Other' }))}
+                  >
+                    Other
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="space-y-2">
