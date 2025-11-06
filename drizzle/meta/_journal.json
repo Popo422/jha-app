@@ -218,6 +218,13 @@
       "when": 1762423194446,
       "tag": "0030_narrow_hawkeye",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1762433508099,
+      "tag": "0031_purple_sentinel",
+      "breakpoints": true
     }
   ]
 }

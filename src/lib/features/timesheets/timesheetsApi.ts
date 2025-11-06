@@ -8,6 +8,8 @@ export interface TimesheetData {
   projectName: string
   jobDescription: string
   timeSpent: string
+  overtimeHours?: string
+  doubleHours?: string
   authType?: 'contractor' | 'admin' | 'any'
 }
 
@@ -20,6 +22,8 @@ export interface Timesheet {
   projectName: string
   jobDescription: string
   timeSpent: string
+  overtimeHours?: string
+  doubleHours?: string
   createdAt: string
   updatedAt: string
   status: 'pending' | 'approved' | 'rejected'
@@ -44,9 +48,15 @@ export interface PaginationInfo {
   hasPreviousPage: boolean
 }
 
+export interface ContractorRates {
+  rate: string
+  overtimeRate: string | null
+  doubleTimeRate: string | null
+}
+
 export interface GetTimesheetsResponse {
   timesheets: Timesheet[]
-  contractorRates?: Record<string, string>
+  contractorRates?: Record<string, ContractorRates>
   pagination?: PaginationInfo | null
   meta: {
     limit: number | null
@@ -128,6 +138,8 @@ export interface UpdateTimesheetData {
   projectName: string
   jobDescription: string
   timeSpent: string
+  overtimeHours?: string
+  doubleHours?: string
 }
 
 export interface UpdateTimesheetResponse {
@@ -312,9 +324,10 @@ export const timesheetsApi = createApi({
     }),
     getWorkmenWeeklyData: builder.query<WorkmenWeeklyResponse, { 
       projectId: string
+      hourType?: 'all' | 'regular' | 'overtime' | 'double'
     }>({
-      query: ({ projectId }) => ({
-        url: `workmen-weekly?projectId=${projectId}`,
+      query: ({ projectId, hourType = 'all' }) => ({
+        url: `workmen-weekly?projectId=${projectId}&hourType=${hourType}`,
         method: 'GET',
       }),
       providesTags: ['Timesheet'],

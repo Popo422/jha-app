@@ -57,7 +57,9 @@ export const timesheets = pgTable('timesheets', {
   company: text('company').notNull(), // Client company name
   projectName: text('project_name').notNull(),
   jobDescription: text('job_description').notNull(), // Information about the job
-  timeSpent: numeric('time_spent', { precision: 5, scale: 2 }).notNull(), // Time spent on site
+  timeSpent: numeric('time_spent', { precision: 5, scale: 2 }).notNull(), // Regular time spent on site
+  overtimeHours: numeric('overtime_hours', { precision: 5, scale: 2 }).default('0.00'), // Overtime hours (typically 1.5x rate)
+  doubleHours: numeric('double_hours', { precision: 5, scale: 2 }).default('0.00'), // Double time hours (typically 2x rate)
   status: text('status').notNull().default('pending'), // 'pending', 'approved', 'rejected'
   approvedBy: uuid('approved_by'), // Admin user ID who approved/rejected
   approvedByName: text('approved_by_name'), // Admin name for display

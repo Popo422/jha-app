@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
+    const hourType = searchParams.get('hourType') || 'all' // 'all', 'regular', 'overtime', 'double'
 
     if (!projectId) {
       return NextResponse.json(
@@ -110,6 +111,8 @@ export async function GET(request: NextRequest) {
       contractorName: contractors.firstName,
       contractorLastName: contractors.lastName,
       contractorRate: contractors.rate,
+      contractorOvertimeRate: contractors.overtimeRate,
+      contractorDoubleTimeRate: contractors.doubleTimeRate,
       contractorCode: contractors.code
     })
     .from(contractorProjects)
@@ -135,6 +138,8 @@ export async function GET(request: NextRequest) {
       employee: timesheets.employee,
       date: timesheets.date,
       timeSpent: timesheets.timeSpent,
+      overtimeHours: timesheets.overtimeHours,
+      doubleHours: timesheets.doubleHours,
     })
     .from(timesheets)
     .where(and(
@@ -148,7 +153,13 @@ export async function GET(request: NextRequest) {
     // Process the data
     const workmenData: WorkmenWeeklyData[] = projectContractors.map(contractor => {
       const fullName = `${contractor.contractorName} ${contractor.contractorLastName}`;
-      const rate = parseFloat(contractor.contractorRate || '0');
+      const regularRate = parseFloat(contractor.contractorRate || '0');
+      const overtimeRate = contractor.contractorOvertimeRate 
+        ? parseFloat(contractor.contractorOvertimeRate) 
+        : regularRate * 1.5;
+      const doubleRate = contractor.contractorDoubleTimeRate 
+        ? parseFloat(contractor.contractorDoubleTimeRate) 
+        : regularRate * 2;
       
       // Initialize weekly hours object
       const weeklyHours: Record<string, number> = {};
@@ -156,25 +167,58 @@ export async function GET(request: NextRequest) {
         weeklyHours[date] = 0;
       });
 
-      // Fill in actual hours from timesheet data
+      // Fill in actual hours from timesheet data based on hour type filter
       let totalHours = 0;
+      let totalPay = 0;
+      let displayRate = regularRate;
+      
       timesheetData
         .filter(t => t.employee === fullName)
         .forEach(timesheet => {
-          const hours = parseFloat(timesheet.timeSpent || '0');
+          const regularHours = parseFloat(timesheet.timeSpent || '0');
+          const overtimeHours = parseFloat(timesheet.overtimeHours || '0');
+          const doubleHours = parseFloat(timesheet.doubleHours || '0');
+          
+          let hoursToShow = 0;
+          let payForDay = 0;
+          
+          switch (hourType) {
+            case 'regular':
+              hoursToShow = regularHours;
+              payForDay = regularHours * regularRate;
+              displayRate = regularRate;
+              break;
+            case 'overtime':
+              hoursToShow = overtimeHours;
+              payForDay = overtimeHours * overtimeRate;
+              displayRate = overtimeRate;
+              break;
+            case 'double':
+              hoursToShow = doubleHours;
+              payForDay = doubleHours * doubleRate;
+              displayRate = doubleRate;
+              break;
+            default: // 'all'
+              hoursToShow = regularHours + overtimeHours + doubleHours;
+              payForDay = (regularHours * regularRate) + (overtimeHours * overtimeRate) + (doubleHours * doubleRate);
+              displayRate = regularRate; // Show regular rate for 'all' view
+              break;
+          }
+          
           if (weeklyHours.hasOwnProperty(timesheet.date)) {
-            weeklyHours[timesheet.date] += hours;
-            totalHours += hours;
+            weeklyHours[timesheet.date] += hoursToShow;
+            totalHours += hoursToShow;
+            totalPay += payForDay;
           }
         });
 
       return {
         contractorId: contractor.contractorId,
         employeeName: fullName,
-        billingRate: contractor.contractorRate || '0.00',
+        billingRate: displayRate.toFixed(2),
         weeklyHours,
         totalHours,
-        grossPay: totalHours * rate
+        grossPay: totalPay
       };
     });
 

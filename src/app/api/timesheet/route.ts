@@ -138,11 +138,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { date, employee, company, projectName, jobDescription, timeSpent } = body;
+    const { date, employee, company, projectName, jobDescription, timeSpent, overtimeHours, doubleHours } = body;
 
     if (!date || !employee || !company || !projectName || !jobDescription || !timeSpent) {
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { error: 'All required fields must be provided' },
         { status: 400 }
       );
     }
@@ -151,6 +151,22 @@ export async function POST(request: NextRequest) {
     if (isNaN(timeSpentNumber) || timeSpentNumber < 0) {
       return NextResponse.json(
         { error: 'Time spent must be a valid positive number' },
+        { status: 400 }
+      );
+    }
+
+    const overtimeHoursNumber = overtimeHours ? parseFloat(overtimeHours) : 0;
+    if (overtimeHours && (isNaN(overtimeHoursNumber) || overtimeHoursNumber < 0)) {
+      return NextResponse.json(
+        { error: 'Overtime hours must be a valid positive number' },
+        { status: 400 }
+      );
+    }
+
+    const doubleHoursNumber = doubleHours ? parseFloat(doubleHours) : 0;
+    if (doubleHours && (isNaN(doubleHoursNumber) || doubleHoursNumber < 0)) {
+      return NextResponse.json(
+        { error: 'Double hours must be a valid positive number' },
         { status: 400 }
       );
     }
@@ -174,6 +190,8 @@ export async function POST(request: NextRequest) {
       projectName,
       jobDescription,
       timeSpent: timeSpentNumber.toString(),
+      overtimeHours: overtimeHoursNumber.toString(),
+      doubleHours: doubleHoursNumber.toString(),
     }).returning();
 
     return NextResponse.json(
@@ -319,7 +337,9 @@ export async function GET(request: NextRequest) {
       // No conditions
       const baseQuery = db.select({
         timesheet: timesheets,
-        contractorRate: contractors.rate
+        contractorRate: contractors.rate,
+        contractorOvertimeRate: contractors.overtimeRate,
+        contractorDoubleTimeRate: contractors.doubleTimeRate
       })
       .from(timesheets)
       .leftJoin(contractors, eq(sql`${timesheets.userId}::uuid`, contractors.id))
@@ -332,7 +352,9 @@ export async function GET(request: NextRequest) {
       // Single condition
       const baseQuery = db.select({
         timesheet: timesheets,
-        contractorRate: contractors.rate
+        contractorRate: contractors.rate,
+        contractorOvertimeRate: contractors.overtimeRate,
+        contractorDoubleTimeRate: contractors.doubleTimeRate
       })
       .from(timesheets)
       .leftJoin(contractors, eq(sql`${timesheets.userId}::uuid`, contractors.id))
@@ -346,7 +368,9 @@ export async function GET(request: NextRequest) {
       // Multiple conditions
       const baseQuery = db.select({
         timesheet: timesheets,
-        contractorRate: contractors.rate
+        contractorRate: contractors.rate,
+        contractorOvertimeRate: contractors.overtimeRate,
+        contractorDoubleTimeRate: contractors.doubleTimeRate
       })
       .from(timesheets)
       .leftJoin(contractors, eq(sql`${timesheets.userId}::uuid`, contractors.id))
@@ -364,9 +388,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       timesheets: results.map(row => row.timesheet),
       contractorRates: results.reduce((acc, row) => {
-        acc[row.timesheet.userId] = row.contractorRate || '0.00';
+        acc[row.timesheet.userId] = {
+          rate: row.contractorRate || '0.00',
+          overtimeRate: row.contractorOvertimeRate || null,
+          doubleTimeRate: row.contractorDoubleTimeRate || null
+        };
         return acc;
-      }, {} as Record<string, string>),
+      }, {} as Record<string, { rate: string; overtimeRate: string | null; doubleTimeRate: string | null }>),
       pagination: fetchAll ? null : {
         page,
         pageSize,
@@ -409,11 +437,11 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const { id, date, employee, company, projectName, jobDescription, timeSpent } = await request.json();
+    const { id, date, employee, company, projectName, jobDescription, timeSpent, overtimeHours, doubleHours } = await request.json();
 
     if (!id || !date || !employee || !company || !projectName || !jobDescription || !timeSpent) {
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { error: 'All required fields must be provided' },
         { status: 400 }
       );
     }
@@ -422,6 +450,22 @@ export async function PUT(request: NextRequest) {
     if (isNaN(timeSpentNumber) || timeSpentNumber < 0) {
       return NextResponse.json(
         { error: 'Time spent must be a valid positive number' },
+        { status: 400 }
+      );
+    }
+
+    const overtimeHoursNumber = overtimeHours ? parseFloat(overtimeHours) : 0;
+    if (overtimeHours && (isNaN(overtimeHoursNumber) || overtimeHoursNumber < 0)) {
+      return NextResponse.json(
+        { error: 'Overtime hours must be a valid positive number' },
+        { status: 400 }
+      );
+    }
+
+    const doubleHoursNumber = doubleHours ? parseFloat(doubleHours) : 0;
+    if (doubleHours && (isNaN(doubleHoursNumber) || doubleHoursNumber < 0)) {
+      return NextResponse.json(
+        { error: 'Double hours must be a valid positive number' },
         { status: 400 }
       );
     }
@@ -447,6 +491,8 @@ export async function PUT(request: NextRequest) {
         projectName,
         jobDescription,
         timeSpent: timeSpentNumber.toString(),
+        overtimeHours: overtimeHoursNumber.toString(),
+        doubleHours: doubleHoursNumber.toString(),
         status: 'pending', // Reset to pending when timesheet is updated
         updatedAt: new Date()
       })

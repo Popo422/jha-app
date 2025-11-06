@@ -5,7 +5,14 @@ import { useGetWorkmenWeeklyDataQuery, type WorkmenWeeklyData } from "@/lib/feat
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Clock, DollarSign } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Users, Clock, DollarSign, ChevronDown } from "lucide-react";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 
 interface WorkmenWeeklyAnalyticsProps {
@@ -13,8 +20,15 @@ interface WorkmenWeeklyAnalyticsProps {
 }
 
 export default function WorkmenWeeklyAnalytics({ projectId }: WorkmenWeeklyAnalyticsProps) {
-  const { data, isLoading, error } = useGetWorkmenWeeklyDataQuery({ projectId });
+  const [hourType, setHourType] = useState<'all' | 'regular' | 'overtime' | 'double'>('regular');
+  const { data, isLoading, error } = useGetWorkmenWeeklyDataQuery({ projectId, hourType });
   const [search, setSearch] = useState("");
+
+  const hourTypeLabels = {
+    regular: 'Regular Hours',
+    overtime: 'Overtime Hours', 
+    double: 'Double Hours'
+  };
 
   // Define table columns
   const columns: ColumnDef<WorkmenWeeklyData>[] = [
@@ -163,29 +177,59 @@ export default function WorkmenWeeklyAnalytics({ projectId }: WorkmenWeeklyAnaly
   }
 
   return (
-    <AdminDataTable
-      data={workmenData}
-      columns={columns}
-      isLoading={isLoading}
-      isFetching={isLoading}
-      getRowId={(workman) => workman.contractorId}
-      exportFilename="workmen-weekly-hours"
-      exportHeaders={[
-        "Employee", 
-        ...data?.weekDates?.map(date => new Date(date).toLocaleDateString()) || [],
-        "Total Hours", 
-        "Billing Rate", 
-        "Gross Pay"
-      ]}
-      getExportData={(workman) => [
-        workman.employeeName,
-        ...data?.weekDates?.map(date => workman.weeklyHours[date]?.toFixed(1) || '0') || [],
-        workman.totalHours.toFixed(1),
-        `$${parseFloat(workman.billingRate).toFixed(2)}`,
-        `$${workman.grossPay.toFixed(2)}`
-      ]}
-      searchValue={search}
-      onSearchChange={setSearch}
-    />
+    <div className="space-y-4">
+      {/* Hour Type Filter */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">View:</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-40 justify-between">
+                {hourTypeLabels[hourType]}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setHourType('regular')}>
+                Regular Hours
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setHourType('overtime')}>
+                Overtime Hours
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setHourType('double')}>
+                Double Hours
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        
+      </div>
+      
+      {/* Data Table */}
+      <AdminDataTable
+        data={workmenData}
+        columns={columns}
+        isLoading={isLoading}
+        isFetching={isLoading}
+        getRowId={(workman) => workman.contractorId}
+        exportFilename={`workmen-${hourType}-hours`}
+        exportHeaders={[
+          "Employee", 
+          ...data?.weekDates?.map(date => new Date(date).toLocaleDateString()) || [],
+          "Total Hours", 
+          "Billing Rate", 
+          "Gross Pay"
+        ]}
+        getExportData={(workman) => [
+          workman.employeeName,
+          ...data?.weekDates?.map(date => workman.weeklyHours[date]?.toFixed(1) || '0') || [],
+          workman.totalHours.toFixed(1),
+          `$${parseFloat(workman.billingRate).toFixed(2)}`,
+          `$${workman.grossPay.toFixed(2)}`
+        ]}
+        searchValue={search}
+        onSearchChange={setSearch}
+      />
+    </div>
   );
 }

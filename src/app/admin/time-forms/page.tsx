@@ -600,9 +600,24 @@ export default function TimeFormsPage() {
       ),
       cell: ({ row }) => {
         const timesheet = row.original;
-        const timeSpent = parseFloat(timesheet.timeSpent || '0');
-        const rate = parseFloat(contractorRates[timesheet.userId] || '0');
-        const cost = timeSpent * rate;
+        const regularHours = parseFloat(timesheet.timeSpent || '0');
+        const overtimeHours = parseFloat(timesheet.overtimeHours || '0');
+        const doubleHours = parseFloat(timesheet.doubleHours || '0');
+        
+        const contractorData = contractorRates[timesheet.userId];
+        const regularRate = parseFloat(contractorData?.rate || '0');
+        
+        // Use contractor's overtime rate if available, otherwise default to 1.5x regular rate
+        const overtimeRate = contractorData?.overtimeRate 
+          ? parseFloat(contractorData.overtimeRate) 
+          : regularRate * 1.5;
+        
+        // Use contractor's double time rate if available, otherwise default to 2x regular rate  
+        const doubleRate = contractorData?.doubleTimeRate 
+          ? parseFloat(contractorData.doubleTimeRate) 
+          : regularRate * 2;
+        
+        const cost = (regularHours * regularRate) + (overtimeHours * overtimeRate) + (doubleHours * doubleRate);
         return <div className="text-sm font-medium text-green-600">${cost.toFixed(2)}</div>;
       },
     },
@@ -895,9 +910,23 @@ export default function TimeFormsPage() {
   ]);
 
   const getExportData = useCallback((timesheet: Timesheet) => {
-    const timeSpent = parseFloat(timesheet.timeSpent || '0');
-    const rate = parseFloat(contractorRates[timesheet.userId] || '0');
-    const cost = timeSpent * rate;
+    const regularHours = parseFloat(timesheet.timeSpent || '0');
+    const overtimeHours = parseFloat(timesheet.overtimeHours || '0');
+    const doubleHours = parseFloat(timesheet.doubleHours || '0');
+    
+    const contractorData = contractorRates[timesheet.userId];
+    const regularRate = parseFloat(contractorData?.rate || '0');
+    
+    const overtimeRate = contractorData?.overtimeRate 
+      ? parseFloat(contractorData.overtimeRate) 
+      : regularRate * 1.5;
+    
+    const doubleRate = contractorData?.doubleTimeRate 
+      ? parseFloat(contractorData.doubleTimeRate) 
+      : regularRate * 2;
+    
+    const cost = (regularHours * regularRate) + (overtimeHours * overtimeRate) + (doubleHours * doubleRate);
+    
     return [
       timesheet.employee,
       timesheet.company,
@@ -905,6 +934,9 @@ export default function TimeFormsPage() {
       timesheet.projectName,
       timesheet.jobDescription,
       timesheet.timeSpent,
+      timesheet.overtimeHours || '0',
+      timesheet.doubleHours || '0',
+      (regularHours + overtimeHours + doubleHours).toFixed(2),
       `$${cost.toFixed(2)}`
     ];
   }, [contractorRates]);
@@ -925,9 +957,31 @@ export default function TimeFormsPage() {
             <div className="flex justify-between items-start mb-2">
               <h3 className="font-medium text-sm">{timesheet.employee}</h3>
               <div className="text-right">
-                <span className="text-sm font-bold text-green-600">{timesheet.timeSpent} hrs</span>
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  Regular: {timesheet.timeSpent || '0'}h | OT: {timesheet.overtimeHours || '0'}h | DT: {timesheet.doubleHours || '0'}h
+                </div>
+                <div className="text-sm font-bold text-blue-600">
+                  Total: {(parseFloat(timesheet.timeSpent || '0') + parseFloat(timesheet.overtimeHours || '0') + parseFloat(timesheet.doubleHours || '0')).toFixed(2)} hrs
+                </div>
                 <div className="text-sm font-bold text-green-600">
-                  ${((parseFloat(timesheet.timeSpent || '0')) * (parseFloat(contractorRates[timesheet.userId] || '0'))).toFixed(2)}
+                  ${(() => {
+                    const regularHours = parseFloat(timesheet.timeSpent || '0');
+                    const overtimeHours = parseFloat(timesheet.overtimeHours || '0');
+                    const doubleHours = parseFloat(timesheet.doubleHours || '0');
+                    
+                    const contractorData = contractorRates[timesheet.userId];
+                    const regularRate = parseFloat(contractorData?.rate || '0');
+                    
+                    const overtimeRate = contractorData?.overtimeRate 
+                      ? parseFloat(contractorData.overtimeRate) 
+                      : regularRate * 1.5;
+                    
+                    const doubleRate = contractorData?.doubleTimeRate 
+                      ? parseFloat(contractorData.doubleTimeRate) 
+                      : regularRate * 2;
+                    
+                    return ((regularHours * regularRate) + (overtimeHours * overtimeRate) + (doubleHours * doubleRate)).toFixed(2);
+                  })()}
                 </div>
               </div>
             </div>
@@ -1112,7 +1166,7 @@ export default function TimeFormsPage() {
         onBulkDelete={handleBulkDelete}
         getRowId={(timesheet) => timesheet.id}
         exportFilename="timesheets"
-        exportHeaders={[t('admin.employee'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.jobDescription'), t('admin.hoursWorked'), t('admin.cost')]}
+        exportHeaders={[t('admin.employee'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.jobDescription'), 'Regular Hours', 'Overtime Hours', 'Double Hours', 'Total Hours', t('admin.cost')]}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}

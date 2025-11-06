@@ -801,7 +801,7 @@ export default function ContractorsPage() {
             {/* Overtime Rate - Only show when standard rate has value */}
             {formData.rate && (
               <div className="space-y-2">
-                <Label htmlFor="overtimeRate">Overtime Rate (1.5x)</Label>
+                <Label htmlFor="overtimeRate">Overtime Rate</Label>
                 <Input
                   id="overtimeRate"
                   name="overtimeRate"
@@ -824,7 +824,7 @@ export default function ContractorsPage() {
             {/* Double Time Rate - Only show when standard rate has value */}
             {formData.rate && (
               <div className="space-y-2">
-                <Label htmlFor="doubleTimeRate">Double Time Rate (2x)</Label>
+                <Label htmlFor="doubleTimeRate">Double Time Rate</Label>
                 <Input
                   id="doubleTimeRate"
                   name="doubleTimeRate"

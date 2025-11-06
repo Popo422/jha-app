@@ -26,6 +26,8 @@ interface TimesheetFormData {
   projectName: string;
   jobDescription: string;
   timeSpent: string;
+  overtimeHours: string;
+  doubleHours: string;
 }
 
 export default function TimesheetPage() {
@@ -40,7 +42,9 @@ export default function TimesheetPage() {
     company: contractor?.companyName || "",
     projectName: "",
     jobDescription: "",
-    timeSpent: ""
+    timeSpent: "",
+    overtimeHours: "",
+    doubleHours: ""
   });
 
   const resetFormData = useCallback(() => {
@@ -50,7 +54,9 @@ export default function TimesheetPage() {
       company: contractor?.companyName || "",
       projectName: "",
       jobDescription: "",
-      timeSpent: ""
+      timeSpent: "",
+      overtimeHours: "",
+      doubleHours: ""
     });
   }, [contractor]);
 
@@ -71,6 +77,16 @@ export default function TimesheetPage() {
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     reset(); // Reset mutation state
+
+    // Validate that at least regular hours is filled
+    const totalHours = parseFloat(formData.timeSpent || '0') + 
+                      parseFloat(formData.overtimeHours || '0') + 
+                      parseFloat(formData.doubleHours || '0');
+    
+    if (totalHours === 0) {
+      // This should be caught by the required attribute on timeSpent, but adding extra safety
+      return;
+    }
 
     await submitTimesheet({ ...formData, authType: 'contractor' });
   }, [formData, submitTimesheet, reset]);
@@ -192,13 +208,70 @@ export default function TimesheetPage() {
                       step="0.25"
                       min="0"
                       max="24"
-                      placeholder="Time spent on site"
+                      placeholder="Regular hours"
                       value={formData.timeSpent}
                       onChange={handleInputChange}
                       required
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="overtimeHours">Overtime Hours</Label>
+                    <Input
+                      id="overtimeHours"
+                      name="overtimeHours"
+                      type="number"
+                      step="0.25"
+                      min="0"
+                      max="24"
+                      placeholder="Overtime hours"
+                      value={formData.overtimeHours}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="doubleHours">Double Hours</Label>
+                    <Input
+                      id="doubleHours"
+                      name="doubleHours"
+                      type="number"
+                      step="0.25"
+                      min="0"
+                      max="24"
+                      placeholder="Double time hours"
+                      value={formData.doubleHours}
+                      onChange={handleInputChange}
+                    />
+                  </div>
                 </div>
+
+                {/* Hours Summary */}
+                {(formData.timeSpent || formData.overtimeHours || formData.doubleHours) && (
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Hours Summary</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-400">Regular:</span>
+                        <span className="ml-2 font-medium">{formData.timeSpent || '0'} hrs</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-400">Overtime:</span>
+                        <span className="ml-2 font-medium">{formData.overtimeHours || '0'} hrs</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-400">Double:</span>
+                        <span className="ml-2 font-medium">{formData.doubleHours || '0'} hrs</span>
+                      </div>
+                      <div className="font-semibold">
+                        <span className="text-gray-600 dark:text-gray-400">Total:</span>
+                        <span className="ml-2 text-blue-600 dark:text-blue-400">
+                          {(parseFloat(formData.timeSpent || '0') + 
+                            parseFloat(formData.overtimeHours || '0') + 
+                            parseFloat(formData.doubleHours || '0')).toFixed(2)} hrs
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Instructions */}
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
