@@ -218,11 +218,11 @@ export default function SafetyFormsPage() {
       case 'start-of-day':
         return t('admin.startOfDay');
       case 'start-of-day-v2':
-        return 'Start of Day V2';
+        return 'Foreman Start of Day';
       case 'end-of-day':
         return t('admin.endOfDay');
       case 'end-of-day-v2':
-        return 'End of Day V2';
+        return 'Foreman End of Day';
       case 'incident-report':
         return t('forms.incidentReport');
       case 'quick-incident-report':
