@@ -20,7 +20,7 @@ interface WorkmenWeeklyAnalyticsProps {
 }
 
 export default function WorkmenWeeklyAnalytics({ projectId }: WorkmenWeeklyAnalyticsProps) {
-  const [hourType, setHourType] = useState<'all' | 'regular' | 'overtime' | 'double'>('regular');
+  const [hourType, setHourType] = useState<'regular' | 'overtime' | 'double'>('regular');
   const { data, isLoading, error } = useGetWorkmenWeeklyDataQuery({ projectId, hourType });
   const [search, setSearch] = useState("");
 

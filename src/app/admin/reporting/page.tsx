@@ -246,7 +246,7 @@ export default function ReportingPage() {
   // Cost calculations
   const getCost = useCallback((timesheet: any) => {
     const timeSpent = parseFloat(timesheet.timeSpent || '0');
-    const rate = parseFloat(contractorRates[timesheet.userId] || '0');
+    const rate = parseFloat(contractorRates[timesheet.userId]?.rate || '0');
     return timeSpent * rate;
   }, [contractorRates]);
 
