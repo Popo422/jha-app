@@ -1,0 +1,2 @@
+ALTER TABLE "companies" ALTER COLUMN "membership_info" SET DEFAULT '{"membershipLevel":"3","user":null,"memberships":[],"tokenVerifiedAt":"2025-11-07T14:04:24.039Z"}'::jsonb;--> statement-breakpoint
+ALTER TABLE "expenses" ADD COLUMN "category" text DEFAULT 'Other' NOT NULL;

@@ -10,6 +10,7 @@ export interface ProjectExpense {
   quantity: string
   totalCost: string
   date: string
+  category: string
   createdBy: string
   createdByName: string
   createdAt: string
@@ -40,6 +41,7 @@ export interface ProjectExpenseWithDetails extends ProjectExpense {
 export interface ProjectExpensesResponse {
   success: boolean
   expenses: ProjectExpenseWithDetails[]
+  totalAmount?: number
   pagination?: {
     page: number
     pageSize: number
@@ -61,6 +63,7 @@ export interface ProjectExpenseQueryParams {
   page?: number
   pageSize?: number
   search?: string
+  category?: string
   dateFrom?: string
   dateTo?: string
   minAmount?: number
@@ -75,6 +78,7 @@ export interface CreateProjectExpenseRequest {
   quantity: number
   totalCost: number
   date: string
+  category: string
 }
 
 export interface UpdateProjectExpenseRequest {
@@ -86,6 +90,7 @@ export interface UpdateProjectExpenseRequest {
   quantity?: number
   totalCost?: number
   date?: string
+  category?: string
 }
 
 export interface DeleteProjectExpenseRequest {
@@ -114,6 +119,7 @@ export interface BulkImportProjectExpensesRequest {
     quantity: number
     totalCost: number
     date: string
+    category: string
   }>
 }
 

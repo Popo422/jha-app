@@ -2,20 +2,23 @@
 
 import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
-import { Plus, Upload, Receipt, Calendar, DollarSign, FileText, Check, X, Eye, Paperclip, Trash2 } from "lucide-react";
+import { Plus, Upload, Receipt, Calendar, DollarSign, FileText, Check, X, Eye, Paperclip, Trash2, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useToast } from "@/components/ui/toast";
-import { useGetExpensesQuery, useCreateExpenseMutation, useUpdateExpenseMutation, useDeleteExpenseMutation, useUploadExpenseDocumentMutation, useUpdateProjectAssignmentsMutation, useDeleteExpenseDocumentMutation, type ExpenseWithDetails } from "@/lib/features/expenses/expensesApi";
+import { useGetExpensesQuery, useCreateExpenseMutation, useUpdateExpenseMutation, useDeleteExpenseMutation, useUploadExpenseDocumentMutation, useUpdateProjectAssignmentsMutation, useDeleteExpenseDocumentMutation, EXPENSE_CATEGORIES, type ExpenseWithDetails } from "@/lib/features/expenses/expensesApi";
 import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
 
 interface Project {
@@ -39,6 +42,10 @@ export default function ExpensesPage() {
   const { t } = useTranslation('common');
   const router = useRouter();
   const [searchValue, setSearchValue] = useState("");
+  const [selectedProject, setSelectedProject] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [editingExpense, setEditingExpense] = useState<ExpenseWithDetails | null>(null);
   const [isCreatingExpense, setIsCreatingExpense] = useState(false);
   const [createForm, setCreateForm] = useState({
@@ -48,6 +55,7 @@ export default function ExpensesPage() {
     quantity: '1',
     totalCost: '',
     date: '',
+    category: 'Other',
     projectIds: [] as string[],
   });
   const [editForm, setEditForm] = useState({
@@ -57,6 +65,7 @@ export default function ExpensesPage() {
     quantity: '',
     totalCost: '',
     date: '',
+    category: 'Other',
     projectIds: [] as string[],
   });
   const [uploadedFiles, setUploadedFiles] = useState<AttachedFile[]>([]);
@@ -64,6 +73,7 @@ export default function ExpensesPage() {
   const [documentsToDelete, setDocumentsToDelete] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const debouncedSearch = useDebouncedValue(searchValue, 300);
 
   const { toast, showToast } = useToast();
 
@@ -71,7 +81,11 @@ export default function ExpensesPage() {
   const { data: expensesData, isLoading, isFetching, refetch, error } = useGetExpensesQuery({
     page: 1,
     pageSize: 50,
-    search: searchValue || undefined,
+    search: debouncedSearch || undefined,
+    projectId: selectedProject !== "all" ? selectedProject : undefined,
+    category: selectedCategory !== "all" ? selectedCategory : undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
   }, {
     skip: false, // Set to true if you want to manually trigger
   });
@@ -91,6 +105,17 @@ export default function ExpensesPage() {
 
   const expenses = expensesData?.expenses || [];
   const projects = projectsData?.projects || [];
+
+  // Check if any filters are active
+  const hasActiveFilters = selectedProject !== "all" || selectedCategory !== "all" || dateFrom || dateTo;
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedProject("all");
+    setSelectedCategory("all");
+    setDateFrom("");
+    setDateTo("");
+  };
 
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -154,6 +179,17 @@ export default function ExpensesPage() {
       cell: ({ row }) => (
         <div className="text-left font-semibold">
           {formatCurrency(row.original.totalCost)}
+        </div>
+      ),
+    },
+    {
+      header: "Category",
+      accessorKey: "category",
+      cell: ({ row }) => (
+        <div>
+          <Badge variant="secondary" className="text-xs">
+            {row.original.category}
+          </Badge>
         </div>
       ),
     },
@@ -229,6 +265,7 @@ export default function ExpensesPage() {
       quantity: expense.quantity,
       totalCost: expense.totalCost,
       date: expense.date,
+      category: expense.category || 'Other',
       projectIds: expense.projects?.map(p => p.projectId) || [],
     });
     setExistingDocuments(expense.documents || []);
@@ -249,6 +286,7 @@ export default function ExpensesPage() {
         quantity: parseFloat(editForm.quantity),
         totalCost: parseFloat(editForm.totalCost),
         date: editForm.date,
+        category: editForm.category,
       }).unwrap();
 
       // Update project assignments if they changed
@@ -305,6 +343,7 @@ export default function ExpensesPage() {
       quantity: '',
       totalCost: '',
       date: '',
+      category: 'Other',
       projectIds: [],
     });
     setUploadedFiles([]);
@@ -324,6 +363,7 @@ export default function ExpensesPage() {
         quantity: parseFloat(createForm.quantity),
         totalCost: parseFloat(createForm.totalCost),
         date: createForm.date,
+        category: createForm.category,
         projectIds: createForm.projectIds.length > 0 ? createForm.projectIds : undefined,
       }).unwrap();
 
@@ -356,6 +396,7 @@ export default function ExpensesPage() {
       quantity: '1',
       totalCost: '',
       date: '',
+      category: 'Other',
       projectIds: [],
     });
     setUploadedFiles([]);
@@ -446,7 +487,7 @@ export default function ExpensesPage() {
         onBulkDelete={handleBulkDelete}
         getRowId={(expense) => expense.id}
         exportFilename="expenses"
-        exportHeaders={["Name", "Description", "Date", "Price", "Quantity", "Total Cost", "Projects", "Created By"]}
+        exportHeaders={["Name", "Description", "Date", "Price", "Quantity", "Total Cost", "Category", "Projects", "Created By"]}
         getExportData={(expense) => [
           expense.name,
           expense.description || '',
@@ -454,11 +495,93 @@ export default function ExpensesPage() {
           formatCurrency(expense.price),
           expense.quantity,
           formatCurrency(expense.totalCost),
+          expense.category,
           expense.projectNames.join(', '),
           expense.createdByName
         ]}
         searchValue={searchValue}
         onSearchChange={setSearchValue}
+        filters={
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="space-y-1">
+              <div className="text-xs font-medium">Project</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
+                    <span className="truncate">
+                      {selectedProject === "all" ? "All Projects" : projects.find(p => p.id === selectedProject)?.name || selectedProject}
+                    </span>
+                    <ChevronDown className="h-3 w-3 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setSelectedProject("all")}>
+                    All Projects
+                  </DropdownMenuItem>
+                  {projects.map((project) => (
+                    <DropdownMenuItem key={project.id} onClick={() => setSelectedProject(project.id)}>
+                      {project.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
+            <div className="space-y-1">
+              <div className="text-xs font-medium">Category</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
+                    <span className="truncate">
+                      {selectedCategory === "all" ? "All Categories" : selectedCategory}
+                    </span>
+                    <ChevronDown className="h-3 w-3 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setSelectedCategory("all")}>
+                    All Categories
+                  </DropdownMenuItem>
+                  {EXPENSE_CATEGORIES.map((category) => (
+                    <DropdownMenuItem key={category} onClick={() => setSelectedCategory(category)}>
+                      {category}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
+            <div className="space-y-1">
+              <div className="text-xs font-medium">Date From</div>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-40 text-xs"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <div className="text-xs font-medium">Date To</div>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-40 text-xs"
+              />
+            </div>
+            
+            {hasActiveFilters && (
+              <div className="space-y-1">
+                <div className="text-xs font-medium">&nbsp;</div>
+                <Button variant="outline" size="sm" onClick={clearFilters} className="text-xs">
+                  <X className="h-3 w-3 mr-1" />
+                  Clear All Filters
+                </Button>
+              </div>
+            )}
+          </div>
+        }
       />
 
       {/* Create Expense Dialog */}
@@ -525,6 +648,28 @@ export default function ExpensesPage() {
                 value={createForm.date}
                 onChange={(e) => setCreateForm({ ...createForm, date: e.target.value })}
               />
+            </div>
+
+            <div>
+              <Label htmlFor="create-category">Category *</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between h-9">
+                    <span>{createForm.category}</span>
+                    <ChevronDown className="h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full max-h-48 overflow-y-auto">
+                  {EXPENSE_CATEGORIES.map((category) => (
+                    <DropdownMenuItem 
+                      key={category} 
+                      onClick={() => setCreateForm({ ...createForm, category })}
+                    >
+                      {category}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="flex flex-col space-y-2">
@@ -671,6 +816,28 @@ export default function ExpensesPage() {
                 value={editForm.date}
                 onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
               />
+            </div>
+
+            <div>
+              <Label htmlFor="edit-category">Category *</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between h-9">
+                    <span>{editForm.category}</span>
+                    <ChevronDown className="h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full max-h-48 overflow-y-auto">
+                  {EXPENSE_CATEGORIES.map((category) => (
+                    <DropdownMenuItem 
+                      key={category} 
+                      onClick={() => setEditForm({ ...editForm, category })}
+                    >
+                      {category}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="flex flex-col space-y-2">

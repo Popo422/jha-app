@@ -147,7 +147,8 @@ export async function PUT(
       price, 
       quantity, 
       totalCost,
-      date
+      date,
+      category
     } = body
 
     // Verify project belongs to admin's company
@@ -196,6 +197,7 @@ export async function PUT(
         quantity: quantity !== undefined ? quantity.toString() : currentExpense.quantity,
         totalCost: totalCost !== undefined ? totalCost.toString() : currentExpense.totalCost,
         date: date || currentExpense.date,
+        category: category || currentExpense.category,
         updatedAt: new Date()
       })
       .where(eq(expenses.id, expenseId))

@@ -30,8 +30,9 @@ import {
   Plus
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import { useUploadReceiptMutation, useExtractExpensesMutation } from "@/lib/features/expenses/expensesApi";
+import { useUploadReceiptMutation, useExtractExpensesMutation, EXPENSE_CATEGORIES } from "@/lib/features/expenses/expensesApi";
 import { useBulkImportProjectExpensesMutation } from "@/lib/features/project-expenses/projectExpensesApi";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type UploadStep = 'upload' | 'extract' | 'review';
 
@@ -43,6 +44,7 @@ interface ExtractedExpense {
   quantity: number;
   totalCost: number;
   date: string;
+  category: string;
 }
 
 export default function ProjectUploadReceiptsPage() {
@@ -63,7 +65,8 @@ export default function ProjectUploadReceiptsPage() {
     price: "",
     quantity: "1",
     totalCost: "",
-    date: ""
+    date: "",
+    category: "Other"
   });
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -143,7 +146,8 @@ export default function ProjectUploadReceiptsPage() {
         price: exp.price,
         quantity: exp.quantity,
         totalCost: exp.price * exp.quantity,
-        date: exp.date || new Date().toISOString().split('T')[0]
+        date: exp.date || new Date().toISOString().split('T')[0],
+        category: exp.category || 'Other'
       }));
 
       setExtractedExpenses(extractedData);
@@ -161,7 +165,8 @@ export default function ProjectUploadReceiptsPage() {
       price: "",
       quantity: "1",
       totalCost: "",
-      date: ""
+      date: "",
+      category: "Other"
     });
   };
 
@@ -179,7 +184,8 @@ export default function ProjectUploadReceiptsPage() {
         price: expense.price.toString(),
         quantity: expense.quantity.toString(),
         totalCost: expense.totalCost.toString(),
-        date: expense.date
+        date: expense.date,
+        category: expense.category || 'Other'
       });
       setEditingIndex(index);
     }
@@ -206,7 +212,8 @@ export default function ProjectUploadReceiptsPage() {
         price,
         quantity,
         totalCost,
-        date: formData.date
+        date: formData.date,
+        category: formData.category
       };
 
       setExtractedExpenses([...extractedExpenses, newExpense]);
@@ -221,7 +228,8 @@ export default function ProjectUploadReceiptsPage() {
         price,
         quantity,
         totalCost,
-        date: formData.date
+        date: formData.date,
+        category: formData.category
       };
 
       setExtractedExpenses(updatedExpenses);
@@ -258,7 +266,8 @@ export default function ProjectUploadReceiptsPage() {
         price: exp.price,
         quantity: exp.quantity,
         totalCost: exp.totalCost,
-        date: exp.date
+        date: exp.date,
+        category: exp.category
       }));
 
       const result = await bulkImportExpenses({
@@ -535,6 +544,7 @@ export default function ProjectUploadReceiptsPage() {
                               <th className="text-left py-3 px-4 font-medium">Price</th>
                               <th className="text-left py-3 px-4 font-medium">Qty</th>
                               <th className="text-left py-3 px-4 font-medium">Total</th>
+                              <th className="text-left py-3 px-4 font-medium">Category</th>
                               <th className="text-left py-3 px-4 font-medium">Date</th>
                               <th className="text-right py-3 px-4 font-medium">Actions</th>
                             </tr>
@@ -559,6 +569,13 @@ export default function ProjectUploadReceiptsPage() {
                                 <td className="py-3 px-4">
                                   <div className="text-left font-semibold text-green-600">
                                     {formatCurrency(expense.totalCost)}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="text-sm">
+                                    <Badge variant="secondary" className="text-xs">
+                                      {expense.category}
+                                    </Badge>
                                   </div>
                                 </td>
                                 <td className="py-3 px-4">
@@ -690,6 +707,22 @@ export default function ProjectUploadReceiptsPage() {
                   value={formData.date}
                   onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-category">Category *</Label>
+                <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                  <SelectTrigger id="edit-category">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EXPENSE_CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

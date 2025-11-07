@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,9 +10,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
-import { Plus, Upload, Receipt, Calendar, DollarSign, FileText, Paperclip, X } from "lucide-react";
+import { Plus, Upload, Receipt, Calendar, DollarSign, FileText, Paperclip, X, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useToast } from "@/components/ui/toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EXPENSE_CATEGORIES } from "@/lib/features/expenses/expensesApi";
 import { 
   useGetProjectExpensesQuery, 
   useCreateProjectExpenseMutation, 
@@ -33,6 +37,9 @@ interface AttachedFile {
 export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
   const router = useRouter();
   const [searchValue, setSearchValue] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [editingExpense, setEditingExpense] = useState<ProjectExpenseWithDetails | null>(null);
   const [isCreatingExpense, setIsCreatingExpense] = useState(false);
   const [createForm, setCreateForm] = useState({
@@ -42,6 +49,7 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
     quantity: '1',
     totalCost: '',
     date: '',
+    category: 'Other',
   });
   const [editForm, setEditForm] = useState({
     name: '',
@@ -50,12 +58,14 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
     quantity: '',
     totalCost: '',
     date: '',
+    category: 'Other',
   });
   const [uploadedFiles, setUploadedFiles] = useState<AttachedFile[]>([]);
   const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
   const [documentsToDelete, setDocumentsToDelete] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const debouncedSearch = useDebouncedValue(searchValue, 300);
 
   const { toast, showToast } = useToast();
 
@@ -64,7 +74,10 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
     projectId,
     page: 1,
     pageSize: 50,
-    search: searchValue || undefined,
+    search: debouncedSearch || undefined,
+    category: selectedCategory !== "all" ? selectedCategory : undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
   });
   
   const [createExpense, { isLoading: isCreating }] = useCreateProjectExpenseMutation();
@@ -73,6 +86,17 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
   const [uploadDocument] = useUploadProjectExpenseDocumentMutation();
 
   const expenses = expensesData?.expenses || [];
+  const totalExpenseAmount = expensesData?.totalAmount || 0;
+
+  // Check if any filters are active
+  const hasActiveFilters = selectedCategory !== "all" || dateFrom || dateTo;
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedCategory("all");
+    setDateFrom("");
+    setDateTo("");
+  };
 
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -140,6 +164,17 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
       ),
     },
     {
+      header: "Category",
+      accessorKey: "category",
+      cell: ({ row }) => (
+        <div>
+          <Badge variant="secondary" className="text-xs">
+            {row.original.category}
+          </Badge>
+        </div>
+      ),
+    },
+    {
       header: "Docs",
       accessorKey: "documentCount",
       cell: ({ row }) => (
@@ -193,6 +228,7 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
       quantity: expense.quantity,
       totalCost: expense.totalCost,
       date: expense.date,
+      category: expense.category || 'Other',
     });
     setExistingDocuments(expense.documents || []);
     setDocumentsToDelete([]);
@@ -213,6 +249,7 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
         quantity: parseFloat(editForm.quantity),
         totalCost: parseFloat(editForm.totalCost),
         date: editForm.date,
+        category: editForm.category,
       }).unwrap();
 
       // Delete removed documents
@@ -254,6 +291,7 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
       quantity: '',
       totalCost: '',
       date: '',
+      category: 'Other',
     });
     setUploadedFiles([]);
     setExistingDocuments([]);
@@ -273,6 +311,7 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
         quantity: parseFloat(createForm.quantity),
         totalCost: parseFloat(createForm.totalCost),
         date: createForm.date,
+        category: createForm.category,
       }).unwrap();
 
       // Upload files if any
@@ -305,6 +344,7 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
       quantity: '1',
       totalCost: '',
       date: '',
+      category: 'Other',
     });
     setUploadedFiles([]);
   };
@@ -387,7 +427,7 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
         onBulkDelete={handleBulkDelete}
         getRowId={(expense) => expense.id}
         exportFilename={`project-${projectId}-expenses`}
-        exportHeaders={["Name", "Description", "Date", "Price", "Quantity", "Total Cost", "Created By"]}
+        exportHeaders={["Name", "Description", "Date", "Price", "Quantity", "Total Cost", "Category", "Created By"]}
         getExportData={(expense) => [
           expense.name,
           expense.description || '',
@@ -395,11 +435,80 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
           formatCurrency(expense.price),
           expense.quantity,
           formatCurrency(expense.totalCost),
+          expense.category,
           expense.createdByName
         ]}
         searchValue={searchValue}
         onSearchChange={setSearchValue}
+        filters={
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="space-y-1">
+              <div className="text-xs font-medium">Category</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
+                    <span className="truncate">
+                      {selectedCategory === "all" ? "All Categories" : selectedCategory}
+                    </span>
+                    <ChevronDown className="h-3 w-3 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="max-h-48 overflow-y-auto">
+                  <DropdownMenuItem onClick={() => setSelectedCategory("all")}>
+                    All Categories
+                  </DropdownMenuItem>
+                  {EXPENSE_CATEGORIES.map((category) => (
+                    <DropdownMenuItem key={category} onClick={() => setSelectedCategory(category)}>
+                      {category}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
+            <div className="space-y-1">
+              <div className="text-xs font-medium">Date From</div>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-40 text-xs"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <div className="text-xs font-medium">Date To</div>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-40 text-xs"
+              />
+            </div>
+            
+            {hasActiveFilters && (
+              <div className="space-y-1">
+                <div className="text-xs font-medium">&nbsp;</div>
+                <Button variant="outline" size="sm" onClick={clearFilters} className="text-xs">
+                  <X className="h-3 w-3 mr-1" />
+                  Clear All Filters
+                </Button>
+              </div>
+            )}
+          </div>
+        }
       />
+
+      {/* Total Expenses Summary */}
+      {!isLoading && expenses.length > 0 && (
+        <div className="mt-4 flex justify-end">
+          <div className="text-right">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Total Expense: {formatCurrency(totalExpenseAmount.toString())}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create Expense Dialog */}
       <Dialog open={isCreatingExpense} onOpenChange={(open) => !open && handleCreateCancel()}>
@@ -465,6 +574,28 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
                 value={createForm.date}
                 onChange={(e) => setCreateForm({ ...createForm, date: e.target.value })}
               />
+            </div>
+
+            <div>
+              <Label htmlFor="create-category">Category *</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between h-9">
+                    <span>{createForm.category}</span>
+                    <ChevronDown className="h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full max-h-48 overflow-y-auto">
+                  {EXPENSE_CATEGORIES.map((category) => (
+                    <DropdownMenuItem 
+                      key={category} 
+                      onClick={() => setCreateForm({ ...createForm, category })}
+                    >
+                      {category}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div>
@@ -602,6 +733,28 @@ export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
                 value={editForm.date}
                 onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
               />
+            </div>
+
+            <div>
+              <Label htmlFor="edit-category">Category *</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between h-9">
+                    <span>{editForm.category}</span>
+                    <ChevronDown className="h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full max-h-48 overflow-y-auto">
+                  {EXPENSE_CATEGORIES.map((category) => (
+                    <DropdownMenuItem 
+                      key={category} 
+                      onClick={() => setEditForm({ ...editForm, category })}
+                    >
+                      {category}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div>

@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     // Create each expense
     for (const expenseData of extractedExpenses) {
-      const { name, description, price, quantity, date, projectIds: expenseProjectIds } = expenseData
+      const { name, description, price, quantity, date, category, projectIds: expenseProjectIds } = expenseData
 
       if (!name || !price || !quantity || !date) {
         continue // Skip invalid expenses
@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
           quantity: quantity.toString(),
           totalCost,
           date,
+          category: category || 'Other',
           createdBy: auth.admin.id,
           createdByName: auth.admin.name
         })

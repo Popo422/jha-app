@@ -1,5 +1,28 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
+// Expense Categories
+export const EXPENSE_CATEGORIES = [
+  'Labor',
+  'Materials',
+  'Equipment',
+  'Subcontractors',
+  'Sitework / Site Preparation',
+  'Permits & Fees',
+  'Design & Professional Services',
+  'General Conditions / Jobsite Overhead',
+  'Insurance & Bonds',
+  'Safety',
+  'Testing & Inspection',
+  'Temporary Facilities & Utilities',
+  'Project Administration / General Overhead',
+  'Contingency',
+  'Financing Costs',
+  'Closeout & Turnover',
+  'Other'
+] as const
+
+export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number]
+
 export interface Expense {
   id: string
   companyId: string
@@ -9,6 +32,7 @@ export interface Expense {
   quantity: string
   totalCost: string
   date: string
+  category: string
   createdBy: string
   createdByName: string
   createdAt: string
@@ -59,6 +83,7 @@ export interface CreateExpenseRequest {
   quantity: number
   totalCost: number
   date: string
+  category: string
   projectIds?: string[]
 }
 
@@ -70,6 +95,7 @@ export interface UpdateExpenseRequest {
   quantity?: number
   totalCost?: number
   date?: string
+  category?: string
 }
 
 export interface AssignProjectsRequest {
@@ -105,6 +131,7 @@ export interface ExtractExpensesResponse {
     quantity: number
     totalCost: number
     date?: string
+    category: string
   }>
   message: string
 }
@@ -116,6 +143,7 @@ export interface BulkImportExpensesRequest {
     price: number
     quantity: number
     date: string
+    category: string
     projectIds?: string[]
   }>
   projectIds?: string[]
@@ -157,6 +185,7 @@ export interface ExpenseQueryParams {
   pageSize?: number
   search?: string
   projectId?: string
+  category?: string
   dateFrom?: string
   dateTo?: string
   minAmount?: number
@@ -179,7 +208,7 @@ export const expensesApi = createApi({
   endpoints: (builder) => ({
     // Get all expenses with filtering and pagination
     getExpenses: builder.query<ExpensesResponse, ExpenseQueryParams>({
-      query: ({ page = 1, pageSize = 10, search, projectId, dateFrom, dateTo, minAmount, maxAmount }) => {
+      query: ({ page = 1, pageSize = 10, search, projectId, category, dateFrom, dateTo, minAmount, maxAmount }) => {
         const params = new URLSearchParams({
           page: page.toString(),
           pageSize: pageSize.toString(),
@@ -187,6 +216,7 @@ export const expensesApi = createApi({
         
         if (search) params.append('search', search)
         if (projectId) params.append('projectId', projectId)
+        if (category) params.append('category', category)
         if (dateFrom) params.append('dateFrom', dateFrom)
         if (dateTo) params.append('dateTo', dateTo)
         if (minAmount !== undefined) params.append('minAmount', minAmount.toString())

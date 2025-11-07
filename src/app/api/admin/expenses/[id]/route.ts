@@ -155,7 +155,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       price, 
       quantity, 
       totalCost,
-      date
+      date,
+      category
     } = body
 
     // Get the existing expense and verify it belongs to admin's company
@@ -187,6 +188,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         quantity: quantity !== undefined ? quantity.toString() : existingExpense[0].quantity,
         totalCost: finalTotalCost,
         date: date || existingExpense[0].date,
+        category: category || existingExpense[0].category,
         updatedAt: new Date()
       })
       .where(eq(expenses.id, expenseId))

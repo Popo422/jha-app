@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     const pageSize = parseInt(searchParams.get('pageSize') || '10');
     const search = searchParams.get('search');
     const projectId = searchParams.get('projectId');
+    const category = searchParams.get('category');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const minAmount = searchParams.get('minAmount');
@@ -70,6 +71,10 @@ export async function GET(request: NextRequest) {
       conditions.push(
         sql`(${expenses.name} ILIKE ${`%${search}%`} OR ${expenses.description} ILIKE ${`%${search}%`})`
       );
+    }
+
+    if (category) {
+      conditions.push(eq(expenses.category, category));
     }
 
     if (dateFrom) {
@@ -233,6 +238,7 @@ export async function POST(request: NextRequest) {
       quantity, 
       totalCost,
       date,
+      category,
       projectIds
     } = body;
 
@@ -253,6 +259,7 @@ export async function POST(request: NextRequest) {
         quantity: quantity.toString(),
         totalCost: totalCost.toString(),
         date,
+        category: category || 'Other',
         createdBy: auth.admin.id,
         createdByName: auth.admin.name
       })

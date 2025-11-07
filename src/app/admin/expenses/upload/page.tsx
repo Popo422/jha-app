@@ -30,9 +30,10 @@ import {
   Plus
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import { useUploadReceiptMutation, useExtractExpensesMutation, useBulkImportExpensesMutation } from "@/lib/features/expenses/expensesApi";
+import { useUploadReceiptMutation, useExtractExpensesMutation, useBulkImportExpensesMutation, EXPENSE_CATEGORIES } from "@/lib/features/expenses/expensesApi";
 import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type UploadStep = 'upload' | 'extract' | 'review';
 
@@ -44,6 +45,7 @@ interface ExtractedExpense {
   quantity: number;
   totalCost: number;
   date: string;
+  category: string;
   projectIds?: string[];
 }
 
@@ -64,6 +66,7 @@ export default function UploadReceiptsPage() {
     quantity: "1",
     totalCost: "",
     date: "",
+    category: "Other",
     projectIds: [] as string[]
   });
   
@@ -83,27 +86,6 @@ export default function UploadReceiptsPage() {
 
   const projects = projectsData?.projects || [];
 
-  // Mock extracted data
-  const mockExtractedExpenses: ExtractedExpense[] = [
-    {
-      id: '1',
-      name: 'Construction Materials',
-      description: 'Steel beams and concrete supplies',
-      price: 2500.00,
-      quantity: 10,
-      totalCost: 25000.00,
-      date: '2024-01-15'
-    },
-    {
-      id: '2',
-      name: 'Safety Equipment',
-      description: 'Hard hats, safety vests, gloves',
-      price: 150.00,
-      quantity: 20,
-      totalCost: 3000.00,
-      date: '2024-01-15'
-    }
-  ];
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -174,7 +156,8 @@ export default function UploadReceiptsPage() {
         price: exp.price,
         quantity: exp.quantity,
         totalCost: exp.price * exp.quantity,
-        date: exp.date || new Date().toISOString().split('T')[0]
+        date: exp.date || new Date().toISOString().split('T')[0],
+        category: exp.category || 'Other'
       }));
 
       setExtractedExpenses(extractedData);
@@ -193,6 +176,7 @@ export default function UploadReceiptsPage() {
       quantity: "1",
       totalCost: "",
       date: "",
+      category: "Other",
       projectIds: []
     });
   };
@@ -212,6 +196,7 @@ export default function UploadReceiptsPage() {
         quantity: expense.quantity.toString(),
         totalCost: expense.totalCost.toString(),
         date: expense.date,
+        category: expense.category || 'Other',
         projectIds: expense.projectIds || []
       });
       setEditingIndex(index);
@@ -240,6 +225,7 @@ export default function UploadReceiptsPage() {
         quantity,
         totalCost,
         date: formData.date,
+        category: formData.category,
         projectIds: formData.projectIds
       };
 
@@ -256,6 +242,7 @@ export default function UploadReceiptsPage() {
         quantity,
         totalCost,
         date: formData.date,
+        category: formData.category,
         projectIds: formData.projectIds
       };
 
@@ -293,6 +280,7 @@ export default function UploadReceiptsPage() {
         price: exp.price,
         quantity: exp.quantity,
         date: exp.date,
+        category: exp.category,
         projectIds: exp.projectIds || []
       }));
 
@@ -564,6 +552,7 @@ export default function UploadReceiptsPage() {
                               <th className="text-left py-3 px-4 font-medium">Price</th>
                               <th className="text-left py-3 px-4 font-medium">Qty</th>
                               <th className="text-left py-3 px-4 font-medium">Total</th>
+                              <th className="text-left py-3 px-4 font-medium">Category</th>
                               <th className="text-left py-3 px-4 font-medium">Projects</th>
                               <th className="text-left py-3 px-4 font-medium">Date</th>
                               <th className="text-right py-3 px-4 font-medium">Actions</th>
@@ -589,6 +578,13 @@ export default function UploadReceiptsPage() {
                                 <td className="py-3 px-4">
                                   <div className="text-left font-semibold text-green-600">
                                     {formatCurrency(expense.totalCost)}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="text-sm">
+                                    <Badge variant="secondary" className="text-xs">
+                                      {expense.category}
+                                    </Badge>
                                   </div>
                                 </td>
                                 <td className="py-3 px-4">
@@ -743,6 +739,22 @@ export default function UploadReceiptsPage() {
                   value={formData.date}
                   onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-category">Category *</Label>
+                <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                  <SelectTrigger id="edit-category">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EXPENSE_CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex flex-col space-y-2">

@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const search = searchParams.get('search')
+    const category = searchParams.get('category')
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
     const minAmount = searchParams.get('minAmount')
@@ -95,6 +96,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         expenses: [],
+        totalAmount: 0,
         pagination: {
           page,
           pageSize,
@@ -116,6 +118,10 @@ export async function GET(request: NextRequest) {
       conditions.push(ilike(expenses.name, `%${search}%`))
     }
 
+    if (category) {
+      conditions.push(eq(expenses.category, category))
+    }
+
     if (dateFrom) {
       conditions.push(gte(expenses.date, dateFrom))
     }
@@ -132,11 +138,24 @@ export async function GET(request: NextRequest) {
       conditions.push(lte(expenses.totalCost, maxAmount))
     }
 
-    // Get total count for pagination
+    // Get total count and total amount for pagination and summary
     const totalCount = await db
       .select({ count: expenses.id })
       .from(expenses)
       .where(and(...conditions))
+
+    // Get total amount for all filtered expenses
+    const totalAmountResult = await db
+      .select({ 
+        totalAmount: expenses.totalCost 
+      })
+      .from(expenses)
+      .where(and(...conditions))
+
+    // Calculate the sum of all filtered expenses
+    const totalAmount = totalAmountResult.reduce((sum, expense) => {
+      return sum + parseFloat(expense.totalAmount)
+    }, 0)
 
     // Get paginated expenses
     const projectExpenses = await db
@@ -190,6 +209,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       expenses: expensesWithDetails,
+      totalAmount,
       pagination: {
         page,
         pageSize,
@@ -227,7 +247,8 @@ export async function POST(request: NextRequest) {
       price, 
       quantity, 
       totalCost,
-      date
+      date,
+      category
     } = body
 
     if (!projectId || !name || !price || !quantity || !totalCost || !date) {
@@ -263,6 +284,7 @@ export async function POST(request: NextRequest) {
         quantity: quantity.toString(),
         totalCost: totalCost.toString(),
         date,
+        category: category || 'Other',
         createdBy: auth.admin.id,
         createdByName: auth.admin.name
       })

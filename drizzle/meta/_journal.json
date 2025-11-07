@@ -239,6 +239,13 @@
       "when": 1762503056162,
       "tag": "0033_charming_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1762524264085,
+      "tag": "0034_empty_kylun",
+      "breakpoints": true
     }
   ]
 }

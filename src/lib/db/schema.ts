@@ -374,6 +374,7 @@ export const expenses = pgTable('expenses', {
   quantity: numeric('quantity', { precision: 10, scale: 2 }).notNull().default('1'), // Quantity purchased
   totalCost: numeric('total_cost', { precision: 12, scale: 2 }).notNull(), // Total cost (price * quantity)
   date: date('date').notNull(), // Date of expense
+  category: text('category').notNull().default('Other'), // Expense category (Labor, Materials, Equipment, etc.)
   
   // Creation Information
   createdBy: uuid('created_by').notNull(), // Admin user ID who created
