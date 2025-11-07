@@ -225,6 +225,20 @@
       "when": 1762433508099,
       "tag": "0031_purple_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1762502540009,
+      "tag": "0032_third_pet_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1762503056162,
+      "tag": "0033_charming_deathstrike",
+      "breakpoints": true
     }
   ]
 }

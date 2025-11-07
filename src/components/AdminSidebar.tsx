@@ -29,6 +29,7 @@ import {
   ChevronRight,
   FolderOpen,
   Heart,
+  Receipt,
 } from 'lucide-react'
 
 interface SidebarItem {
@@ -71,6 +72,11 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       label: 'Project Dashboard',
       href: '/admin/project-dashboard',
       icon: FolderOpen
+    },
+    {
+      label: 'Expenses',
+      href: '/admin/expenses',
+      icon: Receipt
     },
     {
       label: 'Forms',

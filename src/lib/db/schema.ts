@@ -362,3 +362,66 @@ export const changeOrderDocuments = pgTable('change_order_documents', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
+// Expenses Schema
+export const expenses = pgTable('expenses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  
+  // Line Item Details
+  name: text('name').notNull(), // Expense name/item name
+  description: text('description'), // Optional description
+  price: numeric('price', { precision: 12, scale: 2 }).notNull(), // Unit price
+  quantity: numeric('quantity', { precision: 10, scale: 2 }).notNull().default('1'), // Quantity purchased
+  totalCost: numeric('total_cost', { precision: 12, scale: 2 }).notNull(), // Total cost (price * quantity)
+  date: date('date').notNull(), // Date of expense
+  
+  // Creation Information
+  createdBy: uuid('created_by').notNull(), // Admin user ID who created
+  createdByName: text('created_by_name').notNull(), // Admin name for display
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
+// Expense-Project Junction Table (Many-to-Many)
+export const expenseProjects = pgTable('expense_projects', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  expenseId: uuid('expense_id').notNull().references(() => expenses.id, { onDelete: 'cascade' }),
+  projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  
+  // Split allocation
+  percentage: numeric('percentage', { precision: 5, scale: 2 }).default('100.00'), // Percentage allocated to this project (0-100)
+  allocatedAmount: numeric('allocated_amount', { precision: 12, scale: 2 }), // Calculated amount allocated
+  
+  // Assignment Information
+  assignedBy: uuid('assigned_by').notNull(), // Admin user ID who made the assignment
+  assignedByName: text('assigned_by_name').notNull(), // Admin name for display
+  assignedAt: timestamp('assigned_at').notNull().defaultNow(),
+  
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: prevent duplicate assignments
+  expenseProjectUnique: unique().on(table.expenseId, table.projectId),
+}))
+
+// Expense Documents Schema (Manual file attachments)
+export const expenseDocuments = pgTable('expense_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  expenseId: uuid('expense_id')
+    .notNull()
+    .references(() => expenses.id, { onDelete: 'cascade' }),
+  companyId: uuid('company_id').notNull(),
+  
+  name: text('name').notNull(), // Filename
+  description: text('description'), // Optional description
+  fileType: text('file_type').notNull(), // File extension (pdf, jpg, png, etc.)
+  fileSize: integer('file_size').notNull(), // File size in bytes
+  url: text('url').notNull(), // Vercel Blob storage URL
+  blobKey: text('blob_key').notNull(), // Vercel Blob key for deletion
+  
+  // Upload Information
+  uploadedBy: uuid('uploaded_by').notNull(), // Admin user ID who uploaded
+  uploadedByName: text('uploaded_by_name').notNull(), // Admin name for display
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+

@@ -69,7 +69,7 @@ export function MultiSelect({
           disabled={disabled}
         >
           <div className="flex flex-wrap gap-1 max-w-full">
-            {value.length > 0 ? (
+            {value && value.length > 0 ? (
               <>
                 {value.slice(0, 2).map((item) => {
                   const option = options.find((opt) => opt.value === item);
