@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build query conditions
-    let conditions = [
+    const conditions = [
       eq(expenses.companyId, auth.admin.companyId),
       inArray(expenses.id, expenseIds)
     ]
