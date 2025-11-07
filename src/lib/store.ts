@@ -25,6 +25,7 @@ import { projectTasksApi } from './features/project-tasks/projectTasksApi'
 import { projectDocumentsApi } from './features/project-documents/projectDocumentsApi'
 import { changeOrdersApi } from './features/change-orders/changeOrdersApi'
 import { expensesApi } from './features/expenses/expensesApi'
+import { projectExpensesApi } from './features/project-expenses/projectExpensesApi'
 
 export const store = configureStore({
   reducer: {
@@ -54,6 +55,7 @@ export const store = configureStore({
     [projectDocumentsApi.reducerPath]: projectDocumentsApi.reducer,
     [changeOrdersApi.reducerPath]: changeOrdersApi.reducer,
     [expensesApi.reducerPath]: expensesApi.reducer,
+    [projectExpensesApi.reducerPath]: projectExpensesApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -78,7 +80,8 @@ export const store = configureStore({
       projectTasksApi.middleware,
       projectDocumentsApi.middleware,
       changeOrdersApi.middleware,
-      expensesApi.middleware
+      expensesApi.middleware,
+      projectExpensesApi.middleware
     ),
 })
 
