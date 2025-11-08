@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,9 +30,8 @@ import {
   Plus
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import { useUploadReceiptMutation, useExtractExpensesMutation, useBulkImportExpensesMutation, EXPENSE_CATEGORIES } from "@/lib/features/expenses/expensesApi";
-import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
-import { MultiSelect } from "@/components/ui/multi-select";
+import { useUploadReceiptMutation, useExtractExpensesMutation, EXPENSE_CATEGORIES } from "@/lib/features/expenses/expensesApi";
+import { useBulkImportProjectExpensesMutation } from "@/lib/features/project-expenses/projectExpensesApi";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type UploadStep = 'upload' | 'extract' | 'review';
@@ -46,11 +45,12 @@ interface ExtractedExpense {
   totalCost: number;
   date: string;
   category: string;
-  projectIds?: string[];
 }
 
-export default function UploadReceiptsPage() {
+export default function ProjectUploadReceiptsPage() {
   const router = useRouter();
+  const params = useParams();
+  const projectId = params.id as string;
   
   const [activeStep, setActiveStep] = useState<UploadStep>('upload');
   const [uploadType, setUploadType] = useState<'file' | 'url'>('file');
@@ -66,8 +66,7 @@ export default function UploadReceiptsPage() {
     quantity: "1",
     totalCost: "",
     date: "",
-    category: "Other",
-    projectIds: [] as string[]
+    category: "Other"
   });
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -76,16 +75,7 @@ export default function UploadReceiptsPage() {
   // RTK Query hooks
   const [uploadReceipt, { isLoading: isUploading }] = useUploadReceiptMutation();
   const [extractExpenses, { isLoading: isExtracting }] = useExtractExpensesMutation();
-  const [bulkImportExpenses, { isLoading: isImporting }] = useBulkImportExpensesMutation();
-  
-  const { data: projectsData } = useGetProjectsQuery({
-    page: 1,
-    pageSize: 100,
-    authType: 'admin'
-  });
-
-  const projects = projectsData?.projects || [];
-
+  const [bulkImportExpenses, { isLoading: isImporting }] = useBulkImportProjectExpensesMutation();
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -176,8 +166,7 @@ export default function UploadReceiptsPage() {
       quantity: "1",
       totalCost: "",
       date: "",
-      category: "Other",
-      projectIds: []
+      category: "Other"
     });
   };
 
@@ -196,8 +185,7 @@ export default function UploadReceiptsPage() {
         quantity: expense.quantity.toString(),
         totalCost: expense.totalCost.toString(),
         date: expense.date,
-        category: expense.category || 'Other',
-        projectIds: expense.projectIds || []
+        category: expense.category || 'Other'
       });
       setEditingIndex(index);
     }
@@ -225,8 +213,7 @@ export default function UploadReceiptsPage() {
         quantity,
         totalCost,
         date: formData.date,
-        category: formData.category,
-        projectIds: formData.projectIds
+        category: formData.category
       };
 
       setExtractedExpenses([...extractedExpenses, newExpense]);
@@ -242,8 +229,7 @@ export default function UploadReceiptsPage() {
         quantity,
         totalCost,
         date: formData.date,
-        category: formData.category,
-        projectIds: formData.projectIds
+        category: formData.category
       };
 
       setExtractedExpenses(updatedExpenses);
@@ -279,17 +265,18 @@ export default function UploadReceiptsPage() {
         description: exp.description,
         price: exp.price,
         quantity: exp.quantity,
+        totalCost: exp.totalCost,
         date: exp.date,
-        category: exp.category,
-        projectIds: exp.projectIds || []
+        category: exp.category
       }));
 
       const result = await bulkImportExpenses({
+        projectId,
         extractedExpenses: expensesToImport
       }).unwrap();
 
-      showToast(`Successfully imported ${result.count} expenses`, "success");
-      router.push('/admin/expenses');
+      showToast(`Successfully imported ${result.count} expenses to this project`, "success");
+      router.push(`/admin/project-dashboard/${projectId}?tab=expenses`);
     } catch (error: any) {
       showToast(error?.data?.error || "Import failed", "error");
     }
@@ -324,18 +311,18 @@ export default function UploadReceiptsPage() {
         <div className="mb-8">
           <Button
             variant="ghost"
-            onClick={() => router.back()}
+            onClick={() => router.push(`/admin/project-dashboard/${projectId}?tab=expenses`)}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Expenses
+            Back to Project Expenses
           </Button>
           
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Upload & Extract from Receipts
+            Upload Receipts for Project
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Upload receipt images and let AI extract expense line items for you to review and assign to projects
+            Upload receipt images and let AI extract expense line items. All expenses will be automatically assigned to this project.
           </p>
         </div>
 
@@ -352,7 +339,7 @@ export default function UploadReceiptsPage() {
               {[
                 { key: 'upload', label: 'Upload Receipt', icon: Upload },
                 { key: 'extract', label: 'AI Analysis', icon: Brain },
-                { key: 'review', label: 'Review & Edit', icon: Receipt }
+                { key: 'review', label: 'Review & Import', icon: Receipt }
               ].map(({ key, label, icon: Icon }) => (
                 <div key={key} className="flex flex-col items-center">
                   <div className={`
@@ -424,7 +411,7 @@ export default function UploadReceiptsPage() {
                             Drop your receipt here, or click to select
                           </p>
                           <p className="text-sm text-gray-500">
-                            Supports JPG, PNG, PDF up to 10MB
+                            Supports JPG, PNG, PDF up to 50MB
                           </p>
                         </div>
                       )}
@@ -523,6 +510,11 @@ export default function UploadReceiptsPage() {
                   <p className="text-lg text-gray-600">
                     Found {extractedExpenses.length} expense items - review and edit as needed
                   </p>
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border">
+                    <p className="text-sm text-blue-800">
+                      <strong>Note:</strong> All expenses will be automatically assigned to this project when imported.
+                    </p>
+                  </div>
                 </div>
 
                 <Card>
@@ -553,7 +545,6 @@ export default function UploadReceiptsPage() {
                               <th className="text-left py-3 px-4 font-medium">Qty</th>
                               <th className="text-left py-3 px-4 font-medium">Total</th>
                               <th className="text-left py-3 px-4 font-medium">Category</th>
-                              <th className="text-left py-3 px-4 font-medium">Projects</th>
                               <th className="text-left py-3 px-4 font-medium">Date</th>
                               <th className="text-right py-3 px-4 font-medium">Actions</th>
                             </tr>
@@ -585,29 +576,6 @@ export default function UploadReceiptsPage() {
                                     <Badge variant="secondary" className="text-xs">
                                       {expense.category}
                                     </Badge>
-                                  </div>
-                                </td>
-                                <td className="py-3 px-4">
-                                  <div className="flex flex-wrap gap-1">
-                                    {expense.projectIds && expense.projectIds.length > 0 ? (
-                                      <>
-                                        {expense.projectIds.slice(0, 2).map((projectId) => {
-                                          const project = projects.find(p => p.id === projectId);
-                                          return project ? (
-                                            <Badge key={projectId} variant="outline" className="text-xs">
-                                              {project.name}
-                                            </Badge>
-                                          ) : null;
-                                        })}
-                                        {expense.projectIds.length > 2 && (
-                                          <Badge variant="outline" className="text-xs">
-                                            +{expense.projectIds.length - 2} more
-                                          </Badge>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <span className="text-sm text-gray-500">No projects</span>
-                                    )}
                                   </div>
                                 </td>
                                 <td className="py-3 px-4">
@@ -658,7 +626,7 @@ export default function UploadReceiptsPage() {
                     ) : (
                       <>
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Import {extractedExpenses.length} Expenses
+                        Import {extractedExpenses.length} Expenses to Project
                       </>
                     )}
                   </Button>
@@ -755,16 +723,6 @@ export default function UploadReceiptsPage() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="flex flex-col space-y-2">
-                <Label htmlFor="edit-projects">Assign to Projects (Optional)</Label>
-                <MultiSelect
-                  options={projects.map(project => ({ value: project.id, label: project.name }))}
-                  value={formData.projectIds || []}
-                  onValueChange={(values) => setFormData(prev => ({ ...prev, projectIds: values || [] }))}
-                  placeholder="Select projects to assign this expense to"
-                />
               </div>
 
               <div>

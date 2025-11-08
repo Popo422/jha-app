@@ -401,8 +401,6 @@ export function AdminDataTable<T>({
 
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            {filters}
-            
             <div className="space-y-1">
               <div className="text-sm font-medium">{t('common.search')}</div>
               <Input
@@ -412,6 +410,8 @@ export function AdminDataTable<T>({
                 className="w-full md:w-64"
               />
             </div>
+            
+            {filters}
           </div>
 
           <div className="flex gap-2">

@@ -54,7 +54,7 @@ async function fetchFileAsBase64(url: string): Promise<{ data: string; mimeType:
 }
 
 const EXTRACTION_PROMPT = `
-You are an expert at extracting expense data from receipts and invoices. 
+You are an expert at extracting expense data from receipts and invoices for construction projects.
 
 Please analyze the provided receipt/invoice image and extract all line items as separate expenses in the following JSON format:
 
@@ -65,7 +65,8 @@ Please analyze the provided receipt/invoice image and extract all line items as 
       "description": "Additional details about the item if available",
       "price": 25.99,
       "quantity": 2,
-      "date": "2024-11-07"
+      "date": "2024-11-07",
+      "category": "Materials"
     }
   ]
 }
@@ -80,41 +81,73 @@ IMPORTANT INSTRUCTIONS:
 7. For descriptions, include size, brand, or other details if visible
 8. Use numbers only for price (remove currency symbols)
 9. If an item has no clear quantity, assume quantity = 1
-10. Only return valid JSON, no additional text
+10. AUTOMATICALLY CATEGORIZE each expense using one of these categories:
+    - "Labor" - Wages, salaries, contractor fees, labor costs
+    - "Materials" - Construction materials, supplies, hardware, concrete, steel, wood, etc.
+    - "Equipment" - Tools, machinery, equipment rental, vehicle costs
+    - "Subcontractors" - Subcontractor payments, specialized trade services
+    - "Sitework / Site Preparation" - Excavation, grading, site clearing, utilities
+    - "Permits & Fees" - Building permits, inspection fees, regulatory costs
+    - "Design & Professional Services" - Architect, engineer, consultant fees
+    - "General Conditions / Jobsite Overhead" - Project management, temporary facilities
+    - "Insurance & Bonds" - Project insurance, bonding, liability coverage
+    - "Safety" - Safety equipment, training, compliance costs
+    - "Testing & Inspection" - Material testing, quality control, inspections
+    - "Temporary Facilities & Utilities" - Temporary power, water, office trailers
+    - "Project Administration / General Overhead" - Administrative costs, office expenses
+    - "Contingency" - Contingency funds, unexpected costs
+    - "Financing Costs" - Interest, loan fees, financing charges
+    - "Closeout & Turnover" - Final inspections, warranties, closeout documentation
+    - "Other" - Items that don't fit other categories
+11. Only return valid JSON, no additional text
+
+CATEGORIZATION EXAMPLES:
+- "2x4 Lumber" → "Materials"
+- "Concrete Mix" → "Materials"
+- "Electrician Services" → "Subcontractors"
+- "Hard Hat" → "Safety"
+- "Tool Rental" → "Equipment"
+- "Building Permit" → "Permits & Fees"
+- "Fuel" → "Equipment"
+- "Office Supplies" → "Project Administration / General Overhead"
+- "Inspection Fee" → "Testing & Inspection"
 
 Example receipt format:
-- 2x Office Supplies - Pens (Blue) - $12.50 each
-- 1x Shipping Fee - $5.00
-- Tax (8.25%) - $2.85
+- 2x Safety Vests - $25.00 each
+- 1x Concrete Delivery - $450.00
+- Building Permit Fee - $125.00
 
 Should extract as:
 {
   "expenses": [
     {
-      "name": "Office Supplies - Pens (Blue)",
-      "description": "Blue pens, office supplies",
-      "price": 12.50,
+      "name": "Safety Vests",
+      "description": "High-visibility safety vests",
+      "price": 25.00,
       "quantity": 2,
-      "date": "2024-11-07"
+      "date": "2024-11-07",
+      "category": "Safety"
     },
     {
-      "name": "Shipping Fee",
-      "description": "Delivery charge",
-      "price": 5.00,
+      "name": "Concrete Delivery",
+      "description": "Ready-mix concrete delivery",
+      "price": 450.00,
       "quantity": 1,
-      "date": "2024-11-07"
+      "date": "2024-11-07",
+      "category": "Materials"
     },
     {
-      "name": "Tax",
-      "description": "Sales tax (8.25%)",
-      "price": 2.85,
+      "name": "Building Permit Fee",
+      "description": "Municipal building permit",
+      "price": 125.00,
       "quantity": 1,
-      "date": "2024-11-07"
+      "date": "2024-11-07",
+      "category": "Permits & Fees"
     }
   ]
 }
 
-Extract every expense line item from the provided receipt/invoice.
+Extract every expense line item and automatically categorize each one based on the item type and construction context.
 `
 
 export async function POST(request: NextRequest) {

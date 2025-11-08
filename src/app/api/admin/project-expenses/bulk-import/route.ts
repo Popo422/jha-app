@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
+import { eq, and } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { expenses, expenseProjects } from '@/lib/db/schema'
+import { expenses, expenseProjects, projects } from '@/lib/db/schema'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -53,7 +54,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { extractedExpenses, projectIds } = body
+    const { projectId, extractedExpenses } = body
+
+    if (!projectId) {
+      return NextResponse.json({ 
+        error: 'Project ID is required' 
+      }, { status: 400 })
+    }
 
     if (!extractedExpenses || !Array.isArray(extractedExpenses) || extractedExpenses.length === 0) {
       return NextResponse.json({ 
@@ -61,17 +68,31 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Verify project belongs to admin's company
+    const project = await db
+      .select()
+      .from(projects)
+      .where(
+        and(
+          eq(projects.id, projectId),
+          eq(projects.companyId, auth.admin.companyId)
+        )
+      )
+      .limit(1)
+
+    if (project.length === 0) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
     const createdExpenses = []
 
     // Create each expense
     for (const expenseData of extractedExpenses) {
-      const { name, description, price, quantity, date, category, projectIds: expenseProjectIds } = expenseData
+      const { name, description, price, quantity, totalCost, date, category } = expenseData
 
-      if (!name || !price || !quantity || !date) {
+      if (!name || !price || !quantity || !totalCost || !date) {
         continue // Skip invalid expenses
       }
-
-      const totalCost = (parseFloat(price) * parseFloat(quantity)).toString()
 
       // Create the expense
       const newExpense = await db
@@ -82,7 +103,7 @@ export async function POST(request: NextRequest) {
           description: description || null,
           price: price.toString(),
           quantity: quantity.toString(),
-          totalCost,
+          totalCost: totalCost.toString(),
           date,
           category: category || 'Other',
           createdBy: auth.admin.id,
@@ -92,34 +113,34 @@ export async function POST(request: NextRequest) {
 
       const expense = newExpense[0]
 
-      // Assign to projects if provided in the expense data
-      const projectIdsToAssign = expenseProjectIds && expenseProjectIds.length > 0 ? expenseProjectIds : projectIds
-      
-      if (projectIdsToAssign && projectIdsToAssign.length > 0) {
-        const projectAssignments = projectIdsToAssign.map((projectId: string) => ({
-          expenseId: expense.id,
-          projectId,
-          percentage: '100.00', // Default to 100% for bulk import
-          allocatedAmount: totalCost,
-          assignedBy: auth.admin.id,
-          assignedByName: auth.admin.name
-        }))
+      // Assign to project (100% allocation)
+      await db.insert(expenseProjects).values({
+        expenseId: expense.id,
+        projectId,
+        percentage: '100.00',
+        allocatedAmount: totalCost.toString(),
+        assignedBy: auth.admin.id,
+        assignedByName: auth.admin.name
+      })
 
-        await db.insert(expenseProjects).values(projectAssignments)
-      }
-
-      createdExpenses.push(expense)
+      // Add project info for response
+      createdExpenses.push({
+        ...expense,
+        projectId,
+        documents: [],
+        documentCount: 0
+      })
     }
 
     return NextResponse.json({
       success: true,
       expenses: createdExpenses,
       count: createdExpenses.length,
-      message: `Successfully imported ${createdExpenses.length} expense${createdExpenses.length > 1 ? 's' : ''}`
+      message: `Successfully imported ${createdExpenses.length} expense${createdExpenses.length > 1 ? 's' : ''} to project`
     })
 
   } catch (error: any) {
-    console.error('Error bulk importing expenses:', error)
+    console.error('Error bulk importing project expenses:', error)
     return NextResponse.json({ 
       error: 'Internal server error during bulk import' 
     }, { status: 500 })

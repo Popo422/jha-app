@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { eq, and } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { expenses, expenseProjects, expenseDocuments, projects, companies } from '@/lib/db/schema'
+import { expenses, expenseProjects, expenseDocuments, projects } from '@/lib/db/schema'
 import { del } from '@vercel/blob'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
@@ -41,7 +41,10 @@ function authenticateAdmin(request: NextRequest): { admin: any } {
   }
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: NextRequest, 
+  { params }: { params: Promise<{ projectId: string; expenseId: string }> }
+) {
   try {
     // Authenticate admin
     let auth: { admin: any }
@@ -55,44 +58,45 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const resolvedParams = await params
-    const expenseId = resolvedParams.id
+    const { projectId, expenseId } = resolvedParams
 
-    // Get expense with company verification
+    // Verify project belongs to admin's company
+    const project = await db
+      .select()
+      .from(projects)
+      .where(
+        and(
+          eq(projects.id, projectId),
+          eq(projects.companyId, auth.admin.companyId)
+        )
+      )
+      .limit(1)
+
+    if (project.length === 0) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    // Get expense and verify it's assigned to this project
     const expenseResult = await db
       .select({
         expense: expenses,
       })
       .from(expenses)
+      .innerJoin(expenseProjects, eq(expenses.id, expenseProjects.expenseId))
       .where(
         and(
           eq(expenses.id, expenseId),
-          eq(expenses.companyId, auth.admin.companyId)
+          eq(expenses.companyId, auth.admin.companyId),
+          eq(expenseProjects.projectId, projectId)
         )
       )
       .limit(1)
 
     if (expenseResult.length === 0) {
-      return NextResponse.json({ error: 'Expense not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Expense not found in this project' }, { status: 404 })
     }
 
     const expense = expenseResult[0].expense
-
-    // Get project assignments
-    const projectAssignments = await db
-      .select({
-        id: expenseProjects.id,
-        expenseId: expenseProjects.expenseId,
-        projectId: expenseProjects.projectId,
-        percentage: expenseProjects.percentage,
-        allocatedAmount: expenseProjects.allocatedAmount,
-        assignedBy: expenseProjects.assignedBy,
-        assignedByName: expenseProjects.assignedByName,
-        assignedAt: expenseProjects.assignedAt,
-        projectName: projects.name
-      })
-      .from(expenseProjects)
-      .innerJoin(projects, eq(expenseProjects.projectId, projects.id))
-      .where(eq(expenseProjects.expenseId, expenseId))
 
     // Get documents
     const documents = await db
@@ -100,25 +104,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .from(expenseDocuments)
       .where(eq(expenseDocuments.expenseId, expenseId))
 
-    // Combine data
     const expenseWithDetails = {
       ...expense,
-      projects: projectAssignments.map(p => ({
-        id: p.id,
-        expenseId: p.expenseId,
-        projectId: p.projectId,
-        percentage: p.percentage,
-        allocatedAmount: p.allocatedAmount,
-        assignedBy: p.assignedBy,
-        assignedByName: p.assignedByName,
-        assignedAt: p.assignedAt,
-        project: {
-          id: p.projectId,
-          name: p.projectName
-        }
-      })),
+      projectId,
       documents,
-      projectNames: projectAssignments.map(p => p.projectName),
       documentCount: documents.length
     }
 
@@ -128,12 +117,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     })
 
   } catch (error) {
-    console.error('Error fetching expense:', error)
+    console.error('Error fetching project expense:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  request: NextRequest, 
+  { params }: { params: Promise<{ projectId: string; expenseId: string }> }
+) {
   try {
     // Authenticate admin
     let auth: { admin: any }
@@ -147,7 +139,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const resolvedParams = await params
-    const expenseId = resolvedParams.id
+    const { projectId, expenseId } = resolvedParams
     const body = await request.json()
     const { 
       name, 
@@ -159,36 +151,53 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       category
     } = body
 
-    // Get the existing expense and verify it belongs to admin's company
+    // Verify project belongs to admin's company
+    const project = await db
+      .select()
+      .from(projects)
+      .where(
+        and(
+          eq(projects.id, projectId),
+          eq(projects.companyId, auth.admin.companyId)
+        )
+      )
+      .limit(1)
+
+    if (project.length === 0) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    // Get existing expense and verify it's assigned to this project
     const existingExpense = await db
       .select()
       .from(expenses)
+      .innerJoin(expenseProjects, eq(expenses.id, expenseProjects.expenseId))
       .where(
         and(
           eq(expenses.id, expenseId),
-          eq(expenses.companyId, auth.admin.companyId)
+          eq(expenses.companyId, auth.admin.companyId),
+          eq(expenseProjects.projectId, projectId)
         )
       )
       .limit(1)
 
     if (existingExpense.length === 0) {
-      return NextResponse.json({ error: 'Expense not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Expense not found in this project' }, { status: 404 })
     }
 
-    // Use provided total cost or keep existing
-    const finalTotalCost = totalCost !== undefined ? totalCost.toString() : existingExpense[0].totalCost;
+    const currentExpense = existingExpense[0].expenses
 
     // Update the expense
     const updatedExpense = await db
       .update(expenses)
       .set({
-        name: name || existingExpense[0].name,
-        description: description !== undefined ? description : existingExpense[0].description,
-        price: price !== undefined ? price.toString() : existingExpense[0].price,
-        quantity: quantity !== undefined ? quantity.toString() : existingExpense[0].quantity,
-        totalCost: finalTotalCost,
-        date: date || existingExpense[0].date,
-        category: category || existingExpense[0].category,
+        name: name || currentExpense.name,
+        description: description !== undefined ? description : currentExpense.description,
+        price: price !== undefined ? price.toString() : currentExpense.price,
+        quantity: quantity !== undefined ? quantity.toString() : currentExpense.quantity,
+        totalCost: totalCost !== undefined ? totalCost.toString() : currentExpense.totalCost,
+        date: date || currentExpense.date,
+        category: category || currentExpense.category,
         updatedAt: new Date()
       })
       .where(eq(expenses.id, expenseId))
@@ -198,21 +207,23 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       success: true,
       expense: {
         ...updatedExpense[0],
-        projects: [],
+        projectId,
         documents: [],
-        projectNames: [],
         documentCount: 0
       },
       message: 'Expense updated successfully'
     })
 
   } catch (error) {
-    console.error('Error updating expense:', error)
+    console.error('Error updating project expense:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: NextRequest, 
+  { params }: { params: Promise<{ projectId: string; expenseId: string }> }
+) {
   try {
     // Authenticate admin
     let auth: { admin: any }
@@ -226,22 +237,40 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     const resolvedParams = await params
-    const expenseId = resolvedParams.id
+    const { projectId, expenseId } = resolvedParams
 
-    // Get the existing expense and verify it belongs to admin's company
+    // Verify project belongs to admin's company
+    const project = await db
+      .select()
+      .from(projects)
+      .where(
+        and(
+          eq(projects.id, projectId),
+          eq(projects.companyId, auth.admin.companyId)
+        )
+      )
+      .limit(1)
+
+    if (project.length === 0) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    // Get existing expense and verify it's assigned to this project
     const existingExpense = await db
       .select()
       .from(expenses)
+      .innerJoin(expenseProjects, eq(expenses.id, expenseProjects.expenseId))
       .where(
         and(
           eq(expenses.id, expenseId),
-          eq(expenses.companyId, auth.admin.companyId)
+          eq(expenses.companyId, auth.admin.companyId),
+          eq(expenseProjects.projectId, projectId)
         )
       )
       .limit(1)
 
     if (existingExpense.length === 0) {
-      return NextResponse.json({ error: 'Expense not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Expense not found in this project' }, { status: 404 })
     }
 
     // Get all documents associated with this expense before deleting
@@ -279,7 +308,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     })
 
   } catch (error) {
-    console.error('Error deleting expense:', error)
+    console.error('Error deleting project expense:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

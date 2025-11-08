@@ -7,28 +7,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { MultiSelect } from "@/components/ui/multi-select";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTranslation } from 'react-i18next';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
-import { Plus, Upload, Receipt, Calendar, DollarSign, FileText, Check, X, Eye, Paperclip, Trash2, ChevronDown } from "lucide-react";
+import { Plus, Upload, Receipt, Calendar, DollarSign, FileText, Paperclip, X, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useToast } from "@/components/ui/toast";
-import { useGetExpensesQuery, useCreateExpenseMutation, useUpdateExpenseMutation, useDeleteExpenseMutation, useUploadExpenseDocumentMutation, useUpdateProjectAssignmentsMutation, useDeleteExpenseDocumentMutation, EXPENSE_CATEGORIES, type ExpenseWithDetails } from "@/lib/features/expenses/expensesApi";
-import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EXPENSE_CATEGORIES } from "@/lib/features/expenses/expensesApi";
+import { 
+  useGetProjectExpensesQuery, 
+  useCreateProjectExpenseMutation, 
+  useUpdateProjectExpenseMutation, 
+  useDeleteProjectExpenseMutation,
+  useUploadProjectExpenseDocumentMutation,
+  type ProjectExpenseWithDetails 
+} from "@/lib/features/project-expenses/projectExpensesApi";
 
-interface Project {
-  id: string;
-  name: string;
-}
-
-interface ProjectAssignment {
+interface ProjectExpensesProps {
   projectId: string;
-  percentage: number;
 }
 
 interface AttachedFile {
@@ -36,17 +34,13 @@ interface AttachedFile {
   description: string;
 }
 
-// Use the ExpenseWithDetails interface from the API
-
-export default function ExpensesPage() {
-  const { t } = useTranslation('common');
+export default function ProjectExpenses({ projectId }: ProjectExpensesProps) {
   const router = useRouter();
   const [searchValue, setSearchValue] = useState("");
-  const [selectedProject, setSelectedProject] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [editingExpense, setEditingExpense] = useState<ExpenseWithDetails | null>(null);
+  const [editingExpense, setEditingExpense] = useState<ProjectExpenseWithDetails | null>(null);
   const [isCreatingExpense, setIsCreatingExpense] = useState(false);
   const [createForm, setCreateForm] = useState({
     name: '',
@@ -56,7 +50,6 @@ export default function ExpensesPage() {
     totalCost: '',
     date: '',
     category: 'Other',
-    projectIds: [] as string[],
   });
   const [editForm, setEditForm] = useState({
     name: '',
@@ -66,7 +59,6 @@ export default function ExpensesPage() {
     totalCost: '',
     date: '',
     category: 'Other',
-    projectIds: [] as string[],
   });
   const [uploadedFiles, setUploadedFiles] = useState<AttachedFile[]>([]);
   const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
@@ -77,41 +69,30 @@ export default function ExpensesPage() {
 
   const { toast, showToast } = useToast();
 
-  // API hooks - use skip to prevent immediate execution if there are issues
-  const { data: expensesData, isLoading, isFetching, refetch, error } = useGetExpensesQuery({
+  // API hooks
+  const { data: expensesData, isLoading, isFetching, refetch, error } = useGetProjectExpensesQuery({
+    projectId,
     page: 1,
     pageSize: 50,
     search: debouncedSearch || undefined,
-    projectId: selectedProject !== "all" ? selectedProject : undefined,
     category: selectedCategory !== "all" ? selectedCategory : undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
-  }, {
-    skip: false, // Set to true if you want to manually trigger
   });
   
-  const { data: projectsData } = useGetProjectsQuery({
-    page: 1,
-    pageSize: 100,
-    authType: 'admin'
-  });
-
-  const [createExpense, { isLoading: isCreating }] = useCreateExpenseMutation();
-  const [updateExpense, { isLoading: isUpdating }] = useUpdateExpenseMutation();
-  const [deleteExpense, { isLoading: isDeleting }] = useDeleteExpenseMutation();
-  const [uploadDocument] = useUploadExpenseDocumentMutation();
-  const [updateProjectAssignments, { isLoading: isUpdatingProjects }] = useUpdateProjectAssignmentsMutation();
-  const [deleteDocument] = useDeleteExpenseDocumentMutation();
+  const [createExpense, { isLoading: isCreating }] = useCreateProjectExpenseMutation();
+  const [updateExpense, { isLoading: isUpdating }] = useUpdateProjectExpenseMutation();
+  const [deleteExpense, { isLoading: isDeleting }] = useDeleteProjectExpenseMutation();
+  const [uploadDocument] = useUploadProjectExpenseDocumentMutation();
 
   const expenses = expensesData?.expenses || [];
-  const projects = projectsData?.projects || [];
+  const totalExpenseAmount = expensesData?.totalAmount || 0;
 
   // Check if any filters are active
-  const hasActiveFilters = selectedProject !== "all" || selectedCategory !== "all" || dateFrom || dateTo;
+  const hasActiveFilters = selectedCategory !== "all" || dateFrom || dateTo;
 
   // Clear all filters
   const clearFilters = () => {
-    setSelectedProject("all");
     setSelectedCategory("all");
     setDateFrom("");
     setDateTo("");
@@ -132,7 +113,7 @@ export default function ExpensesPage() {
   };
 
   // Table columns
-  const columns = useMemo<ColumnDef<ExpenseWithDetails>[]>(() => [
+  const columns = useMemo<ColumnDef<ProjectExpenseWithDetails>[]>(() => [
     {
       header: "Expense Name",
       accessorKey: "name",
@@ -194,24 +175,6 @@ export default function ExpensesPage() {
       ),
     },
     {
-      header: "Projects",
-      accessorKey: "projectNames",
-      cell: ({ row }) => (
-        <div className="flex flex-wrap gap-1">
-          {row.original.projectNames.slice(0, 2).map((project, index) => (
-            <Badge key={index} variant="outline" className="text-xs">
-              {project}
-            </Badge>
-          ))}
-          {row.original.projectNames.length > 2 && (
-            <Badge variant="outline" className="text-xs">
-              +{row.original.projectNames.length - 2} more
-            </Badge>
-          )}
-        </div>
-      ),
-    },
-    {
       header: "Docs",
       accessorKey: "documentCount",
       cell: ({ row }) => (
@@ -233,7 +196,7 @@ export default function ExpensesPage() {
   // Handle delete
   const handleDelete = async (id: string) => {
     try {
-      await deleteExpense({ id }).unwrap();
+      await deleteExpense({ projectId, expenseId: id }).unwrap();
       showToast("Expense deleted successfully", "success");
       refetch();
     } catch (error: any) {
@@ -246,7 +209,7 @@ export default function ExpensesPage() {
     if (ids.length === 0) return;
 
     try {
-      const deletePromises = ids.map(id => deleteExpense({ id }).unwrap());
+      const deletePromises = ids.map(id => deleteExpense({ projectId, expenseId: id }).unwrap());
       await Promise.all(deletePromises);
       showToast(`Successfully deleted ${ids.length} expense${ids.length > 1 ? 's' : ''}`, "success");
       refetch();
@@ -256,7 +219,7 @@ export default function ExpensesPage() {
   };
 
   // Handle edit
-  const handleEdit = (expense: ExpenseWithDetails) => {
+  const handleEdit = (expense: ProjectExpenseWithDetails) => {
     setEditingExpense(expense);
     setEditForm({
       name: expense.name,
@@ -266,7 +229,6 @@ export default function ExpensesPage() {
       totalCost: expense.totalCost,
       date: expense.date,
       category: expense.category || 'Other',
-      projectIds: expense.projects?.map(p => p.projectId) || [],
     });
     setExistingDocuments(expense.documents || []);
     setDocumentsToDelete([]);
@@ -279,7 +241,8 @@ export default function ExpensesPage() {
     
     try {
       await updateExpense({
-        id: editingExpense.id,
+        projectId,
+        expenseId: editingExpense.id,
         name: editForm.name,
         description: editForm.description || undefined,
         price: parseFloat(editForm.price),
@@ -289,32 +252,17 @@ export default function ExpensesPage() {
         category: editForm.category,
       }).unwrap();
 
-      // Update project assignments if they changed
-      const currentProjectIds = editingExpense.projects?.map(p => p.projectId) || [];
-      const newProjectIds = editForm.projectIds;
-      
-      if (JSON.stringify(currentProjectIds.sort()) !== JSON.stringify(newProjectIds.sort())) {
-        // Projects changed, update assignments
-        await updateProjectAssignments({
-          expenseId: editingExpense.id,
-          projectIds: newProjectIds
-        }).unwrap();
-      }
-
       // Delete removed documents
       if (documentsToDelete.length > 0) {
-        for (const documentId of documentsToDelete) {
-          await deleteDocument({
-            expenseId: editingExpense.id,
-            documentId: documentId,
-          });
-        }
+        // Handle document deletion here if needed
+        console.log('Documents to delete:', documentsToDelete);
       }
 
       // Upload new files if any
       if (uploadedFiles.length > 0) {
         for (const attachedFile of uploadedFiles) {
           await uploadDocument({
+            projectId,
             expenseId: editingExpense.id,
             file: attachedFile.file,
             description: attachedFile.description,
@@ -344,7 +292,6 @@ export default function ExpensesPage() {
       totalCost: '',
       date: '',
       category: 'Other',
-      projectIds: [],
     });
     setUploadedFiles([]);
     setExistingDocuments([]);
@@ -357,6 +304,7 @@ export default function ExpensesPage() {
     
     try {
       const result = await createExpense({
+        projectId,
         name: createForm.name,
         description: createForm.description || undefined,
         price: parseFloat(createForm.price),
@@ -364,13 +312,13 @@ export default function ExpensesPage() {
         totalCost: parseFloat(createForm.totalCost),
         date: createForm.date,
         category: createForm.category,
-        projectIds: createForm.projectIds.length > 0 ? createForm.projectIds : undefined,
       }).unwrap();
 
       // Upload files if any
       if (uploadedFiles.length > 0 && result.expense) {
         for (const attachedFile of uploadedFiles) {
           await uploadDocument({
+            projectId,
             expenseId: result.expense.id,
             file: attachedFile.file,
             description: attachedFile.description,
@@ -397,16 +345,8 @@ export default function ExpensesPage() {
       totalCost: '',
       date: '',
       category: 'Other',
-      projectIds: [],
     });
     setUploadedFiles([]);
-  };
-
-  // Calculate total cost when price or quantity changes
-  const calculateTotal = (price: string, quantity: string) => {
-    const p = parseFloat(price) || 0;
-    const q = parseFloat(quantity) || 0;
-    return (p * q).toFixed(2);
   };
 
   // File upload handlers
@@ -448,13 +388,13 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div className="p-4 md:p-6">
+    <div>
       <div className="mb-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Expense Management</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm md:text-base">
-              Track and manage project expenses with receipt uploads
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Project Expenses</h2>
+            <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
+              Track expenses specifically for this project
             </p>
           </div>
           <div className="flex gap-2">
@@ -468,7 +408,7 @@ export default function ExpensesPage() {
             <Button 
               variant="outline"
               className="flex items-center gap-2"
-              onClick={() => router.push('/admin/expenses/upload')}
+              onClick={() => router.push(`/admin/project-dashboard/${projectId}/expenses/upload`)}
             >
               <Upload className="h-4 w-4" />
               Upload Receipts
@@ -486,8 +426,8 @@ export default function ExpensesPage() {
         onDelete={handleDelete}
         onBulkDelete={handleBulkDelete}
         getRowId={(expense) => expense.id}
-        exportFilename="expenses"
-        exportHeaders={["Name", "Description", "Date", "Price", "Quantity", "Total Cost", "Category", "Projects", "Created By"]}
+        exportFilename={`project-${projectId}-expenses`}
+        exportHeaders={["Name", "Description", "Date", "Price", "Quantity", "Total Cost", "Category", "Created By"]}
         getExportData={(expense) => [
           expense.name,
           expense.description || '',
@@ -496,37 +436,12 @@ export default function ExpensesPage() {
           expense.quantity,
           formatCurrency(expense.totalCost),
           expense.category,
-          expense.projectNames.join(', '),
           expense.createdByName
         ]}
         searchValue={searchValue}
         onSearchChange={setSearchValue}
         filters={
           <div className="flex flex-wrap gap-3 items-end">
-            <div className="space-y-1">
-              <div className="text-xs font-medium">Project</div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
-                    <span className="truncate">
-                      {selectedProject === "all" ? "All Projects" : projects.find(p => p.id === selectedProject)?.name || selectedProject}
-                    </span>
-                    <ChevronDown className="h-3 w-3 shrink-0" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setSelectedProject("all")}>
-                    All Projects
-                  </DropdownMenuItem>
-                  {projects.map((project) => (
-                    <DropdownMenuItem key={project.id} onClick={() => setSelectedProject(project.id)}>
-                      {project.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            
             <div className="space-y-1">
               <div className="text-xs font-medium">Category</div>
               <DropdownMenu>
@@ -538,7 +453,7 @@ export default function ExpensesPage() {
                     <ChevronDown className="h-3 w-3 shrink-0" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent className="max-h-48 overflow-y-auto">
                   <DropdownMenuItem onClick={() => setSelectedCategory("all")}>
                     All Categories
                   </DropdownMenuItem>
@@ -583,6 +498,17 @@ export default function ExpensesPage() {
           </div>
         }
       />
+
+      {/* Total Expenses Summary */}
+      {!isLoading && expenses.length > 0 && (
+        <div className="mt-4 flex justify-end">
+          <div className="text-right">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Total Expense: {formatCurrency(totalExpenseAmount.toString())}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create Expense Dialog */}
       <Dialog open={isCreatingExpense} onOpenChange={(open) => !open && handleCreateCancel()}>
@@ -672,16 +598,6 @@ export default function ExpensesPage() {
               </DropdownMenu>
             </div>
 
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="create-projects">Assign to Projects (Optional)</Label>
-              <MultiSelect
-                options={projects.map(project => ({ value: project.id, label: project.name }))}
-                value={createForm.projectIds || []}
-                onValueChange={(values) => setCreateForm({ ...createForm, projectIds: values || [] })}
-                placeholder="Select projects to assign this expense to"
-              />
-            </div>
-
             <div>
               <Label>File Attachments (Optional)</Label>
               <div className="space-y-2">
@@ -752,7 +668,7 @@ export default function ExpensesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Expense Dialog */}
+      {/* Edit Expense Dialog - Similar structure to create but for editing */}
       <Dialog open={!!editingExpense} onOpenChange={(open) => !open && handleEditCancel()}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -760,6 +676,7 @@ export default function ExpensesPage() {
           </DialogHeader>
           
           <div className="space-y-4">
+            {/* Edit form fields - similar to create form */}
             <div>
               <Label htmlFor="edit-name">Expense Name *</Label>
               <Input
@@ -840,107 +757,6 @@ export default function ExpensesPage() {
               </DropdownMenu>
             </div>
 
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="edit-projects">Assign to Projects (Optional)</Label>
-              <MultiSelect
-                options={projects.map(project => ({ value: project.id, label: project.name }))}
-                value={editForm.projectIds || []}
-                onValueChange={(values) => setEditForm({ ...editForm, projectIds: values || [] })}
-                placeholder="Select projects to assign this expense to"
-              />
-            </div>
-
-            <div>
-              <Label>File Attachments (Optional)</Label>
-              <div className="space-y-3">
-                
-                {/* Existing Documents */}
-                {existingDocuments.length > 0 && (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">Current files:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {existingDocuments.map((doc) => (
-                        <div key={doc.id} className="flex items-center gap-2 p-2 bg-blue-50 rounded border max-w-xs">
-                          <span className="text-base flex-shrink-0">{getFileIcon(doc.fileType)}</span>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm font-medium truncate block">{doc.name}</span>
-                            {doc.description && (
-                              <p className="text-xs text-gray-500 truncate">{doc.description}</p>
-                            )}
-                          </div>
-                          <div className="flex gap-1 flex-shrink-0">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => window.open(doc.url, '_blank')}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeExistingDocument(doc.id)}
-                              className="h-6 w-6 p-0 text-red-600 hover:text-red-800"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Add New Files */}
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept=".jpg,.jpeg,.png,.pdf"
-                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="w-full"
-                  >
-                    <Paperclip className="h-4 w-4 mr-2" />
-                    {isUploading ? 'Adding files...' : 'Add New Files'}
-                  </Button>
-                </div>
-
-                {/* New Files to Upload */}
-                {uploadedFiles.length > 0 && (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">New files to upload:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {uploadedFiles.map((attachedFile, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 bg-green-50 rounded border max-w-xs">
-                          <span className="text-sm truncate flex-1 min-w-0">{attachedFile.file.name}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFile(index)}
-                            className="h-6 w-6 p-0 flex-shrink-0"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
             <div>
               <Label htmlFor="edit-total">Total Cost *</Label>
               <Input
@@ -961,9 +777,9 @@ export default function ExpensesPage() {
             </Button>
             <Button 
               onClick={handleEditSave} 
-              disabled={!editForm.name.trim() || !editForm.price || !editForm.totalCost || !editForm.date || isUpdating || isUpdatingProjects || isUploading}
+              disabled={!editForm.name.trim() || !editForm.price || !editForm.totalCost || !editForm.date || isUpdating || isUploading}
             >
-              {(isUpdating || isUpdatingProjects || isUploading) ? 'Saving...' : 'Save Changes'}
+              {(isUpdating || isUploading) ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
