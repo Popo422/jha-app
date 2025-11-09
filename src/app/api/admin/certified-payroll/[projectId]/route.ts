@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { db } from '@/lib/db';
-import { timesheets, contractors, projects } from '@/lib/db/schema';
+import { timesheets, contractors, projects, contractorProjects } from '@/lib/db/schema';
 import { eq, and, gte, lte, sql } from 'drizzle-orm';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -73,29 +73,18 @@ export async function GET(
       );
     }
 
-    // Get all contractors for this project first
-    // We need to find contractors who have worked on this project (from any approved timesheet)
+    // Get all contractors assigned to this specific project
     const projectContractors = await db
       .select({
         contractor: contractors,
       })
       .from(contractors)
-      .innerJoin(timesheets, sql`${contractors.id}::text = ${timesheets.userId}`)
+      .innerJoin(contractorProjects, eq(contractorProjects.contractorId, contractors.id))
       .where(and(
         eq(contractors.companyId, auth.admin.companyId),
-        eq(timesheets.projectName, project[0].name),
-        eq(timesheets.status, 'approved')
-      ))
-      .groupBy(contractors.id);
-
-    if (projectContractors.length === 0) {
-      return NextResponse.json({
-        weekStart,
-        weekEnd,
-        projectName: project[0].name,
-        workers: [],
-      });
-    }
+        eq(contractorProjects.projectId, projectId),
+        eq(contractorProjects.isActive, true)
+      ));
 
     // Get timesheets for the specific week and project
     const timesheetData = await db
