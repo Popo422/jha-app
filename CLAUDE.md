@@ -507,6 +507,47 @@ BLOB_READ_WRITE_TOKEN="your-vercel-blob-token"
 
 ## Development Guidelines
 
+### New Feature Development Workflow
+
+When adding any new feature to the application, follow this systematic approach:
+
+#### 1. Tab Integration Pattern
+```typescript
+// When adding new tabs to existing dashboards:
+// 1. Update grid-cols-X to grid-cols-X+1 in TabsList
+// 2. Add TabsTrigger with appropriate icon + text
+// 3. Add TabsContent with new component
+// 4. Import new component and lucide-react icon
+```
+
+#### 2. Database-to-UI Data Flow Pattern
+```typescript
+// Standard pattern for new data features:
+// 1. Create RTK Query API slice in /lib/features/[feature]/
+// 2. Create backend API route in /api/admin/[feature]/
+// 3. Add database queries with company scoping
+// 4. Create UI components that consume the API
+// 5. Add proper loading/error states throughout
+```
+
+#### 3. Multi-Step Feature Creation Pattern
+```typescript
+// For complex features requiring multiple pages/steps:
+// 1. Create route: /admin/[feature]/[id]/[action]/page.tsx
+// 2. Create wizard/multi-step component with state management
+// 3. Implement step-based navigation with visual indicators
+// 4. Add "Go Back" navigation to parent feature
+```
+
+#### 4. TypeScript-First Development
+```typescript
+// Always start with types, then implement:
+// 1. Define interfaces for all data structures
+// 2. Add proper error handling with type guards
+// 3. Use type assertions for dynamic object access (keyof typeof)
+// 4. Handle async params properly in Next.js 14 routes
+```
+
 ### Code Style
 - Use TypeScript for all files
 - Follow existing component patterns

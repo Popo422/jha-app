@@ -39,7 +39,26 @@ export default function WeeklyNavigator({ onWeekChange }: WeeklyNavigatorProps) 
     };
   }, [currentWeekStart]);
 
+  // Check if next week would be entirely in the future
+  const isNextWeekInFuture = useMemo(() => {
+    const nextWeekStart = new Date(currentWeekStart);
+    nextWeekStart.setDate(currentWeekStart.getDate() + 7);
+    
+    // Get today's date without time
+    const today = new Date();
+    const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const nextWeekDateOnly = new Date(nextWeekStart.getFullYear(), nextWeekStart.getMonth(), nextWeekStart.getDate());
+    
+    // Allow if next week starts today or in the past
+    return nextWeekDateOnly > todayDateOnly;
+  }, [currentWeekStart]);
+
   const navigateWeek = (direction: 'prev' | 'next') => {
+    // Prevent navigation to future weeks
+    if (direction === 'next' && isNextWeekInFuture) {
+      return;
+    }
+    
     const newWeekStart = new Date(currentWeekStart);
     newWeekStart.setDate(currentWeekStart.getDate() + (direction === 'next' ? 7 : -7));
     setCurrentWeekStart(newWeekStart);
@@ -69,6 +88,7 @@ export default function WeeklyNavigator({ onWeekChange }: WeeklyNavigatorProps) 
           variant="outline"
           size="sm"
           onClick={() => navigateWeek('next')}
+          disabled={isNextWeekInFuture}
           className="h-8 w-8 p-0"
         >
           <ChevronRight className="h-4 w-4" />
