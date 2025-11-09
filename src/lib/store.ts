@@ -26,6 +26,7 @@ import { projectDocumentsApi } from './features/project-documents/projectDocumen
 import { changeOrdersApi } from './features/change-orders/changeOrdersApi'
 import { expensesApi } from './features/expenses/expensesApi'
 import { projectExpensesApi } from './features/project-expenses/projectExpensesApi'
+import { certifiedPayrollApi } from './features/certified-payroll/certifiedPayrollApi'
 
 export const store = configureStore({
   reducer: {
@@ -56,6 +57,7 @@ export const store = configureStore({
     [changeOrdersApi.reducerPath]: changeOrdersApi.reducer,
     [expensesApi.reducerPath]: expensesApi.reducer,
     [projectExpensesApi.reducerPath]: projectExpensesApi.reducer,
+    [certifiedPayrollApi.reducerPath]: certifiedPayrollApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -81,7 +83,8 @@ export const store = configureStore({
       projectDocumentsApi.middleware,
       changeOrdersApi.middleware,
       expensesApi.middleware,
-      projectExpensesApi.middleware
+      projectExpensesApi.middleware,
+      certifiedPayrollApi.middleware
     ),
 })
 

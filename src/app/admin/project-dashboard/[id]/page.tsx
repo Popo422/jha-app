@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, FolderOpen, CheckSquare, FileText, Users, ClipboardList, Calendar, Receipt } from "lucide-react";
+import { ArrowLeft, FolderOpen, CheckSquare, FileText, Users, ClipboardList, Calendar, Receipt, BarChart3 } from "lucide-react";
 import ProjectTasks from "@/components/admin/ProjectTasks";
 import ProjectSnapshot from "@/components/admin/ProjectSnapshot";
 import ProjectDocuments from "@/components/admin/ProjectDocuments";
@@ -15,6 +15,7 @@ import ProjectChangeOrders from "@/components/admin/ProjectChangeOrders";
 import ProjectTimeline from "@/components/admin/ProjectTimeline";
 import OverallProgress from "@/components/admin/OverallProgress";
 import ProjectExpenses from "@/components/admin/ProjectExpenses";
+import TimeAndCostReporting from "@/components/admin/TimeAndCostReporting";
 import { useGetProjectTimelineQuery } from "@/lib/features/project-snapshot/projectSnapshotApi";
 
 export default function ProjectDetailsPage() {
@@ -64,7 +65,7 @@ export default function ProjectDetailsPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="snapshot" className="text-xs sm:text-sm flex items-center gap-1">
             <FolderOpen className="h-4 w-4" />
             <span className="hidden sm:inline">Project Snapshot</span>
@@ -94,6 +95,11 @@ export default function ProjectDetailsPage() {
             <ClipboardList className="h-4 w-4" />
             <span className="hidden sm:inline">Change Orders</span>
             <span className="sm:hidden">Changes</span>
+          </TabsTrigger>
+          <TabsTrigger value="time-cost" className="text-xs sm:text-sm flex items-center gap-1">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Time & Cost</span>
+            <span className="sm:hidden">T&C</span>
           </TabsTrigger>
           <TabsTrigger value="expenses" className="text-xs sm:text-sm flex items-center gap-1">
             <Receipt className="h-4 w-4" />
@@ -158,6 +164,12 @@ export default function ProjectDetailsPage() {
         <TabsContent value="change-orders" className="mt-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
             <ProjectChangeOrders projectId={projectId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="time-cost" className="mt-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
+            <TimeAndCostReporting projectId={projectId} />
           </div>
         </TabsContent>
 
