@@ -35,6 +35,47 @@ export interface CertifiedPayrollData {
   workers: PayrollWorker[];
 }
 
+export interface ProjectContractor {
+  id: string;
+  name: string;
+  email: string;
+  totalProjectHours: number;
+  grossEarned: number;
+  dateOfHire: string;
+  rate: number;
+  type: string;
+  role: string;
+}
+
+export interface ProjectContractorsResponse {
+  contractors: ProjectContractor[];
+  totalContractors: number;
+}
+
+export interface UploadPayrollRequest {
+  file?: File;
+  url?: string;
+}
+
+export interface UploadPayrollResponse {
+  success: boolean;
+  fileUrl: string;
+  fileName: string;
+  message: string;
+}
+
+export interface ExtractPayrollRequest {
+  fileUrl: string;
+  contractorName?: string;
+}
+
+export interface ExtractPayrollResponse {
+  success: boolean;
+  extractedData: any;
+  message: string;
+  rawResponse?: string;
+}
+
 interface GetCertifiedPayrollParams {
   projectId: string;
   weekStart: string; // YYYY-MM-DD format
@@ -59,9 +100,47 @@ export const certifiedPayrollApi = createApi({
       }),
       providesTags: ['CertifiedPayroll'],
     }),
+    getProjectContractors: builder.query<ProjectContractorsResponse, string>({
+      query: (projectId) => ({
+        url: `/${projectId}/contractors`,
+      }),
+      providesTags: ['CertifiedPayroll'],
+    }),
+    uploadPayroll: builder.mutation<UploadPayrollResponse, UploadPayrollRequest>({
+      queryFn: async (arg, api, extraOptions, baseQuery) => {
+        const { file, url } = arg as UploadPayrollRequest;
+        const formData = new FormData();
+        if (file) formData.append('file', file);
+        if (url) formData.append('url', url);
+        
+        const response = await fetch('/api/admin/certified-payroll/upload-payroll', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          return { error: { status: response.status, data } };
+        }
+
+        return { data };
+      },
+    }),
+    extractPayroll: builder.mutation<ExtractPayrollResponse, ExtractPayrollRequest>({
+      query: (body) => ({
+        url: '/extract-payroll',
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
 export const {
   useGetCertifiedPayrollQuery,
+  useGetProjectContractorsQuery,
+  useUploadPayrollMutation,
+  useExtractPayrollMutation,
 } = certifiedPayrollApi;
