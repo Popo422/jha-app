@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { Document, Page, Text, View, StyleSheet, PDFViewer, PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -100,12 +100,16 @@ const styles = StyleSheet.create({
   headerRow: {
     fontWeight: 'bold',
   },
+  contractorSeparator: {
+    width: '100%',
+    height: 50,
+  },
   // Column widths
   nameCol: { width: '11%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc' },
   classificationCol: { width: '8%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc' },
   typeCol: { width: '1.5%', padding: 0, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center', flexDirection: 'column' },
   dayCell: { width: '4.2%', padding: 0, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center', flexDirection: 'column' },
-  mergedDayHeader: { width: '29.5%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center', justifyContent: 'center', alignItems: 'center' },
+  mergedDayHeader: { width: '29.4%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center', justifyContent: 'center', alignItems: 'center' },
   dayCellRow: { 
     flex: 1, 
     borderBottomWidth: 1, 
@@ -126,15 +130,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
-  totalCol: { width: '5%', padding: 0, borderRightWidth: 1, borderRightColor: '#ccc', flexDirection: 'column' },
-  rateCol: { width: '5%', padding: 0, borderRightWidth: 1, borderRightColor: '#ccc', flexDirection: 'column' },
-  amountCol: { width: '10%', padding: 0, borderRightWidth: 1, borderRightColor: '#ccc', flexDirection: 'row' },
+  totalCol: { width: '3.85%', padding: 0, borderRightWidth: 1, borderRightColor: '#ccc', flexDirection: 'column' },
+  rateCol: { width: '3.85%', padding: 0, borderRightWidth: 1, borderRightColor: '#ccc', flexDirection: 'column' },
+  amountCol: { width: '7.7%', padding: 0, borderRightWidth: 1, borderRightColor: '#ccc', flexDirection: 'row' },
   amountSubCol: { width: '50%', flexDirection: 'column', borderRightWidth: 1, borderRightColor: '#ccc' },
   amountSubColLast: { width: '50%', flexDirection: 'column' },
-  deductionsCol: { width: '30%', padding: 0, flexDirection: 'column' },
+  deductionsCol: { width: '34.65%', padding: 0, flexDirection: 'column' },
   deductionRow: { flex: 1, flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#ccc' },
-  deductionSubCol: { width: '33.33%', padding: 1, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center' },
-  deductionSubColLast: { width: '33.33%', padding: 1, textAlign: 'center' },
+  deductionSubCol: { width: '11.11%', padding: 0.5, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center' },
+  deductionSubColLast: { width: '11.11%', padding: 0.5, textAlign: 'center' },
   
   // Daily hours sub-table
   dailyHoursContainer: {
@@ -155,7 +159,7 @@ const styles = StyleSheet.create({
   hoursValue: { width: '13%', textAlign: 'center', padding: 1 },
   
   cellText: {
-    fontSize: 7,
+    fontSize: 6,
   },
   centerText: {
     textAlign: 'center',
@@ -186,39 +190,46 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
         <Text>Project: {data.projectName}</Text>
       </View>
 
-      {/* Table */}
-      <View style={styles.table}>
-        {/* Header Row */}
-        <View style={[styles.tableRow, styles.headerRow]}>
-          <View style={[styles.nameCol, { justifyContent: 'center', alignItems: 'center' }]}>
-            <Text style={[styles.cellText, { textAlign: 'center' }]}>Name, Address, SSN, Drivers License, Ethnicity, Gender</Text>
-          </View>
-          <View style={[styles.classificationCol, { justifyContent: 'center', alignItems: 'center' }]}>
-            <Text style={[styles.cellText, { textAlign: 'center' }]}>Work Classification, Location and Type</Text>
-          </View>
-          <View style={[styles.typeCol, { justifyContent: 'center', alignItems: 'center' }]}>
-            <Text style={[styles.cellText, { textAlign: 'center' }]}></Text>
-          </View>
-          <View style={styles.mergedDayHeader}>
-            <Text style={[styles.cellText, { textAlign: 'center' }]}>Hours Worked Each Day</Text>
-          </View>
-          <View style={[styles.totalCol, { justifyContent: 'center', alignItems: 'center' }]}>
-            <Text style={[styles.cellText, { textAlign: 'center' }]}>Total Hours</Text>
-          </View>
-          <View style={[styles.rateCol, { justifyContent: 'center', alignItems: 'center' }]}>
-            <Text style={[styles.cellText, { textAlign: 'center' }]}>Base Hourly Rate</Text>
-          </View>
-          <View style={[styles.amountCol, { justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }]}>
-            <Text style={[styles.cellText, { textAlign: 'center' }]}>Gross Amount Earned</Text>
-          </View>
-          <View style={[styles.deductionsCol, { justifyContent: 'center', alignItems: 'center' }]}>
-            <Text style={[styles.cellText, { textAlign: 'center' }]}>Deductions & Contributions</Text>
-          </View>
-        </View>
-
-        {/* Data Rows - 1 row per worker with S/O/D stacked in each cell */}
-        {data.workers.map((worker, index) => (
-          <View key={worker.id} style={styles.tableRow}>
+      {/* Tables - One per contractor */}
+      {data.workers.map((worker, index) => (
+        <Fragment key={worker.id}>
+          {/* Large spacing for contractors after the first one */}
+          {index > 0 && <View style={styles.contractorSeparator}></View>}
+          
+          {/* Individual contractor table */}
+          <View style={styles.table}>
+            {/* Header Row - Only for first contractor */}
+            {index === 0 && (
+              <View style={[styles.tableRow, styles.headerRow]}>
+                <View style={[styles.nameCol, { justifyContent: 'center', alignItems: 'center', width: '11%' }]}>
+                  <Text style={[styles.cellText, { textAlign: 'center' }]}>Name, Address, SSN, Drivers License, Ethnicity, Gender</Text>
+                </View>
+                <View style={[styles.classificationCol, { justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { textAlign: 'center' }]}>Work Classification, Location and Type</Text>
+                </View>
+                <View style={[styles.typeCol, { justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { textAlign: 'center' }]}></Text>
+                </View>
+                <View style={styles.mergedDayHeader}>
+                  <Text style={[styles.cellText, { textAlign: 'center' }]}>Hours Worked Each Day</Text>
+                </View>
+                <View style={[styles.totalCol, { justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { textAlign: 'center' }]}>Total Hours</Text>
+                </View>
+                <View style={[styles.rateCol, { justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { textAlign: 'center' }]}>Base Hourly Rate</Text>
+                </View>
+                <View style={[styles.amountCol, { justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }]}>
+                  <Text style={[styles.cellText, { textAlign: 'center' }]}>Gross Amount Earned</Text>
+                </View>
+                <View style={[styles.deductionsCol, { justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { textAlign: 'center' }]}>Deductions & Contributions</Text>
+                </View>
+              </View>
+            )}
+            
+            {/* Contractor Data Row */}
+            <View style={[styles.tableRow, { borderBottomWidth: 0 }]}>
             <View style={styles.nameCol}>
               <Text style={styles.cellText}>{worker.name}</Text>
               <Text style={styles.cellText}>{worker.address}</Text>
@@ -377,7 +388,7 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
 
             <View style={styles.totalCol}>
               <View style={styles.mergedBlankRow}>
-                <Text style={styles.cellText}>Total Hours on this Project</Text>
+                <Text style={[styles.cellText,{ fontSize: 5 }]}>Total Hours on this Project</Text>
               </View>
               <View style={styles.dayCellRow}>
                 <Text style={styles.cellText}>{worker.totalHours.straight}</Text>
@@ -392,7 +403,7 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
 
             <View style={styles.rateCol}>
               <View style={styles.mergedBlankRow}>
-                <Text style={styles.cellText}>Base Hourly Rate of Pay</Text>
+                <Text style={[styles.cellText,{ fontSize: 5 }]}>Base Hourly Rate of Pay</Text>
               </View>
               <View style={styles.dayCellRow}>
                 <Text style={styles.cellText}>${worker.baseHourlyRate.toFixed(2)}</Text>
@@ -408,7 +419,7 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
             <View style={styles.amountCol}>
               <View style={styles.amountSubCol}>
                 <View style={styles.mergedBlankRow}>
-                  <Text style={[styles.cellText, { textAlign: 'center' }]}>This Project</Text>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>This Project</Text>
                 </View>
                 <View style={[styles.dayCellRow, { flex: 3.8, borderBottomWidth: 0 }]}>
                   <Text style={[styles.cellText, { textAlign: 'center' }]}>${worker.grossAmount.toFixed(2)}</Text>
@@ -416,7 +427,7 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
               </View>
               <View style={styles.amountSubColLast}>
                 <View style={styles.mergedBlankRow}>
-                  <Text style={[styles.cellText, { textAlign: 'center' }]}>All Projects</Text>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>All Projects</Text>
                 </View>
                 <View style={[styles.dayCellRow, { flex: 3.8, borderBottomWidth: 0 }]}>
                   <Text style={[styles.cellText, { textAlign: 'center' }]}>${worker.grossAmount.toFixed(2)}</Text>
@@ -425,94 +436,159 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
             </View>
 
             <View style={styles.deductionsCol}>
-              <View style={[styles.deductionRow, { fontSize: 5 }]}>
+              {/* Row 1: Headers */}
+              <View style={styles.deductionRow}>
                 <View style={styles.deductionSubCol}>
                   <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Fed Tax</Text>
                 </View>
                 <View style={styles.deductionSubCol}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>FICA</Text>
-                </View>
-                <View style={styles.deductionSubColLast}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Other</Text>
-                </View>
-              </View>
-              <View style={styles.deductionRow}>
-                <View style={styles.deductionSubCol}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 6 }]}>
-                    ${(worker.deductions?.federalTax || 0).toFixed(2)}
-                  </Text>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Soc Sec</Text>
                 </View>
                 <View style={styles.deductionSubCol}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 6 }]}>
-                    ${((worker.deductions?.socialSecurity || 0) + (worker.deductions?.medicare || 0)).toFixed(2)}
-                  </Text>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Medicare</Text>
                 </View>
-                <View style={styles.deductionSubColLast}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 6 }]}>
-                    ${(worker.deductions?.allOtherDeductions || 0).toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.deductionRow}>
                 <View style={styles.deductionSubCol}>
                   <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>State Tax</Text>
                 </View>
                 <View style={styles.deductionSubCol}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Health</Text>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Local/SDI</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Other</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Savings</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Tot Ded</Text>
                 </View>
                 <View style={styles.deductionSubColLast}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Pension</Text>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Check No</Text>
                 </View>
               </View>
+              {/* Row 2: Values */}
               <View style={styles.deductionRow}>
                 <View style={styles.deductionSubCol}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 6 }]}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
+                    ${(worker.deductions?.federalTax || 0).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
+                    ${(worker.deductions?.socialSecurity || 0).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
+                    ${(worker.deductions?.medicare || 0).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
                     ${(worker.deductions?.stateTax || 0).toFixed(2)}
                   </Text>
                 </View>
                 <View style={styles.deductionSubCol}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 6 }]}>
-                    ${(worker.fringes?.healthWelfare || 0).toFixed(2)}
-                  </Text>
-                </View>
-                <View style={styles.deductionSubColLast}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 6 }]}>
-                    ${(worker.fringes?.pension || 0).toFixed(2)}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.deductionRow}>
-                <View style={styles.deductionSubCol}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Training</Text>
-                </View>
-                <View style={styles.deductionSubCol}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Total Ded</Text>
-                </View>
-                <View style={styles.deductionSubColLast}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Net Pay</Text>
-                </View>
-              </View>
-              <View style={[styles.deductionRow, { borderBottomWidth: 0 }]}>
-                <View style={styles.deductionSubCol}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 6 }]}>
-                    ${(worker.fringes?.training || 0).toFixed(2)}
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
+                    ${(worker.deductions?.localTaxesSDI || 0).toFixed(2)}
                   </Text>
                 </View>
                 <View style={styles.deductionSubCol}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 6 }]}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
+                    ${(worker.deductions?.allOtherDeductions || 0).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
+                    ${(worker.payments?.savings || 0).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
                     ${(worker.deductions?.totalDeduction || 0).toFixed(2)}
                   </Text>
                 </View>
                 <View style={styles.deductionSubColLast}>
-                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 6 }]}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
+                    {worker.payments?.checkNo || 'N/A'}
+                  </Text>
+                </View>
+              </View>
+              {/* Row 3: Fringe Headers */}
+              <View style={styles.deductionRow}>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Vac/Dues</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Trav Subs</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Health</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Pension</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Vac Hol</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Training</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>All Other</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Tot Fringe</Text>
+                </View>
+                <View style={styles.deductionSubColLast}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>Paid 3rd</Text>
+                </View>
+              </View>
+              {/* Row 4: Fringe Values */}
+              <View style={[styles.deductionRow, { borderBottomWidth: 0 }]}>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>$0.00</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>$0.00</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
+                    ${(worker.fringes?.healthWelfare || 0).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
+                    ${(worker.fringes?.pension || 0).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>$0.00</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
+                    ${(worker.fringes?.training || 0).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>$0.00</Text>
+                </View>
+                <View style={styles.deductionSubCol}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
+                    ${((worker.fringes?.healthWelfare || 0) + (worker.fringes?.pension || 0) + (worker.fringes?.training || 0)).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.deductionSubColLast}>
+                  <Text style={[styles.cellText, { textAlign: 'center', fontSize: 5 }]}>
                     ${(worker.payments?.netPaidWeek || 0).toFixed(2)}
                   </Text>
                 </View>
               </View>
             </View>
+            </View>
           </View>
+          </Fragment>
         ))}
-      </View>
     </Page>
   </Document>
 );
