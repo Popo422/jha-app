@@ -548,6 +548,249 @@ When adding any new feature to the application, follow this systematic approach:
 // 4. Handle async params properly in Next.js 14 routes
 ```
 
+## Adding New Database Fields Workflow
+
+### Full-Stack Field Addition Pattern
+
+When adding new fields to existing database tables, follow this systematic 7-step approach:
+
+#### Step 1: Database Schema Update
+```typescript
+// Add fields to /src/lib/db/schema.ts
+export const tableName = pgTable('table_name', {
+  // ... existing fields
+  newField: text('new_field'),
+  newBooleanField: boolean('new_boolean_field').default(false),
+  // Make fields nullable if optional: .null()
+})
+```
+
+#### Step 2: TypeScript Interface Updates
+```typescript
+// Update interfaces in /src/lib/features/[feature]/[feature]Api.ts
+export interface MainInterface {
+  // ... existing fields
+  newField?: string
+  newBooleanField?: boolean
+}
+
+export interface CreateRequest {
+  // ... existing fields
+  newField?: string
+  newBooleanField?: boolean
+}
+
+export interface UpdateRequest {
+  // ... existing fields  
+  newField?: string
+  newBooleanField?: boolean
+}
+```
+
+#### Step 3: Backend API Route Updates
+```typescript
+// Update POST method in /src/app/api/[resource]/route.ts
+export async function POST(request: NextRequest) {
+  const { 
+    existingField1, 
+    existingField2,
+    newField,           // Add new field extraction
+    newBooleanField     // Add new boolean field extraction
+  } = body
+
+  const newItem = await db.insert(table).values({
+    // ... existing fields
+    newField,
+    newBooleanField,
+  }).returning()
+}
+
+// Update PUT method similarly
+export async function PUT(request: NextRequest) {
+  const { 
+    id, 
+    existingField1,
+    newField,
+    newBooleanField 
+  } = body
+
+  await db.update(table)
+    .set({
+      // ... existing fields
+      newField: newField || null,
+      newBooleanField: newBooleanField || false,
+    })
+    .where(eq(table.id, id))
+}
+```
+
+#### Step 4: Frontend Form State Updates
+```typescript
+// Update form state in component
+const [formData, setFormData] = useState({
+  // ... existing fields
+  newField: "",
+  newBooleanField: false,
+})
+
+// Update handleEdit to populate new fields
+const handleEdit = (item: ItemType) => {
+  setFormData({
+    // ... existing field mappings
+    newField: item.newField || "",
+    newBooleanField: item.newBooleanField || false,
+  })
+}
+
+// Update form reset functions
+const resetForm = () => {
+  setFormData({
+    // ... existing fields
+    newField: "",
+    newBooleanField: false,
+  })
+}
+```
+
+#### Step 5: UI Form Components
+```typescript
+// Add form fields to create/edit dialogs
+
+// For text fields:
+<div className="space-y-2">
+  <Label htmlFor="newField">New Field Label (Optional)</Label>
+  <Input
+    id="newField"
+    value={formData.newField}
+    onChange={(e) => setFormData({ ...formData, newField: e.target.value })}
+    placeholder="Enter value"
+    disabled={isFormLoading}
+  />
+</div>
+
+// For dropdown fields with predefined options:
+// First create a shared constants file: /src/lib/constants/[field-name].ts
+const FIELD_OPTIONS = ['Option 1', 'Option 2', 'Option 3'] as const;
+
+// Then use in component:
+<div className="space-y-2">
+  <Label htmlFor="newField">New Field Label (Optional)</Label>
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button variant="outline" disabled={isFormLoading} className="w-full justify-between">
+        {formData.newField || "Select option"}
+        <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent className="w-full max-h-60 overflow-y-auto">
+      <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, newField: '' }))}>
+        Not specified
+      </DropdownMenuItem>
+      {FIELD_OPTIONS.map((option) => (
+        <DropdownMenuItem 
+          key={option}
+          onClick={() => setFormData(prev => ({ ...prev, newField: option }))}
+        >
+          {option}
+        </DropdownMenuItem>
+      ))}
+    </DropdownMenuContent>
+  </DropdownMenu>
+</div>
+
+// For boolean/checkbox fields:
+<div className="flex items-center space-x-2">
+  <Checkbox
+    id="newBooleanField"
+    checked={formData.newBooleanField}
+    onCheckedChange={(checked) => setFormData({ ...formData, newBooleanField: checked === true })}
+    disabled={isFormLoading}
+  />
+  <Label htmlFor="newBooleanField" className="text-sm font-normal">
+    Boolean field description
+  </Label>
+</div>
+```
+
+#### Step 6: Data Table Column Updates
+```typescript
+// Add new columns to table definition
+const columns: ColumnDef<ItemType>[] = [
+  // ... existing columns
+  {
+    accessorKey: "newField",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="h-auto p-0 font-medium text-sm"
+      >
+        New Field Header
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const value = row.getValue("newField") as string | null;
+      return value ? (
+        <span className="text-sm">{value}</span>
+      ) : (
+        <span className="text-sm text-muted-foreground">—</span>
+      );
+    },
+  },
+  {
+    accessorKey: "newBooleanField",
+    header: "Boolean Field Header",
+    cell: ({ row }) => {
+      const isTrue = row.getValue("newBooleanField") as boolean;
+      return (
+        <span className={`text-xs px-2 py-1 rounded-full ${
+          isTrue 
+            ? 'bg-blue-100 text-blue-800' 
+            : 'bg-gray-100 text-gray-800'
+        }`}>
+          {isTrue ? 'Yes' : 'No'}
+        </span>
+      );
+    },
+  },
+  // ... rest of columns
+]
+```
+
+#### Step 7: Export Functionality Updates
+```typescript
+// Update export headers and data in AdminDataTable
+<AdminDataTable
+  // ... other props
+  exportHeaders={[
+    'Existing Header 1', 
+    'Existing Header 2',
+    'New Field Header',        // Add new field header
+    'Boolean Field Header',    // Add new boolean field header
+    // ... other headers
+  ]}
+  getExportData={(item) => [
+    item.existingField1,
+    item.existingField2,
+    item.newField || '',              // Add new field data
+    item.newBooleanField ? 'Yes' : 'No', // Add boolean field data  
+    // ... other data fields
+  ]}
+/>
+```
+
+### Recent Examples
+- **Contractor Fields**: Added Date of Hire, Work Classification, Type, Group to contractor management
+- **Subcontractor Fields**: Added Trade (dropdown), Contractor License #, Specialty License #, Federal Tax ID, Motor Carrier Permit #, Union (yes/no), Self-Insured (yes/no), Workers Comp Policy
+
+### Key Patterns for Different Field Types
+- **Text Fields**: Use `Input` component with proper validation
+- **Dropdown Fields**: Use `DropdownMenu` with predefined options for consistency
+- **Boolean Fields**: Use `Checkbox` with proper `onCheckedChange` handling
+- **Table Display**: Use badges for boolean values, em-dash (—) for empty values
+- **Export**: Include all new fields in export headers and data mapping
+
 ### Code Style
 - Use TypeScript for all files
 - Follow existing component patterns

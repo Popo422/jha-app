@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
         companyName: foremanSubcontractor,
         language: language || 'en',
         type: type || 'contractor',
-        dateOfHire: dateOfHire ? new Date(dateOfHire) : null,
+        dateOfHire: dateOfHire || null,
         workClassification,
         projectType,
         group,

@@ -100,7 +100,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         companyName: foremanSubcontractor,
         language: language || 'en',
         type: type || 'contractor',
-        dateOfHire: dateOfHire ? new Date(dateOfHire) : null,
+        dateOfHire: dateOfHire || null,
         workClassification,
         projectType,
         group,

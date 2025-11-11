@@ -218,6 +218,18 @@ export async function GET(request: NextRequest) {
         contractAmount: subcontractors.contractAmount,
         companyId: subcontractors.companyId,
         foreman: subcontractors.foreman,
+        address: subcontractors.address,
+        contact: subcontractors.contact,
+        email: subcontractors.email,
+        phone: subcontractors.phone,
+        trade: subcontractors.trade,
+        contractorLicenseNo: subcontractors.contractorLicenseNo,
+        specialtyLicenseNo: subcontractors.specialtyLicenseNo,
+        federalTaxId: subcontractors.federalTaxId,
+        motorCarrierPermitNo: subcontractors.motorCarrierPermitNo,
+        isUnion: subcontractors.isUnion,
+        isSelfInsured: subcontractors.isSelfInsured,
+        workersCompPolicy: subcontractors.workersCompPolicy,
         createdAt: subcontractors.createdAt,
         updatedAt: subcontractors.updatedAt,
       }).from(subcontractors)
@@ -236,6 +248,18 @@ export async function GET(request: NextRequest) {
         contractAmount: subcontractors.contractAmount,
         companyId: subcontractors.companyId,
         foreman: subcontractors.foreman,
+        address: subcontractors.address,
+        contact: subcontractors.contact,
+        email: subcontractors.email,
+        phone: subcontractors.phone,
+        trade: subcontractors.trade,
+        contractorLicenseNo: subcontractors.contractorLicenseNo,
+        specialtyLicenseNo: subcontractors.specialtyLicenseNo,
+        federalTaxId: subcontractors.federalTaxId,
+        motorCarrierPermitNo: subcontractors.motorCarrierPermitNo,
+        isUnion: subcontractors.isUnion,
+        isSelfInsured: subcontractors.isSelfInsured,
+        workersCompPolicy: subcontractors.workersCompPolicy,
         createdAt: subcontractors.createdAt,
         updatedAt: subcontractors.updatedAt,
       }).from(subcontractors)
@@ -471,7 +495,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single subcontractor creation (existing logic)
-    const { name, contractAmount, projectIds, foreman, foremanEmail, address, contact, email, phone } = body
+    const { name, contractAmount, projectIds, foreman, foremanEmail, address, contact, email, phone, trade, contractorLicenseNo, specialtyLicenseNo, federalTaxId, motorCarrierPermitNo, isUnion, isSelfInsured, workersCompPolicy } = body
 
     // Validate required fields
     if (!name) {
@@ -532,6 +556,15 @@ export async function POST(request: NextRequest) {
       contact: contact ? contact.trim() : null,
       email: email ? email.trim() : null,
       phone: phone ? phone.trim() : null,
+      // New fields
+      trade: trade ? trade.trim() : null,
+      contractorLicenseNo: contractorLicenseNo ? contractorLicenseNo.trim() : null,
+      specialtyLicenseNo: specialtyLicenseNo ? specialtyLicenseNo.trim() : null,
+      federalTaxId: federalTaxId ? federalTaxId.trim() : null,
+      motorCarrierPermitNo: motorCarrierPermitNo ? motorCarrierPermitNo.trim() : null,
+      isUnion: isUnion || false,
+      isSelfInsured: isSelfInsured || false,
+      workersCompPolicy: workersCompPolicy ? workersCompPolicy.trim() : null,
     }
 
     // Create subcontractor record
@@ -622,7 +655,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, name, contractAmount, projectIds, foreman, foremanEmail, address, contact, email, phone } = body
+    const { id, name, contractAmount, projectIds, foreman, foremanEmail, address, contact, email, phone, trade, contractorLicenseNo, specialtyLicenseNo, federalTaxId, motorCarrierPermitNo, isUnion, isSelfInsured, workersCompPolicy } = body
 
     if (!id) {
       return NextResponse.json(
@@ -683,6 +716,39 @@ export async function PUT(request: NextRequest) {
 
     if (phone !== undefined) {
       updateData.phone = phone ? phone.trim() : null
+    }
+
+    // Add new fields
+    if (trade !== undefined) {
+      updateData.trade = trade ? trade.trim() : null
+    }
+
+    if (contractorLicenseNo !== undefined) {
+      updateData.contractorLicenseNo = contractorLicenseNo ? contractorLicenseNo.trim() : null
+    }
+
+    if (specialtyLicenseNo !== undefined) {
+      updateData.specialtyLicenseNo = specialtyLicenseNo ? specialtyLicenseNo.trim() : null
+    }
+
+    if (federalTaxId !== undefined) {
+      updateData.federalTaxId = federalTaxId ? federalTaxId.trim() : null
+    }
+
+    if (motorCarrierPermitNo !== undefined) {
+      updateData.motorCarrierPermitNo = motorCarrierPermitNo ? motorCarrierPermitNo.trim() : null
+    }
+
+    if (isUnion !== undefined) {
+      updateData.isUnion = Boolean(isUnion)
+    }
+
+    if (isSelfInsured !== undefined) {
+      updateData.isSelfInsured = Boolean(isSelfInsured)
+    }
+
+    if (workersCompPolicy !== undefined) {
+      updateData.workersCompPolicy = workersCompPolicy ? workersCompPolicy.trim() : null
     }
 
     // Update subcontractor
