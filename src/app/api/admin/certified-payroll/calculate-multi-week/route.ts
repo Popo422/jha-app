@@ -244,7 +244,7 @@ export async function POST(request: NextRequest) {
           driversLicense: 'Not specified', // Not in schema
           ethnicity: contractor.race || 'Not specified',
           gender: contractor.gender || 'Not specified',
-          workClassification: contractor.type || 'Contractor',
+          workClassification: contractor.workClassification || contractor.type || 'Contractor',
           location: project[0].location || 'Project Site',
           type: contractor.type || 'contractor',
           dailyHours,
@@ -295,7 +295,7 @@ export async function POST(request: NextRequest) {
             fringesPaidToEmployee: contractorPayrollData.fringesPaidToEmployee || 'No',
             vacationHolidayDuesInGrossPay: contractorPayrollData.vacationHolidayDuesInGrossPay || 'Yes',
             voluntaryContributionsInGrossPay: contractorPayrollData.voluntaryContributionsInGrossPay || 'No',
-            dateOfHire: contractor.createdAt ? new Date(contractor.createdAt).toLocaleDateString('en-US') : '10/7/2024',
+            dateOfHire: contractor.dateOfHire ? new Date(contractor.dateOfHire).toLocaleDateString('en-US') : (contractor.createdAt ? new Date(contractor.createdAt).toLocaleDateString('en-US') : '10/7/2024'),
           }
         };
       }).filter(Boolean);

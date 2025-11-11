@@ -246,6 +246,13 @@
       "when": 1762524264085,
       "tag": "0034_empty_kylun",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1762862135872,
+      "tag": "0035_unique_christian_walker",
+      "breakpoints": true
     }
   ]
 }

@@ -86,6 +86,10 @@ export const contractors = pgTable('contractors', {
   phone: text('phone'),
   race: text('race'),
   gender: text('gender'),
+  dateOfHire: date('date_of_hire'), // Date of hire
+  workClassification: text('work_classification'), // Work classification options
+  projectType: text('project_type'), // Type: 'ALL', 'BLD', 'HWY', 'FLT'
+  group: integer('group'), // Group integer
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -119,6 +123,15 @@ export const subcontractors = pgTable('subcontractors', {
   contact: text('contact'),
   email: text('email'),
   phone: text('phone'),
+  // New fields
+  trade: text('trade'), // Trade classification
+  contractorLicenseNo: text('contractor_license_no'), // Contractor License Number
+  specialtyLicenseNo: text('specialty_license_no'), // Specialty License Number
+  federalTaxId: text('federal_tax_id'), // Federal Tax ID
+  motorCarrierPermitNo: text('motor_carrier_permit_no'), // Motor Carrier Permit Number
+  isUnion: boolean('is_union').default(false), // Union membership (yes/no)
+  isSelfInsured: boolean('is_self_insured').default(false), // Self-Insured Certificate (yes/no)
+  workersCompPolicy: text('workers_comp_policy'), // Worker's Comp. Policy information
   enabledModules: jsonb('enabled_modules').$type<string[]>().default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'timesheet']), // Available modules for this subcontractor
   modulesLastUpdatedAt: timestamp('modules_last_updated_at'),
   modulesLastUpdatedBy: text('modules_last_updated_by'), // Admin name who last updated modules

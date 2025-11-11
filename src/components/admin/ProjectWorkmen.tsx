@@ -49,6 +49,10 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
     phone: "",
     race: "",
     gender: "",
+    dateOfHire: "",
+    workClassification: "",
+    projectType: "",
+    group: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -117,6 +121,10 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
       phone: contractor.phone || "",
       race: contractor.race || "",
       gender: contractor.gender || "",
+      dateOfHire: contractor.dateOfHire ? new Date(contractor.dateOfHire).toISOString().split('T')[0] : "",
+      workClassification: contractor.workClassification || "",
+      projectType: contractor.projectType || "",
+      group: contractor.group?.toString() || "",
     });
     setFormErrors({});
     setEmailMessage("");
@@ -140,6 +148,10 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
       phone: "",
       race: "",
       gender: "",
+      dateOfHire: "",
+      workClassification: "",
+      projectType: "",
+      group: "",
     });
     setFormErrors({});
     setEmailMessage("");
@@ -149,7 +161,7 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
   const handleCancel = () => {
     setViewMode('list');
     setEditingContractor(null);
-    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", phone: "", race: "", gender: "" });
+    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", phone: "", race: "", gender: "", dateOfHire: "", workClassification: "", projectType: "", group: "" });
     setFormErrors({});
     setEmailMessage("");
   };
@@ -230,12 +242,16 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
           phone: "",
           race: "",
           gender: "",
+          dateOfHire: "",
+          workClassification: "",
+          projectType: "",
+          group: "",
         });
         setFormErrors({});
       } else {
         setViewMode('list');
         setEditingContractor(null);
-        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "",  overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", phone: "", race: "", gender: ""});
+        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "",  overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", phone: "", race: "", gender: "", dateOfHire: "", workClassification: "", projectType: "", group: ""});
       }
     } catch (error: any) {
       console.error('Failed to save contractor:', error);
@@ -756,6 +772,172 @@ export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dateOfHire">Date of Hire (Optional)</Label>
+              <Input
+                id="dateOfHire"
+                name="dateOfHire"
+                type="date"
+                value={formData.dateOfHire}
+                onChange={handleInputChange}
+                disabled={isFormLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                When this contractor was hired
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="workClassification">Work Classification (Optional)</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isFormLoading}
+                    className="w-full justify-between"
+                  >
+                    {formData.workClassification || "Select work classification"}
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full max-h-60 overflow-y-auto">
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: '' }))}>
+                    Not specified
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Asbestos Worker / Remover' }))}>
+                    Asbestos Worker / Remover
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Boilermaker' }))}>
+                    Boilermaker
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Bricklayer' }))}>
+                    Bricklayer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Carpenter' }))}>
+                    Carpenter
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Cement Mason / Concrete Finisher' }))}>
+                    Cement Mason / Concrete Finisher
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Construction Equipment Operator' }))}>
+                    Construction Equipment Operator
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Construction Laborer' }))}>
+                    Construction Laborer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Drywall Installer' }))}>
+                    Drywall Installer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Electrician' }))}>
+                    Electrician
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Elevator Constructor' }))}>
+                    Elevator Constructor
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Glazier' }))}>
+                    Glazier
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Insulation Worker' }))}>
+                    Insulation Worker
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Iron Worker' }))}>
+                    Iron Worker
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Mason' }))}>
+                    Mason
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Millwright' }))}>
+                    Millwright
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Operating Engineer' }))}>
+                    Operating Engineer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Painter' }))}>
+                    Painter
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Pile Driver' }))}>
+                    Pile Driver
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Pipefitter' }))}>
+                    Pipefitter
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Plasterer' }))}>
+                    Plasterer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Plumber' }))}>
+                    Plumber
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Roofer' }))}>
+                    Roofer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Sheet Metal Worker' }))}>
+                    Sheet Metal Worker
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Structural Iron Worker' }))}>
+                    Structural Iron Worker
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Tile Setter' }))}>
+                    Tile Setter
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className="text-xs text-muted-foreground">
+                Specific work classification for this contractor
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="projectType">Project Type (Optional)</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isFormLoading}
+                      className="w-full justify-between"
+                    >
+                      {formData.projectType || "Select project type"}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, projectType: '' }))}>
+                      Not specified
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, projectType: 'ALL' }))}>
+                      ALL
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, projectType: 'BLD' }))}>
+                      BLD (Building)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, projectType: 'HWY' }))}>
+                      HWY (Highway)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, projectType: 'FLT' }))}>
+                      FLT (Floating)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="group">Group (Optional)</Label>
+                <Input
+                  id="group"
+                  name="group"
+                  type="number"
+                  min="0"
+                  value={formData.group}
+                  onChange={handleInputChange}
+                  placeholder="Enter group number"
+                  disabled={isFormLoading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Group classification number
+                </p>
+              </div>
             </div>
 
             <div className="space-y-2">

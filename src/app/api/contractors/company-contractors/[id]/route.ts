@@ -54,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // Parse request body
     const body = await request.json();
-    const { firstName, lastName, email, code, rate, language, type } = body;
+    const { firstName, lastName, email, code, rate, language, type, dateOfHire, workClassification, projectType, group } = body;
 
     // Validate required fields
     if (!firstName || !lastName || !email || !code) {
@@ -100,6 +100,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         companyName: foremanSubcontractor,
         language: language || 'en',
         type: type || 'contractor',
+        dateOfHire: dateOfHire ? new Date(dateOfHire) : null,
+        workClassification,
+        projectType,
+        group,
         updatedAt: new Date()
       })
       .where(eq(contractors.id, contractorToUpdateId))
@@ -113,6 +117,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         companyName: contractors.companyName,
         language: contractors.language,
         type: contractors.type,
+        dateOfHire: contractors.dateOfHire,
+        workClassification: contractors.workClassification,
+        projectType: contractors.projectType,
+        group: contractors.group,
         createdAt: contractors.createdAt,
         updatedAt: contractors.updatedAt
       });
