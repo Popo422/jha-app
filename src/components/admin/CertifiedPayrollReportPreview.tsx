@@ -12,17 +12,47 @@ interface PayrollReportData {
   weekEnd: string;
   projectName: string;
   workers: any[];
+  weeks?: any[];
 }
 
 interface CertifiedPayrollReportPreviewProps {
-  data: PayrollReportData;
+  generateReportData: () => Promise<PayrollReportData | null>;
+  isCalculating: boolean;
   onBack: () => void;
 }
 
-export default function CertifiedPayrollReportPreview({ data, onBack }: CertifiedPayrollReportPreviewProps) {
+export default function CertifiedPayrollReportPreview({ generateReportData, isCalculating, onBack }: CertifiedPayrollReportPreviewProps) {
   const [downloading, setDownloading] = useState(false);
+  const [data, setData] = useState<PayrollReportData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load data when component mounts
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const reportData = await generateReportData();
+        if (reportData) {
+          setData(reportData);
+        } else {
+          setError('Failed to generate report data');
+        }
+      } catch (err) {
+        console.error('Error loading report data:', err);
+        setError('Error generating report data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []); // Empty dependency array to run only once
 
   const handleDownload = async () => {
+    if (!data) return;
+    
     setDownloading(true);
     try {
       // Generate PDF blob
@@ -45,6 +75,8 @@ export default function CertifiedPayrollReportPreview({ data, onBack }: Certifie
   };
 
   const formatDateRange = () => {
+    if (!data) return '';
+    
     const start = new Date(data.weekStart);
     const end = new Date(data.weekEnd);
     
@@ -56,6 +88,41 @@ export default function CertifiedPayrollReportPreview({ data, onBack }: Certifie
     
     return `${start.toLocaleDateString('en-US', formatOptions)} - ${end.toLocaleDateString('en-US', formatOptions)}`;
   };
+
+  // Show loading state
+  if (loading || isCalculating) {
+    return (
+      <Card className="bg-white dark:bg-gray-800 shadow-sm">
+        <CardContent className="p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+            <p className="text-gray-600">Calculating payroll data...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error state
+  if (error || !data) {
+    return (
+      <Card className="bg-white dark:bg-gray-800 shadow-sm">
+        <CardContent className="p-8">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">{error || 'Failed to generate report data'}</p>
+            <Button variant="outline" onClick={onBack}>
+              Back to Wizard
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const workerCount = data.weeks ? 
+    // Count unique workers across all weeks
+    new Set(data.weeks.flatMap(week => week.workers.map((worker: any) => worker.id))).size : 
+    data.workers.length;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -78,7 +145,7 @@ export default function CertifiedPayrollReportPreview({ data, onBack }: Certifie
                   Certified Payroll Preview
                 </CardTitle>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Week of {formatDateRange()} • {data.workers.length} workers
+                  {formatDateRange()} • {workerCount} worker entries • {data.weeks ? `${data.weeks.length} weeks` : '1 week'}
                 </p>
               </div>
             </div>

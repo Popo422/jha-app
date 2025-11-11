@@ -23,12 +23,20 @@ export default function TimeFrameSelectionStep({
   const [endDate, setEndDate] = useState<string>('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  // Get current week starting at Sunday
+  // Convert date to YYYY-MM-DD format without timezone conversion
+  const formatLocalDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Get current week starting at Sunday (using local dates to avoid timezone issues)
   const getCurrentWeekStart = (date: Date = new Date()) => {
-    const d = new Date(date);
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate()); // Local date only
     const day = d.getDay();
     const diff = d.getDate() - day; // First day is Sunday
-    return new Date(d.setDate(diff));
+    return new Date(d.getFullYear(), d.getMonth(), diff);
   };
 
   // Initialize with provided date range or current week
@@ -40,11 +48,10 @@ export default function TimeFrameSelectionStep({
     } else {
       // Default to current week if no initial dates provided
       const weekStart = getCurrentWeekStart();
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
+      const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
 
-      setStartDate(weekStart.toISOString().split('T')[0]);
-      setEndDate(weekEnd.toISOString().split('T')[0]);
+      setStartDate(formatLocalDate(weekStart));
+      setEndDate(formatLocalDate(weekEnd));
     }
   }, [initialDateRange]);
 
@@ -102,9 +109,9 @@ export default function TimeFrameSelectionStep({
       // Ensure end date doesn't exceed today
       const today = new Date();
       if (end > today) {
-        setEndDate(today.toISOString().split('T')[0]);
+        setEndDate(formatLocalDate(today));
       } else {
-        setEndDate(end.toISOString().split('T')[0]);
+        setEndDate(formatLocalDate(end));
       }
     }
     
@@ -146,12 +153,18 @@ export default function TimeFrameSelectionStep({
   };
 
   const selectCurrentWeek = () => {
+    const today = new Date();
     const weekStart = getCurrentWeekStart();
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
+    
+    console.log('Today is:', formatLocalDate(today));
+    console.log('Day of week:', today.getDay()); // 0=Sun, 1=Mon, etc.
+    console.log('Week start calculated as:', formatLocalDate(weekStart));
+    
+    // End date is today (don't go into future)
+    const startDateStr = formatLocalDate(weekStart);
+    const endDateStr = formatLocalDate(today);
 
-    const startDateStr = weekStart.toISOString().split('T')[0];
-    const endDateStr = weekEnd.toISOString().split('T')[0];
+    console.log('Setting date range:', startDateStr, 'to', endDateStr);
 
     setStartDate(startDateStr);
     setEndDate(endDateStr);
@@ -162,13 +175,14 @@ export default function TimeFrameSelectionStep({
   };
 
   const selectPreviousWeek = () => {
-    const weekStart = getCurrentWeekStart();
-    weekStart.setDate(weekStart.getDate() - 7);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
+    const currentWeekStart = getCurrentWeekStart();
+    const prevWeekStart = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), currentWeekStart.getDate() - 7);
+    const prevWeekEnd = new Date(prevWeekStart.getFullYear(), prevWeekStart.getMonth(), prevWeekStart.getDate() + 6);
 
-    const startDateStr = weekStart.toISOString().split('T')[0];
-    const endDateStr = weekEnd.toISOString().split('T')[0];
+    const startDateStr = formatLocalDate(prevWeekStart);
+    const endDateStr = formatLocalDate(prevWeekEnd);
+
+    console.log('Previous week:', startDateStr, 'to', endDateStr);
 
     setStartDate(startDateStr);
     setEndDate(endDateStr);
@@ -178,14 +192,13 @@ export default function TimeFrameSelectionStep({
     setValidationErrors(errors);
   };
 
-  // Check if current week would be in the future
+  // Check if current week START would be in the future
   const isCurrentWeekInFuture = () => {
     const currentWeekStart = getCurrentWeekStart();
     const today = new Date();
-    const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const weekStartDateOnly = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), currentWeekStart.getDate());
+    today.setHours(0, 0, 0, 0); // Start of today
     
-    return weekStartDateOnly > todayDateOnly;
+    return currentWeekStart > today;
   };
 
   // Get max date (today)

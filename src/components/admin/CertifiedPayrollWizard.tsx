@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import PayrollDataWizard from "./PayrollDataWizard";
 import PayrollDetailsForm from "./PayrollDetailsForm";
 import PayrollUploadWizard from "./PayrollUploadWizard";
 import CertifiedPayrollReportPreview from "./CertifiedPayrollReportPreview";
-import { useGetProjectContractorsQuery } from "@/lib/features/certified-payroll/certifiedPayrollApi";
+import { useGetProjectContractorsQuery, useCalculateMultiWeekPayrollMutation } from "@/lib/features/certified-payroll/certifiedPayrollApi";
 
 interface CertifiedPayrollWizardProps {
   projectId: string;
@@ -31,6 +31,9 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
   
   // Get contractor data for the payroll wizard
   const { data: contractorsData } = useGetProjectContractorsQuery(projectId);
+  
+  // Multi-week payroll calculation mutation
+  const [calculateMultiWeekPayroll, { isLoading: isCalculatingPayroll }] = useCalculateMultiWeekPayrollMutation();
 
   // Debug logging to check state
   console.log('Current wizard state:', {
@@ -121,72 +124,73 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
     setCurrentStep("add-details");
   };
 
-  // Generate enhanced report data combining contractor info with payroll data
-  const generateEnhancedReportData = () => {
+  // Convert Map to stable object for dependency tracking
+  const payrollDataObject = useMemo(() => {
+    const obj: Record<string, any> = {};
+    savedPayrollData.forEach((data, contractorId) => {
+      obj[contractorId] = data;
+    });
+    return obj;
+  }, [savedPayrollData]);
+
+  // Generate enhanced report data using real timesheet calculations
+  const generateEnhancedReportData = useCallback(async () => {
     if (!contractorsData?.contractors || !selectedDateRange) {
       return null;
     }
 
-    const enhancedWorkers = selectedContractors.map(contractorId => {
-      const contractor = contractorsData.contractors.find(c => c.id === contractorId);
-      const payrollData = savedPayrollData.get(contractorId) || {};
+    try {
+      // Use the stable payroll data object
+      const payrollDataMap = payrollDataObject;
+
+      // Call the multi-week calculation API
+      const result = await calculateMultiWeekPayroll({
+        projectId,
+        startDate: selectedDateRange.startDate,
+        endDate: selectedDateRange.endDate,
+        selectedContractorIds: selectedContractors,
+        payrollData: payrollDataMap
+      }).unwrap();
+
+      if (!result.success || !result.data) {
+        console.error('API returned unsuccessful result:', result);
+        return null;
+      }
+
+      // Transform the API response to match the expected format
+      const apiData = result.data;
       
-      if (!contractor) return null;
-
-      return {
-        id: contractor.id,
-        name: contractor.name,
-        address: 'Address not specified', // Can be enhanced with contractor address
-        ssn: 'XXX-XX-1234', // Masked for security
-        driversLicense: 'Not specified',
-        ethnicity: 'Not specified',
-        gender: 'Not specified', 
-        workClassification: 'Operating Engineer HWY 1/',
-        location: 'Project Site',
-        type: contractor.role || 'contractor',
-        dailyHours: {
-          sunday: { straight: 0, overtime: 0, double: 0 },
-          monday: { straight: 8, overtime: 0, double: 0 }, // Sample data
-          tuesday: { straight: 8, overtime: 0, double: 0 },
-          wednesday: { straight: 8, overtime: 0, double: 0 },
-          thursday: { straight: 8, overtime: 0, double: 0 },
-          friday: { straight: 8, overtime: 0, double: 0 },
-          saturday: { straight: 0, overtime: 0, double: 0 },
-        },
-        totalHours: { straight: 40, overtime: 0, double: 0 },
-        baseHourlyRate: 25.00,
-        overtimeRate: 37.50,
-        doubleTimeRate: 50.00,
-        grossAmount: 1000.00,
-        deductions: {
-          federalTax: parseFloat(payrollData.federalTax) || 0,
-          socialSecurity: parseFloat(payrollData.socialSecurity) || 0,
-          medicare: parseFloat(payrollData.medicare) || 0,
-          stateTax: parseFloat(payrollData.stateTax) || 0,
-          localTaxesSDI: parseFloat(payrollData.localTaxesSDI) || 0,
-          allOtherDeductions: parseFloat(payrollData.allOtherDeductions) || 0,
-          totalDeduction: parseFloat(payrollData.totalDeduction) || 0,
-        },
-        fringes: {
-          healthWelfare: parseFloat(payrollData.healthWelfare) || 0,
-          pension: parseFloat(payrollData.pension) || 0,
-          training: parseFloat(payrollData.trainingRate) || 0,
-        },
-        payments: {
-          checkNo: payrollData.checkNo || '',
-          netPaidWeek: parseFloat(payrollData.netPaidWeek) || 0,
-          savings: parseFloat(payrollData.savings) || 0,
-        }
-      };
-    }).filter(Boolean);
-
-    return {
-      weekStart: selectedDateRange.startDate,
-      weekEnd: selectedDateRange.endDate,
-      projectName: 'Project Name', // Get from project data
-      workers: enhancedWorkers
-    };
-  };
+      // Check if it's multi-week data
+      if (apiData.weeks && apiData.weeks.length > 0) {
+        // Multi-week format
+        return {
+          weekStart: apiData.weekStart,
+          weekEnd: apiData.weekEnd,
+          projectName: apiData.projectName,
+          workers: [], // Not used for multi-week
+          weeks: apiData.weeks
+        };
+      } else {
+        // Single week format (fallback)
+        return {
+          weekStart: apiData.weekStart,
+          weekEnd: apiData.weekEnd,
+          projectName: apiData.projectName,
+          workers: apiData.weeks?.[0]?.workers || []
+        };
+      }
+    } catch (error) {
+      console.error('Error calculating multi-week payroll:', error);
+      return null;
+    }
+  }, [
+    contractorsData?.contractors,
+    selectedDateRange,
+    selectedContractors,
+    projectId,
+    calculateMultiWeekPayroll,
+    payrollDataObject
+  ]);
 
   const handleBackFromUpload = () => {
     setCurrentStep("payroll-wizard");
@@ -257,26 +261,10 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
 
   // Show Enhanced Report Generation
   if (currentStep === "generate-report") {
-    const reportData = generateEnhancedReportData();
-    
-    if (!reportData) {
-      return (
-        <Card className="bg-white dark:bg-gray-800 shadow-sm">
-          <CardContent className="p-8">
-            <div className="text-center">
-              <p className="text-red-600">Error generating report data. Please go back and try again.</p>
-              <Button variant="outline" onClick={handleBackFromReport} className="mt-4">
-                Back
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
     return (
       <CertifiedPayrollReportPreview
-        data={reportData}
+        generateReportData={generateEnhancedReportData}
+        isCalculating={isCalculatingPayroll}
         onBack={handleBackFromReport}
       />
     );

@@ -26,6 +26,45 @@ export interface PayrollWorker {
   overtimeRate: number;
   doubleTimeRate: number;
   grossAmount: number;
+  deductions?: {
+    federalTax: number;
+    socialSecurity: number;
+    medicare: number;
+    stateTax: number;
+    localTaxesSDI: number;
+    voluntaryPension: number;
+    voluntaryMedical: number;
+    vacDues: number;
+    travSubs: number;
+    allOtherDeductions: number;
+    totalDeduction: number;
+  };
+  fringes?: {
+    rateInLieuOfFringes: number;
+    totalBaseRatePlusFringes: number;
+    hwRate: number;
+    healthWelfare: number;
+    pensionRate: number;
+    pension: number;
+    vacHolRate: number;
+    vacationHoliday: number;
+    trainingRate: number;
+    training: number;
+    allOtherRate: number;
+    totalFringeRateToThird: number;
+    totalFringesPaidToThird: number;
+  };
+  payments?: {
+    checkNo: string;
+    netPaidWeek: number;
+    savings: number;
+    payrollPaymentDate: string;
+  };
+  additionalInfo?: {
+    fringesPaidToEmployee: string;
+    vacationHolidayDuesInGrossPay: string;
+    voluntaryContributionsInGrossPay: string;
+  };
 }
 
 export interface CertifiedPayrollData {
@@ -33,6 +72,32 @@ export interface CertifiedPayrollData {
   weekEnd: string;
   projectName: string;
   workers: PayrollWorker[];
+}
+
+export interface PayrollWeekData {
+  weekStart: string;
+  weekEnd: string;
+  workers: PayrollWorker[];
+}
+
+export interface MultiWeekPayrollData {
+  weekStart: string;
+  weekEnd: string;
+  projectName: string;
+  weeks: PayrollWeekData[];
+}
+
+export interface CalculateMultiWeekRequest {
+  projectId: string;
+  startDate: string;
+  endDate: string;
+  selectedContractorIds: string[];
+  payrollData: Record<string, any>;
+}
+
+export interface CalculateMultiWeekResponse {
+  success: boolean;
+  data: MultiWeekPayrollData;
 }
 
 export interface ProjectContractor {
@@ -135,6 +200,14 @@ export const certifiedPayrollApi = createApi({
         body,
       }),
     }),
+    calculateMultiWeekPayroll: builder.mutation<CalculateMultiWeekResponse, CalculateMultiWeekRequest>({
+      query: (body) => ({
+        url: '/calculate-multi-week',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['CertifiedPayroll'],
+    }),
   }),
 });
 
@@ -143,4 +216,5 @@ export const {
   useGetProjectContractorsQuery,
   useUploadPayrollMutation,
   useExtractPayrollMutation,
+  useCalculateMultiWeekPayrollMutation,
 } = certifiedPayrollApi;
