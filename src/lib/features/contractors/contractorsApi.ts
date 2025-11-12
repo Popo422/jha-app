@@ -17,6 +17,10 @@ export interface Contractor {
   phone?: string | null
   race?: string | null
   gender?: string | null
+  dateOfHire?: string | null
+  workClassification?: string | null
+  projectType?: string | null
+  group?: number | null
   createdAt: string
   updatedAt: string
 }
@@ -36,6 +40,10 @@ export interface CreateContractorRequest {
   phone?: string
   race?: string
   gender?: string
+  dateOfHire?: string
+  workClassification?: string
+  projectType?: string
+  group?: string
   projectIds?: string[]
 }
 
@@ -55,6 +63,10 @@ export interface UpdateContractorRequest {
   phone?: string
   race?: string
   gender?: string
+  dateOfHire?: string
+  workClassification?: string
+  projectType?: string
+  group?: string
   projectIds?: string[]
 }
 

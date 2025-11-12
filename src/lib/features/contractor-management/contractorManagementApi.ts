@@ -12,6 +12,10 @@ export interface Contractor {
   companyName?: string;
   language: string;
   type: string;
+  dateOfHire?: string;
+  workClassification?: string;
+  projectType?: string;
+  group?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,6 +30,10 @@ export interface CreateContractorRequest {
   doubleTimeRate?: string;
   language: string;
   type: string;
+  dateOfHire?: string;
+  workClassification?: string;
+  projectType?: string;
+  group?: number;
 }
 
 export interface UpdateContractorRequest {
@@ -39,6 +47,10 @@ export interface UpdateContractorRequest {
   doubleTimeRate?: string;
   language: string;
   type: string;
+  dateOfHire?: string;
+  workClassification?: string;
+  projectType?: string;
+  group?: number;
 }
 
 

@@ -57,6 +57,10 @@ export async function GET(request: NextRequest) {
         companyName: contractor.companyName,
         language: contractor.language || 'en',
         type: contractor.type || 'contractor',
+        dateOfHire: contractor.dateOfHire,
+        workClassification: contractor.workClassification,
+        projectType: contractor.projectType,
+        group: contractor.group,
         createdAt: contractor.createdAt,
         updatedAt: contractor.updatedAt
       }))
@@ -103,7 +107,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { firstName, lastName, email, code, rate, language, type } = body;
+    const { firstName, lastName, email, code, rate, language, type, dateOfHire, workClassification, projectType, group } = body;
 
     // Validate required fields
     if (!firstName || !lastName || !email || !code) {
@@ -148,6 +152,10 @@ export async function POST(request: NextRequest) {
         companyName: foremanSubcontractor,
         language: language || 'en',
         type: type || 'contractor',
+        dateOfHire: dateOfHire || null,
+        workClassification,
+        projectType,
+        group,
         companyId
       })
       .returning({
@@ -160,6 +168,10 @@ export async function POST(request: NextRequest) {
         companyName: contractors.companyName,
         language: contractors.language,
         type: contractors.type,
+        dateOfHire: contractors.dateOfHire,
+        workClassification: contractors.workClassification,
+        projectType: contractors.projectType,
+        group: contractors.group,
         createdAt: contractors.createdAt,
         updatedAt: contractors.updatedAt
       });

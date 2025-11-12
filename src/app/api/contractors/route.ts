@@ -462,7 +462,7 @@ export async function POST(request: NextRequest) {
 
     // Single contractor creation (existing logic)
     console.log('🔍 [API] Single contractor creation - body:', body)
-    const { firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, address, phone, race, gender, projectIds } = body
+    const { firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, address, phone, race, gender, dateOfHire, workClassification, projectType, group, projectIds } = body
     console.log('🔍 [API] Extracted projectIds:', projectIds)
 
     // Validate required fields
@@ -608,6 +608,26 @@ export async function POST(request: NextRequest) {
       contractorData.gender = gender.trim()
     }
 
+    // Add new fields
+    if (dateOfHire && dateOfHire.trim()) {
+      contractorData.dateOfHire = new Date(dateOfHire)
+    }
+
+    if (workClassification && workClassification.trim()) {
+      contractorData.workClassification = workClassification.trim()
+    }
+
+    if (projectType && projectType.trim()) {
+      contractorData.projectType = projectType.trim()
+    }
+
+    if (group !== undefined && group !== null && group !== '') {
+      const groupValue = parseInt(group)
+      if (!isNaN(groupValue)) {
+        contractorData.group = groupValue
+      }
+    }
+
     // Create contractor record
     const contractor = await db.insert(contractors).values(contractorData).returning()
     console.log('🔍 [API] Contractor created:', contractor[0])
@@ -704,7 +724,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json()
     console.log('🔍 [API] Update contractor body:', body)
-    const { id, firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, address, phone, race, gender, projectIds } = body
+    const { id, firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, address, phone, race, gender, dateOfHire, workClassification, projectType, group, projectIds } = body
     console.log('🔍 [API] Update projectIds:', projectIds)
 
     if (!id) {
@@ -824,6 +844,30 @@ export async function PUT(request: NextRequest) {
 
     if (gender !== undefined) {
       updateData.gender = gender && gender.trim() ? gender.trim() : null
+    }
+
+    // Add new fields
+    if (dateOfHire !== undefined) {
+      updateData.dateOfHire = dateOfHire && dateOfHire.trim() ? new Date(dateOfHire) : null
+    }
+
+    if (workClassification !== undefined) {
+      updateData.workClassification = workClassification && workClassification.trim() ? workClassification.trim() : null
+    }
+
+    if (projectType !== undefined) {
+      updateData.projectType = projectType && projectType.trim() ? projectType.trim() : null
+    }
+
+    if (group !== undefined) {
+      if (group !== null && group !== '' && typeof group === 'string') {
+        const groupValue = parseInt(group)
+        updateData.group = !isNaN(groupValue) ? groupValue : null
+      } else if (typeof group === 'number') {
+        updateData.group = group
+      } else {
+        updateData.group = null
+      }
     }
 
     // Update contractor

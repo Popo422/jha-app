@@ -14,6 +14,15 @@ export interface Subcontractor {
   contact?: string
   email?: string
   phone?: string
+  // New fields
+  trade?: string
+  contractorLicenseNo?: string
+  specialtyLicenseNo?: string
+  federalTaxId?: string
+  motorCarrierPermitNo?: string
+  isUnion?: boolean
+  isSelfInsured?: boolean
+  workersCompPolicy?: string
   createdAt: string
   updatedAt: string
 }
@@ -28,6 +37,15 @@ export interface CreateSubcontractorRequest {
   contact?: string
   email?: string
   phone?: string
+  // New fields
+  trade?: string
+  contractorLicenseNo?: string
+  specialtyLicenseNo?: string
+  federalTaxId?: string
+  motorCarrierPermitNo?: string
+  isUnion?: boolean
+  isSelfInsured?: boolean
+  workersCompPolicy?: string
 }
 
 export interface UpdateSubcontractorRequest {
@@ -41,6 +59,15 @@ export interface UpdateSubcontractorRequest {
   contact?: string
   email?: string
   phone?: string
+  // New fields
+  trade?: string
+  contractorLicenseNo?: string
+  specialtyLicenseNo?: string
+  federalTaxId?: string
+  motorCarrierPermitNo?: string
+  isUnion?: boolean
+  isSelfInsured?: boolean
+  workersCompPolicy?: string
 }
 
 export interface PaginationInfo {

@@ -185,6 +185,8 @@ export async function GET(request: NextRequest) {
       projectCost: projects.projectCost,
       startDate: projects.startDate,
       endDate: projects.endDate,
+      projectCode: projects.projectCode,
+      contractId: projects.contractId,
       createdAt: projects.createdAt,
       updatedAt: projects.updatedAt,
       subcontractorCount: sql<number>`(
@@ -320,7 +322,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single project creation (existing logic)
-    const { name, projectManager, location, projectCost, startDate, endDate } = body
+    const { name, projectManager, location, projectCost, startDate, endDate, projectCode, contractId } = body
 
     // Validate required fields
     if (!name || !projectManager || !location) {
@@ -373,6 +375,8 @@ export async function POST(request: NextRequest) {
       projectCost: projectCost ? projectCost.toString() : null,
       startDate: startDate || null,
       endDate: endDate || null,
+      projectCode: projectCode ? projectCode.trim() : null,
+      contractId: contractId ? contractId.trim() : null,
     }
 
     // Create project record
@@ -426,7 +430,7 @@ export async function PUT(request: NextRequest) {
 
 
     const body = await request.json()
-    const { id, name, projectManager, location, projectCost, startDate, endDate } = body
+    const { id, name, projectManager, location, projectCost, startDate, endDate, projectCode, contractId } = body
 
     if (!id) {
       return NextResponse.json(
@@ -466,6 +470,8 @@ export async function PUT(request: NextRequest) {
       projectCost: projectCost ? projectCost.toString() : null,
       startDate: startDate || null,
       endDate: endDate || null,
+      projectCode: projectCode ? projectCode.trim() : null,
+      contractId: contractId ? contractId.trim() : null,
       updatedAt: new Date()
     }
 

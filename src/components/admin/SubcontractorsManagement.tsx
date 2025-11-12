@@ -2,18 +2,13 @@
 
 import React, { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'next/navigation';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetSubcontractorsQuery, useDeleteSubcontractorMutation, useCreateSubcontractorMutation, useUpdateSubcontractorMutation, type Subcontractor, type PaginationInfo } from "@/lib/features/subcontractors/subcontractorsApi";
-import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MultiSelect } from "@/components/ui/multi-select";
+import { useGetSubcontractorsQuery, useDeleteSubcontractorMutation, type Subcontractor, type PaginationInfo } from "@/lib/features/subcontractors/subcontractorsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, ArrowUpDown, Building2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -21,21 +16,6 @@ export function SubcontractorsManagement() {
   const { t } = useTranslation('common');
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingSubcontractor, setEditingSubcontractor] = useState<Subcontractor | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    contractAmount: "",
-    projectIds: [] as string[],
-    foreman: "",
-    foremanEmail: "",
-    address: "",
-    contact: "",
-    email: "",
-    phone: "",
-  });
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [clientPagination, setClientPagination] = useState({
     currentPage: 1,
     pageSize: 10
@@ -54,18 +34,8 @@ export function SubcontractorsManagement() {
     authType: 'admin'
   });
   
-  const { data: projectsData } = useGetProjectsQuery({
-    page: 1,
-    pageSize: 100,
-    authType: 'admin'
-  });
   
   const [deleteSubcontractor, { isLoading: isDeleting }] = useDeleteSubcontractorMutation();
-  const [createSubcontractor, { isLoading: isCreating, error: createError }] = useCreateSubcontractorMutation();
-  const [updateSubcontractor, { isLoading: isUpdating, error: updateError }] = useUpdateSubcontractorMutation();
-
-  const isFormLoading = isCreating || isUpdating;
-  const formError = createError || updateError;
 
   const allSubcontractors = subcontractorsData?.subcontractors || [];
   const serverPaginationInfo = subcontractorsData?.pagination;
@@ -122,91 +92,17 @@ export function SubcontractorsManagement() {
     skip: !shouldPrefetch
   });
 
+  const router = useRouter();
+  
   const handleEdit = (subcontractor: Subcontractor) => {
-    setEditingSubcontractor(subcontractor);
-    setFormData({
-      name: subcontractor.name,
-      contractAmount: subcontractor.contractAmount || "",
-      projectIds: (subcontractor as any).projectIds || [],
-      foreman: subcontractor.foreman || "",
-      foremanEmail: (subcontractor as any).foremanEmail || "",
-      address: (subcontractor as any).address || "",
-      contact: (subcontractor as any).contact || "",
-      email: (subcontractor as any).email || "",
-      phone: (subcontractor as any).phone || "",
-    });
-    setFormErrors({});
-    setIsEditDialogOpen(true);
+    router.push(`/admin/subcontractors/${subcontractor.id}/edit?back=${encodeURIComponent('/admin/subcontractors')}`);
   };
 
   const handleAdd = () => {
-    setEditingSubcontractor(null);
-    setFormData({
-      name: "",
-      contractAmount: "",
-      projectIds: [],
-      foreman: "",
-      foremanEmail: "",
-      address: "",
-      contact: "",
-      email: "",
-      phone: "",
-    });
-    setFormErrors({});
-    setIsCreateDialogOpen(true);
+    router.push('/admin/subcontractors/new?back=' + encodeURIComponent('/admin/subcontractors'));
   };
 
-  const handleCancel = () => {
-    setIsCreateDialogOpen(false);
-    setIsEditDialogOpen(false);
-    setEditingSubcontractor(null);
-    setFormData({ name: "", contractAmount: "", projectIds: [], foreman: "", foremanEmail: "", address: "", contact: "", email: "", phone: "" });
-    setFormErrors({});
-  };
 
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      errors.name = 'Subcontractor name is required';
-    }
-
-    // Validate foreman email if provided (optional)
-    if (formData.foremanEmail && formData.foremanEmail.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.foremanEmail)) {
-        errors.foremanEmail = 'Please enter a valid email address for the foreman';
-      }
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      if (editingSubcontractor) {
-        await updateSubcontractor({
-          id: editingSubcontractor.id,
-          ...formData,
-        }).unwrap();
-        showToast('Subcontractor updated successfully', 'success');
-      } else {
-        await createSubcontractor(formData).unwrap();
-        showToast('Subcontractor created successfully', 'success');
-      }
-      handleCancel();
-      refetch();
-    } catch (error: any) {
-      showToast(error.data?.error || 'Failed to save subcontractor', 'error');
-    }
-  };
 
   const handleDelete = async (subcontractorId: string) => {
     const subcontractor = allSubcontractors.find(s => s.id === subcontractorId);
@@ -310,6 +206,85 @@ export function SubcontractorsManagement() {
       },
     },
     {
+      accessorKey: "trade",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Trade
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const trade = row.getValue("trade") as string | null;
+        return trade ? (
+          <span className="text-sm">{trade}</span>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        );
+      },
+    },
+    {
+      accessorKey: "isUnion",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Union
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const isUnion = row.getValue("isUnion") as boolean;
+        return (
+          <div className="text-sm">
+            {isUnion ? (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                Yes
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                No
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "isSelfInsured",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Self-Insured
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const isSelfInsured = row.getValue("isSelfInsured") as boolean;
+        return (
+          <div className="text-sm">
+            {isSelfInsured ? (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Yes
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                No
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
       accessorKey: "createdAt",
       header: ({ column }) => (
         <Button
@@ -330,315 +305,6 @@ export function SubcontractorsManagement() {
 
   return (
     <>
-      {/* Create Subcontractor Dialog */}
-      <AlertDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('admin.addSubcontractor')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              Enter the company/subcontractor name below.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">{t('contractors.companySubcontractor')}</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Enter name"
-                  className={formErrors.name ? "border-red-500" : ""}
-                />
-                {formErrors.name && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="contractAmount">Contract Amount (Optional)</Label>
-                <Input
-                  id="contractAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.contractAmount}
-                  onChange={(e) => setFormData({ ...formData, contractAmount: e.target.value })}
-                  placeholder="Enter contract amount"
-                />
-              </div>
-              <div>
-                <Label>Projects (Optional)</Label>
-                <MultiSelect
-                  options={projectsData?.projects?.map(project => ({
-                    value: project.id,
-                    label: project.name
-                  })) || []}
-                  value={formData.projectIds}
-                  onValueChange={(value) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      projectIds: value
-                    }));
-                  }}
-                  placeholder="Select projects..."
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label htmlFor="foreman">Foreman (Optional)</Label>
-                <Input
-                  id="foreman"
-                  value={formData.foreman}
-                  onChange={(e) => setFormData({ ...formData, foreman: e.target.value })}
-                  placeholder="Enter foreman name"
-                  className={formErrors.foreman ? "border-red-500" : ""}
-                />
-                {formErrors.foreman && (
-                  <p className="text-sm text-red-500">{formErrors.foreman}</p>
-                )}
-              </div>
-              
-              {formData.foreman && formData.foreman.trim() && (
-                <div>
-                  <Label htmlFor="foremanEmail">Foreman Email (Optional)</Label>
-                  <Input
-                    id="foremanEmail"
-                    type="email"
-                    value={formData.foremanEmail}
-                    onChange={(e) => setFormData({ ...formData, foremanEmail: e.target.value })}
-                    placeholder="Enter foreman email address"
-                    className={formErrors.foremanEmail ? "border-red-500" : ""}
-                  />
-                  {formErrors.foremanEmail && (
-                    <p className="text-sm text-red-500">{formErrors.foremanEmail}</p>
-                  )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    If no email provided, a default email will be generated. Adding a foreman will automatically create a contractor account.
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="address">Address (Optional)</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Enter address"
-                  disabled={isFormLoading}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact">Contact Person (Optional)</Label>
-                  <Input
-                    id="contact"
-                    value={formData.contact}
-                    onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                    placeholder="Enter contact person"
-                    disabled={isFormLoading}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email-create">Email (Optional)</Label>
-                  <Input
-                    id="email-create"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="Enter email address"
-                    disabled={isFormLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone (Optional)</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="Enter phone number"
-                  disabled={isFormLoading}
-                />
-              </div>
-
-              {formError && (
-                <div className="p-3 rounded-md bg-red-50 border border-red-200">
-                  <p className="text-sm text-red-600">
-                    {(formError as any)?.data?.error || 'An error occurred'}
-                  </p>
-                </div>
-              )}
-            </div>
-            <AlertDialogFooter className="mt-6">
-              <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSubmit} disabled={isFormLoading}>
-                {isFormLoading ? 'Creating...' : 'Create'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </form>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Edit Subcontractor Dialog */}
-      <AlertDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('admin.editSubcontractor')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              Update the company/subcontractor name below.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="edit-name">{t('contractors.companySubcontractor')}</Label>
-                <Input
-                  id="edit-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Enter name"
-                  className={formErrors.name ? "border-red-500" : ""}
-                />
-                {formErrors.name && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="edit-contractAmount">Contract Amount (Optional)</Label>
-                <Input
-                  id="edit-contractAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.contractAmount}
-                  onChange={(e) => setFormData({ ...formData, contractAmount: e.target.value })}
-                  placeholder="Enter contract amount"
-                />
-              </div>
-              <div>
-                <Label>Projects (Optional)</Label>
-                <MultiSelect
-                  options={projectsData?.projects?.map(project => ({
-                    value: project.id,
-                    label: project.name
-                  })) || []}
-                  value={formData.projectIds}
-                  onValueChange={(value) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      projectIds: value
-                    }));
-                  }}
-                  placeholder="Select projects..."
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-foreman">Foreman (Optional)</Label>
-                <Input
-                  id="edit-foreman"
-                  value={formData.foreman}
-                  onChange={(e) => setFormData({ ...formData, foreman: e.target.value })}
-                  placeholder="Enter foreman name"
-                  className={formErrors.foreman ? "border-red-500" : ""}
-                />
-                {formErrors.foreman && (
-                  <p className="text-sm text-red-500">{formErrors.foreman}</p>
-                )}
-              </div>
-              
-              {formData.foreman && formData.foreman.trim() && (
-                <div>
-                  <Label htmlFor="edit-foremanEmail">Foreman Email (Optional)</Label>
-                  <Input
-                    id="edit-foremanEmail"
-                    type="email"
-                    value={formData.foremanEmail}
-                    onChange={(e) => setFormData({ ...formData, foremanEmail: e.target.value })}
-                    placeholder="Enter foreman email address"
-                    className={formErrors.foremanEmail ? "border-red-500" : ""}
-                  />
-                  {formErrors.foremanEmail && (
-                    <p className="text-sm text-red-500">{formErrors.foremanEmail}</p>
-                  )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    If no email provided, a default email will be generated. Adding/updating a foreman will create a contractor account.
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-address">Address (Optional)</Label>
-                <Input
-                  id="edit-address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Enter address"
-                  disabled={isFormLoading}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-contact">Contact Person (Optional)</Label>
-                  <Input
-                    id="edit-contact"
-                    value={formData.contact}
-                    onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                    placeholder="Enter contact person"
-                    disabled={isFormLoading}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="edit-email">Email (Optional)</Label>
-                  <Input
-                    id="edit-email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="Enter email address"
-                    disabled={isFormLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-phone">Phone (Optional)</Label>
-                <Input
-                  id="edit-phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="Enter phone number"
-                  disabled={isFormLoading}
-                />
-              </div>
-
-              {formError && (
-                <div className="p-3 rounded-md bg-red-50 border border-red-200">
-                  <p className="text-sm text-red-600">
-                    {(formError as any)?.data?.error || 'An error occurred'}
-                  </p>
-                </div>
-              )}
-            </div>
-            <AlertDialogFooter className="mt-6">
-              <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSubmit} disabled={isFormLoading}>
-                {isFormLoading ? 'Updating...' : 'Update'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </form>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Main Subcontractors Table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -662,12 +328,20 @@ export function SubcontractorsManagement() {
             onDelete={handleDelete}
             getRowId={(subcontractor) => subcontractor.id}
             exportFilename="subcontractors"
-            exportHeaders={[t('contractors.companySubcontractor'), 'Contract Amount', 'Foreman', 'Projects', t('admin.created')]}
+            exportHeaders={[t('contractors.companySubcontractor'), 'Contract Amount', 'Foreman', 'Projects', 'Trade', 'Contractor License No.', 'Specialty License No.', 'Federal Tax ID', 'Motor Carrier Permit No.', 'Union', 'Self-Insured', 'Workers Comp Policy', t('admin.created')]}
             getExportData={(subcontractor) => [
               subcontractor.name,
               subcontractor.contractAmount ? `$${parseFloat(subcontractor.contractAmount).toLocaleString()}` : '',
               subcontractor.foreman || '',
               (subcontractor as any).projectNames?.join(', ') || 'No projects assigned',
+              (subcontractor as any).trade || '',
+              (subcontractor as any).contractorLicenseNo || '',
+              (subcontractor as any).specialtyLicenseNo || '',
+              (subcontractor as any).federalTaxId || '',
+              (subcontractor as any).motorCarrierPermitNo || '',
+              (subcontractor as any).isUnion ? 'Yes' : 'No',
+              (subcontractor as any).isSelfInsured ? 'Yes' : 'No',
+              (subcontractor as any).workersCompPolicy || '',
               new Date(subcontractor.createdAt).toLocaleDateString()
             ]}
             searchValue={search}
