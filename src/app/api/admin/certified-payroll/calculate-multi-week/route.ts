@@ -244,12 +244,13 @@ export async function POST(request: NextRequest) {
           driversLicense: 'Not specified', // Not in schema
           ethnicity: contractor.race || 'Not specified',
           gender: contractor.gender || 'Not specified',
-          workClassification: contractor.workClassification || contractor.type || 'Contractor',
+          workClassification: contractor.workClassification || 'Not specified',
           location: project[0].location || 'Project Site',
           type: contractor.type || 'contractor',
           dailyHours,
           totalHours: { 
             straight: totalStraight, 
+            
             overtime: totalOvertime, 
             double: totalDouble 
           },

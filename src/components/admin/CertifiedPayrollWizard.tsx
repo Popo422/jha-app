@@ -11,14 +11,15 @@ import PayrollDetailsStep from "./PayrollDetailsStep";
 import PayrollDataWizard from "./PayrollDataWizard";
 import PayrollDetailsForm from "./PayrollDetailsForm";
 import PayrollUploadWizard from "./PayrollUploadWizard";
+import BulkAIUploadWizard from "./BulkAIUploadWizard";
 import CertifiedPayrollReportPreview from "./CertifiedPayrollReportPreview";
-import { useGetProjectContractorsQuery, useCalculateMultiWeekPayrollMutation } from "@/lib/features/certified-payroll/certifiedPayrollApi";
+import { useGetProjectContractorsQuery, useCalculateMultiWeekPayrollMutation, useUploadPayrollMutation, useBulkExtractPayrollMutation } from "@/lib/features/certified-payroll/certifiedPayrollApi";
 
 interface CertifiedPayrollWizardProps {
   projectId: string;
 }
 
-type WizardStep = "onboarding" | "select-workmen" | "select-timeframe" | "add-details" | "payroll-wizard" | "payroll-form" | "payroll-upload" | "generate-report";
+type WizardStep = "onboarding" | "select-workmen" | "select-timeframe" | "add-details" | "payroll-wizard" | "payroll-form" | "payroll-upload" | "bulk-ai-upload" | "generate-report";
 
 export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWizardProps) {
   const router = useRouter();
@@ -34,6 +35,10 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
   
   // Multi-week payroll calculation mutation
   const [calculateMultiWeekPayroll, { isLoading: isCalculatingPayroll }] = useCalculateMultiWeekPayrollMutation();
+  
+  // Bulk AI upload mutations
+  const [uploadPayroll] = useUploadPayrollMutation();
+  const [bulkExtractPayroll] = useBulkExtractPayrollMutation();
 
   // Debug logging to check state
   console.log('Current wizard state:', {
@@ -79,12 +84,16 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
 
   const handleAddPayrollData = (contractorId: string) => {
     setSelectedContractorForPayroll(contractorId);
+    // Clear any previous extracted data when switching contractors
+    setExtractedPayrollData(null);
     setCurrentStep("payroll-wizard");
   };
 
   const handleBackFromPayrollWizard = () => {
     setCurrentStep("add-details");
     setSelectedContractorForPayroll(null);
+    // Clear extracted data when going back
+    setExtractedPayrollData(null);
   };
 
   const handleAddManually = () => {
@@ -111,9 +120,10 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
       console.log('Payroll data saved to state for contractor:', selectedContractorForPayroll, payrollData);
     }
     
-    // Go back to add-details step
+    // Go back to add-details step and clear states
     setCurrentStep("add-details");
     setSelectedContractorForPayroll(null);
+    setExtractedPayrollData(null);
   };
 
   const handleGenerateReport = () => {
@@ -188,7 +198,6 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
     selectedDateRange,
     selectedContractors,
     projectId,
-    calculateMultiWeekPayroll,
     payrollDataObject
   ]);
 
@@ -200,6 +209,63 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
     // Store the extracted data and move to the form
     setExtractedPayrollData(extractedData);
     setCurrentStep("payroll-form");
+  };
+
+  const handleBulkAIUpload = async () => {
+    setCurrentStep("bulk-ai-upload");
+  };
+
+  const handleBackFromBulkAI = () => {
+    setCurrentStep("add-details");
+  };
+
+  const handleBulkAICompleted = (extractedWorkers: any[]) => {
+    // Process the bulk extracted data and save to state
+    extractedWorkers.forEach(worker => {
+      if (worker.contractorId) {
+        setSavedPayrollData(prev => {
+          const newMap = new Map(prev);
+          newMap.set(worker.contractorId, {
+            // Remove the matching fields and just save the payroll data
+            federalTax: worker.federalTax,
+            socialSecurity: worker.socialSecurity,
+            medicare: worker.medicare,
+            stateTax: worker.stateTax,
+            localTaxesSDI: worker.localTaxesSDI,
+            voluntaryPension: worker.voluntaryPension,
+            voluntaryMedical: worker.voluntaryMedical,
+            vacDues: worker.vacDues,
+            travSubs: worker.travSubs,
+            allOtherDeductions: worker.allOtherDeductions,
+            totalDeduction: worker.totalDeduction,
+            rateInLieuOfFringes: worker.rateInLieuOfFringes,
+            totalBaseRatePlusFringes: worker.totalBaseRatePlusFringes,
+            hwRate: worker.hwRate,
+            healthWelfare: worker.healthWelfare,
+            pensionRate: worker.pensionRate,
+            pension: worker.pension,
+            vacHolRate: worker.vacHolRate,
+            vacationHoliday: worker.vacationHoliday,
+            trainingRate: worker.trainingRate,
+            allOtherFringes: worker.allOtherFringes,
+            allOtherRate: worker.allOtherRate,
+            totalFringeRateToThird: worker.totalFringeRateToThird,
+            totalFringesPaidToThird: worker.totalFringesPaidToThird,
+            checkNo: worker.checkNo,
+            netPaidWeek: worker.netPaidWeek,
+            savings: worker.savings,
+            payrollPaymentDate: worker.payrollPaymentDate,
+            allOrPartOfFringesPaidToEmployee: worker.allOrPartOfFringesPaidToEmployee,
+            vacationHolidayDuesInGrossPay: worker.vacationHolidayDuesInGrossPay,
+            voluntaryContributionsInGrossPay: worker.voluntaryContributionsInGrossPay
+          });
+          return newMap;
+        });
+      }
+    });
+    
+    // Go back to the add-details step
+    setCurrentStep("add-details");
   };
 
   const handleGoBack = () => {
@@ -259,6 +325,22 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
     );
   }
 
+  // Show Bulk AI Upload Wizard
+  if (currentStep === "bulk-ai-upload" && contractorsData?.contractors && selectedDateRange) {
+    const selectedContractorData = contractorsData.contractors.filter(
+      contractor => selectedContractors.includes(contractor.id)
+    );
+    
+    return (
+      <BulkAIUploadWizard
+        contractors={selectedContractorData}
+        dateRange={selectedDateRange}
+        onBack={handleBackFromBulkAI}
+        onCompleted={handleBulkAICompleted}
+      />
+    );
+  }
+
   // Show Enhanced Report Generation
   if (currentStep === "generate-report") {
     return (
@@ -308,6 +390,7 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
               onNext={handleNext}
               onBack={handleBack}
               onAddPayrollData={handleAddPayrollData}
+              onBulkAIUpload={handleBulkAIUpload}
               onGenerateReport={handleGenerateReport}
             />
           </CardContent>

@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useGetProjectContractorsQuery } from '@/lib/features/certified-payroll/certifiedPayrollApi';
-import { Plus, User } from 'lucide-react';
+import { Plus, User, Upload } from 'lucide-react';
 
 interface PayrollDetailsStepProps {
   projectId: string;
@@ -13,6 +13,7 @@ interface PayrollDetailsStepProps {
   onNext: () => void;
   onBack: () => void;
   onAddPayrollData: (contractorId: string) => void;
+  onBulkAIUpload?: () => void;
   onGenerateReport?: () => void;
 }
 
@@ -23,6 +24,7 @@ export default function PayrollDetailsStep({
   onNext,
   onBack,
   onAddPayrollData,
+  onBulkAIUpload,
   onGenerateReport
 }: PayrollDetailsStepProps) {
   const { data: contractorsData } = useGetProjectContractorsQuery(projectId);
@@ -47,6 +49,11 @@ export default function PayrollDetailsStep({
     return `${start.toLocaleDateString('en-US', formatOptions)} - ${end.toLocaleDateString('en-US', formatOptions)}`;
   };
 
+  const handleBulkAIUpload = () => {
+    // Navigate to the bulk AI wizard instead of inline upload
+    onBulkAIUpload?.();
+  };
+
 
   return (
     <div className="space-y-6">
@@ -65,6 +72,14 @@ export default function PayrollDetailsStep({
             <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100">
               Selected Workmen ({selectedContractorData.length})
             </h4>
+            <Button
+              onClick={handleBulkAIUpload}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              Bulk AI Upload
+            </Button>
           </div>
 
           {selectedContractorData.length === 0 ? (
@@ -130,6 +145,7 @@ export default function PayrollDetailsStep({
           )}
         </div>
       </div>
+
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>

@@ -175,7 +175,7 @@ export async function GET(
         driversLicense: 'Not Specified',
         ethnicity: contractor.race || 'Not Specified',
         gender: contractor.gender || 'Not Specified',
-        workClassification: 'Operating Engineer HWY 1/', // This should come from job classification data
+        workClassification: contractor.workClassification || 'Not Specified',
         location: project[0].location || 'Project Site',
         type: contractor.type || 'contractor',
         dailyHours,

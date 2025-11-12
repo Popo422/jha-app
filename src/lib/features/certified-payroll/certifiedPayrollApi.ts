@@ -141,6 +141,63 @@ export interface ExtractPayrollResponse {
   rawResponse?: string;
 }
 
+export interface BulkExtractPayrollRequest {
+  fileUrl: string;
+  contractors: Array<{
+    id: string;
+    name: string;
+  }>;
+}
+
+export interface BulkExtractedWorker {
+  workerName: string;
+  contractorId: string | null;
+  matchedContractor: string;
+  confidence: 'high' | 'low';
+  federalTax: string;
+  socialSecurity: string;
+  medicare: string;
+  stateTax: string;
+  localTaxesSDI: string;
+  voluntaryPension: string;
+  voluntaryMedical: string;
+  vacDues: string;
+  travSubs: string;
+  allOtherDeductions: string;
+  totalDeduction: string;
+  rateInLieuOfFringes: string;
+  totalBaseRatePlusFringes: string;
+  hwRate: string;
+  healthWelfare: string;
+  pensionRate: string;
+  pension: string;
+  vacHolRate: string;
+  vacationHoliday: string;
+  trainingRate: string;
+  allOtherFringes: string;
+  allOtherRate: string;
+  totalFringeRateToThird: string;
+  totalFringesPaidToThird: string;
+  checkNo: string;
+  netPaidWeek: string;
+  savings: string;
+  payrollPaymentDate: string;
+  allOrPartOfFringesPaidToEmployee: string;
+  vacationHolidayDuesInGrossPay: string;
+  voluntaryContributionsInGrossPay: string;
+}
+
+export interface BulkExtractPayrollResponse {
+  success: boolean;
+  extractedData: BulkExtractedWorker[];
+  totalWorkersFound: number;
+  matchingSummary: {
+    highConfidence: number;
+    lowConfidence: number;
+    unmatched: number;
+  };
+}
+
 interface GetCertifiedPayrollParams {
   projectId: string;
   weekStart: string; // YYYY-MM-DD format
@@ -208,6 +265,13 @@ export const certifiedPayrollApi = createApi({
       }),
       invalidatesTags: ['CertifiedPayroll'],
     }),
+    bulkExtractPayroll: builder.mutation<BulkExtractPayrollResponse, BulkExtractPayrollRequest>({
+      query: (body) => ({
+        url: '/bulk-extract-payroll',
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -217,4 +281,5 @@ export const {
   useUploadPayrollMutation,
   useExtractPayrollMutation,
   useCalculateMultiWeekPayrollMutation,
+  useBulkExtractPayrollMutation,
 } = certifiedPayrollApi;

@@ -207,7 +207,7 @@ export default function PayrollUploadWizard({
                   <div className="text-center">
                     <h3 className="text-lg font-semibold mb-2">Upload Payroll Document</h3>
                     <p className="text-gray-600 dark:text-gray-400">
-                      Upload a PDF or image containing payroll information to extract the data automatically.
+                      Upload a PDF, Excel file, or image containing payroll information to extract the data automatically.
                     </p>
                   </div>
 
@@ -225,16 +225,16 @@ export default function PayrollUploadWizard({
                     <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <div className="space-y-2">
                       <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                        {selectedFile ? selectedFile.name : 'Drop your PDF or image here or click to browse'}
+                        {selectedFile ? selectedFile.name : 'Drop your payroll document here or click to browse'}
                       </p>
                       <p className="text-sm text-gray-500">
-                        PDF and image files (JPEG, PNG, WebP), up to 50MB
+                        PDF, Excel, and image files (JPEG, PNG, WebP), up to 50MB
                       </p>
                     </div>
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      accept=".pdf,.xlsx,.xls,.jpg,.jpeg,.png,.webp"
                       onChange={handleFileSelect}
                       className="hidden"
                     />
