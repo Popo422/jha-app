@@ -134,6 +134,21 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     fontWeight: 'bold',
   },
+  blankHeaderRow: {
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    width: '100%',
+  },
+  blankHeaderRowMiddle: {
+    borderStyle: 'solid',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
+    borderColor: '#ccc',
+    width: '100%',
+  },
   contractorSeparator: {
     width: '100%',
     height: 50,
@@ -143,7 +158,7 @@ const styles = StyleSheet.create({
   classificationCol: { width: '8%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc' },
   typeCol: { width: '1.5%', padding: 0, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center', flexDirection: 'column' },
   dayCell: { width: '4.2%', padding: 0, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center', flexDirection: 'column' },
-  mergedDayHeader: { width: '29.4%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center', justifyContent: 'center', alignItems: 'center' },
+  mergedDayHeader: { width: '29.45%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center', justifyContent: 'center', alignItems: 'center' },
   dayCellRow: { 
     flex: 1, 
     borderBottomWidth: 1, 
@@ -172,7 +187,7 @@ const styles = StyleSheet.create({
   deductionsCol: { width: '34.65%', padding: 0, flexDirection: 'column' },
   deductionRow: { flex: 1, flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#ccc' },
   deductionSubCol: { width: '11.11%', padding: 0.5, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center' },
-  deductionSubColLast: { width: '11.11%', padding: 0.5, textAlign: 'center' },
+  deductionSubColLast: { width: '11.12%', padding: 0.5, textAlign: 'center' },
   
   // Daily hours sub-table
   dailyHoursContainer: {
@@ -242,6 +257,56 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
           
           {/* Individual contractor table */}
           <View style={styles.table}>
+            {/* Blank Header Rows - Only for first contractor */}
+            {index === 0 && (
+              <>
+                {/* First blank row */}
+                <View style={[styles.tableRow, { height:30 }]}>
+                  <View style={{ width: '28%', padding: 2, borderColor: '#ccc', borderTopWidth: 1, borderBottomWidth: 1, borderRightWidth: 1, justifyContent: 'center', alignItems: 'flex-start' }}>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>NAME OF CONTRACTOR :</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>Structure Re-Right, Inc</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>Sub To: Brandenburg - Excavation</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>Contract ID# 956405</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>Subcontractor to Brandenburg - Excavation</Text>
+                  </View>
+                  <View style={{ width: '12.6%', padding: 2, borderColor: '#ccc', borderTopWidth: 1, borderBottomWidth: 1, justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>CONTRACTOR'S LICENSE No. 312-877-5560</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>SPECIALTY LICENSE No.</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>FEDERAL TAX ID#: 46-0886430</Text>
+                  </View>
+                  <View style={{ width: '29.4%', padding: 2, borderColor: '#ccc', borderTopWidth: 1, borderBottomWidth: 1, borderRightWidth: 1, justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>ADDRESS : 155 N. Michigan Ave Suite 300, Chicago, IL 60001</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>PHONE: 312-662-2285</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>EMAIL: giovanni@structurereright.com</Text>
+                  </View>
+                  <View style={{ width: '30%', padding: 2,  borderColor: '#ccc', borderTopWidth: 1,justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>PROJECT LOCATION/ CODE / NAME :</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>Cook County, IL / TB074 / Bally's Chicago</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>Permanent Facility (CCBC)</Text>
+                  </View>
+                </View>
+                
+                {/* Second blank row */}
+                <View style={[styles.tableRow, { borderBottomWidth: 0, borderTopWidth: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#ccc', height: 20 }]}>
+                  <View style={{ width: '23.33%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>PAYROLL No. 7</Text>
+                  </View>
+                  <View style={{ width: '11.67%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>FOR WEEK ENDING: 11/23/2024</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>SUBMITTED ON: December 01, 2024</Text>
+                  </View>
+                  <View style={{ width: '35%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>MOTOR CARRIER PERMIT No</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>SELF-INSURED CERTIFICATE No.</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>WORKERS' COMP. POLICY :</Text>
+                  </View>
+                  <View style={{ width: '30%', padding: 2, borderTopWidth: 0, borderBottomWidth: 0, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={styles.cellText}></Text>
+                  </View>
+                </View>
+              </>
+            )}
+            
             {/* Header Row - Only for first contractor */}
             {index === 0 && (
               <View style={[styles.tableRow, styles.headerRow]}>
