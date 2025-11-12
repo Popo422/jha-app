@@ -185,6 +185,8 @@ export async function GET(request: NextRequest) {
       projectCost: projects.projectCost,
       startDate: projects.startDate,
       endDate: projects.endDate,
+      projectCode: projects.projectCode,
+      contractId: projects.contractId,
       createdAt: projects.createdAt,
       updatedAt: projects.updatedAt,
       subcontractorCount: sql<number>`(
