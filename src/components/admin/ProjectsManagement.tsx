@@ -34,6 +34,8 @@ export function ProjectsManagement() {
     projectCost: "",
     startDate: "",
     endDate: "",
+    projectCode: "",
+    contractId: "",
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [serverPagination, setServerPagination] = useState({
@@ -109,6 +111,8 @@ export function ProjectsManagement() {
       projectCost: project.projectCost || "",
       startDate: project.startDate || "",
       endDate: project.endDate || "",
+      projectCode: project.projectCode || "",
+      contractId: project.contractId || "",
     });
     setFormErrors({});
     setIsEditDialogOpen(true);
@@ -123,6 +127,8 @@ export function ProjectsManagement() {
       projectCost: "",
       startDate: "",
       endDate: "",
+      projectCode: "",
+      contractId: "",
     });
     setFormErrors({});
     setIsCreateDialogOpen(true);
@@ -132,7 +138,7 @@ export function ProjectsManagement() {
     setIsCreateDialogOpen(false);
     setIsEditDialogOpen(false);
     setEditingProject(null);
-    setFormData({ name: "", projectManager: "", location: "", projectCost: "", startDate: "", endDate: "" });
+    setFormData({ name: "", projectManager: "", location: "", projectCost: "", startDate: "", endDate: "", projectCode: "", contractId: "" });
     setFormErrors({});
   };
 
@@ -492,6 +498,29 @@ export function ProjectsManagement() {
                     />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="projectCode" className="text-sm text-gray-600">Project Code (Optional)</Label>
+                    <Input
+                      id="projectCode"
+                      value={formData.projectCode}
+                      onChange={(e) => setFormData({ ...formData, projectCode: e.target.value })}
+                      placeholder="Enter project code"
+                      disabled={isFormLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contractId" className="text-sm text-gray-600">Contract ID (Optional)</Label>
+                    <Input
+                      id="contractId"
+                      value={formData.contractId}
+                      onChange={(e) => setFormData({ ...formData, contractId: e.target.value })}
+                      placeholder="Enter contract ID"
+                      disabled={isFormLoading}
+                    />
+                  </div>
+                </div>
               </div>
               {formError && (
                 <div className="p-3 rounded-md bg-red-50 border border-red-200">
@@ -593,6 +622,29 @@ export function ProjectsManagement() {
                       value={formData.endDate}
                       onChange={(value) => setFormData({ ...formData, endDate: value })}
                       placeholder="Select end date"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-projectCode" className="text-sm text-gray-600">Project Code (Optional)</Label>
+                    <Input
+                      id="edit-projectCode"
+                      value={formData.projectCode}
+                      onChange={(e) => setFormData({ ...formData, projectCode: e.target.value })}
+                      placeholder="Enter project code"
+                      disabled={isFormLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-contractId" className="text-sm text-gray-600">Contract ID (Optional)</Label>
+                    <Input
+                      id="edit-contractId"
+                      value={formData.contractId}
+                      onChange={(e) => setFormData({ ...formData, contractId: e.target.value })}
+                      placeholder="Enter contract ID"
+                      disabled={isFormLoading}
                     />
                   </div>
                 </div>

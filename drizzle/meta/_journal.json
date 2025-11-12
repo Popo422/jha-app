@@ -253,6 +253,13 @@
       "when": 1762862135872,
       "tag": "0035_unique_christian_walker",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1762912296392,
+      "tag": "0036_lucky_brother_voodoo",
+      "breakpoints": true
     }
   ]
 }

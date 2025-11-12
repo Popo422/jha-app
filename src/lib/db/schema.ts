@@ -106,6 +106,8 @@ export const projects = pgTable('projects', {
   projectCost: numeric('project_cost', { precision: 12, scale: 2 }), // Optional project cost
   startDate: date('start_date'),
   endDate: date('end_date'),
+  projectCode: text('project_code'), // Project code identifier
+  contractId: text('contract_id'), // Contract ID
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({

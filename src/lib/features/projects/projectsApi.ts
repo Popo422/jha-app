@@ -9,6 +9,8 @@ export interface Project {
   projectCost?: string
   startDate?: string
   endDate?: string
+  projectCode?: string
+  contractId?: string
   subcontractorCount?: number
   createdAt: string
   updatedAt: string
@@ -21,6 +23,8 @@ export interface CreateProjectRequest {
   projectCost?: string
   startDate?: string
   endDate?: string
+  projectCode?: string
+  contractId?: string
 }
 
 export interface UpdateProjectRequest {
@@ -31,6 +35,8 @@ export interface UpdateProjectRequest {
   projectCost?: string
   startDate?: string
   endDate?: string
+  projectCode?: string
+  contractId?: string
 }
 
 export interface PaginationInfo {

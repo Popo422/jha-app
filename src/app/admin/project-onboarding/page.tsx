@@ -47,6 +47,8 @@ interface ProjectDetailsForm {
   projectCost: string;
   startDate: string;
   endDate: string;
+  projectCode: string;
+  contractId: string;
 }
 
 interface DocumentUpload {
@@ -83,7 +85,9 @@ export default function ProjectOnboardingPage() {
     projectManager: '',
     projectCost: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    projectCode: '',
+    contractId: ''
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -181,6 +185,8 @@ export default function ProjectOnboardingPage() {
         projectCost: projectForm.projectCost || undefined,
         startDate: projectForm.startDate || undefined,
         endDate: projectForm.endDate || undefined,
+        projectCode: projectForm.projectCode || undefined,
+        contractId: projectForm.contractId || undefined,
       }).unwrap();
 
       setCreatedProjectId(result.project.id);
@@ -555,6 +561,42 @@ export default function ProjectOnboardingPage() {
               />
               <p className="text-sm text-muted-foreground">
                 Expected completion date
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="projectCode" className="flex items-center gap-2 text-base">
+                <FileText className="w-5 h-5" />
+                Project Code
+              </Label>
+              <Input
+                id="projectCode"
+                value={projectForm.projectCode}
+                onChange={(e) => setProjectForm(prev => ({ ...prev, projectCode: e.target.value }))}
+                placeholder="Enter project code"
+                className="text-base p-3"
+              />
+              <p className="text-sm text-muted-foreground">
+                Internal project identifier (optional)
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contractId" className="flex items-center gap-2 text-base">
+                <FileText className="w-5 h-5" />
+                Contract ID
+              </Label>
+              <Input
+                id="contractId"
+                value={projectForm.contractId}
+                onChange={(e) => setProjectForm(prev => ({ ...prev, contractId: e.target.value }))}
+                placeholder="Enter contract ID"
+                className="text-base p-3"
+              />
+              <p className="text-sm text-muted-foreground">
+                Contract reference number (optional)
               </p>
             </div>
           </div>
