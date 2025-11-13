@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Toast, useToast } from '@/components/ui/toast';
-import { Moon, Sun, Palette, Upload, Image as ImageIcon, X, Save, RotateCcw, Languages } from 'lucide-react';
+import { Moon, Sun, Palette, Upload, Image as ImageIcon, X, Save, RotateCcw, Languages, Puzzle, ExternalLink, CheckCircle, XCircle } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +28,12 @@ export default function SettingsPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [procoreStatus, setProcoreStatus] = useState<{
+    connected: boolean;
+    loading: boolean;
+    integration: any;
+    appUrl?: string;
+  }>({ connected: false, loading: true, integration: null });
   const { toast, showToast, hideToast } = useToast();
 
   const handleThemeToggle = () => {
@@ -37,6 +43,96 @@ export default function SettingsPage() {
   const handleLanguageChange = (language: string) => {
     i18n.changeLanguage(language);
     showToast(t('settings.saved'), 'success');
+  };
+
+  // Load Procore integration status
+  useEffect(() => {
+    checkProcoreStatus();
+    
+    // Check for OAuth callback messages
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const error = urlParams.get('error');
+    
+    if (success === 'connected') {
+      showToast('Procore connected successfully!', 'success');
+      // Refresh status after successful connection
+      setTimeout(() => checkProcoreStatus(), 1000);
+    } else if (error) {
+      const errorMessages: Record<string, string> = {
+        'auth_failed': 'Failed to connect to Procore',
+        'missing_parameters': 'Missing authorization parameters',
+        'access_denied': 'Procore authorization was denied'
+      };
+      showToast(errorMessages[error] || 'Connection failed', 'error');
+    }
+  }, []);
+
+  const checkProcoreStatus = async () => {
+    try {
+      const response = await fetch('/api/integrations/procore/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'status' })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setProcoreStatus({
+          connected: data.connected,
+          loading: false,
+          integration: data.integration,
+          appUrl: data.appUrl
+        });
+      }
+    } catch (error) {
+      console.error('Failed to check Procore status:', error);
+      setProcoreStatus(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleProcoreConnect = async () => {
+    try {
+      const response = await fetch('/api/integrations/procore/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'connect' })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.authUrl;
+      } else {
+        showToast('Failed to initiate Procore connection', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to connect to Procore:', error);
+      showToast('Failed to connect to Procore', 'error');
+    }
+  };
+
+  const handleProcoreDisconnect = async () => {
+    if (!confirm('Are you sure you want to disconnect Procore? This will stop all data synchronization.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/integrations/procore/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'disconnect' })
+      });
+      
+      if (response.ok) {
+        setProcoreStatus({ connected: false, loading: false, integration: null });
+        showToast('Procore disconnected successfully', 'success');
+      } else {
+        showToast('Failed to disconnect Procore', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to disconnect Procore:', error);
+      showToast('Failed to disconnect Procore', 'error');
+    }
   };
 
   // Cleanup preview URL on unmount
@@ -337,15 +433,101 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Additional Settings Placeholder */}
+        {/* Integrations */}
         <Card>
           <CardHeader>
-            <CardTitle>{t('settings.systemPreferences')}</CardTitle>
+            <CardTitle className="flex items-center">
+              <Puzzle className="h-5 w-5 mr-2" />
+              Integrations
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t('settings.additionalSystemSettings')}
-            </p>
+          <CardContent className="space-y-4">
+            {/* Procore Integration */}
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-orange-600" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                  </svg>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <h4 className="font-medium">Procore</h4>
+                    {procoreStatus.loading ? (
+                      <div className="h-4 w-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+                    ) : procoreStatus.connected ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-gray-400" />
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {procoreStatus.loading 
+                      ? 'Checking connection...'
+                      : procoreStatus.connected 
+                        ? 'Connected and syncing project data'
+                        : 'Connect to sync projects, workers, and timesheets'
+                    }
+                  </p>
+                  {procoreStatus.connected && procoreStatus.integration && (
+                    <p className="text-xs text-gray-400">
+                      Last sync: {procoreStatus.integration.lastSyncAt 
+                        ? new Date(procoreStatus.integration.lastSyncAt).toLocaleDateString()
+                        : 'Never'
+                      }
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                {procoreStatus.connected ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(procoreStatus.appUrl || 'https://app.procore.com', '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Open Procore
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleProcoreDisconnect}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Disconnect
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    onClick={handleProcoreConnect}
+                    disabled={procoreStatus.loading}
+                    size="sm"
+                  >
+                    Connect Procore
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Future integrations placeholder */}
+            <div className="flex items-center justify-between p-4 border rounded-lg opacity-50">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                  <Puzzle className="w-6 h-6 text-gray-400" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-medium text-gray-500">More integrations</h4>
+                  <p className="text-sm text-gray-400">
+                    Additional integrations coming soon
+                  </p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" disabled>
+                Coming Soon
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

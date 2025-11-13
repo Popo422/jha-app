@@ -1,0 +1,2 @@
+ALTER TABLE "companies" ALTER COLUMN "membership_info" SET DEFAULT '{"membershipLevel":"3","user":null,"memberships":[],"tokenVerifiedAt":"2025-10-15T04:34:43.534Z"}'::jsonb;--> statement-breakpoint
+ALTER TABLE "project_tasks" ADD COLUMN "completed" boolean DEFAULT false;

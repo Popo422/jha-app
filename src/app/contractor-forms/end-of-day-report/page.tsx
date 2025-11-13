@@ -240,6 +240,7 @@ export default function EndOfDayReportPage() {
                       onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
                       label={t('admin.companySubcontractor')}
                       required
+                      returnValue="name"
                     />
                   </div>
                   <div className="space-y-2">

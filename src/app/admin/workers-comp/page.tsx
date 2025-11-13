@@ -8,14 +8,20 @@ import {
   Search,
   FileText,
   Shield,
+  AlertTriangle,
+  Users,
+  TrendingUp,
+  Bell,
 } from "lucide-react";
 import RecentIncidentsTab from "@/components/admin/workers-comp/RecentIncidentsTab";
 import QuickIncidentReportsTab from "@/components/admin/workers-comp/QuickIncidentReportsTab";
 import IncidentReportsTab from "@/components/admin/workers-comp/IncidentReportsTab";
+import { useGetWorkersCompDataQuery } from "@/lib/features/workers-comp/workersCompApi";
 
 export default function WorkersCompPage() {
   const { t } = useTranslation('common');
   const [activeTab, setActiveTab] = useState('recent');
+  const { data: workersCompData, isLoading, error } = useGetWorkersCompDataQuery();
 
   return (
     <div className="p-4 md:p-6">
@@ -26,40 +32,98 @@ export default function WorkersCompPage() {
         </p>
       </div>
 
-      {/* Dashboard Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('workersComp.cards.knowTheRisk')}</CardTitle>
-            <Search className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{t('workersComp.cards.knowTheRiskDescription')}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('workersComp.cards.reportIncident')}</CardTitle>
-            <FileText className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{t('workersComp.cards.reportIncidentDescription')}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t('workersComp.cards.planSafetyTraining')}</CardTitle>
-            <Shield className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{t('workersComp.cards.planSafetyTrainingDescription')}</p>
-          </CardContent>
-        </Card>
+      {/* Top Section: Metrics and Action Required */}
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 mb-6 lg:mb-8">
+        {/* Metrics Cards */}
+        <div className="w-full lg:w-1/2">
+          <div className="grid grid-cols-2 gap-3 md:gap-6">
+            <Card className="bg-gray-50 dark:bg-gray-800">
+              <CardHeader className="pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                <CardTitle className="text-xs md:text-sm font-medium text-blue-600 flex items-center gap-1 md:gap-2">
+                  <FileText className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="leading-tight">{t('workersComp.metrics.recentIncidents')}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 px-3 md:px-6 pb-3 md:pb-6">
+                <div className="text-xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  {isLoading ? '...' : workersCompData?.metrics.recentIncidents ?? 0}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gray-50 dark:bg-gray-800">
+              <CardHeader className="pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                <CardTitle className="text-xs md:text-sm font-medium text-blue-600 flex items-center gap-1 md:gap-2">
+                  <FileText className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="leading-tight">{t('workersComp.metrics.needsAttention')}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 px-3 md:px-6 pb-3 md:pb-6">
+                <div className="text-xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  {isLoading ? '...' : workersCompData?.metrics.needsAttention ?? 0}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gray-50 dark:bg-gray-800">
+              <CardHeader className="pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                <CardTitle className="text-xs md:text-sm font-medium text-blue-600 flex items-center gap-1 md:gap-2">
+                  <FileText className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="leading-tight">{t('workersComp.metrics.nearMisses')}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 px-3 md:px-6 pb-3 md:pb-6">
+                <div className="text-xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  {isLoading ? '...' : workersCompData?.metrics.nearMisses ?? 0}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gray-50 dark:bg-gray-800">
+              <CardHeader className="pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                <CardTitle className="text-xs md:text-sm font-medium text-blue-600 flex items-center gap-1 md:gap-2">
+                  <FileText className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="leading-tight">{t('workersComp.metrics.trir')}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0 px-3 md:px-6 pb-3 md:pb-6">
+                <div className="text-xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  {isLoading ? '...' : workersCompData?.metrics.trir ?? 0}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Action Required Sidebar */}
+        <div className="w-full lg:w-1/2">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-4 md:p-6">
+            <div className="mb-4 md:mb-6">
+              <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100">{t('workersComp.actionRequired.title')}</h2>
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('workersComp.actionRequired.asOf')} 07 Dec 2023</p>
+            </div>
+            <div className="space-y-3 md:space-y-4">
+              {isLoading ? (
+                <div className="text-sm text-muted-foreground">{t('workersComp.actionRequired.loadingActionItems')}</div>
+              ) : (
+                workersCompData?.actionItems.map((item) => (
+                  <div key={item.id} className="flex items-start gap-2 md:gap-3 p-3 md:p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-800/50">
+                    <div className="w-5 h-5 md:w-6 md:h-6 bg-red-500 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-white text-xs font-bold">!</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-xs md:text-sm text-gray-900 dark:text-gray-100 mb-1 leading-tight">{item.title}</h4>
+                      <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{item.description}</p>
+                    </div>
+                  </div>
+                )) ?? <div className="text-xs md:text-sm text-muted-foreground">{t('workersComp.actionRequired.noActionItems')}</div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Incident Reports Tabs */}
+      {/* Full Width Tabs Section */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="recent" className="text-xs sm:text-sm">

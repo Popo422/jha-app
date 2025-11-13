@@ -3,9 +3,10 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, useGetContractorLimitQuery, type Contractor } from "@/lib/features/contractors/contractorsApi";
+import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, useGetContractorLimitQuery, useSyncToProcoreMutation, type Contractor } from "@/lib/features/contractors/contractorsApi";
 import { useContractorExportAll } from "@/hooks/useExportAll";
 import { useCreateSubcontractorMutation } from "@/lib/features/subcontractors/subcontractorsApi";
+import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
 import { AdminDataTable } from "@/components/admin/AdminDataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +16,10 @@ import { Badge } from "@/components/ui/badge";
 import { Toast, useToast } from "@/components/ui/toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MultiSelect } from "@/components/ui/multi-select";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
 import { ContractorBulkUploadModal } from "@/components/admin/ContractorBulkUploadModal";
-import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy, Upload, ChevronDown } from "lucide-react";
+import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy, Upload, ChevronDown, Building } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 type ViewMode = 'list' | 'add' | 'edit';
@@ -27,6 +29,7 @@ export default function ContractorsPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [editingContractor, setEditingContractor] = useState<Contractor | null>(null);
   const [formData, setFormData] = useState({
@@ -35,8 +38,20 @@ export default function ContractorsPage() {
     email: "",
     code: "",
     rate: "",
+    overtimeRate: "",
+    doubleTimeRate: "",
     companyName: "",
     language: "en",
+    type: "contractor",
+    address: "",
+    phone: "",
+    race: "",
+    gender: "",
+    dateOfHire: "",
+    workClassification: "",
+    projectType: "",
+    group: "",
+    projectIds: [] as string[],
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -44,6 +59,9 @@ export default function ContractorsPage() {
   const [isSubcontractorModalOpen, setIsSubcontractorModalOpen] = useState(false);
   const [newSubcontractorName, setNewSubcontractorName] = useState("");
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [syncingContractor, setSyncingContractor] = useState<Contractor | null>(null);
+  const [existingProcorePerson, setExistingProcorePerson] = useState<any>(null);
   
   const { toast, showToast, hideToast } = useToast();
   
@@ -60,12 +78,20 @@ export default function ContractorsPage() {
     fetchAll: true,
     authType: 'admin'
   });
+
+  // Get projects for assignment
+  const { data: projectsData } = useGetProjectsQuery({
+    page: 1,
+    pageSize: 100,
+    authType: 'admin'
+  });
   
   const [deleteContractor, { isLoading: isDeleting }] = useDeleteContractorMutation();
   const exportAllContractors = useContractorExportAll();
   const [createContractor, { isLoading: isCreating, error: createError }] = useCreateContractorMutation();
   const [updateContractor, { isLoading: isUpdating, error: updateError }] = useUpdateContractorMutation();
   const [createSubcontractor, { isLoading: isCreatingSubcontractor }] = useCreateSubcontractorMutation();
+  const [syncToProcore, { isLoading: isSyncingToProcore }] = useSyncToProcoreMutation();
 
   // Function to fetch all contractors for export
   const handleExportAll = useCallback(async () => {
@@ -96,8 +122,20 @@ export default function ContractorsPage() {
       email: contractor.email,
       code: contractor.code,
       rate: contractor.rate || "0.00",
+      overtimeRate: contractor.overtimeRate || "",
+      doubleTimeRate: contractor.doubleTimeRate || "",
       companyName: contractor.companyName || "",
       language: contractor.language || "en",
+      type: contractor.type || "contractor",
+      address: contractor.address || "",
+      phone: contractor.phone || "",
+      race: contractor.race || "",
+      gender: contractor.gender || "",
+      dateOfHire: contractor.dateOfHire || "",
+      workClassification: contractor.workClassification || "",
+      projectType: contractor.projectType || "",
+      group: contractor.group?.toString() || "",
+      projectIds: (contractor as any).projectIds || [],
     });
     setFormErrors({});
     setEmailMessage("");
@@ -112,8 +150,20 @@ export default function ContractorsPage() {
       email: "",
       code: "",
       rate: "0.00",
+      overtimeRate: "",
+      doubleTimeRate: "",
       companyName: "",
       language: "en",
+      type: "contractor",
+      address: "",
+      phone: "",
+      race: "",
+      gender: "",
+      dateOfHire: "",
+      workClassification: "",
+      projectType: "",
+      group: "",
+      projectIds: [],
     });
     setFormErrors({});
     setEmailMessage("");
@@ -123,7 +173,7 @@ export default function ContractorsPage() {
   const handleCancel = () => {
     setViewMode('list');
     setEditingContractor(null);
-    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en" });
+    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", phone: "", race: "", gender: "", dateOfHire: "", workClassification: "", projectType: "", group: "", projectIds: [] });
     setFormErrors({});
     setEmailMessage("");
   };
@@ -187,14 +237,26 @@ export default function ContractorsPage() {
           email: "", 
           code: "", 
           rate: "", 
+          overtimeRate: "",
+          doubleTimeRate: "",
           companyName: savedCompanyName, 
-          language: "en" 
+          language: "en",
+          type: "contractor",
+          address: "",
+          phone: "",
+          race: "",
+          gender: "",
+          dateOfHire: "",
+          workClassification: "",
+          projectType: "",
+          group: "",
+          projectIds: []
         });
         setFormErrors({});
       } else {
         setViewMode('list');
         setEditingContractor(null);
-        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", companyName: "", language: "en" });
+        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", phone: "", race: "", gender: "", dateOfHire: "", workClassification: "", projectType: "", group: "", projectIds: [] });
       }
     } catch (error: any) {
       console.error('Failed to save contractor:', error);
@@ -215,10 +277,24 @@ export default function ContractorsPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: value,
+      };
+      
+      // Auto-calculate overtime and double time rates when rate changes
+      if (name === 'rate' && value) {
+        const rateValue = parseFloat(value);
+        if (!isNaN(rateValue)) {
+          // Always recalculate when standard rate changes
+          newData.overtimeRate = (rateValue * 1.5).toFixed(2);
+          newData.doubleTimeRate = (rateValue * 2).toFixed(2);
+        }
+      }
+      
+      return newData;
+    });
     
     if (formErrors[name]) {
       setFormErrors(prev => ({
@@ -312,9 +388,69 @@ export default function ContractorsPage() {
     }
   };
 
+  const handleSyncToProcore = async (contractor: Contractor) => {
+    try {
+      showToast(`Syncing ${contractor.firstName} ${contractor.lastName} to Procore...`, 'info');
+      const result = await syncToProcore({ contractorIds: [contractor.id] }).unwrap();
+      
+      if (result.results && result.results.length > 0) {
+        const contractorResult = result.results[0];
+        
+        if (contractorResult.status === 'exists') {
+          // Show modal for existing contractors
+          setSyncingContractor(contractor);
+          setExistingProcorePerson({
+            name: `${contractor.firstName} ${contractor.lastName}`,
+            employee_id: contractor.code,
+            procorePartyId: contractorResult.procorePartyId
+          });
+          setShowSyncModal(true);
+          return;
+        } else if (contractorResult.status === 'created') {
+          showToast(`${contractor.firstName} ${contractor.lastName} synced to Procore successfully`, 'success');
+        }
+      }
+      
+      if (result.errors && result.errors.length > 0) {
+        showToast(result.errors[0].error, 'error');
+      }
+    } catch (error: any) {
+      const errorMessage = error?.data?.error || 'Failed to sync contractor to Procore';
+      showToast(`Error syncing ${contractor.firstName} ${contractor.lastName}: ${errorMessage}`, 'error');
+    }
+  };
+
+  const handleConfirmSync = async () => {
+    if (!syncingContractor) return;
+    
+    try {
+      showToast(`Creating new person in Procore for ${syncingContractor.firstName} ${syncingContractor.lastName}...`, 'info');
+      const result = await syncToProcore({ contractorIds: [syncingContractor.id] }).unwrap();
+      showToast(`${syncingContractor.firstName} ${syncingContractor.lastName} synced to Procore successfully`, 'success');
+      setShowSyncModal(false);
+      setSyncingContractor(null);
+      setExistingProcorePerson(null);
+    } catch (error: any) {
+      const errorMessage = error?.data?.error || 'Failed to sync contractor to Procore';
+      showToast(`Error syncing ${syncingContractor.firstName} ${syncingContractor.lastName}: ${errorMessage}`, 'error');
+    }
+  };
+
+  const handleCancelSync = () => {
+    setShowSyncModal(false);
+    setSyncingContractor(null);
+    setExistingProcorePerson(null);
+  };
 
   const allContractors = contractorsData?.contractors || [];
-  const contractors = allContractors;
+  
+  // Apply type filter
+  const contractors = typeFilter === "all" 
+    ? allContractors 
+    : allContractors.filter(contractor => {
+        const contractorType = contractor.type || 'contractor';
+        return contractorType === typeFilter;
+      });
 
   // Define table columns
   const columns: ColumnDef<Contractor>[] = [
@@ -424,6 +560,61 @@ export default function ContractorsPage() {
       },
     },
     {
+      accessorKey: "type",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Type
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const type = getValue() as string | null;
+        return (
+          <Badge 
+            variant={type === 'foreman' ? 'default' : 'secondary'}
+            className="text-xs"
+          >
+            {type === 'foreman' ? 'Foreman' : 'Contractor'}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "projectNames",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Projects
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const contractor = row.original;
+        const projectNames = (contractor as any).projectNames as string[] | null;
+        
+        if (projectNames && projectNames.length > 0) {
+          const displayText = projectNames.join(', ');
+          return (
+            <div 
+              className="text-sm max-w-[200px] truncate" 
+              title={displayText}
+            >
+              {displayText}
+            </div>
+          );
+        } else {
+          return <span className="text-sm text-muted-foreground">No projects assigned</span>;
+        }
+      },
+    },
+    {
       accessorKey: "language",
       header: ({ column }) => (
         <Button
@@ -450,23 +641,6 @@ export default function ContractorsPage() {
             {getLanguageDisplay(language)}
           </div>
         );
-      },
-    },
-    {
-      accessorKey: "createdAt",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium text-sm"
-        >
-{t('contractors.created')}
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ getValue }) => {
-        const date = new Date(getValue() as string);
-        return date.toLocaleDateString();
       },
     },
   ];
@@ -505,6 +679,7 @@ export default function ContractorsPage() {
                     placeholder={t('contractors.companyNamePlaceholder')}
                     disabled={isFormLoading}
                     authType="admin"
+                    returnValue="name"
                   />
                 </div>
                 <div className="flex items-end">
@@ -639,6 +814,83 @@ export default function ContractorsPage() {
               )}
             </div>
 
+            {/* Overtime Rate - Only show when standard rate has value */}
+            {formData.rate && (
+              <div className="space-y-2">
+                <Label htmlFor="overtimeRate">Overtime Rate</Label>
+                <Input
+                  id="overtimeRate"
+                  name="overtimeRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="9999.99"
+                  value={formData.overtimeRate}
+                  onChange={handleInputChange}
+                  placeholder="Auto-calculated as 1.5x standard rate"
+                  className={formErrors.overtimeRate ? "border-red-500" : ""}
+                  disabled={isFormLoading}
+                />
+                {formErrors.overtimeRate && (
+                  <p className="text-sm text-red-500">{formErrors.overtimeRate}</p>
+                )}
+              </div>
+            )}
+
+            {/* Double Time Rate - Only show when standard rate has value */}
+            {formData.rate && (
+              <div className="space-y-2">
+                <Label htmlFor="doubleTimeRate">Double Time Rate</Label>
+                <Input
+                  id="doubleTimeRate"
+                  name="doubleTimeRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="9999.99"
+                  value={formData.doubleTimeRate}
+                  onChange={handleInputChange}
+                  placeholder="Auto-calculated as 2x standard rate"
+                  className={formErrors.doubleTimeRate ? "border-red-500" : ""}
+                  disabled={isFormLoading}
+                />
+                {formErrors.doubleTimeRate && (
+                  <p className="text-sm text-red-500">{formErrors.doubleTimeRate}</p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="type">Type</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isFormLoading}
+                    className="w-full justify-between"
+                  >
+                    {formData.type === 'foreman' ? 'Foreman' : 'Contractor'}
+                    <ArrowUpDown className="ml-2 h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full">
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, type: 'contractor' }))}
+                  >
+                    Contractor
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, type: 'foreman' }))}
+                  >
+                    Foreman
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className="text-xs text-muted-foreground">
+                Select whether this person is a contractor or foreman
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="language">Language Preference</Label>
               <DropdownMenu>
@@ -680,6 +932,488 @@ export default function ContractorsPage() {
               </DropdownMenu>
               <p className="text-xs text-muted-foreground">
                 {t('contractors.languagePreferenceHelp')}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address (Optional)</Label>
+              <Input
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                placeholder="Enter address"
+                disabled={isFormLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Complete address for the contractor
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone (Optional)</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="Enter phone number"
+                  disabled={isFormLoading}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="race">Race (Optional)</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isFormLoading}
+                      className="w-full justify-between"
+                    >
+                      {formData.race || "Select race"}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: '' }))}
+                    >
+                      Not specified
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'American Indian or Alaska Native' }))}
+                    >
+                      American Indian or Alaska Native
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'Asian' }))}
+                    >
+                      Asian
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'Black or African American' }))}
+                    >
+                      Black or African American
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'Native Hawaiian or Other Pacific Islander' }))}
+                    >
+                      Native Hawaiian or Other Pacific Islander
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'White' }))}
+                    >
+                      White
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'Hispanic or Latino' }))}
+                    >
+                      Hispanic or Latino
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender (Optional)</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isFormLoading}
+                    className="w-full justify-between"
+                  >
+                    {formData.gender || "Select gender"}
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full">
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, gender: '' }))}
+                  >
+                    Not specified
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, gender: 'Male' }))}
+                  >
+                    Male
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, gender: 'Female' }))}
+                  >
+                    Female
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, gender: 'Other' }))}
+                  >
+                    Other
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dateOfHire">Date of Hire (Optional)</Label>
+                <Input
+                  id="dateOfHire"
+                  name="dateOfHire"
+                  type="date"
+                  value={formData.dateOfHire}
+                  onChange={handleInputChange}
+                  disabled={isFormLoading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  The date this contractor was hired
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="group">Group (Optional)</Label>
+                <Input
+                  id="group"
+                  name="group"
+                  type="number"
+                  min="0"
+                  value={formData.group}
+                  onChange={handleInputChange}
+                  placeholder="Enter group number"
+                  disabled={isFormLoading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Group number for organization
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="workClassification">Work Classification (Optional)</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isFormLoading}
+                      className="w-full justify-between"
+                    >
+                      {formData.workClassification || "Select work classification"}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full max-h-64 overflow-y-auto">
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, workClassification: '' }))}
+                    >
+                      Not specified
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Asbestos Worker / Remover' }))}>
+                      Asbestos Worker / Remover
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Asphalt Paver Operator' }))}>
+                      Asphalt Paver Operator
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Backhoe / Excavator Operator' }))}>
+                      Backhoe / Excavator Operator
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Bricklayer / Blocklayer' }))}>
+                      Bricklayer / Blocklayer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Bulldozer Operator' }))}>
+                      Bulldozer Operator
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Carpenter, Finish' }))}>
+                      Carpenter, Finish
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Carpenter, Formwork / Concrete Forms' }))}>
+                      Carpenter, Formwork / Concrete Forms
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Carpenter, Framing' }))}>
+                      Carpenter, Framing
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Carpenter, General' }))}>
+                      Carpenter, General
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Carpet Layer' }))}>
+                      Carpet Layer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Cement Mason / Concrete Finisher' }))}>
+                      Cement Mason / Concrete Finisher
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Cleanup Laborer / Final Cleanup' }))}>
+                      Cleanup Laborer / Final Cleanup
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Concrete Laborer' }))}>
+                      Concrete Laborer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Concrete Paving Machine Operator' }))}>
+                      Concrete Paving Machine Operator
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Crane Operator (Mobile)' }))}>
+                      Crane Operator (Mobile)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Demolition Laborer' }))}>
+                      Demolition Laborer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Drill Rig Operator' }))}>
+                      Drill Rig Operator
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Drywall Finisher / Taper' }))}>
+                      Drywall Finisher / Taper
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Drywall Hanger' }))}>
+                      Drywall Hanger
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Electrician, Inside Wireman' }))}>
+                      Electrician, Inside Wireman
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Electrician, Power Line / Outside' }))}>
+                      Electrician, Power Line / Outside
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Flagger / Traffic Control' }))}>
+                      Flagger / Traffic Control
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Flatbed Truck Driver' }))}>
+                      Flatbed Truck Driver
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Floor Layer (Resilient Flooring)' }))}>
+                      Floor Layer (Resilient Flooring)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Foreman (Working)' }))}>
+                      Foreman (Working)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Forklift / Telehandler Operator' }))}>
+                      Forklift / Telehandler Operator
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Glazier' }))}>
+                      Glazier
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Grader / Blade Operator' }))}>
+                      Grader / Blade Operator
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Hazmat Laborer' }))}>
+                      Hazmat Laborer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'HVAC Technician / Sheet Metal' }))}>
+                      HVAC Technician / Sheet Metal
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Ironworker, Ornamental' }))}>
+                      Ironworker, Ornamental
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Ironworker, Reinforcing (Rebar)' }))}>
+                      Ironworker, Reinforcing (Rebar)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Ironworker, Structural' }))}>
+                      Ironworker, Structural
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Laborer, Common/General' }))}>
+                      Laborer, Common/General
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Laborer, Skilled' }))}>
+                      Laborer, Skilled
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Landscape Laborer' }))}>
+                      Landscape Laborer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Loader Operator' }))}>
+                      Loader Operator
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Low Voltage Technician' }))}>
+                      Low Voltage Technician
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Lowboy Truck Driver (Equipment Hauling)' }))}>
+                      Lowboy Truck Driver (Equipment Hauling)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Mason Tender (Brick/Block)' }))}>
+                      Mason Tender (Brick/Block)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Mason Tender (Cement/Concrete)' }))}>
+                      Mason Tender (Cement/Concrete)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Millwright' }))}>
+                      Millwright
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Mixer Truck Driver (Ready-Mix Concrete)' }))}>
+                      Mixer Truck Driver (Ready-Mix Concrete)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Oiler' }))}>
+                      Oiler
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Operating Engineer' }))}>
+                      Operating Engineer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Painter (Brush/Roller)' }))}>
+                      Painter (Brush/Roller)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Painter (Spray)' }))}>
+                      Painter (Spray)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Pile Driver Operator' }))}>
+                      Pile Driver Operator
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Pipe Layer / Underground Utility Laborer' }))}>
+                      Pipe Layer / Underground Utility Laborer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Pipefitter / Steamfitter' }))}>
+                      Pipefitter / Steamfitter
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Plasterer' }))}>
+                      Plasterer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Plumber' }))}>
+                      Plumber
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Pump Operator (Concrete Pump)' }))}>
+                      Pump Operator (Concrete Pump)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Roller / Compactor Operator' }))}>
+                      Roller / Compactor Operator
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Roofer' }))}>
+                      Roofer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Scaffold Builder' }))}>
+                      Scaffold Builder
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Scraper Operator' }))}>
+                      Scraper Operator
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Sheet Metal Worker' }))}>
+                      Sheet Metal Worker
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Sprinkler Fitter (Fire Protection)' }))}>
+                      Sprinkler Fitter (Fire Protection)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Stonemason' }))}>
+                      Stonemason
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Survey Instrument Person' }))}>
+                      Survey Instrument Person
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Survey Party Chief' }))}>
+                      Survey Party Chief
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Survey Rodman / Chainman' }))}>
+                      Survey Rodman / Chainman
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Telecom Installer' }))}>
+                      Telecom Installer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Terrazzo Finisher' }))}>
+                      Terrazzo Finisher
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Terrazzo Worker' }))}>
+                      Terrazzo Worker
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Tile Finisher / Helper' }))}>
+                      Tile Finisher / Helper
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Tile Setter (Ceramic/Porcelain)' }))}>
+                      Tile Setter (Ceramic/Porcelain)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Tower Crane Operator' }))}>
+                      Tower Crane Operator
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Truck Driver, Dump Truck – Semi / Trailer' }))}>
+                      Truck Driver, Dump Truck – Semi / Trailer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Truck Driver, Dump Truck – Single Axle' }))}>
+                      Truck Driver, Dump Truck – Single Axle
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Truck Driver, Dump Truck – Tandem Axle' }))}>
+                      Truck Driver, Dump Truck – Tandem Axle
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Truck Driver, Light (Pickup/Service Truck)' }))}>
+                      Truck Driver, Light (Pickup/Service Truck)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Watchman / Security Guard' }))}>
+                      Watchman / Security Guard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Water Truck Driver' }))}>
+                      Water Truck Driver
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Waterproofer' }))}>
+                      Waterproofer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Working Owner (Construction)' }))}>
+                      Working Owner (Construction)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <p className="text-xs text-muted-foreground">
+                  Classification of work performed
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="projectType">Project Type (Optional)</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isFormLoading}
+                      className="w-full justify-between"
+                    >
+                      {formData.projectType || "Select project type"}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, projectType: '' }))}
+                    >
+                      Not specified
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, projectType: 'ALL' }))}
+                    >
+                      ALL
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, projectType: 'BLD' }))}
+                    >
+                      BLD (Building)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, projectType: 'HWY' }))}
+                    >
+                      HWY (Highway)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, projectType: 'FLT' }))}
+                    >
+                      FLT (Fleet)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <p className="text-xs text-muted-foreground">
+                  Type of projects this contractor works on
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Projects (Optional)</Label>
+              <MultiSelect
+                options={projectsData?.projects?.map(project => ({
+                  value: project.id,
+                  label: project.name
+                })) || []}
+                value={formData.projectIds}
+                onValueChange={(value) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    projectIds: value
+                  }));
+                }}
+                placeholder="Select projects..."
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Select which projects this contractor will be assigned to
               </p>
             </div>
 
@@ -814,15 +1548,45 @@ export default function ContractorsPage() {
               </DropdownMenu>
             </div>
 
-            {companyFilter !== "all" && (
+            <div className="space-y-1">
+              <div className="text-xs font-medium">Type</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-28 justify-between text-xs">
+                    <span className="truncate">
+                      {typeFilter === "all" ? "All Types" : 
+                       typeFilter === "contractor" ? "Workmen" : 
+                       typeFilter === "foreman" ? "Foremen" : "All Types"}
+                    </span>
+                    <ChevronDown className="h-3 w-3 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setTypeFilter("all")}>
+                    All Types
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTypeFilter("contractor")}>
+                    Workmen
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTypeFilter("foreman")}>
+                    Foremen
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {(companyFilter !== "all" || typeFilter !== "all") && (
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => setCompanyFilter("all")}
+                onClick={() => {
+                  setCompanyFilter("all");
+                  setTypeFilter("all");
+                }}
                 className="gap-1 text-xs"
               >
                 <X className="h-3 w-3" />
-                Clear Filter
+                Clear Filters
               </Button>
             )}
           </div>
@@ -833,9 +1597,17 @@ export default function ContractorsPage() {
         isFetching={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        customActions={[
+          {
+            label: "Sync to Procore",
+            icon: Building,
+            onClick: handleSyncToProcore,
+            disabled: isSyncingToProcore,
+          }
+        ]}
         getRowId={(contractor) => contractor.id}
         exportFilename="contractors"
-        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), 'Language', t('contractors.created')]}
+        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), 'Type', 'Projects', 'Language']}
         getExportData={(contractor) => [
           contractor.firstName,
           contractor.lastName,
@@ -843,10 +1615,11 @@ export default function ContractorsPage() {
           contractor.code,
           `$${(contractor.rate ? parseFloat(contractor.rate) : 0).toFixed(2)}${t('contractors.perHour')}`,
           contractor.companyName || "",
+          (contractor as any).type === 'foreman' ? 'Foreman' : 'Contractor',
+          (contractor as any).projectNames?.join(', ') || 'No projects assigned',
           contractor.language === 'es' ? 'Español' :
           contractor.language === 'pl' ? 'Polski' :
-          contractor.language === 'zh' ? '中文' : 'English',
-          new Date(contractor.createdAt).toLocaleDateString()
+          contractor.language === 'zh' ? '中文' : 'English'
         ]}
         searchValue={search}
         onSearchChange={setSearch}
@@ -858,6 +1631,38 @@ export default function ContractorsPage() {
   return (
     <div className="p-4 md:p-6">
       {viewMode === 'list' ? renderListView() : renderFormView()}
+
+      {/* Sync Confirmation Modal */}
+      <AlertDialog open={showSyncModal} onOpenChange={setShowSyncModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Workmen Already Exists in Procore</AlertDialogTitle>
+            <AlertDialogDescription>
+              {`The workmen "${syncingContractor?.firstName} ${syncingContractor?.lastName}" already exists in Procore.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {existingProcorePerson && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Existing Procore Person:</h4>
+              <p className="text-sm font-medium">{existingProcorePerson.name}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Employee ID: {existingProcorePerson.employee_id}</p>
+              {existingProcorePerson.procorePartyId && (
+                <p className="text-sm text-gray-600 dark:text-gray-400">Procore ID: {existingProcorePerson.procorePartyId}</p>
+              )}
+            </div>
+          )}
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+            Do you still want to create a new person in Procore? This will create a duplicate.
+          </p>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelSync}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSync} disabled={isSyncingToProcore}>
+              {isSyncingToProcore ? 'Syncing...' : 'Sync Anyway'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Toast
         message={toast.message}
         type={toast.type}

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Eye, EyeOff } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const { t, i18n } = useTranslation('common')
   const [contractorCode, setContractorCode] = useState('')
   const [showCode, setShowCode] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState('')
   const dispatch = useAppDispatch()
   const [login, { isLoading }] = useLoginMutation()
@@ -26,7 +28,7 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const result = await login({ contractorCode }).unwrap()
+      const result = await login({ contractorCode, rememberMe }).unwrap()
       
       // Apply contractor's language preference immediately
       if (result.contractor?.language) {
@@ -87,6 +89,16 @@ export default function LoginPage() {
                 {error && (
                   <p className="text-sm text-destructive">{error}</p>
                 )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
+                />
+                <Label htmlFor="rememberMe" className="text-sm cursor-pointer text-muted-foreground">
+                  {t('auth.rememberMe', 'Remember me for 30 days')}
+                </Label>
               </div>
               <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
                 {isLoading ? t('common.loggingIn') : t('auth.login')}

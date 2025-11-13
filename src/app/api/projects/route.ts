@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, desc, and, or, ilike, sql, count } from 'drizzle-orm'
+import { eq, desc, and, or, ilike, sql, count, gte, lte } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { projects, companies } from '@/lib/db/schema'
+import { projects, companies, subcontractors, subcontractorProjects, projectDocuments } from '@/lib/db/schema'
 import { authenticateRequest } from '@/lib/auth-utils'
+import { del } from '@vercel/blob'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -113,6 +114,9 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const projectManager = searchParams.get('projectManager')
     const location = searchParams.get('location')
+    const subcontractorName = searchParams.get('subcontractorName')
+    const dateFrom = searchParams.get('dateFrom')
+    const dateTo = searchParams.get('dateTo')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const limit = pageSize
@@ -143,13 +147,53 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(projects.location, location))
     }
 
+    // Add subcontractor filter if specified
+    if (subcontractorName) {
+      // Filter by subcontractor name using junction table
+      const subcontractorCondition = sql`EXISTS (
+        SELECT 1 FROM ${subcontractorProjects} sp
+        JOIN ${subcontractors} s ON sp.subcontractor_id = s.id
+        WHERE sp.project_id = ${projects.id} 
+        AND s.name = ${subcontractorName}
+      )`;
+      conditions.push(subcontractorCondition);
+    }
+
+    // Add date filters if specified
+    if (dateFrom) {
+      conditions.push(gte(projects.createdAt, new Date(dateFrom)))
+    }
+    if (dateTo) {
+      // Add one day to dateTo to include the entire day
+      const dateToEnd = new Date(dateTo)
+      dateToEnd.setDate(dateToEnd.getDate() + 1)
+      conditions.push(lte(projects.createdAt, dateToEnd))
+    }
+
     // Get total count for pagination
     const countResult = await db.select({ count: sql`count(*)` }).from(projects)
       .where(and(...conditions))
     const totalCount = Number(countResult[0].count)
 
-    // Execute query with pagination
-    const result = await db.select().from(projects)
+    // Execute query with pagination and subcontractor count
+    const result = await db.select({
+      id: projects.id,
+      name: projects.name,
+      projectManager: projects.projectManager,
+      location: projects.location,
+      companyId: projects.companyId,
+      projectCost: projects.projectCost,
+      startDate: projects.startDate,
+      endDate: projects.endDate,
+      projectCode: projects.projectCode,
+      contractId: projects.contractId,
+      createdAt: projects.createdAt,
+      updatedAt: projects.updatedAt,
+      subcontractorCount: sql<number>`(
+        SELECT COALESCE(COUNT(*), 0) FROM subcontractor_projects
+        WHERE subcontractor_projects.project_id = projects.id
+      )`
+    }).from(projects)
       .where(and(...conditions))
       .orderBy(desc(projects.createdAt))
       .limit(limit)
@@ -252,13 +296,19 @@ export async function POST(request: NextRequest) {
         )
       }
 
+
       // Prepare project data with projectManager from first project manager in company or default
-      const preparedProjects = uniqueProjects.map((project: any) => ({
-        name: project.name.trim(),
-        projectManager: 'Project Manager', // Default for onboarding, can be updated later
-        location: project.location.trim(),
-        companyId: auth.admin.companyId,
-      }))
+      const preparedProjects = uniqueProjects.map((project: any) => {
+        return {
+          name: project.name.trim(),
+          projectManager: 'Project Manager', // Default for onboarding, can be updated later
+          location: project.location.trim(),
+          companyId: auth.admin.companyId,
+          projectCost: project.projectCost ? project.projectCost.toString() : null,
+          startDate: project.startDate || null,
+          endDate: project.endDate || null,
+        }
+      })
 
       // Create projects
       const createdProjects = await db.insert(projects).values(preparedProjects).returning()
@@ -272,7 +322,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single project creation (existing logic)
-    const { name, projectManager, location } = body
+    const { name, projectManager, location, projectCost, startDate, endDate, projectCode, contractId } = body
 
     // Validate required fields
     if (!name || !projectManager || !location) {
@@ -322,6 +372,11 @@ export async function POST(request: NextRequest) {
       projectManager: projectManager.trim(),
       location: location.trim(),
       companyId: auth.admin.companyId,
+      projectCost: projectCost ? projectCost.toString() : null,
+      startDate: startDate || null,
+      endDate: endDate || null,
+      projectCode: projectCode ? projectCode.trim() : null,
+      contractId: contractId ? contractId.trim() : null,
     }
 
     // Create project record
@@ -375,7 +430,7 @@ export async function PUT(request: NextRequest) {
 
 
     const body = await request.json()
-    const { id, name, projectManager, location } = body
+    const { id, name, projectManager, location, projectCost, startDate, endDate, projectCode, contractId } = body
 
     if (!id) {
       return NextResponse.json(
@@ -412,6 +467,11 @@ export async function PUT(request: NextRequest) {
       name: name.trim(),
       projectManager: projectManager.trim(),
       location: location.trim(),
+      projectCost: projectCost ? projectCost.toString() : null,
+      startDate: startDate || null,
+      endDate: endDate || null,
+      projectCode: projectCode ? projectCode.trim() : null,
+      contractId: contractId ? contractId.trim() : null,
       updatedAt: new Date()
     }
 
@@ -493,13 +553,34 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Delete project
+    // Get all project documents to clean up Vercel Blob storage
+    const documents = await db.select({
+      blobKey: projectDocuments.blobKey,
+      url: projectDocuments.url
+    }).from(projectDocuments)
+      .where(eq(projectDocuments.projectId, projectId))
+
+    // Delete files from Vercel Blob storage
+    const blobDeletionPromises = documents.map(async (doc) => {
+      try {
+        await del(doc.url)
+        console.log(`Successfully deleted blob: ${doc.blobKey}`)
+      } catch (error) {
+        console.error(`Failed to delete blob ${doc.blobKey}:`, error)
+        // Continue with deletion even if blob cleanup fails
+      }
+    })
+
+    // Wait for all blob deletions to complete (but don't fail if some fail)
+    await Promise.allSettled(blobDeletionPromises)
+
+    // Delete project (this will cascade delete all related records including project_documents)
     await db.delete(projects)
       .where(eq(projects.id, projectId))
 
     return NextResponse.json({
       success: true,
-      message: 'Project deleted successfully'
+      message: 'Project and all associated files deleted successfully'
     })
 
   } catch (error) {

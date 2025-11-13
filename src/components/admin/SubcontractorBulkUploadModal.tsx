@@ -22,6 +22,7 @@ import * as XLSX from "xlsx";
 interface SubcontractorRow {
   name: string;
   contractAmount?: string;
+  foreman?: string;
   _fileName?: string;
 }
 
@@ -42,7 +43,8 @@ export function SubcontractorBulkUploadModal({ isOpen, onClose, onUploadSuccess 
 
   const csvSchema = [
     { field: "name", label: "Company Name", required: true, example: "ABC Construction Co." },
-    { field: "contractAmount", label: "Contract Amount", required: false, example: "50000.00" }
+    { field: "contractAmount", label: "Contract Amount", required: false, example: "50000.00" },
+    { field: "foreman", label: "Foreman", required: false, example: "John Smith" }
   ];
 
   const downloadTemplate = (format: "csv" | "excel" = "csv") => {
@@ -109,6 +111,9 @@ export function SubcontractorBulkUploadModal({ isOpen, onClose, onUploadSuccess 
           case "contractamount":
             row.contractAmount = value;
             break;
+          case "foreman":
+            row.foreman = value;
+            break;
         }
       });
 
@@ -152,6 +157,9 @@ export function SubcontractorBulkUploadModal({ isOpen, onClose, onUploadSuccess 
           case "contract amount":
           case "contractamount":
             row.contractAmount = value;
+            break;
+          case "foreman":
+            row.foreman = value;
             break;
         }
       });
@@ -478,6 +486,18 @@ export function SubcontractorBulkUploadModal({ isOpen, onClose, onUploadSuccess 
                       <span className="font-medium text-gray-500 dark:text-gray-400">Company:</span>
                       <p className="text-gray-900 dark:text-gray-100">{subcontractor.name}</p>
                     </div>
+                    {subcontractor.contractAmount && (
+                      <div>
+                        <span className="font-medium text-gray-500 dark:text-gray-400">Contract Amount:</span>
+                        <p className="text-gray-900 dark:text-gray-100">${subcontractor.contractAmount}</p>
+                      </div>
+                    )}
+                    {subcontractor.foreman && (
+                      <div>
+                        <span className="font-medium text-gray-500 dark:text-gray-400">Foreman:</span>
+                        <p className="text-gray-900 dark:text-gray-100">{subcontractor.foreman}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -495,6 +515,9 @@ export function SubcontractorBulkUploadModal({ isOpen, onClose, onUploadSuccess 
                   <th className="text-left p-4 border-b border-gray-200 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-100">
                     Contract Amount
                   </th>
+                  <th className="text-left p-4 border-b border-gray-200 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-100">
+                    Foreman
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -505,6 +528,7 @@ export function SubcontractorBulkUploadModal({ isOpen, onClose, onUploadSuccess 
                   >
                     <td className="p-4 text-gray-900 dark:text-gray-100">{subcontractor.name}</td>
                     <td className="p-4 text-gray-900 dark:text-gray-100">{subcontractor.contractAmount ? `$${subcontractor.contractAmount}` : '-'}</td>
+                    <td className="p-4 text-gray-900 dark:text-gray-100">{subcontractor.foreman || '-'}</td>
                   </tr>
                 ))}
               </tbody>

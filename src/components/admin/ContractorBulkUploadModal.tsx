@@ -18,6 +18,11 @@ interface ContractorRow {
   email: string;
   rate?: string;
   companyName?: string;
+  type?: string;
+  address?: string;
+  phone?: string;
+  race?: string;
+  gender?: string;
   _fileName?: string;
 }
 
@@ -52,6 +57,11 @@ export function ContractorBulkUploadModal({
     { field: 'email', label: 'Email', required: true, example: 'john.doe@example.com' },
     { field: 'rate', label: 'Hourly Rate', required: false, example: '25.00' },
     { field: 'companyName', label: 'Company/Subcontractor', required: false, example: 'ABC Construction' },
+    { field: 'type', label: 'Type', required: false, example: 'contractor' },
+    { field: 'address', label: 'Address', required: false, example: '123 Main St, City, State' },
+    { field: 'phone', label: 'Phone', required: false, example: '555-123-4567' },
+    { field: 'race', label: 'Race', required: false, example: 'Hispanic' },
+    { field: 'gender', label: 'Gender', required: false, example: 'Male' },
   ];
 
   const downloadTemplate = (format: 'csv' | 'excel' = 'csv') => {
@@ -126,6 +136,9 @@ export function ContractorBulkUploadModal({
           case 'companyname':
             row.companyName = value;
             break;
+          case 'type':
+            row.type = value;
+            break;
         }
       });
 
@@ -180,6 +193,9 @@ export function ContractorBulkUploadModal({
           case 'companyname':
             row.companyName = value;
             break;
+          case 'type':
+            row.type = value;
+            break;
         }
       });
 
@@ -228,6 +244,14 @@ export function ContractorBulkUploadModal({
         const rateValue = parseFloat(contractor.rate);
         if (isNaN(rateValue) || rateValue < 0 || rateValue > 9999.99) {
           errors.push(`Row ${rowNum}: Rate must be a valid number between 0 and 9999.99`);
+        }
+      }
+
+      // Validate type if provided
+      if (contractor.type && contractor.type.trim()) {
+        const validTypes = ['contractor', 'foreman'];
+        if (!validTypes.includes(contractor.type.toLowerCase().trim())) {
+          errors.push(`Row ${rowNum}: Type must be either "contractor" or "foreman"`);
         }
       }
     });
@@ -413,7 +437,7 @@ export function ContractorBulkUploadModal({
                 Required: First Name, Last Name, Email
               </p>
               <p className="text-xs text-muted-foreground">
-                Optional: Rate, Company/Subcontractor
+                Optional: Rate, Company/Subcontractor, Type (contractor/foreman)
               </p>
             </div>
           </div>
@@ -529,6 +553,12 @@ export function ContractorBulkUploadModal({
                         {contractor.rate ? `$${contractor.rate}` : '-'}
                       </p>
                     </div>
+                    <div>
+                      <span className="font-medium text-gray-500 dark:text-gray-400">Type:</span>
+                      <p className="text-gray-900 dark:text-gray-100">
+                        {contractor.type === 'foreman' ? 'Foreman' : 'Contractor'}
+                      </p>
+                    </div>
                     <div className="col-span-2">
                       <span className="font-medium text-gray-500 dark:text-gray-400">Email:</span>
                       <p className="text-gray-900 dark:text-gray-100 text-xs font-mono break-all">{contractor.email}</p>
@@ -565,6 +595,9 @@ export function ContractorBulkUploadModal({
                   <th className="text-left p-4 border-b border-gray-200 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-100">
                     Company
                   </th>
+                  <th className="text-left p-4 border-b border-gray-200 dark:border-gray-700 font-medium text-gray-900 dark:text-gray-100">
+                    Type
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -586,6 +619,15 @@ export function ContractorBulkUploadModal({
                       ) : (
                         <span className="text-gray-400 dark:text-gray-500">-</span>
                       )}
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        contractor.type === 'foreman' 
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' 
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300'
+                      }`}>
+                        {contractor.type === 'foreman' ? 'Foreman' : 'Contractor'}
+                      </span>
                     </td>
                   </tr>
                 ))}

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, jsonb, numeric, unique } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, uuid, jsonb, numeric, unique, boolean, integer, date } from 'drizzle-orm/pg-core'
 
 export const companies = pgTable('companies', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -57,7 +57,9 @@ export const timesheets = pgTable('timesheets', {
   company: text('company').notNull(), // Client company name
   projectName: text('project_name').notNull(),
   jobDescription: text('job_description').notNull(), // Information about the job
-  timeSpent: numeric('time_spent', { precision: 5, scale: 2 }).notNull(), // Time spent on site
+  timeSpent: numeric('time_spent', { precision: 5, scale: 2 }).notNull(), // Regular time spent on site
+  overtimeHours: numeric('overtime_hours', { precision: 5, scale: 2 }).default('0.00'), // Overtime hours (typically 1.5x rate)
+  doubleHours: numeric('double_hours', { precision: 5, scale: 2 }).default('0.00'), // Double time hours (typically 2x rate)
   status: text('status').notNull().default('pending'), // 'pending', 'approved', 'rejected'
   approvedBy: uuid('approved_by'), // Admin user ID who approved/rejected
   approvedByName: text('approved_by_name'), // Admin name for display
@@ -74,9 +76,20 @@ export const contractors = pgTable('contractors', {
   email: text('email').notNull(),
   companyId: uuid('company_id').notNull(),
   code: text('code').notNull().unique(), // Used for login - still globally unique
-  rate: numeric('rate', { precision: 10, scale: 2 }).default('0.00'), // Hourly rate for contractor
+  rate: numeric('rate', { precision: 10, scale: 2 }).default('0.00'), // Standard hourly rate for contractor
+  overtimeRate: numeric('overtime_rate', { precision: 10, scale: 2 }), // Overtime rate (typically 1.5x standard)
+  doubleTimeRate: numeric('double_time_rate', { precision: 10, scale: 2 }), // Double time rate (typically 2x standard)
   companyName: text('company_name'), // Optional: contractor's own company name for login token
   language: text('language').default('en'), // Language preference: 'en' or 'es'
+  type: text('type').default('contractor'), // Type: 'contractor' or 'foreman'
+  address: text('address'),
+  phone: text('phone'),
+  race: text('race'),
+  gender: text('gender'),
+  dateOfHire: date('date_of_hire'), // Date of hire
+  workClassification: text('work_classification'), // Work classification options
+  projectType: text('project_type'), // Type: 'ALL', 'BLD', 'HWY', 'FLT'
+  group: integer('group'), // Group integer
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -90,6 +103,11 @@ export const projects = pgTable('projects', {
   projectManager: text('project_manager').notNull(),
   location: text('location').notNull(),
   companyId: uuid('company_id').notNull(),
+  projectCost: numeric('project_cost', { precision: 12, scale: 2 }), // Optional project cost
+  startDate: date('start_date'),
+  endDate: date('end_date'),
+  projectCode: text('project_code'), // Project code identifier
+  contractId: text('contract_id'), // Contract ID
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -102,6 +120,20 @@ export const subcontractors = pgTable('subcontractors', {
   name: text('name').notNull(),
   contractAmount: numeric('contract_amount', { precision: 12, scale: 2 }), // Optional budget/contract amount
   companyId: uuid('company_id').notNull(),
+  foreman: text('foreman'), // Optional foreman name
+  address: text('address'),
+  contact: text('contact'),
+  email: text('email'),
+  phone: text('phone'),
+  // New fields
+  trade: text('trade'), // Trade classification
+  contractorLicenseNo: text('contractor_license_no'), // Contractor License Number
+  specialtyLicenseNo: text('specialty_license_no'), // Specialty License Number
+  federalTaxId: text('federal_tax_id'), // Federal Tax ID
+  motorCarrierPermitNo: text('motor_carrier_permit_no'), // Motor Carrier Permit Number
+  isUnion: boolean('is_union').default(false), // Union membership (yes/no)
+  isSelfInsured: boolean('is_self_insured').default(false), // Self-Insured Certificate (yes/no)
+  workersCompPolicy: text('workers_comp_policy'), // Worker's Comp. Policy information
   enabledModules: jsonb('enabled_modules').$type<string[]>().default(['start-of-day', 'end-of-day', 'job-hazard-analysis', 'timesheet']), // Available modules for this subcontractor
   modulesLastUpdatedAt: timestamp('modules_last_updated_at'),
   modulesLastUpdatedBy: text('modules_last_updated_by'), // Admin name who last updated modules
@@ -111,6 +143,21 @@ export const subcontractors = pgTable('subcontractors', {
 }, (table) => ({
   // Composite unique constraint: same subcontractor name can exist across companies but not within same company
   companySubcontractorUnique: unique().on(table.companyId, table.name),
+}))
+
+// Junction table for many-to-many relationship between subcontractors and projects
+export const subcontractorProjects = pgTable('subcontractor_projects', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  subcontractorId: uuid('subcontractor_id').notNull().references(() => subcontractors.id, { onDelete: 'cascade' }),
+  projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  assignedAt: timestamp('assigned_at').notNull().defaultNow(),
+  assignedBy: text('assigned_by'), // Admin name who made the assignment
+  assignedByUserId: text('assigned_by_user_id'), // Admin user ID for reference
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: prevent duplicate assignments
+  subcontractorProjectUnique: unique().on(table.subcontractorId, table.projectId),
 }))
 
 export const supervisors = pgTable('supervisors', {
@@ -179,4 +226,218 @@ export const formTemplates = pgTable('form_templates', {
   // Composite unique constraint: same template name can exist across companies but not within same company
   companyTemplateUnique: unique().on(table.companyId, table.name),
 }))
+
+// Junction table for many-to-many relationship between contractors and projects
+export const contractorProjects = pgTable('contractor_projects', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  contractorId: uuid('contractor_id').notNull().references(() => contractors.id, { onDelete: 'cascade' }),
+  projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  assignedAt: timestamp('assigned_at').notNull().defaultNow(),
+  assignedBy: text('assigned_by'), // Admin/foreman name who made the assignment
+  assignedByUserId: text('assigned_by_user_id'), // Admin/foreman user ID for reference
+  role: text('role').default('worker'), // Role on project: 'worker', 'lead', 'supervisor'
+  isActive: boolean('is_active').notNull().default(true), // Allow temporary deactivation
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: prevent duplicate assignments
+  contractorProjectUnique: unique().on(table.contractorId, table.projectId),
+}))
+
+export const procoreIntegrations = pgTable('procore_integrations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  procoreCompanyId: text('procore_company_id').notNull(),
+  procoreAccessToken: text('procore_access_token').notNull(),
+  procoreRefreshToken: text('procore_refresh_token').notNull(),
+  tokenExpiresAt: timestamp('token_expires_at').notNull(),
+  isActive: boolean('is_active').notNull().default(true),
+  syncSettings: jsonb('sync_settings').default({}), // Configuration options for sync
+  lastSyncAt: timestamp('last_sync_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: prevent duplicate integrations per company-procore pair
+  companyProcoreUnique: unique().on(table.companyId, table.procoreCompanyId),
+}))
+
+// Project Documents Schema
+export const projectDocuments = pgTable('project_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(), // Filename
+  description: text('description'), // Optional description
+  category: text('category').notNull().default('Other'), // Document category
+  fileType: text('file_type').notNull(), // File extension
+  fileSize: integer('file_size').notNull(), // File size in bytes
+  url: text('url').notNull(), // Vercel Blob storage URL
+  blobKey: text('blob_key').notNull(), // Vercel Blob key for deletion
+  companyId: uuid('company_id').notNull(),
+  uploadedBy: uuid('uploaded_by').notNull(), // Admin user ID who uploaded
+  uploadedByName: text('uploaded_by_name').notNull(), // Admin name for display
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+// Project Tasks (Gantt-like) Schema
+export const projectTasks = pgTable('project_tasks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+
+  taskNumber: integer('task_number').notNull(), // 1, 2, 3, 4... unique within project
+  name: text('name').notNull(), // e.g. "Mobilize", "Install", etc.
+  durationDays: integer('duration_days'),
+  startDate: date('start_date'),
+  endDate: date('end_date'),
+  predecessors: text('predecessors'), // "1,2,3" or "1FS+5 days" - references taskNumber
+  progress: numeric('progress', { precision: 5, scale: 2 }).default('0'), // e.g. 0–100
+  cost: numeric('cost', { precision: 12, scale: 2 }), // Optional task cost
+  completed: boolean('completed').default(false), // Whether task is marked as completed
+
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Ensure unique task numbers within each project
+  projectTaskNumberUnique: unique().on(table.projectId, table.taskNumber),
+}))
+
+// Change Orders Schema
+export const changeOrders = pgTable('change_orders', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  companyId: uuid('company_id').notNull(),
+
+  // Basic Information
+  title: text('title').notNull(),
+  description: text('description'),
+  changeType: text('change_type').notNull(), // 'Scope', 'Time', 'Cost', 'All'
+  
+  // Cost Impact
+  originalContractAmount: numeric('original_contract_amount', { precision: 12, scale: 2 }),
+  newAmount: numeric('new_amount', { precision: 12, scale: 2 }),
+  costDifference: numeric('cost_difference', { precision: 12, scale: 2 }),
+  
+  // Schedule Impact
+  addedDays: integer('added_days').default(0),
+  originalEndDate: date('original_end_date'),
+  revisedEndDate: date('revised_end_date'),
+  
+  
+  // Request Information
+  requestedBy: text('requested_by').notNull(), // Project Manager name
+  requestedByUserId: uuid('requested_by_user_id'), // Admin user ID
+  submissionDate: timestamp('submission_date').notNull().defaultNow(),
+  notesOrJustification: text('notes_or_justification'),
+  
+  // Admin Approval Section
+  toBeApprovedBy: text('to_be_approved_by'), // Project Manager(s) who need to approve
+  toBeApprovedByUserIds: jsonb('to_be_approved_by_user_ids').$type<string[]>().default([]), // Admin user IDs
+  keyStakeholder: text('key_stakeholder'),
+  status: text('status').notNull().default('Pending'), // 'Pending', 'Approved', 'Rejected'
+  assignedApproverId: uuid('assigned_approver_id'), // Current approver
+  assignedApproverName: text('assigned_approver_name'),
+  
+  // Approval Information
+  approverSignature: text('approver_signature'),
+  dateApproved: timestamp('date_approved'),
+  dateRejected: timestamp('date_rejected'),
+  rejectionReason: text('rejection_reason'),
+  
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Ensure unique change order titles within each project
+  projectChangeOrderTitleUnique: unique().on(table.projectId, table.title),
+}))
+
+// Change Order Documents Schema
+export const changeOrderDocuments = pgTable('change_order_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  changeOrderId: uuid('change_order_id')
+    .notNull()
+    .references(() => changeOrders.id, { onDelete: 'cascade' }),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  companyId: uuid('company_id').notNull(),
+  
+  name: text('name').notNull(), // Filename
+  description: text('description'), // Optional description
+  category: text('category').notNull().default('Supporting Document'), // Document category
+  fileType: text('file_type').notNull(), // File extension
+  fileSize: integer('file_size').notNull(), // File size in bytes
+  url: text('url').notNull(), // Vercel Blob storage URL
+  blobKey: text('blob_key').notNull(), // Vercel Blob key for deletion
+  
+  uploadedBy: uuid('uploaded_by').notNull(), // Admin user ID who uploaded
+  uploadedByName: text('uploaded_by_name').notNull(), // Admin name for display
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+// Expenses Schema
+export const expenses = pgTable('expenses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+  
+  // Line Item Details
+  name: text('name').notNull(), // Expense name/item name
+  description: text('description'), // Optional description
+  price: numeric('price', { precision: 12, scale: 2 }).notNull(), // Unit price
+  quantity: numeric('quantity', { precision: 10, scale: 2 }).notNull().default('1'), // Quantity purchased
+  totalCost: numeric('total_cost', { precision: 12, scale: 2 }).notNull(), // Total cost (price * quantity)
+  date: date('date').notNull(), // Date of expense
+  category: text('category').notNull().default('Other'), // Expense category (Labor, Materials, Equipment, etc.)
+  
+  // Creation Information
+  createdBy: uuid('created_by').notNull(), // Admin user ID who created
+  createdByName: text('created_by_name').notNull(), // Admin name for display
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
+// Expense-Project Junction Table (Many-to-Many)
+export const expenseProjects = pgTable('expense_projects', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  expenseId: uuid('expense_id').notNull().references(() => expenses.id, { onDelete: 'cascade' }),
+  projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  
+  // Split allocation
+  percentage: numeric('percentage', { precision: 5, scale: 2 }).default('100.00'), // Percentage allocated to this project (0-100)
+  allocatedAmount: numeric('allocated_amount', { precision: 12, scale: 2 }), // Calculated amount allocated
+  
+  // Assignment Information
+  assignedBy: uuid('assigned_by').notNull(), // Admin user ID who made the assignment
+  assignedByName: text('assigned_by_name').notNull(), // Admin name for display
+  assignedAt: timestamp('assigned_at').notNull().defaultNow(),
+  
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  // Composite unique constraint: prevent duplicate assignments
+  expenseProjectUnique: unique().on(table.expenseId, table.projectId),
+}))
+
+// Expense Documents Schema (Manual file attachments)
+export const expenseDocuments = pgTable('expense_documents', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  expenseId: uuid('expense_id')
+    .notNull()
+    .references(() => expenses.id, { onDelete: 'cascade' }),
+  companyId: uuid('company_id').notNull(),
+  
+  name: text('name').notNull(), // Filename
+  description: text('description'), // Optional description
+  fileType: text('file_type').notNull(), // File extension (pdf, jpg, png, etc.)
+  fileSize: integer('file_size').notNull(), // File size in bytes
+  url: text('url').notNull(), // Vercel Blob storage URL
+  blobKey: text('blob_key').notNull(), // Vercel Blob key for deletion
+  
+  // Upload Information
+  uploadedBy: uuid('uploaded_by').notNull(), // Admin user ID who uploaded
+  uploadedByName: text('uploaded_by_name').notNull(), // Admin name for display
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
 

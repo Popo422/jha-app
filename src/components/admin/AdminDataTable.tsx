@@ -18,6 +18,7 @@ import {
   Download, 
   Trash2, 
   Edit, 
+  Eye,
   ChevronDown,
 } from "lucide-react";
 import {
@@ -34,9 +35,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 export interface CustomAction<T> {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  onClick: (item: T) => void;
+  onClick: (item: T) => void | Promise<void>;
   className?: string;
   show?: (item: T) => boolean;
+  disabled?: boolean;
 }
 
 export interface PaginationInfo {
@@ -54,6 +56,7 @@ export interface AdminDataTableProps<T> {
   isLoading: boolean;
   isFetching: boolean;
   onEdit?: (item: T) => void;
+  onView?: (item: T) => void;
   onDelete?: (id: string) => void;
   onBulkDelete?: (ids: string[]) => void;
   getRowId: (item: T) => string;
@@ -83,6 +86,7 @@ export function AdminDataTable<T>({
   isLoading,
   isFetching,
   onEdit,
+  onView,
   onDelete,
   onBulkDelete,
   getRowId,
@@ -169,7 +173,7 @@ export function AdminDataTable<T>({
 
     tableColumns.push(...baseColumns);
 
-    if (onEdit || onDelete || customActions.length > 0) {
+    if (onEdit || onView || onDelete || customActions.length > 0) {
       tableColumns.push({
         id: 'actions',
         header: '',
@@ -189,14 +193,24 @@ export function AdminDataTable<T>({
                   return (
                     <DropdownMenuItem 
                       key={index}
-                      onClick={() => action.onClick(item)}
-                      className={`cursor-pointer ${action.className || ''}`}
+                      onClick={() => !action.disabled && action.onClick(item)}
+                      className={`cursor-pointer ${action.className || ''} ${action.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={action.disabled}
                     >
                       <Icon className="h-4 w-4 mr-2" />
                       {action.label}
                     </DropdownMenuItem>
                   );
                 })}
+                {onView && (
+                  <DropdownMenuItem 
+                    onClick={() => onView(item)}
+                    className="cursor-pointer"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    {t('common.view')}
+                  </DropdownMenuItem>
+                )}
                 {onEdit && (
                   <DropdownMenuItem 
                     onClick={() => onEdit(item)}
@@ -244,7 +258,7 @@ export function AdminDataTable<T>({
     }
 
     return tableColumns;
-  }, [showCheckboxes, baseColumns, onEdit, onDelete, handleSingleDelete, getRowId]);
+  }, [showCheckboxes, baseColumns, onEdit, onView, onDelete, handleSingleDelete, getRowId]);
 
   const table = useReactTable({
     data,
@@ -387,8 +401,6 @@ export function AdminDataTable<T>({
 
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            {filters}
-            
             <div className="space-y-1">
               <div className="text-sm font-medium">{t('common.search')}</div>
               <Input
@@ -398,6 +410,8 @@ export function AdminDataTable<T>({
                 className="w-full md:w-64"
               />
             </div>
+            
+            {filters}
           </div>
 
           <div className="flex gap-2">

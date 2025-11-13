@@ -288,6 +288,7 @@ export default function IncidentReportPage() {
                       value={formData.companySubcontractor}
                       onChange={(value) => setFormData(prev => ({ ...prev, companySubcontractor: value }))}
                       required
+                      returnValue="name"
                     />
                   </div>
                   <div className="space-y-2">

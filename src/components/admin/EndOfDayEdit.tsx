@@ -34,9 +34,10 @@ interface Submission {
 interface EndOfDayEditProps {
   submission: Submission;
   onBack: () => void;
+  readOnly?: boolean;
 }
 
-export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) {
+export default function EndOfDayEdit({ submission, onBack, readOnly = false }: EndOfDayEditProps) {
   const { t } = useTranslation('common');
   const [formData, setFormData] = useState(submission.formData);
   const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
@@ -138,7 +139,9 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
         <Button variant="ghost" onClick={onBack} className="p-2">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-2xl font-bold">{t('admin.editEndOfDayReport')}</h2>
+        <h2 className="text-2xl font-bold">
+          {readOnly ? t('admin.viewEndOfDayReport') : t('admin.editEndOfDayReport')}
+        </h2>
       </div>
 
       <Card>
@@ -155,6 +158,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                 value={formData.completedBy || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -165,6 +169,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                 type="date"
                 value={formData.date || ''}
                 onChange={handleInputChange}
+                readOnly={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -175,6 +180,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                 value={formData.supervisor || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -184,6 +190,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                 name="company"
                 value={formData.company || ''}
                 onChange={handleInputChange}
+                readOnly={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -196,6 +203,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                 placeholder="Name or title of the project"
                 required
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -206,6 +214,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                 type="time"
                 value={formData.timeClocked || ''}
                 onChange={handleInputChange}
+                readOnly={readOnly}
               />
             </div>
           </div>
@@ -267,6 +276,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                       checked={formData.completedJHA === true}
                       onChange={handleInputChange}
                       className="w-4 h-4"
+                      disabled={readOnly}
                     />
                     <Label htmlFor="jha-yes">{t('adminEdit.yes')}</Label>
                   </div>
@@ -279,6 +289,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                       checked={formData.completedJHA === false}
                       onChange={handleInputChange}
                       className="w-4 h-4"
+                      disabled={readOnly}
                     />
                     <Label htmlFor="jha-no">{t('adminEdit.no')}</Label>
                   </div>
@@ -298,6 +309,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                       checked={formData.freeFromFever === true}
                       onChange={handleInputChange}
                       className="w-4 h-4"
+                      disabled={readOnly}
                     />
                     <Label htmlFor="fever-yes">{t('adminEdit.yes')}</Label>
                   </div>
@@ -310,6 +322,7 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                       checked={formData.freeFromFever === false}
                       onChange={handleInputChange}
                       className="w-4 h-4"
+                      disabled={readOnly}
                     />
                     <Label htmlFor="fever-no">{t('adminEdit.no')}</Label>
                   </div>
@@ -495,15 +508,20 @@ export default function EndOfDayEdit({ submission, onBack }: EndOfDayEditProps) 
                 modalDescription={t('adminEdit.employeeSignature')}
                 signatureLabel={`${t('adminEdit.employeeSignature')}:`}
                 required
+                readOnly={readOnly}
               />
             </CardContent>
           </Card>
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onBack}>{t('adminEdit.cancel')}</Button>
-            <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? t('adminEdit.saving') : t('adminEdit.saveChanges')}
+            <Button variant="outline" onClick={onBack}>
+              {readOnly ? t('common.close') : t('adminEdit.cancel')}
             </Button>
+            {!readOnly && (
+              <Button onClick={handleSave} disabled={isLoading}>
+                {isLoading ? t('adminEdit.saving') : t('adminEdit.saveChanges')}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

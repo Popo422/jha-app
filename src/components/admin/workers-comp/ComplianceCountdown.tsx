@@ -25,7 +25,7 @@ export default function ComplianceCountdown({ createdAt }: ComplianceCountdownPr
       const timeSinceSubmission = now.getTime() - submissionDate.getTime();
       
       // 8 days in milliseconds
-      const eightDaysInMs = 7 * 24 * 60 * 60 * 1000;
+      const eightDaysInMs = 3 * 24 * 60 * 60 * 1000;
       
       // Calculate remaining time (8 days minus time elapsed)
       const remainingTime = eightDaysInMs - timeSinceSubmission;

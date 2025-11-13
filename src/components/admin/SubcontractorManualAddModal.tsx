@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { SearchableSelect } from "@/components/ui/searchable-select-v2";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -18,6 +20,16 @@ import { Users, User, Mail, Phone, Plus, ArrowRight } from "lucide-react";
 interface SubcontractorData {
   name: string;
   contractAmount?: string;
+  projectIds?: string[];
+  foreman?: string;
+  foremanEmail?: string;
+}
+
+interface ProjectData {
+  name: string;
+  location: string;
+  projectManager: string;
+  projectCost?: string;
 }
 
 interface SubcontractorManualAddModalProps {
@@ -25,6 +37,7 @@ interface SubcontractorManualAddModalProps {
   onClose: () => void;
   onSaveAndContinue: (subcontractors: SubcontractorData[]) => void;
   onSaveAndAddMore: (subcontractor: SubcontractorData) => void;
+  availableProjects?: ProjectData[];
 }
 
 export function SubcontractorManualAddModal({
@@ -32,6 +45,7 @@ export function SubcontractorManualAddModal({
   onClose,
   onSaveAndContinue,
   onSaveAndAddMore,
+  availableProjects = [],
 }: SubcontractorManualAddModalProps) {
   const { t } = useTranslation("common");
 
@@ -39,6 +53,9 @@ export function SubcontractorManualAddModal({
   const [currentSubcontractor, setCurrentSubcontractor] = useState<SubcontractorData>({
     name: "",
     contractAmount: "",
+    projectIds: [],
+    foreman: "",
+    foremanEmail: "",
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -47,6 +64,14 @@ export function SubcontractorManualAddModal({
 
     if (!subcontractor.name.trim()) {
       newErrors.name = t('admin.companyNameRequired');
+    }
+
+    // Validate foreman email if provided (optional)
+    if (subcontractor.foremanEmail && subcontractor.foremanEmail.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(subcontractor.foremanEmail)) {
+        newErrors.foremanEmail = 'Please enter a valid email address for the foreman';
+      }
     }
 
     return newErrors;
@@ -64,7 +89,7 @@ export function SubcontractorManualAddModal({
     onSaveAndAddMore(newSubcontractor);
 
     // Reset form
-    setCurrentSubcontractor({ name: "", contractAmount: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", projectIds: [], foreman: "", foremanEmail: "" });
     setErrors({});
   };
 
@@ -81,12 +106,12 @@ export function SubcontractorManualAddModal({
 
     // Reset state
     setTempSubcontractors([]);
-    setCurrentSubcontractor({ name: "", contractAmount: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", projectIds: [], foreman: "", foremanEmail: "" });
     setErrors({});
   };
 
   const handleClose = () => {
-    setCurrentSubcontractor({ name: "", contractAmount: "" });
+    setCurrentSubcontractor({ name: "", contractAmount: "", projectIds: [], foreman: "", foremanEmail: "" });
     setTempSubcontractors([]);
     setErrors({});
     onClose();
@@ -146,6 +171,29 @@ export function SubcontractorManualAddModal({
                   )}
                 </div>
                 <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Assign to Projects (Optional)
+                  </Label>
+                  <MultiSelect
+                    options={availableProjects.map((project) => ({
+                      value: `${project.name}|${project.location}`,
+                      label: `${project.name} - ${project.location}`
+                    }))}
+                    value={currentSubcontractor.projectIds || []}
+                    onValueChange={(value) => {
+                      setCurrentSubcontractor(prev => ({
+                        ...prev,
+                        projectIds: value
+                      }));
+                    }}
+                    placeholder="Select projects..."
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Assign this subcontractor to specific projects
+                  </p>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="contractAmount" className="text-sm font-medium">
                     Contract Amount (Optional)
                   </Label>
@@ -161,6 +209,47 @@ export function SubcontractorManualAddModal({
                     placeholder="Enter contract amount"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="foreman" className="text-sm font-medium">
+                    Foreman (Optional)
+                  </Label>
+                  <Input
+                    id="foreman"
+                    value={currentSubcontractor.foreman}
+                    onChange={(e) => {
+                      setCurrentSubcontractor((prev) => ({ ...prev, foreman: e.target.value }));
+                    }}
+                    placeholder="Enter foreman name"
+                    className={errors.foreman ? "border-red-500" : ""}
+                  />
+                  {errors.foreman && (
+                    <p className="text-sm text-red-500">{errors.foreman}</p>
+                  )}
+                </div>
+                
+                {currentSubcontractor.foreman && currentSubcontractor.foreman.trim() && (
+                  <div className="space-y-2">
+                    <Label htmlFor="foremanEmail" className="text-sm font-medium">
+                      Foreman Email (Optional)
+                    </Label>
+                    <Input
+                      id="foremanEmail"
+                      type="email"
+                      value={currentSubcontractor.foremanEmail}
+                      onChange={(e) => {
+                        setCurrentSubcontractor((prev) => ({ ...prev, foremanEmail: e.target.value }));
+                      }}
+                      placeholder="Enter foreman email address"
+                      className={errors.foremanEmail ? "border-red-500" : ""}
+                    />
+                    {errors.foremanEmail && (
+                      <p className="text-sm text-red-500">{errors.foremanEmail}</p>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      If no email provided, a default email will be generated. Adding a foreman will automatically create a contractor account.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

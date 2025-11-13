@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from 'react-i18next';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useGetSubmissionQuery, useUpdateSubmissionMutation } from '@/lib/features/submissions/submissionsApi';
 import { useToast } from '@/components/ui/toast';
 import { Button } from "@/components/ui/button";
@@ -137,7 +137,9 @@ export default function AdminEditVehicleInspectionPage() {
   const { t } = useTranslation('common');
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const submissionId = typeof params?.id === 'string' ? params.id : Array.isArray(params?.id) ? params.id[0] : '';
+  const readOnly = searchParams.get('view') === 'true';
   const { showToast } = useToast();
   
   const { data: submission, isLoading: isLoadingSubmission } = useGetSubmissionQuery(submissionId);
@@ -324,7 +326,7 @@ export default function AdminEditVehicleInspectionPage() {
                   Back to Safety Forms
                 </Link>
               </Button>
-              <h1 className="text-3xl font-bold text-foreground">Edit Vehicle Inspection</h1>
+              <h1 className="text-3xl font-bold text-foreground">{readOnly ? 'View Vehicle Inspection' : 'Edit Vehicle Inspection'}</h1>
               <p className="text-muted-foreground mt-2">
                 Submitted by {submission.completedBy} on {new Date(submission.createdAt).toLocaleDateString()}
               </p>
@@ -344,6 +346,7 @@ export default function AdminEditVehicleInspectionPage() {
                         label={t('forms.completedBy')}
                         value={formData.completedBy}
                         onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
+                        authType="admin"
                         required
                       />
                     </div>
@@ -365,6 +368,7 @@ export default function AdminEditVehicleInspectionPage() {
                         label={t('formFields.supervisor')}
                         value={formData.supervisor}
                         onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
+                        authType="admin"
                       />
                     </div>
                   </div>
@@ -374,6 +378,7 @@ export default function AdminEditVehicleInspectionPage() {
                         label={t('formFields.projectName')}
                         value={formData.projectName}
                         onChange={(value) => setFormData(prev => ({ ...prev, projectName: value }))}
+                        authType="admin"
                         required
                       />
                     </div>
@@ -384,6 +389,8 @@ export default function AdminEditVehicleInspectionPage() {
                         label={t('forms.companySubcontractor')}
                         value={formData.company}
                         onChange={(value) => setFormData(prev => ({ ...prev, company: value }))}
+                        authType="admin"
+                        returnValue="name"
                       />
                     </div>
                   </div>
@@ -561,22 +568,27 @@ export default function AdminEditVehicleInspectionPage() {
                   </CardContent>
                 </Card>
 
-                <Button 
-                  type="submit" 
-                  disabled={isUpdating || !formData.signature || !formData.equipmentType || !formData.completedBy || !formData.projectName} 
-                  className="w-full"
-                >
-                  {isUpdating ? t('common.saving') : t('common.saveChanges')}
-                </Button>
+                {!readOnly && (
+                  <Button 
+                    type="submit" 
+                    disabled={isUpdating || !formData.signature || !formData.equipmentType || !formData.completedBy || !formData.projectName} 
+                    className="w-full"
+                  >
+                    {isUpdating ? t('common.saving') : t('common.saveChanges')}
+                  </Button>
+                )}
               </form>
 
               {/* Admin Note */}
               <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
-                  Admin Edit Mode
+                  {readOnly ? 'Admin View Mode' : 'Admin Edit Mode'}
                 </h3>
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  You are editing this submission as an administrator. Changes will be saved and logged for audit purposes.
+                  {readOnly 
+                    ? 'You are viewing this submission as an administrator in read-only mode.' 
+                    : 'You are editing this submission as an administrator. Changes will be saved and logged for audit purposes.'
+                  }
                 </p>
               </div>
             </CardContent>

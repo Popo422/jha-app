@@ -8,8 +8,19 @@ export interface Contractor {
   companyId: string
   code: string
   rate?: string | null
+  overtimeRate?: string | null
+  doubleTimeRate?: string | null
   companyName?: string | null
   language?: string | null
+  type?: string | null
+  address?: string | null
+  phone?: string | null
+  race?: string | null
+  gender?: string | null
+  dateOfHire?: string | null
+  workClassification?: string | null
+  projectType?: string | null
+  group?: number | null
   createdAt: string
   updatedAt: string
 }
@@ -20,8 +31,20 @@ export interface CreateContractorRequest {
   email: string
   code: string
   rate?: string
+  overtimeRate?: string
+  doubleTimeRate?: string
   companyName?: string
   language?: string
+  type?: string
+  address?: string
+  phone?: string
+  race?: string
+  gender?: string
+  dateOfHire?: string
+  workClassification?: string
+  projectType?: string
+  group?: string
+  projectIds?: string[]
 }
 
 export interface UpdateContractorRequest {
@@ -31,8 +54,43 @@ export interface UpdateContractorRequest {
   email: string
   code: string
   rate?: string
+  overtimeRate?: string
+  doubleTimeRate?: string
   companyName?: string
   language?: string
+  type?: string
+  address?: string
+  phone?: string
+  race?: string
+  gender?: string
+  dateOfHire?: string
+  workClassification?: string
+  projectType?: string
+  group?: string
+  projectIds?: string[]
+}
+
+export interface SyncToProcoreRequest {
+  contractorIds: string[]
+}
+
+export interface SyncToProcoreResponse {
+  success: boolean
+  message: string
+  results: Array<{
+    contractorId: string
+    name: string
+    status: 'exists' | 'created' | 'error'
+    procorePartyId?: string
+    message?: string
+    error?: string
+  }>
+  errors?: Array<{
+    contractorId: string
+    name: string
+    status: 'error'
+    error: string
+  }>
 }
 
 export interface PaginationInfo {
@@ -93,8 +151,8 @@ export const contractorsApi = createApi({
   }),
   tagTypes: ['Contractor'],
   endpoints: (builder) => ({
-    getContractors: builder.query<ContractorsResponse, { search?: string; company?: string; page?: number; pageSize?: number; limit?: number; offset?: number; fetchAll?: boolean; authType: 'contractor' | 'admin' }>({
-      query: ({ search, company, page, pageSize, limit, offset, fetchAll, authType } = {} as any) => {
+    getContractors: builder.query<ContractorsResponse, { search?: string; company?: string; page?: number; pageSize?: number; limit?: number; offset?: number; fetchAll?: boolean; authType: 'contractor' | 'admin'; projectId?: string }>({
+      query: ({ search, company, page, pageSize, limit, offset, fetchAll, authType, projectId } = {} as any) => {
         const params = new URLSearchParams()
         
         if (fetchAll) {
@@ -116,6 +174,10 @@ export const contractorsApi = createApi({
         
         if (company) {
           params.append('company', company)
+        }
+        
+        if (projectId) {
+          params.append('projectId', projectId)
         }
         
         params.append('authType', authType)
@@ -153,7 +215,7 @@ export const contractorsApi = createApi({
     }),
     bulkCreateContractors: builder.mutation<
       { success: boolean; contractors: Contractor[]; created: number; skipped: number; errors?: string[]; warnings?: string[] },
-      { contractors: Array<{ firstName: string; lastName: string; email: string; rate?: string; companyName?: string; language?: string }> }
+      { contractors: Array<{ firstName: string; lastName: string; email: string; rate?: string; companyName?: string; language?: string; type?: string; address?: string; phone?: string; race?: string; gender?: string; projectIds?: string[] }> }
     >({
       query: (body) => ({
         url: '',
@@ -161,6 +223,13 @@ export const contractorsApi = createApi({
         body,
       }),
       invalidatesTags: ['Contractor'],
+    }),
+    syncToProcore: builder.mutation<SyncToProcoreResponse, SyncToProcoreRequest>({
+      query: (data) => ({
+        url: 'sync-procore',
+        method: 'POST',
+        body: data,
+      }),
     }),
   }),
 })
@@ -173,6 +242,7 @@ export const {
   useDeleteContractorMutation,
   useGetContractorLimitQuery,
   useBulkCreateContractorsMutation,
+  useSyncToProcoreMutation,
 } = contractorsApi
 
 export type GetContractorsResponse = ContractorsResponse;

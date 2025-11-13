@@ -3,7 +3,7 @@
 import { useMemo, useCallback, useState } from "react";
 import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useGetTimesheetsQuery, useDeleteTimesheetMutation, type Timesheet, type PaginationInfo } from "@/lib/features/timesheets/timesheetsApi";
+import { useGetTimesheetsQuery, useDeleteTimesheetMutation, useSyncToProcoreMutation, type Timesheet, type PaginationInfo } from "@/lib/features/timesheets/timesheetsApi";
 import { useGetSubmissionsQuery, type Submission } from "@/lib/features/submissions/submissionsApi";
 import { useTimesheetExportAll } from "@/hooks/useExportAll";
 import { useGetContractorsQuery } from "@/lib/features/contractors/contractorsApi";
@@ -23,9 +23,10 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X, Check, XCircle, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X, Check, XCircle, Clock, CheckCircle, AlertTriangle, Upload, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Toast, useToast } from "@/components/ui/toast";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 
 const columnHelper = createColumnHelper<Timesheet>();
@@ -46,6 +47,7 @@ interface TimesheetVerification {
 export default function TimeFormsPage() {
   const { t } = useTranslation('common')
   const [selectedTimesheet, setSelectedTimesheet] = useState<Timesheet | null>(null);
+  const [viewMode, setViewMode] = useState(false);
   const [activeTab, setActiveTab] = useState('review');
   const [filters, setFilters] = useState({
     dateFrom: '',
@@ -109,9 +111,13 @@ export default function TimeFormsPage() {
   });
 
   const [deleteTimesheet] = useDeleteTimesheetMutation();
+  const [syncToProcore] = useSyncToProcoreMutation();
   const [approvalDialog, setApprovalDialog] = useState<{ timesheet: Timesheet; action: 'approve' | 'reject' | 'pending' } | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [syncDialog, setSyncDialog] = useState<{ timesheets: Timesheet[] } | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   const exportAllTimesheets = useTimesheetExportAll();
+  const { toast, showToast, hideToast } = useToast();
 
   const allData = timesheetsData?.timesheets || [];
   const contractorRates = timesheetsData?.contractorRates || {};
@@ -325,10 +331,17 @@ export default function TimeFormsPage() {
 
   const handleEdit = useCallback((timesheet: Timesheet) => {
     setSelectedTimesheet(timesheet);
+    setViewMode(false);
+  }, []);
+
+  const handleView = useCallback((timesheet: Timesheet) => {
+    setSelectedTimesheet(timesheet);
+    setViewMode(true);
   }, []);
 
   const handleBackToList = useCallback(() => {
     setSelectedTimesheet(null);
+    setViewMode(false);
     refetch(); // Refresh data when returning to list
   }, [refetch]);
 
@@ -376,6 +389,70 @@ export default function TimeFormsPage() {
       console.error('Error updating timesheet:', error);
     }
   }, [approvalDialog, rejectionReason, refetch]);
+
+  const handleSyncToProcore = useCallback((timesheets: Timesheet[]) => {
+    if (timesheets.length === 0) {
+      showToast('No timesheets selected for sync.', 'error');
+      return;
+    }
+    
+    // Show status breakdown
+    const statusCounts = timesheets.reduce((acc, t) => {
+      acc[t.status] = (acc[t.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const statusMessage = Object.entries(statusCounts)
+      .map(([status, count]) => `${count} ${status}`)
+      .join(', ');
+    
+    showToast(`Selected ${timesheets.length} timesheets: ${statusMessage}`, 'info');
+    setSyncDialog({ timesheets });
+  }, [showToast]);
+
+  const executeProcoreSync = useCallback(async () => {
+    if (!syncDialog) return;
+    
+    setIsSyncing(true);
+    try {
+      showToast(`Syncing ${syncDialog.timesheets.length} timesheets to Procore...`, 'info');
+      
+      const result = await syncToProcore({
+        timesheetIds: syncDialog.timesheets.map(t => t.id),
+      }).unwrap();
+      
+      // Show success message
+      showToast(`Successfully synced ${result.results.length} timesheets to Procore!`, 'success');
+      
+      // Show error details if any failed
+      if (result.errors && result.errors.length > 0) {
+        const errorMessages = result.errors.map(err => `${err.employee}: ${err.error}`).join('\n');
+        showToast(`Some timesheets failed to sync:\n${errorMessages}`, 'error');
+      }
+      
+      setSyncDialog(null);
+      refetch();
+    } catch (error: any) {
+      console.error('Error syncing to Procore:', error);
+      
+      // Extract meaningful error message
+      let errorMessage = 'Unknown error occurred';
+      if (error.data?.error) {
+        errorMessage = error.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Show specific error guidance
+      if (errorMessage.includes('not found in Procore')) {
+        showToast(`Sync failed: ${errorMessage}\n\nPlease sync contractors and projects to Procore first.`, 'error');
+      } else {
+        showToast(`Error syncing to Procore: ${errorMessage}`, 'error');
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [syncDialog, syncToProcore, refetch, showToast]);
 
   const getStatusBadge = useCallback((status: string) => {
     switch (status) {
@@ -523,9 +600,24 @@ export default function TimeFormsPage() {
       ),
       cell: ({ row }) => {
         const timesheet = row.original;
-        const timeSpent = parseFloat(timesheet.timeSpent || '0');
-        const rate = parseFloat(contractorRates[timesheet.userId] || '0');
-        const cost = timeSpent * rate;
+        const regularHours = parseFloat(timesheet.timeSpent || '0');
+        const overtimeHours = parseFloat(timesheet.overtimeHours || '0');
+        const doubleHours = parseFloat(timesheet.doubleHours || '0');
+        
+        const contractorData = contractorRates[timesheet.userId];
+        const regularRate = parseFloat(contractorData?.rate || '0');
+        
+        // Use contractor's overtime rate if available, otherwise default to 1.5x regular rate
+        const overtimeRate = contractorData?.overtimeRate 
+          ? parseFloat(contractorData.overtimeRate) 
+          : regularRate * 1.5;
+        
+        // Use contractor's double time rate if available, otherwise default to 2x regular rate  
+        const doubleRate = contractorData?.doubleTimeRate 
+          ? parseFloat(contractorData.doubleTimeRate) 
+          : regularRate * 2;
+        
+        const cost = (regularHours * regularRate) + (overtimeHours * overtimeRate) + (doubleHours * doubleRate);
         return <div className="text-sm font-medium text-green-600">${cost.toFixed(2)}</div>;
       },
     },
@@ -818,9 +910,23 @@ export default function TimeFormsPage() {
   ]);
 
   const getExportData = useCallback((timesheet: Timesheet) => {
-    const timeSpent = parseFloat(timesheet.timeSpent || '0');
-    const rate = parseFloat(contractorRates[timesheet.userId] || '0');
-    const cost = timeSpent * rate;
+    const regularHours = parseFloat(timesheet.timeSpent || '0');
+    const overtimeHours = parseFloat(timesheet.overtimeHours || '0');
+    const doubleHours = parseFloat(timesheet.doubleHours || '0');
+    
+    const contractorData = contractorRates[timesheet.userId];
+    const regularRate = parseFloat(contractorData?.rate || '0');
+    
+    const overtimeRate = contractorData?.overtimeRate 
+      ? parseFloat(contractorData.overtimeRate) 
+      : regularRate * 1.5;
+    
+    const doubleRate = contractorData?.doubleTimeRate 
+      ? parseFloat(contractorData.doubleTimeRate) 
+      : regularRate * 2;
+    
+    const cost = (regularHours * regularRate) + (overtimeHours * overtimeRate) + (doubleHours * doubleRate);
+    
     return [
       timesheet.employee,
       timesheet.company,
@@ -828,6 +934,9 @@ export default function TimeFormsPage() {
       timesheet.projectName,
       timesheet.jobDescription,
       timesheet.timeSpent,
+      timesheet.overtimeHours || '0',
+      timesheet.doubleHours || '0',
+      (regularHours + overtimeHours + doubleHours).toFixed(2),
       `$${cost.toFixed(2)}`
     ];
   }, [contractorRates]);
@@ -848,9 +957,31 @@ export default function TimeFormsPage() {
             <div className="flex justify-between items-start mb-2">
               <h3 className="font-medium text-sm">{timesheet.employee}</h3>
               <div className="text-right">
-                <span className="text-sm font-bold text-green-600">{timesheet.timeSpent} hrs</span>
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  Regular: {timesheet.timeSpent || '0'}h | OT: {timesheet.overtimeHours || '0'}h | DT: {timesheet.doubleHours || '0'}h
+                </div>
+                <div className="text-sm font-bold text-blue-600">
+                  Total: {(parseFloat(timesheet.timeSpent || '0') + parseFloat(timesheet.overtimeHours || '0') + parseFloat(timesheet.doubleHours || '0')).toFixed(2)} hrs
+                </div>
                 <div className="text-sm font-bold text-green-600">
-                  ${((parseFloat(timesheet.timeSpent || '0')) * (parseFloat(contractorRates[timesheet.userId] || '0'))).toFixed(2)}
+                  ${(() => {
+                    const regularHours = parseFloat(timesheet.timeSpent || '0');
+                    const overtimeHours = parseFloat(timesheet.overtimeHours || '0');
+                    const doubleHours = parseFloat(timesheet.doubleHours || '0');
+                    
+                    const contractorData = contractorRates[timesheet.userId];
+                    const regularRate = parseFloat(contractorData?.rate || '0');
+                    
+                    const overtimeRate = contractorData?.overtimeRate 
+                      ? parseFloat(contractorData.overtimeRate) 
+                      : regularRate * 1.5;
+                    
+                    const doubleRate = contractorData?.doubleTimeRate 
+                      ? parseFloat(contractorData.doubleTimeRate) 
+                      : regularRate * 2;
+                    
+                    return ((regularHours * regularRate) + (overtimeHours * overtimeRate) + (doubleHours * doubleRate)).toFixed(2);
+                  })()}
                 </div>
               </div>
             </div>
@@ -940,11 +1071,18 @@ export default function TimeFormsPage() {
                 </>
               )}
               <DropdownMenuItem 
+                onClick={() => handleView(timesheet)}
+                className="cursor-pointer"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {t('common.view')}
+              </DropdownMenuItem>
+              <DropdownMenuItem 
                 onClick={() => handleEdit(timesheet)}
                 className="cursor-pointer"
               >
                 <Edit className="h-4 w-4 mr-2" />
-                Edit
+                {t('common.edit')}
               </DropdownMenuItem>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -979,13 +1117,14 @@ export default function TimeFormsPage() {
         </div>
       </CardContent>
     </Card>
-  ), [handleEdit, handleSingleDelete]);
+  ), [handleView, handleEdit, handleSingleDelete]);
 
   if (selectedTimesheet) {
     return (
       <TimesheetEdit 
         timesheet={selectedTimesheet}
         onBack={handleBackToList}
+        readOnly={viewMode}
       />
     );
   }
@@ -1021,12 +1160,13 @@ export default function TimeFormsPage() {
         columns={columns}
         isLoading={isLoading}
         isFetching={isFetching}
+        onView={handleView}
         onEdit={handleEdit}
         onDelete={handleSingleDelete}
         onBulkDelete={handleBulkDelete}
         getRowId={(timesheet) => timesheet.id}
         exportFilename="timesheets"
-        exportHeaders={[t('admin.employee'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.jobDescription'), t('admin.hoursWorked'), t('admin.cost')]}
+        exportHeaders={[t('admin.employee'), t('admin.company'), t('tableHeaders.date'), t('admin.projectName'), t('admin.jobDescription'), 'Regular Hours', 'Overtime Hours', 'Double Hours', 'Total Hours', t('admin.cost')]}
         getExportData={getExportData}
         filters={filterComponents}
         renderMobileCard={renderMobileCard}
@@ -1057,6 +1197,14 @@ export default function TimeFormsPage() {
             onClick: (timesheet) => handleApprovalAction(timesheet, 'pending'),
             className: 'text-orange-600',
             show: (timesheet) => timesheet.status === 'approved' || timesheet.status === 'rejected'
+          },
+          {
+            label: 'Sync to Procore',
+            icon: Upload,
+            onClick: (timesheet) => handleSyncToProcore([timesheet]),
+            className: 'text-blue-600',
+            show: () => true,
+            disabled: isSyncing
           }
         ]}
         onExportAll={handleExportAll}
@@ -1143,6 +1291,92 @@ export default function TimeFormsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Procore Sync Dialog */}
+      <AlertDialog open={!!syncDialog} onOpenChange={() => setSyncDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sync Timesheets to Procore</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to sync {syncDialog?.timesheets.length || 0} timesheet(s) to Procore.
+              The approval status will be mapped to Procore's workflow (pending → pending, approved → approved, rejected → pending).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4">
+            {syncDialog && (
+              <>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Timesheets to sync:</p>
+                  <div className="max-h-32 overflow-y-auto text-xs text-gray-600">
+                    {syncDialog.timesheets.map((timesheet) => (
+                      <div key={timesheet.id} className="flex justify-between">
+                        <span>{timesheet.employee}</span>
+                        <span>{timesheet.timeSpent} hrs on {new Date(timesheet.date).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Projects:</p>
+                  <div className="text-xs text-gray-600">
+                    {[...new Set(syncDialog.timesheets.map(t => t.projectName))].map((projectName) => (
+                      <div key={projectName} className="flex items-center gap-2">
+                        <span>📋 {projectName}</span>
+                        <span className="text-green-600">(will auto-match in Procore)</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                  <p className="text-xs text-blue-800 dark:text-blue-200">
+                    <strong>Auto-sync:</strong> Projects will be automatically matched by name in Procore. 
+                    If a project doesn't exist in Procore, you'll need to sync projects first.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={() => setSyncDialog(null)}
+              disabled={isSyncing}
+              className="disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={executeProcoreSync}
+              disabled={isSyncing}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSyncing ? (
+                <>
+                  <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Sync to Procore
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toast Notifications */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={hideToast}
+        duration={5000}
+      />
     </div>
   );
 }

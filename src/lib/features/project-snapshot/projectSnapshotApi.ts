@@ -41,6 +41,73 @@ export interface GetProjectSnapshotFiltersParams {
   projectManager?: string;
 }
 
+export interface ProjectSnapshotMetrics {
+  totalIncidents: number;
+  trir: number;
+  manHours: number;
+  activeContractors: number;
+  complianceRate: number;
+  completionRate: number;
+  totalProjectCost: number;
+  totalSpent: number;
+  spendPercentage: number;
+}
+
+export interface GetProjectSnapshotMetricsParams {
+  companyId: string;
+  project?: string;
+  subcontractor?: string;
+}
+
+export interface ProjectTimelineData {
+  project: {
+    id: string;
+    name: string;
+    companyId: string;
+    createdAt: string;
+  };
+  overallProgress: number;
+  projectStartDate: string | null;
+  projectEndDate: string | null;
+  totalTasks: number;
+  tasks: {
+    id: string;
+    taskNumber: number;
+    name: string;
+    durationDays: number | null;
+    startDate: string | null;
+    endDate: string | null;
+    progress: string;
+    predecessors: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+  timelineData: {
+    weeks: {
+      weekNumber: number;
+      label: string;
+      startDate: string;
+      endDate: string;
+    }[];
+    taskTimelines: {
+      taskId: string;
+      taskNumber: number;
+      name: string;
+      progress: number;
+      startWeek: number | null;
+      endWeek: number | null;
+      duration: number;
+      timeline: boolean[];
+      startDate?: string | null;
+      endDate?: string | null;
+    }[];
+  };
+}
+
+export interface GetProjectTimelineParams {
+  projectId: string;
+}
+
 export const projectSnapshotApi = createApi({
   reducerPath: 'projectSnapshotApi',
   baseQuery: fetchBaseQuery({
@@ -93,7 +160,7 @@ export const projectSnapshotApi = createApi({
       providesTags: ['ProjectSnapshot'],
     }),
     
-    getProjectSnapshotProjects: builder.query<string[], GetProjectSnapshotFiltersParams>({
+    getProjectSnapshotProjects: builder.query<{name: string, location: string}[], GetProjectSnapshotFiltersParams>({
       query: ({ companyId, subcontractor }) => {
         const params = new URLSearchParams({
           companyId,
@@ -122,6 +189,36 @@ export const projectSnapshotApi = createApi({
       },
       providesTags: ['ProjectSnapshotFilters'],
     }),
+    
+    getProjectSnapshotMetrics: builder.query<ProjectSnapshotMetrics, GetProjectSnapshotMetricsParams>({
+      query: ({ companyId, project, subcontractor }) => {
+        const params = new URLSearchParams({
+          companyId,
+        })
+        
+        if (project) {
+          params.append('project', project)
+        }
+        
+        if (subcontractor) {
+          params.append('subcontractor', subcontractor)
+        }
+        
+        return `/metrics?${params}`
+      },
+      providesTags: ['ProjectSnapshot'],
+    }),
+
+    getProjectTimeline: builder.query<ProjectTimelineData, GetProjectTimelineParams>({
+      query: ({ projectId }) => {
+        const params = new URLSearchParams({
+          projectId,
+        })
+        
+        return `../project-tasks/timeline?${params}`
+      },
+      providesTags: ['ProjectSnapshot'],
+    }),
 
   }),
 })
@@ -130,7 +227,11 @@ export const {
   useGetProjectSnapshotQuery,
   useGetProjectSnapshotProjectsQuery,
   useGetProjectSnapshotSubcontractorsQuery,
+  useGetProjectSnapshotMetricsQuery,
+  useGetProjectTimelineQuery,
   useLazyGetProjectSnapshotQuery,
   useLazyGetProjectSnapshotProjectsQuery,
-  useLazyGetProjectSnapshotSubcontractorsQuery
+  useLazyGetProjectSnapshotSubcontractorsQuery,
+  useLazyGetProjectSnapshotMetricsQuery,
+  useLazyGetProjectTimelineQuery
 } = projectSnapshotApi

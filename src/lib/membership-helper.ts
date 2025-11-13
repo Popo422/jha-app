@@ -88,6 +88,15 @@ export function hasLevel3Membership(memberships: MembershipData[]): boolean {
     const isActive = membership.status === '1'
     const isNotExpired = !membership.is_expired && new Date(membership.expire_time) > new Date()
     
+    console.log('DEBUG - Membership check:', {
+      levelId,
+      isActive,
+      isNotExpired,
+      expireTime: membership.expire_time,
+      currentTime: new Date().toISOString(),
+      result: levelId >= 1 && isActive && isNotExpired
+    });
+    
     return levelId >= 1 && isActive && isNotExpired
   })
 }
@@ -110,6 +119,8 @@ export function verifyMembershipAccess(secretKey: string, token?: string): Membe
     
     // Verify and decode JWT
     const payload = verifyJWTToken(accessToken, secretKey)
+    
+    console.log('DEBUG - Token payload:', payload);
     
     if (!payload) {
       return {

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { eq, desc, and, or, ilike, count, sql } from 'drizzle-orm'
+import { eq, desc, and, or, ilike, count, sql, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { contractors, companies } from '@/lib/db/schema'
+import { contractors, companies, contractorProjects, projects } from '@/lib/db/schema'
 import { emailService } from '@/lib/email-service'
 import { authenticateRequest } from '@/lib/auth-utils'
 
@@ -107,6 +107,7 @@ export async function GET(request: NextRequest) {
     // Get remaining query parameters
     const search = searchParams.get('search')
     const company = searchParams.get('company')
+    const projectId = searchParams.get('projectId')
     const page = parseInt(searchParams.get('page') || '1')
     const pageSize = parseInt(searchParams.get('pageSize') || '50')
     const fetchAll = searchParams.get('fetchAll') === 'true'
@@ -141,26 +142,103 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get total count for pagination
-    const countResult = await db.select({ count: sql`count(*)` }).from(contractors)
-      .where(and(...conditions))
+    // Get total count for pagination - adjust for project filtering
+    let countResult;
+    if (projectId) {
+      countResult = await db.select({ count: sql`count(DISTINCT ${contractors.id})` })
+        .from(contractors)
+        .innerJoin(contractorProjects, and(
+          eq(contractorProjects.contractorId, contractors.id),
+          eq(contractorProjects.projectId, projectId),
+          eq(contractorProjects.isActive, true)
+        ))
+        .where(and(...conditions))
+    } else {
+      countResult = await db.select({ count: sql`count(*)` })
+        .from(contractors)
+        .where(and(...conditions))
+    }
     const totalCount = Number(countResult[0].count)
 
-    // Execute query
-    const baseQuery = db.select().from(contractors)
-      .where(and(...conditions))
-      .orderBy(desc(contractors.createdAt))
+    // Execute query - adjust for project filtering
+    let result;
+    if (projectId) {
+      const baseQuery = db.select().from(contractors)
+        .innerJoin(contractorProjects, and(
+          eq(contractorProjects.contractorId, contractors.id),
+          eq(contractorProjects.projectId, projectId),
+          eq(contractorProjects.isActive, true)
+        ))
+        .where(and(...conditions))
+        .orderBy(desc(contractors.createdAt))
+      
+      result = fetchAll
+        ? await baseQuery
+        : await baseQuery.limit(limit!).offset(offset!)
+      
+      // Extract just the contractor data since we joined
+      result = result.map(row => row.contractors)
+    } else {
+      const baseQuery = db.select().from(contractors)
+        .where(and(...conditions))
+        .orderBy(desc(contractors.createdAt))
+      
+      result = fetchAll
+        ? await baseQuery
+        : await baseQuery.limit(limit!).offset(offset!)
+    }
+
+
+    // Fetch project assignments for all contractors
+    const contractorIds = result.map(contractor => contractor.id);
+    let projectAssignments: Array<{
+      contractorId: string;
+      projectId: string;
+      projectName: string | null;
+    }> = [];
     
-    const result = fetchAll
-      ? await baseQuery
-      : await baseQuery.limit(limit!).offset(offset!)
+    if (contractorIds.length > 0) {
+      projectAssignments = await db
+        .select({
+          contractorId: contractorProjects.contractorId,
+          projectId: contractorProjects.projectId,
+          projectName: projects.name,
+        })
+        .from(contractorProjects)
+        .leftJoin(projects, eq(contractorProjects.projectId, projects.id))
+        .where(and(
+          inArray(contractorProjects.contractorId, contractorIds),
+          eq(contractorProjects.isActive, true)
+        ));
+    }
+
+    // Group projects by contractor
+    const contractorProjectMap = new Map<string, { projectIds: string[]; projectNames: string[] }>();
+    projectAssignments.forEach(assignment => {
+      if (!contractorProjectMap.has(assignment.contractorId)) {
+        contractorProjectMap.set(assignment.contractorId, {
+          projectIds: [],
+          projectNames: []
+        });
+      }
+      contractorProjectMap.get(assignment.contractorId)!.projectIds.push(assignment.projectId);
+      contractorProjectMap.get(assignment.contractorId)!.projectNames.push(assignment.projectName || '');
+    });
+
+    // Add project data to contractors
+    const contractorsWithProjects = result.map(contractor => ({
+      ...contractor,
+      projectIds: contractorProjectMap.get(contractor.id)?.projectIds || [],
+      projectNames: contractorProjectMap.get(contractor.id)?.projectNames || [],
+    }));
+
 
     const totalPages = Math.ceil(totalCount / pageSize)
     const hasNextPage = page < totalPages
     const hasPreviousPage = page > 1
 
     return NextResponse.json({
-      contractors: result,
+      contractors: contractorsWithProjects,
       pagination: fetchAll ? null : {
         page,
         pageSize,
@@ -279,6 +357,15 @@ export async function POST(request: NextRequest) {
 
       const existingCodesSet = new Set(existingCodes.map(c => c.code))
       
+      // Get company name for default use
+      const company = await db
+        .select({ name: companies.name })
+        .from(companies)
+        .where(eq(companies.id, auth.admin.companyId))
+        .limit(1)
+      
+      const defaultCompanyName = company.length > 0 ? company[0].name : null
+      
       // Prepare contractor data
       const preparedContractors = uniqueContractors.map((contractor: any, index: number) => {
         const firstName = contractor.firstName.trim();
@@ -303,7 +390,8 @@ export async function POST(request: NextRequest) {
           companyId: auth.admin.companyId,
           language: (contractor.language && (contractor.language === 'en' || contractor.language === 'es')) ? contractor.language : 'en',
           rate: contractor.rate || '0.00',
-          companyName: contractor.companyName || null
+          companyName: contractor.companyName || defaultCompanyName,
+          type: (contractor.type && (contractor.type.toLowerCase() === 'contractor' || contractor.type.toLowerCase() === 'foreman')) ? contractor.type.toLowerCase() : 'contractor'
         }
       })
 
@@ -311,10 +399,30 @@ export async function POST(request: NextRequest) {
       const createdContractors = []
       const errors = []
       
-      for (const contractorData of preparedContractors) {
+      for (let i = 0; i < preparedContractors.length; i++) {
+        const contractorData = preparedContractors[i];
+        const originalContractor = uniqueContractors[i];
+        
         try {
           const [createdContractor] = await db.insert(contractors).values(contractorData).returning()
           createdContractors.push(createdContractor)
+          
+          // Handle project assignments if provided in original contractor data
+          if (originalContractor.projectIds && Array.isArray(originalContractor.projectIds) && originalContractor.projectIds.length > 0) {
+            const assignedBy = auth.admin.name;
+            const assignedByUserId = auth.admin.id;
+            
+            const assignmentData = originalContractor.projectIds.map((projectId: string) => ({
+              contractorId: createdContractor.id,
+              projectId,
+              role: 'worker',
+              assignedBy,
+              assignedByUserId,
+              isActive: true
+            }));
+
+            await db.insert(contractorProjects).values(assignmentData);
+          }
         } catch (insertError: any) {
           if (insertError.code === '23505') {
             if (insertError.constraint?.includes('company_email_unique')) {
@@ -353,7 +461,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Single contractor creation (existing logic)
-    const { firstName, lastName, email, code, rate, companyName, language } = body
+    console.log('🔍 [API] Single contractor creation - body:', body)
+    const { firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, address, phone, race, gender, dateOfHire, workClassification, projectType, group, projectIds } = body
+    console.log('🔍 [API] Extracted projectIds:', projectIds)
 
     // Validate required fields
     if (!firstName || !lastName || !email || !code) {
@@ -418,6 +528,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get company name for default use
+    const company = await db
+      .select({ name: companies.name })
+      .from(companies)
+      .where(eq(companies.id, auth.admin.companyId))
+      .limit(1)
+    
+    const defaultCompanyName = company.length > 0 ? company[0].name : null
+
     // Prepare contractor data
     const contractorData: any = {
       firstName: firstName.trim(),
@@ -435,9 +554,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Add company name if provided
+    // Add overtime rate if provided and valid
+    if (overtimeRate !== undefined && overtimeRate !== null && overtimeRate !== '') {
+      const overtimeRateValue = parseFloat(overtimeRate)
+      if (!isNaN(overtimeRateValue) && overtimeRateValue >= 0 && overtimeRateValue <= 9999.99) {
+        contractorData.overtimeRate = overtimeRateValue.toFixed(2)
+      }
+    }
+
+    // Add double time rate if provided and valid
+    if (doubleTimeRate !== undefined && doubleTimeRate !== null && doubleTimeRate !== '') {
+      const doubleTimeRateValue = parseFloat(doubleTimeRate)
+      if (!isNaN(doubleTimeRateValue) && doubleTimeRateValue >= 0 && doubleTimeRateValue <= 9999.99) {
+        contractorData.doubleTimeRate = doubleTimeRateValue.toFixed(2)
+      }
+    }
+
+    // Add company name if provided, otherwise use default company name
     if (companyName && companyName.trim()) {
       contractorData.companyName = companyName.trim()
+    } else if (defaultCompanyName) {
+      contractorData.companyName = defaultCompanyName
     }
 
     // Add language if provided, otherwise default to 'en'
@@ -447,8 +584,73 @@ export async function POST(request: NextRequest) {
       contractorData.language = 'en'
     }
 
+    // Add type if provided, otherwise default to 'contractor'
+    if (type && (type === 'contractor' || type === 'foreman')) {
+      contractorData.type = type
+    } else {
+      contractorData.type = 'contractor'
+    }
+
+    // Add optional fields
+    if (address && address.trim()) {
+      contractorData.address = address.trim()
+    }
+
+    if (phone && phone.trim()) {
+      contractorData.phone = phone.trim()
+    }
+
+    if (race && race.trim()) {
+      contractorData.race = race.trim()
+    }
+
+    if (gender && gender.trim()) {
+      contractorData.gender = gender.trim()
+    }
+
+    // Add new fields
+    if (dateOfHire && dateOfHire.trim()) {
+      contractorData.dateOfHire = new Date(dateOfHire)
+    }
+
+    if (workClassification && workClassification.trim()) {
+      contractorData.workClassification = workClassification.trim()
+    }
+
+    if (projectType && projectType.trim()) {
+      contractorData.projectType = projectType.trim()
+    }
+
+    if (group !== undefined && group !== null && group !== '') {
+      const groupValue = parseInt(group)
+      if (!isNaN(groupValue)) {
+        contractorData.group = groupValue
+      }
+    }
+
     // Create contractor record
     const contractor = await db.insert(contractors).values(contractorData).returning()
+    console.log('🔍 [API] Contractor created:', contractor[0])
+
+    // Handle project assignments if provided
+    if (projectIds && Array.isArray(projectIds) && projectIds.length > 0) {
+      console.log('🔍 [API] Creating project assignments for contractor:', projectIds)
+      
+      const assignedBy = auth.admin.name;
+      const assignedByUserId = auth.admin.id;
+      
+      const assignmentData = projectIds.map(projectId => ({
+        contractorId: contractor[0].id,
+        projectId,
+        role: 'worker',
+        assignedBy,
+        assignedByUserId,
+        isActive: true
+      }));
+
+      await db.insert(contractorProjects).values(assignmentData);
+      console.log('🔍 [API] Project assignments created successfully')
+    }
 
     // // Send welcome email (non-blocking)
     // try {
@@ -521,7 +723,9 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, firstName, lastName, email, code, rate, companyName, language } = body
+    console.log('🔍 [API] Update contractor body:', body)
+    const { id, firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, address, phone, race, gender, dateOfHire, workClassification, projectType, group, projectIds } = body
+    console.log('🔍 [API] Update projectIds:', projectIds)
 
     if (!id) {
       return NextResponse.json(
@@ -582,6 +786,28 @@ export async function PUT(request: NextRequest) {
       updateData.rate = null
     }
 
+    // Add overtime rate if provided and valid
+    if (overtimeRate !== undefined && overtimeRate !== null && overtimeRate !== '') {
+      const overtimeRateValue = parseFloat(overtimeRate)
+      if (!isNaN(overtimeRateValue) && overtimeRateValue >= 0 && overtimeRateValue <= 9999.99) {
+        updateData.overtimeRate = overtimeRateValue.toFixed(2)
+      }
+    } else {
+      // Set overtime rate to null if empty string is provided
+      updateData.overtimeRate = null
+    }
+
+    // Add double time rate if provided and valid
+    if (doubleTimeRate !== undefined && doubleTimeRate !== null && doubleTimeRate !== '') {
+      const doubleTimeRateValue = parseFloat(doubleTimeRate)
+      if (!isNaN(doubleTimeRateValue) && doubleTimeRateValue >= 0 && doubleTimeRateValue <= 9999.99) {
+        updateData.doubleTimeRate = doubleTimeRateValue.toFixed(2)
+      }
+    } else {
+      // Set double time rate to null if empty string is provided
+      updateData.doubleTimeRate = null
+    }
+
     // Add company name if provided, otherwise set to null
     if (companyName && companyName.trim()) {
       updateData.companyName = companyName.trim()
@@ -596,11 +822,86 @@ export async function PUT(request: NextRequest) {
       updateData.language = 'en'
     }
 
+    // Add type if provided, otherwise default to 'contractor'
+    if (type && (type === 'contractor' || type === 'foreman')) {
+      updateData.type = type
+    } else {
+      updateData.type = 'contractor'
+    }
+
+    // Add optional fields
+    if (address !== undefined) {
+      updateData.address = address && address.trim() ? address.trim() : null
+    }
+
+    if (phone !== undefined) {
+      updateData.phone = phone && phone.trim() ? phone.trim() : null
+    }
+
+    if (race !== undefined) {
+      updateData.race = race && race.trim() ? race.trim() : null
+    }
+
+    if (gender !== undefined) {
+      updateData.gender = gender && gender.trim() ? gender.trim() : null
+    }
+
+    // Add new fields
+    if (dateOfHire !== undefined) {
+      updateData.dateOfHire = dateOfHire && dateOfHire.trim() ? new Date(dateOfHire) : null
+    }
+
+    if (workClassification !== undefined) {
+      updateData.workClassification = workClassification && workClassification.trim() ? workClassification.trim() : null
+    }
+
+    if (projectType !== undefined) {
+      updateData.projectType = projectType && projectType.trim() ? projectType.trim() : null
+    }
+
+    if (group !== undefined) {
+      if (group !== null && group !== '' && typeof group === 'string') {
+        const groupValue = parseInt(group)
+        updateData.group = !isNaN(groupValue) ? groupValue : null
+      } else if (typeof group === 'number') {
+        updateData.group = group
+      } else {
+        updateData.group = null
+      }
+    }
+
     // Update contractor
     const updatedContractor = await db.update(contractors)
       .set(updateData)
       .where(eq(contractors.id, id))
       .returning()
+
+    // Handle project assignments update
+    if (projectIds !== undefined) {
+      console.log('🔍 [API] Updating project assignments for contractor:', id)
+      
+      // Delete existing assignments
+      await db.delete(contractorProjects)
+        .where(eq(contractorProjects.contractorId, id))
+      
+      // Create new assignments if provided
+      if (Array.isArray(projectIds) && projectIds.length > 0) {
+        const assignedBy = auth.admin.name;
+        const assignedByUserId = auth.admin.id;
+        
+        const assignmentData = projectIds.map(projectId => ({
+          contractorId: id,
+          projectId,
+          role: 'worker',
+          assignedBy,
+          assignedByUserId,
+          isActive: true
+        }));
+
+        await db.insert(contractorProjects).values(assignmentData);
+        console.log('🔍 [API] Updated project assignments successfully')
+      }
+    }
 
     return NextResponse.json({
       success: true,

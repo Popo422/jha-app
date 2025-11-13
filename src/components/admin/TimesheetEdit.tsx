@@ -22,6 +22,8 @@ interface Timesheet {
   projectName: string;
   jobDescription: string;
   timeSpent: string;
+  overtimeHours?: string;
+  doubleHours?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -29,9 +31,10 @@ interface Timesheet {
 interface TimesheetEditProps {
   timesheet: Timesheet;
   onBack: () => void;
+  readOnly?: boolean;
 }
 
-export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps) {
+export default function TimesheetEdit({ timesheet, onBack, readOnly = false }: TimesheetEditProps) {
   const { t } = useTranslation('common');
   const [formData, setFormData] = useState({
     date: timesheet.date,
@@ -40,6 +43,8 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
     projectName: timesheet.projectName || '',
     jobDescription: timesheet.jobDescription,
     timeSpent: timesheet.timeSpent,
+    overtimeHours: timesheet.overtimeHours || '',
+    doubleHours: timesheet.doubleHours || '',
   });
   
   const [updateTimesheet, { isLoading }] = useUpdateTimesheetMutation();
@@ -68,6 +73,20 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
         return;
       }
 
+      // Validate overtime hours
+      const overtimeHoursNumber = formData.overtimeHours ? parseFloat(formData.overtimeHours) : 0;
+      if (formData.overtimeHours && (isNaN(overtimeHoursNumber) || overtimeHoursNumber < 0)) {
+        showToast('Overtime hours must be a valid positive number', 'error');
+        return;
+      }
+
+      // Validate double hours
+      const doubleHoursNumber = formData.doubleHours ? parseFloat(formData.doubleHours) : 0;
+      if (formData.doubleHours && (isNaN(doubleHoursNumber) || doubleHoursNumber < 0)) {
+        showToast('Double hours must be a valid positive number', 'error');
+        return;
+      }
+
       const result = await updateTimesheet({
         id: timesheet.id,
         date: formData.date,
@@ -76,6 +95,8 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
         projectName: formData.projectName,
         jobDescription: formData.jobDescription,
         timeSpent: formData.timeSpent,
+        overtimeHours: formData.overtimeHours,
+        doubleHours: formData.doubleHours,
         authType: 'admin'
       }).unwrap();
 
@@ -95,7 +116,9 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
         <Button variant="ghost" onClick={onBack} className="p-2">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-2xl font-bold">{t('admin.editTimesheet')}</h2>
+        <h2 className="text-2xl font-bold">
+          {readOnly ? t('admin.viewTimesheet') : t('admin.editTimesheet')}
+        </h2>
       </div>
 
       <Card>
@@ -113,6 +136,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 value={formData.date || ''}
                 onChange={handleInputChange}
                 required
+                readOnly={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -125,6 +149,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 placeholder={t('formFields.employeeName')}
                 required
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -136,6 +161,7 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 onChange={handleInputChange}
                 placeholder={t('formFields.clientCompanyName')}
                 required
+                readOnly={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -148,9 +174,10 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 placeholder={t('formFields.projectNamePlaceholder')}
                 required
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
-            <div className="space-y-2 md:col-span-1">
+            <div className="space-y-2">
               <Label htmlFor="timeSpent">{t('formFields.timeSpentHours')}</Label>
               <Input
                 id="timeSpent"
@@ -160,11 +187,69 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
                 min="0"
                 value={formData.timeSpent || ''}
                 onChange={handleInputChange}
-                placeholder={t('formFields.hoursSpentOnSite')}
+                placeholder="Regular hours"
                 required
+                readOnly={readOnly}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="overtimeHours">Overtime Hours</Label>
+              <Input
+                id="overtimeHours"
+                name="overtimeHours"
+                type="number"
+                step="0.25"
+                min="0"
+                value={formData.overtimeHours || ''}
+                onChange={handleInputChange}
+                placeholder="Overtime hours"
+                readOnly={readOnly}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="doubleHours">Double Hours</Label>
+              <Input
+                id="doubleHours"
+                name="doubleHours"
+                type="number"
+                step="0.25"
+                min="0"
+                value={formData.doubleHours || ''}
+                onChange={handleInputChange}
+                placeholder="Double time hours"
+                readOnly={readOnly}
               />
             </div>
           </div>
+
+          {/* Hours Summary */}
+          {(formData.timeSpent || formData.overtimeHours || formData.doubleHours) && (
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Hours Summary</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">Regular:</span>
+                  <span className="ml-2 font-medium">{formData.timeSpent || '0'} hrs</span>
+                </div>
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">Overtime:</span>
+                  <span className="ml-2 font-medium">{formData.overtimeHours || '0'} hrs</span>
+                </div>
+                <div>
+                  <span className="text-gray-600 dark:text-gray-400">Double:</span>
+                  <span className="ml-2 font-medium">{formData.doubleHours || '0'} hrs</span>
+                </div>
+                <div className="font-semibold">
+                  <span className="text-gray-600 dark:text-gray-400">Total:</span>
+                  <span className="ml-2 text-blue-600 dark:text-blue-400">
+                    {(parseFloat(formData.timeSpent || '0') + 
+                      parseFloat(formData.overtimeHours || '0') + 
+                      parseFloat(formData.doubleHours || '0')).toFixed(2)} hrs
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="jobDescription">{t('formFields.jobDescription')}</Label>
@@ -175,17 +260,19 @@ export default function TimesheetEdit({ timesheet, onBack }: TimesheetEditProps)
               onChange={handleInputChange}
               placeholder={t('formFields.jobDescriptionPlaceholder')}
               className="min-h-[100px]"
-            
+              readOnly={readOnly}
             />
           </div>
 
           <div className="flex gap-3">
             <Button variant="outline" onClick={onBack}>
-              {t('common.cancel')}
+              {readOnly ? t('common.close') : t('common.cancel')}
             </Button>
-            <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? t('common.saving') : t('common.saveChanges')}
-            </Button>
+            {!readOnly && (
+              <Button onClick={handleSave} disabled={isLoading}>
+                {isLoading ? t('common.saving') : t('common.saveChanges')}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

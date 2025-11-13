@@ -35,9 +35,10 @@ interface HazardData {
 interface HazardIdentificationSectionProps {
   hazards: HazardData;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  readOnly?: boolean;
 }
 
-const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentificationSectionProps) => {
+const HazardIdentificationSection = memo(({ hazards, onChange, readOnly = false }: HazardIdentificationSectionProps) => {
   const { t } = useTranslation('common');
   
   const hazardItems = [
@@ -89,6 +90,7 @@ const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentific
                       },
                     } as any)
                   }
+                  disabled={readOnly}
                   className="w-4 h-4"
                 />
                 <Label htmlFor={`${hazard.key}-yes`}>{t('common.yes')}</Label>
@@ -111,6 +113,7 @@ const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentific
                       },
                     } as any)
                   }
+                  disabled={readOnly}
                   className="w-4 h-4"
                 />
                 <Label htmlFor={`${hazard.key}-no`}>{t('common.no')}</Label>
@@ -147,6 +150,7 @@ const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentific
                           },
                         } as any)
                       }
+                      disabled={readOnly}
                       className="w-4 h-4"
                     />
                     <Label htmlFor={`${hazard.key}Action-yes`}>{t('common.yes')}</Label>
@@ -169,6 +173,7 @@ const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentific
                           },
                         } as any)
                       }
+                      disabled={readOnly}
                       className="w-4 h-4"
                     />
                     <Label htmlFor={`${hazard.key}Action-no`}>{t('common.no')}</Label>
@@ -188,6 +193,7 @@ const HazardIdentificationSection = memo(({ hazards, onChange }: HazardIdentific
             onChange={onChange}
             placeholder="Enter information"
             rows={3}
+            readOnly={readOnly}
           />
         </div>
       </CardContent>

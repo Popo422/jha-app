@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Building2,
   Users,
@@ -32,11 +34,11 @@ import { SubcontractorManualAddModal } from "./SubcontractorManualAddModal";
 import { EmployeeBulkUploadModal } from "./EmployeeBulkUploadModal";
 import { EmployeeManualAddModal } from "./EmployeeManualAddModal";
 import { useCreateAdminUserMutation, useBulkCreateAdminUsersMutation, useGetAdminUsersQuery } from "@/lib/features/admin-users/adminUsersApi";
-import { useBulkCreateProjectsMutation, useGetProjectLimitQuery } from "@/lib/features/projects/projectsApi";
+import { useBulkCreateProjectsMutation, useGetProjectLimitQuery, useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
 import { useBulkCreateSubcontractorsMutation, useGetSubcontractorsQuery } from "@/lib/features/subcontractors/subcontractorsApi";
 import { useBulkCreateContractorsMutation, useGetContractorLimitQuery } from "@/lib/features/contractors/contractorsApi";
 
-type Step = "welcome" | "projectManagers" | "projects" | "subcontractors" | "employees" | "complete";
+type Step = "welcome" | "projectManagers" | "projects" | "subcontractors" | "complete";
 
 interface ProjectManagerData {
   name: string;
@@ -47,11 +49,16 @@ interface ProjectData {
   name: string;
   location: string;
   projectManager: string;
+  projectCost?: string;
 }
 
 interface SubcontractorData {
   name: string; // This maps to the database 'name' field
   contractAmount?: string; // Optional contract amount
+  projectId?: string; // Optional project assignment (legacy)
+  projectIds?: string[]; // Optional multiple project assignments
+  foreman?: string; // Optional foreman name
+  foremanEmail?: string; // Optional foreman email
 }
 
 interface EmployeeData {
@@ -78,6 +85,7 @@ export default function AdminOnboarding() {
 
   const [currentStep, setCurrentStep] = useState<Step>("welcome");
   const [isLoading, setIsLoading] = useState(false);
+  const [subcontractorProjectAssignments, setSubcontractorProjectAssignments] = useState<Record<string, string[]>>({});
   const [apiErrors, setApiErrors] = useState<{
     projectManagers?: string[];
     projects?: string[];
@@ -99,6 +107,8 @@ export default function AdminOnboarding() {
   const savedProjectManagers = savedAdminUsersData?.adminUsers.filter(user => user.role === 'admin') || [];
   const { data: savedSubcontractorsData } = useGetSubcontractorsQuery({ authType: 'admin' });
   const savedSubcontractors = savedSubcontractorsData?.subcontractors || [];
+  const { data: savedProjectsData } = useGetProjectsQuery({ authType: 'admin', page: 1, pageSize: 100 });
+  const savedProjects = savedProjectsData?.projects || [];
   const { data: contractorLimitData } = useGetContractorLimitQuery();
   const { data: projectLimitData } = useGetProjectLimitQuery();
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
@@ -133,6 +143,7 @@ export default function AdminOnboarding() {
   const [newProject, setNewProject] = useState<ProjectData>({ name: "", location: "", projectManager: "" });
   const [newSubcontractor, setNewSubcontractor] = useState<SubcontractorData>({
     name: "",
+    foremanEmail: "",
   });
   const [newEmployee, setNewEmployee] = useState<EmployeeData>({
     firstName: "",
@@ -143,7 +154,7 @@ export default function AdminOnboarding() {
     language: "en",
   });
 
-  const steps: Step[] = ["welcome", "projectManagers", "projects", "subcontractors", "employees", "complete"];
+  const steps: Step[] = ["welcome", "projectManagers", "projects", "subcontractors", /* "employees", */ "complete"];
   const currentStepIndex = steps.indexOf(currentStep);
   const progress = ((currentStepIndex + 1) / steps.length) * 100;
 
@@ -215,8 +226,8 @@ export default function AdminOnboarding() {
         return duplicateProjectsCount > 0 || (apiErrors.projects && apiErrors.projects.length > 0);
       case 'subcontractors':
         return duplicateSubcontractorsCount > 0 || (apiErrors.subcontractors && apiErrors.subcontractors.length > 0);
-      case 'employees':
-        return duplicateEmployeesCount > 0 || (apiErrors.employees && apiErrors.employees.length > 0);
+      // case 'employees':
+        // return duplicateEmployeesCount > 0 || (apiErrors.employees && apiErrors.employees.length > 0);
       default:
         return false;
     }
@@ -384,9 +395,42 @@ export default function AdminOnboarding() {
       return true;
     }
 
+    // Create a map of project names to IDs for quick lookup
+    const allProjects = [...savedProjects, ...onboardingData.projects];
+    const projectNameToIdMap = new Map();
+    
+    // Add saved projects (which have IDs)
+    savedProjects.forEach(project => {
+      projectNameToIdMap.set(project.name, project.id);
+    });
+    
+    // For new projects from onboarding, we don't have IDs yet, so we'll use project names
+    // The backend will need to handle this by looking up project IDs by name
+    onboardingData.projects.forEach(project => {
+      if (!projectNameToIdMap.has(project.name)) {
+        projectNameToIdMap.set(project.name, project.name); // Use name as fallback
+      }
+    });
+
+    // Merge project assignments into subcontractor data
+    const subcontractorsWithProjects = unsavedSubcontractors.map(subcontractor => {
+      // Get multiple project assignments from the assignments state
+      const assignedProjectNames = subcontractorProjectAssignments[subcontractor.name] || [];
+      
+      // Map project names to IDs
+      const projectIds = assignedProjectNames
+        .map(projectName => projectNameToIdMap.get(projectName))
+        .filter(id => id !== undefined);
+      
+      return {
+        ...subcontractor,
+        projectIds: projectIds.length > 0 ? projectIds : undefined
+      };
+    });
+
     try {
       const result = await bulkCreateSubcontractors({
-        subcontractors: unsavedSubcontractors
+        subcontractors: subcontractorsWithProjects
       }).unwrap();
 
       // Mark successfully created subcontractors as saved
@@ -523,8 +567,8 @@ export default function AdminOnboarding() {
       saveSuccess = await handleSaveProjects();
     } else if (currentStep === "subcontractors" && onboardingData.subcontractors.length > 0) {
       saveSuccess = await handleSaveSubcontractors();
-    } else if (currentStep === "employees" && onboardingData.employees.length > 0) {
-      saveSuccess = await handleSaveEmployees();
+    // } else if (currentStep === "employees" && onboardingData.employees.length > 0) {
+      // saveSuccess = await handleSaveEmployees();
     }
 
     // Only proceed to next step if save was successful
@@ -585,7 +629,7 @@ export default function AdminOnboarding() {
         ...prev,
         subcontractors: [...prev.subcontractors, newSubcontractor],
       }));
-      setNewSubcontractor({ name: "" });
+      setNewSubcontractor({ name: "", foremanEmail: "" });
       // Clear API errors when adding new data
       setApiErrors(prev => ({ ...prev, subcontractors: undefined }));
     }
@@ -794,6 +838,22 @@ export default function AdminOnboarding() {
       ...prev,
       subcontractors: [...prev.subcontractors, ...subcontractors],
     }));
+    
+    // Convert projectIds to subcontractorProjectAssignments state
+    const newAssignments: Record<string, string[]> = {};
+    subcontractors.forEach(subcontractor => {
+      if (subcontractor.projectIds && subcontractor.projectIds.length > 0) {
+        // Convert "ProjectName|Location" format to just "ProjectName"
+        const projectNames = subcontractor.projectIds.map((id: string) => id.split('|')[0]);
+        newAssignments[subcontractor.name] = projectNames;
+      }
+    });
+    
+    setSubcontractorProjectAssignments(prev => ({
+      ...prev,
+      ...newAssignments
+    }));
+    
     setIsSubcontractorManualAddModalOpen(false);
     setShowTable("subcontractors");
   };
@@ -803,6 +863,16 @@ export default function AdminOnboarding() {
       ...prev,
       subcontractors: [...prev.subcontractors, subcontractor],
     }));
+    
+    // Convert projectIds to subcontractorProjectAssignments state
+    if (subcontractor.projectIds && subcontractor.projectIds.length > 0) {
+      // Convert "ProjectName|Location" format to just "ProjectName"
+      const projectNames = subcontractor.projectIds.map((id: string) => id.split('|')[0]);
+      setSubcontractorProjectAssignments(prev => ({
+        ...prev,
+        [subcontractor.name]: projectNames
+      }));
+    }
   };
 
   const handleEmployeeManualAddSaveAndContinue = (employees: EmployeeData[]) => {
@@ -892,7 +962,7 @@ export default function AdminOnboarding() {
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">{t("admin.onboardingDescription")}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
         <div className="text-center space-y-3">
           <div className="w-12 h-12 mx-auto bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center">
             <User className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -917,13 +987,13 @@ export default function AdminOnboarding() {
           <p className="text-sm text-muted-foreground">{t("admin.subcontractorsDescription")}</p>
         </div>
 
-        <div className="text-center space-y-3">
+        {/* <div className="text-center space-y-3">
           <div className="w-12 h-12 mx-auto bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
             <User className="w-6 h-6 text-green-600 dark:text-green-400" />
           </div>
           <h3 className="font-semibold">{t("admin.employeesSetup")}</h3>
           <p className="text-sm text-muted-foreground">{t("admin.employeesDescription")}</p>
-        </div>
+        </div> */}
       </div>
 
       <Button onClick={handleNext} size="lg" className="px-8">
@@ -1663,6 +1733,15 @@ export default function AdminOnboarding() {
                         Contract Amount
                       </th>
                       <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
+                        Foreman
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
+                        Foreman Email
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
+                        Projects
+                      </th>
+                      <th className="text-left p-4 font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700">
                         Actions
                       </th>
                     </tr>
@@ -1697,6 +1776,45 @@ export default function AdminOnboarding() {
                                 className="w-full"
                                 placeholder="Contract Amount (optional)"
                                 type="text"
+                              />
+                            </td>
+                            <td className="p-4">
+                              <Input
+                                value={editingSubcontractor?.foreman || ""}
+                                onChange={(e) =>
+                                  setEditingSubcontractor((prev) => (prev ? { ...prev, foreman: e.target.value } : null))
+                                }
+                                className="w-full"
+                                placeholder="Foreman name (optional)"
+                                type="text"
+                              />
+                            </td>
+                            <td className="p-4">
+                              <Input
+                                value={editingSubcontractor?.foremanEmail || ""}
+                                onChange={(e) =>
+                                  setEditingSubcontractor((prev) => (prev ? { ...prev, foremanEmail: e.target.value } : null))
+                                }
+                                className="w-full"
+                                placeholder="Foreman email (optional)"
+                                type="email"
+                              />
+                            </td>
+                            <td className="p-4">
+                              <MultiSelect
+                                options={[...savedProjects, ...onboardingData.projects].map((project) => ({
+                                  value: project.name,
+                                  label: project.name
+                                }))}
+                                value={subcontractorProjectAssignments[subcontractor.name] || []}
+                                onValueChange={(value) => {
+                                  setSubcontractorProjectAssignments(prev => ({
+                                    ...prev,
+                                    [subcontractor.name]: value
+                                  }));
+                                }}
+                                placeholder="Select projects..."
+                                className="min-w-64"
                               />
                             </td>
                             <td className="p-4">
@@ -1741,6 +1859,36 @@ export default function AdminOnboarding() {
                               <span className="text-gray-700 dark:text-gray-300">
                                 {subcontractor.contractAmount || "-"}
                               </span>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {subcontractor.foreman || "-"}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {subcontractor.foremanEmail || "-"}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <div className="text-gray-700 dark:text-gray-300">
+                                {(subcontractorProjectAssignments[subcontractor.name] || []).length > 0 ? (
+                                  <div className="space-y-1">
+                                    {(subcontractorProjectAssignments[subcontractor.name] || []).slice(0, 2).map((projectName, projIndex) => (
+                                      <div key={projIndex} className="text-sm">
+                                        {projectName}
+                                      </div>
+                                    ))}
+                                    {(subcontractorProjectAssignments[subcontractor.name] || []).length > 2 && (
+                                      <div className="text-xs text-muted-foreground">
+                                        +{(subcontractorProjectAssignments[subcontractor.name] || []).length - 2} more
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span>No projects assigned</span>
+                                )}
+                              </div>
                             </td>
                             <td className="p-4">
                               <div className="flex gap-2">
@@ -1799,7 +1947,7 @@ export default function AdminOnboarding() {
                   </>
                 ) : (
                   <>
-                    Finish & Continue to Employees
+                    Finish & Complete Setup
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </>
                 )}
@@ -2311,7 +2459,7 @@ export default function AdminOnboarding() {
         </div>
         <h1 className="text-4xl font-bold text-green-600">Onboarding Complete!</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Your projects, subcontractors, and employees have been successfully set up.
+          Your projects and subcontractors have been successfully set up.
         </p>
       </div>
 
@@ -2329,10 +2477,6 @@ export default function AdminOnboarding() {
           <div className="flex justify-between">
             <span>Subcontractors added:</span>
             <span className="font-medium">{onboardingData.subcontractors.length}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Employees added:</span>
-            <span className="font-medium">{onboardingData.employees.length}</span>
           </div>
         </div>
       </div>
@@ -2364,7 +2508,7 @@ export default function AdminOnboarding() {
           {currentStep === "projectManagers" && renderProjectManagersStep()}
           {currentStep === "projects" && renderProjectsStep()}
           {currentStep === "subcontractors" && renderSubcontractorsStep()}
-          {currentStep === "employees" && renderEmployeesStep()}
+          {/* {currentStep === "employees" && renderEmployeesStep()} */}
           {currentStep === "complete" && renderCompleteStep()}
         </CardContent>
       </Card>
@@ -2376,7 +2520,7 @@ export default function AdminOnboarding() {
             Previous
           </Button>
 
-          {currentStep === "employees" ? (
+          {currentStep === "subcontractors" ? (
             <Button onClick={handleComplete} disabled={isLoading} className="px-8">
               {isLoading ? "Completing Setup..." : "Complete Setup"}
               <CheckCircle className="ml-2 w-4 h-4" />
@@ -2396,10 +2540,9 @@ export default function AdminOnboarding() {
                 className="px-8" 
                 disabled={isLoading || isSavingProjectManagers || isSavingProjects || isSavingSubcontractors || isSavingEmployees || hasDuplicates()}
               >
-                {(isSavingProjectManagers && currentStep === "projectManagers") || 
-                 (isSavingProjects && currentStep === "projects") ||
-                 (isSavingSubcontractors && currentStep === "subcontractors") ||
-                 (isSavingEmployees && (currentStep as Step) === "employees") ? (
+                {((isSavingProjectManagers && (currentStep as Step) === "projectManagers") || 
+                  (isSavingProjects && (currentStep as Step) === "projects") ||
+                  (isSavingSubcontractors && (currentStep as Step) === "subcontractors")) ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
                     Saving...
@@ -2465,6 +2608,7 @@ export default function AdminOnboarding() {
         onClose={() => setIsSubcontractorManualAddModalOpen(false)}
         onSaveAndContinue={handleSubcontractorManualAddSaveAndContinue}
         onSaveAndAddMore={handleSubcontractorManualAddSaveAndAddMore}
+        availableProjects={[...savedProjects, ...onboardingData.projects]}
       />
 
       <EmployeeManualAddModal

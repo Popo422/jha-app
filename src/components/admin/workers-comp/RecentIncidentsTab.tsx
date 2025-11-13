@@ -41,10 +41,10 @@ export default function RecentIncidentsTab() {
   // Fetch dropdown data
   const { data: projectsData } = useGetProjectsQuery({ pageSize: 1000, authType: 'admin' });
 
-  // Only get incidents from the last 30 days for "Recent Incidents"
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const defaultDateFrom = filters.dateFrom || thirtyDaysAgo.toISOString().split('T')[0];
+  // Only get incidents from the last 3 days for "Recent Incidents"
+  const threeDaysAgo = new Date();
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+  const defaultDateFrom = filters.dateFrom || threeDaysAgo.toISOString().split('T')[0];
 
   const { data: incidentsData, isLoading } = useGetIncidentsQuery({
     page: pagination.page,

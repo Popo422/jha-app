@@ -15,6 +15,8 @@ export interface AuthContractor {
   code: string
   companyId: string
   companyName: string
+  type: string
+  isForeman: boolean
 }
 
 export interface TokenPayload {
@@ -124,4 +126,47 @@ export function authenticateRequest(request: NextRequest, authType: 'contractor'
   }
 
   throw new Error('No valid authentication token found')
+}
+
+// Simplified contractor session validation for API endpoints
+export async function validateContractorSession(request: NextRequest) {
+  try {
+    const auth = authenticateRequest(request, 'contractor')
+    if (auth.isAdmin || !auth.contractor?.companyId) {
+      return { success: false, error: 'Contractor authentication required', status: 401 }
+    }
+    
+    return { 
+      success: true, 
+      contractor: auth.contractor
+    }
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Authentication failed', 
+      status: 401 
+    }
+  }
+}
+
+// Simplified admin session validation for API endpoints
+export async function validateAdminSession(request: NextRequest) {
+  try {
+    const auth = authenticateRequest(request, 'admin')
+    if (!auth.isAdmin || !auth.admin?.companyId) {
+      return { success: false, error: 'Admin authentication required', status: 401 }
+    }
+    
+    return { 
+      success: true, 
+      admin: auth.admin,
+      company: { id: auth.admin.companyId }
+    }
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Authentication failed', 
+      status: 401 
+    }
+  }
 }

@@ -29,6 +29,7 @@ import {
   ChevronRight,
   FolderOpen,
   Heart,
+  Receipt,
 } from 'lucide-react'
 
 interface SidebarItem {
@@ -68,6 +69,16 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       icon: Home
     },
     {
+      label: 'Project Dashboard',
+      href: '/admin/project-dashboard',
+      icon: FolderOpen
+    },
+    {
+      label: 'Expenses',
+      href: '/admin/expenses',
+      icon: Receipt
+    },
+    {
       label: 'Forms',
       icon: FolderOpen,
       isAccordion: true,
@@ -89,23 +100,23 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         }
       ]
     },
-    {
-      label: t('admin.reporting'),
-      icon: BarChart3,
-      isAccordion: true,
-      children: [
-        {
-          label: t('admin.projectSnapshot'),
-          href: '/admin/project-snapshot',
-          icon: Camera
-        },
-        {
-          label: 'Time and Cost Reports',
-          href: '/admin/reporting',
-          icon: Clock
-        }
-      ]
-    },
+      // {
+      //   label: t('admin.reporting'),
+      //   icon: BarChart3,
+      //   isAccordion: true,
+      //   children: [
+      //     // {
+      //     //   label: t('admin.projectSnapshot'),
+      //     //   href: '/admin/project-snapshot',
+      //     //   icon: Camera
+      //     // },
+      //     {
+      //       label: 'Time and Cost Reports',
+      //       href: '/admin/reporting',
+      //       icon: Clock
+      //     }
+      //   ]
+      // },
     {
       label: 'Workers Comp',
       href: '/admin/workers-comp',
@@ -116,10 +127,15 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       href: '/admin/toolbox-talks',
       icon: MessageSquare
     },
+    // {
+    //   label: t('admin.onboarding'),
+    //   href: '/admin/onboarding',
+    //   icon: Sparkles
+    // },
     {
-      label: t('admin.onboarding'),
-      href: '/admin/onboarding',
-      icon: Sparkles
+      label: 'Project Manager',
+      href: '/admin/admin-editor',
+      icon: Shield
     },
     {
       label: 'Settings',
@@ -130,11 +146,6 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           label: t('admin.moduleConfiguration'),
           href: '/admin/modules',
           icon: Puzzle
-        },
-        {
-          label: t('admin.adminEditor'),
-          href: '/admin/admin-editor',
-          icon: Shield
         },
         {
           label: t('admin.contractorsEditor'),

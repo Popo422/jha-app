@@ -19,6 +19,7 @@ interface ProjectData {
   name: string
   location: string
   projectManager: string
+  projectCost?: string
 }
 
 interface ProjectManualAddModalProps {
@@ -42,7 +43,8 @@ export function ProjectManualAddModal({
   const [currentProject, setCurrentProject] = useState<ProjectData>({
     name: '',
     location: '',
-    projectManager: ''
+    projectManager: '',
+    projectCost: ''
   })
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
@@ -72,7 +74,7 @@ export function ProjectManualAddModal({
     onSaveAndAddMore(newProject)
     
     // Reset form
-    setCurrentProject({ name: '', location: '', projectManager: '' })
+    setCurrentProject({ name: '', location: '', projectManager: '', projectCost: '' })
     setErrors({})
   }
 
@@ -89,12 +91,12 @@ export function ProjectManualAddModal({
     
     // Reset state
     setTempProjects([])
-    setCurrentProject({ name: '', location: '', projectManager: '' })
+    setCurrentProject({ name: '', location: '', projectManager: '', projectCost: '' })
     setErrors({})
   }
 
   const handleClose = () => {
-    setCurrentProject({ name: '', location: '', projectManager: '' })
+    setCurrentProject({ name: '', location: '', projectManager: '', projectCost: '' })
     setTempProjects([])
     setErrors({})
     onClose()
@@ -197,6 +199,24 @@ export function ProjectManualAddModal({
                     </p>
                   )}
                 </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="projectCost" className="text-sm font-medium">
+                    Project Cost (Optional)
+                  </Label>
+                  <Input
+                    id="projectCost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={currentProject.projectCost}
+                    onChange={(e) => {
+                      setCurrentProject(prev => ({ ...prev, projectCost: e.target.value }))
+                    }}
+                    placeholder="Enter project cost"
+                  />
+                </div>
+                
               </div>
             </div>
           </div>

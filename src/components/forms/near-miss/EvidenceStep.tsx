@@ -16,9 +16,10 @@ interface EvidenceStepProps {
   updateData: (updates: Partial<{
     evidenceFiles: File[];
   }>) => void;
+  readOnly?: boolean;
 }
 
-export default function EvidenceStep({ data, updateData }: EvidenceStepProps) {
+export default function EvidenceStep({ data, updateData, readOnly = false }: EvidenceStepProps) {
   const { t } = useTranslation('common');
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,7 +46,11 @@ export default function EvidenceStep({ data, updateData }: EvidenceStepProps) {
             <div className="mt-4">
               <Label
                 htmlFor="evidence-files"
-                className="cursor-pointer inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                className={`inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white ${
+                  readOnly 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                }`}
               >
                 Upload File
               </Label>
@@ -55,6 +60,7 @@ export default function EvidenceStep({ data, updateData }: EvidenceStepProps) {
                 multiple
                 accept="image/*,video/*,.pdf,.doc,.docx,.txt"
                 onChange={handleFileUpload}
+                disabled={readOnly}
                 className="hidden"
               />
             </div>
@@ -76,7 +82,7 @@ export default function EvidenceStep({ data, updateData }: EvidenceStepProps) {
                       key={`new-${index}`}
                       file={file}
                       onDelete={() => removeFile(index)}
-                      showDeleteButton={true}
+                      showDeleteButton={!readOnly}
                     />
                   ))}
                 </div>

@@ -8,7 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
 export async function POST(request: NextRequest) {
   try {
-    const { contractorCode } = await request.json()
+    const { contractorCode, rememberMe } = await request.json()
 
     if (!contractorCode) {
       return NextResponse.json(
@@ -51,15 +51,18 @@ export async function POST(request: NextRequest) {
       code: contractorData.code,
       companyId: contractorData.companyId,
       companyLogoUrl: company?.logoUrl || null,
-      language: contractorData.language || 'en'
+      language: contractorData.language || 'en',
+      type: contractorData.type || 'contractor',
+      isForeman: (contractorData.type === 'foreman')
     }
 
     // Generate JWT token with user and contractor info
+    const expirationHours = rememberMe ? 30 * 24 : 24 // 30 days or 24 hours
     const tokenPayload = {
       user,
       contractor,
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+      exp: Math.floor(Date.now() / 1000) + (expirationHours * 60 * 60)
     }
 
     const token = jwt.sign(tokenPayload, JWT_SECRET)
@@ -75,7 +78,7 @@ export async function POST(request: NextRequest) {
     // Set the cookie on the server side
     response.cookies.set('authToken', token, {
       path: '/',
-      maxAge: 24 * 60 * 60, // 24 hours
+      maxAge: expirationHours * 60 * 60, // Match token expiration
       httpOnly: false, // Allow client-side access for debugging
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax'

@@ -21,6 +21,7 @@ interface SubcontractorSelectProps {
   id?: string;
   name?: string;
   authType?: 'contractor' | 'admin';
+  returnValue?: 'id' | 'name'; // What to return when selecting - defaults to 'id'
 }
 
 export default function SubcontractorSelect({
@@ -34,6 +35,7 @@ export default function SubcontractorSelect({
   id,
   name,
   authType = 'contractor',
+  returnValue = 'name',
 }: SubcontractorSelectProps) {
   const { t } = useTranslation("common");
 
@@ -57,10 +59,19 @@ export default function SubcontractorSelect({
 
   const subcontractors = subcontractorsData?.subcontractors || [];
 
-  // Update input value when prop value changes
+  // Update input value when prop value changes - find subcontractor name by ID
   useEffect(() => {
-    setInputValue(value);
-  }, [value]);
+    if (value && subcontractors.length > 0) {
+      const foundSubcontractor = subcontractors.find(s => s.id === value);
+      if (foundSubcontractor) {
+        setInputValue(foundSubcontractor.name);
+      } else {
+        setInputValue(value); // Fallback if not found (might be a name)
+      }
+    } else {
+      setInputValue(value || '');
+    }
+  }, [value, subcontractors]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -78,7 +89,18 @@ export default function SubcontractorSelect({
     const newValue = e.target.value;
     setInputValue(newValue);
     setSearchTerm(newValue);
-    onChange(newValue);
+    
+    // If the input matches a subcontractor name exactly, pass the ID
+    const matchingSubcontractor = subcontractors.find(s => 
+      s.name.toLowerCase() === newValue.toLowerCase()
+    );
+    
+    if (matchingSubcontractor) {
+      onChange(returnValue === 'name' ? matchingSubcontractor.name : matchingSubcontractor.id);
+    } else {
+      // If no match, clear the selection
+      onChange('');
+    }
 
     // Open dropdown when typing
     if (newValue.length > 0 && !isOpen) {
@@ -89,7 +111,7 @@ export default function SubcontractorSelect({
   const handleSubcontractorSelect = (subcontractor: any) => {
     const subcontractorName = subcontractor.name;
     setInputValue(subcontractorName);
-    onChange(subcontractorName);
+    onChange(returnValue === 'name' ? subcontractor.name : subcontractor.id);
     setIsOpen(false);
     setSearchTerm("");
   };
@@ -179,7 +201,7 @@ export default function SubcontractorSelect({
               <div className="p-2 text-sm text-gray-500 dark:text-gray-400">Loading subcontractors...</div>
             ) : filteredSubcontractors.length > 0 ? (
               filteredSubcontractors.map((subcontractor) => {
-                const isSelected = subcontractor.name === inputValue;
+                const isSelected = subcontractor.id === value;
 
                 return (
                   <div

@@ -130,7 +130,7 @@ export const incidentsApi = createApi({
       return headers
     },
   }),
-  tagTypes: ['Incident'],
+  tagTypes: ['Incident', 'WorkersCompData'],
   endpoints: (builder) => ({
     createIncident: builder.mutation<IncidentResponse, IncidentData>({
       query: (data) => {
@@ -175,7 +175,7 @@ export const incidentsApi = createApi({
           body: formData,
         }
       },
-      invalidatesTags: ['Incident'],
+      invalidatesTags: ['Incident', 'WorkersCompData'],
     }),
     getIncidents: builder.query<GetIncidentsResponse, { 
       incidentType?: string
@@ -255,7 +255,7 @@ export const incidentsApi = createApi({
           body: data,
         }
       },
-      invalidatesTags: (result, error, { id }) => [{ type: 'Incident', id }],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Incident', id }, 'WorkersCompData'],
     }),
     deleteIncident: builder.mutation<DeleteIncidentResponse, { id: string, authType?: 'contractor' | 'admin' | 'any' }>({
       query: ({ id, authType }) => {
@@ -266,7 +266,46 @@ export const incidentsApi = createApi({
           method: 'DELETE',
         }
       },
-      invalidatesTags: ['Incident'],
+      invalidatesTags: ['Incident', 'WorkersCompData'],
+    }),
+    createAdminIncident: builder.mutation<IncidentResponse, IncidentData>({
+      query: (data) => {
+        const formData = new FormData()
+        
+        // Add form fields
+        formData.append('reportedBy', data.reportedBy)
+        formData.append('injuredEmployee', data.injuredEmployee)
+        formData.append('projectName', data.projectName)
+        formData.append('dateOfIncident', data.dateOfIncident)
+        formData.append('incidentType', data.incidentType)
+        formData.append('company', data.company)
+        
+        if (data.subcontractor) formData.append('subcontractor', data.subcontractor)
+        if (data.description) formData.append('description', data.description)
+        if (data.injuryType) formData.append('injuryType', data.injuryType)
+        if (data.bodyPart) formData.append('bodyPart', data.bodyPart)
+        if (data.witnessName) formData.append('witnessName', data.witnessName)
+        if (data.witnessStatement) formData.append('witnessStatement', data.witnessStatement)
+        if (data.immediateAction) formData.append('immediateAction', data.immediateAction)
+        if (data.rootCause) formData.append('rootCause', data.rootCause)
+        if (data.preventiveMeasures) formData.append('preventiveMeasures', data.preventiveMeasures)
+        if (data.severity) formData.append('severity', data.severity)
+        if (data.formData) formData.append('formData', JSON.stringify(data.formData))
+        
+        // Add files if any
+        if (data.files) {
+          data.files.forEach(file => {
+            formData.append('files', file)
+          })
+        }
+
+        return {
+          url: '../admin/incidents',
+          method: 'POST',
+          body: formData,
+        }
+      },
+      invalidatesTags: ['Incident', 'WorkersCompData'],
     }),
     exportIncidents: builder.mutation<Blob, { 
       incidentType?: string
@@ -290,6 +329,7 @@ export const incidentsApi = createApi({
 
 export const { 
   useCreateIncidentMutation,
+  useCreateAdminIncidentMutation,
   useGetIncidentsQuery,
   useLazyGetIncidentsQuery,
   useGetIncidentByIdQuery,

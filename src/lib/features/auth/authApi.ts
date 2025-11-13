@@ -2,11 +2,13 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
 export interface LoginRequest {
   contractorCode: string
+  rememberMe?: boolean
 }
 
 export interface AdminLoginRequest {
   email: string
   password: string
+  rememberMe?: boolean
 }
 
 export interface User {
@@ -23,6 +25,8 @@ export interface Contractor {
   companyId: string
   companyLogoUrl: string | null
   language: string
+  type: string
+  isForeman: boolean
 }
 
 export interface Admin {

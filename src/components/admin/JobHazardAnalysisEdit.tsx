@@ -36,9 +36,10 @@ interface Submission {
 interface JobHazardAnalysisEditProps {
   submission: Submission;
   onBack: () => void;
+  readOnly?: boolean;
 }
 
-export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardAnalysisEditProps) {
+export default function JobHazardAnalysisEdit({ submission, onBack, readOnly = false }: JobHazardAnalysisEditProps) {
   const { t } = useTranslation('common');
   const [formData, setFormData] = useState(submission.formData);
   const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
@@ -156,7 +157,9 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
         <Button variant="ghost" onClick={onBack} className="p-2">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-2xl font-bold">{t('common.edit')} {t('forms.jobHazardAnalysis')}</h2>
+        <h2 className="text-2xl font-bold">
+          {readOnly ? t('admin.viewJobHazardAnalysis') : `${t('common.edit')} ${t('forms.jobHazardAnalysis')}`}
+        </h2>
       </div>
 
       <Card>
@@ -173,6 +176,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                 value={formData.completedBy || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, completedBy: value }))}
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -183,6 +187,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                 type="date"
                 value={formData.date || ''}
                 onChange={handleInputChange}
+                readOnly={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -193,6 +198,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                 value={formData.supervisor || ''}
                 onChange={(value) => setFormData(prev => ({ ...prev, supervisor: value }))}
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -202,6 +208,7 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                 name="company"
                 value={formData.company || ''}
                 onChange={handleInputChange}
+                readOnly={readOnly}
               />
             </div>
             <div className="space-y-2">
@@ -214,17 +221,19 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                 placeholder="Name or title of the project"
                 required
                 authType="admin"
+                disabled={readOnly}
               />
             </div>
           </div>
 
           {/* Form Sections */}
-          <HazardIdentificationSection hazards={formData.hazards || {}} onChange={handleInputChange} />
-          <PPERequirementsSection ppe={formData.ppe || {}} onChange={handleInputChange} />
+          <HazardIdentificationSection hazards={formData.hazards || {}} onChange={handleInputChange} readOnly={readOnly} />
+          <PPERequirementsSection ppe={formData.ppe || {}} onChange={handleInputChange} readOnly={readOnly} />
           <FallProtectionSection 
             fallProtection={formData.fallProtection || {}} 
             siteSpecificSafety={formData.siteSpecificSafety || false}
-            onChange={handleInputChange} 
+            onChange={handleInputChange}
+            readOnly={readOnly}
           />
 
           {/* Tool Inspection Section */}
@@ -599,15 +608,20 @@ export default function JobHazardAnalysisEdit({ submission, onBack }: JobHazardA
                 modalDescription="Employee Signature"
                 signatureLabel="Employee Signature:"
                 required
+                readOnly={readOnly}
               />
             </CardContent>
           </Card>
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onBack}>{t('common.cancel')}</Button>
-            <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? t('common.save') + '...' : t('common.save') + ' Changes'}
+            <Button variant="outline" onClick={onBack}>
+              {readOnly ? t('common.close') : t('common.cancel')}
             </Button>
+            {!readOnly && (
+              <Button onClick={handleSave} disabled={isLoading}>
+                {isLoading ? t('common.save') + '...' : t('common.save') + ' Changes'}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

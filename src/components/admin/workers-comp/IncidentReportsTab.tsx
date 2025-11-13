@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { DateInput } from "@/components/ui/date-input";
 import { Card, CardContent } from "@/components/ui/card";
 import IncidentReportEdit from "@/components/admin/IncidentReportEdit";
+import CreateIncidentReport from "@/components/admin/incidents/CreateIncidentReport";
+import IncidentReportPdfExport, { generateAndDownloadIncidentReportPDF } from "@/components/admin/IncidentReportPdfExport";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -27,6 +29,7 @@ import {
   Edit,
   Trash2,
   X,
+  FileText,
 } from "lucide-react";
 import {
   createColumnHelper,
@@ -47,6 +50,7 @@ interface Incident {
   injuryType?: string;
   createdAt: string;
   updatedAt: string;
+  formData?: Record<string, any>;
 }
 
 const columnHelper = createColumnHelper<Incident>();
@@ -54,6 +58,7 @@ const columnHelper = createColumnHelper<Incident>();
 export default function IncidentReportsTab() {
   const { t } = useTranslation('common');
   const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
+  const [isCreatingIncident, setIsCreatingIncident] = useState(false);
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
@@ -129,6 +134,17 @@ export default function IncidentReportsTab() {
 
   const handleEdit = useCallback((incident: Incident) => {
     setEditingIncident(incident);
+  }, []);
+
+  const handleDownloadPDF = useCallback(async (incident: Incident) => {
+    try {
+      await generateAndDownloadIncidentReportPDF(
+        (incident.formData || incident) as any,
+        `incident-report-${incident.id}.pdf`
+      );
+    } catch (error) {
+      console.error('Error generating Incident Report PDF:', error);
+    }
   }, []);
 
   const columns = useMemo<ColumnDef<Incident>[]>(() => [
@@ -377,6 +393,13 @@ export default function IncidentReportsTab() {
                 <Edit className="h-4 w-4 mr-2" />
                 {t('workersComp.table.edit')}
               </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleDownloadPDF(incident)}
+                className="cursor-pointer"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Export PDF
+              </DropdownMenuItem>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem 
@@ -412,6 +435,21 @@ export default function IncidentReportsTab() {
     </Card>
   ), [handleEdit, handleSingleDelete]);
 
+  // Render create form if creating
+  if (isCreatingIncident) {
+    return (
+      <div className="p-4 md:p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="p-4 md:p-6">
+            <CreateIncidentReport 
+              onBack={() => setIsCreatingIncident(false)} 
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Render edit form if editing
   if (editingIncident) {
     return (
@@ -429,32 +467,49 @@ export default function IncidentReportsTab() {
   }
 
   return (
-    <AdminDataTable
-      data={allData}
-      columns={columns}
-      isLoading={isLoading}
-      isFetching={isFetching}
-      onEdit={handleEdit}
-      onDelete={handleSingleDelete}
-      onBulkDelete={handleBulkDelete}
-      getRowId={(incident) => incident.id}
-      exportFilename="incident_reports"
-      exportHeaders={[
-        t('workersComp.export.injuredEmployee'), 
-        t('workersComp.export.subcontractorCompany'), 
-        t('workersComp.export.reportedBy'), 
-        t('workersComp.export.dateReported'), 
-        t('workersComp.export.projectName')
-      ]}
-      getExportData={getExportData}
-      filters={filterComponents}
-      renderMobileCard={renderMobileCard}
-      searchValue={searchValue}
-      onSearchChange={setSearchValue}
-      serverSide={true}
-      pagination={paginationInfo || undefined}
-      onPageChange={handlePageChange}
-      onPageSizeChange={handlePageSizeChange}
-    />
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Full Incident Reports</h3>
+        <Button onClick={() => setIsCreatingIncident(true)} className="bg-blue-600 hover:bg-blue-700">
+          Create Full Incident
+        </Button>
+      </div>
+      
+      <AdminDataTable
+        data={allData}
+        columns={columns}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        onEdit={handleEdit}
+        onDelete={handleSingleDelete}
+        onBulkDelete={handleBulkDelete}
+        getRowId={(incident) => incident.id}
+        exportFilename="incident_reports"
+        exportHeaders={[
+          t('workersComp.export.injuredEmployee'), 
+          t('workersComp.export.subcontractorCompany'), 
+          t('workersComp.export.reportedBy'), 
+          t('workersComp.export.dateReported'), 
+          t('workersComp.export.projectName')
+        ]}
+        getExportData={getExportData}
+        filters={filterComponents}
+        renderMobileCard={renderMobileCard}
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
+        serverSide={true}
+        pagination={paginationInfo || undefined}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        customActions={[
+          {
+            label: 'Export PDF',
+            icon: FileText,
+            onClick: handleDownloadPDF,
+            className: 'cursor-pointer'
+          }
+        ]}
+      />
+    </div>
   );
 }

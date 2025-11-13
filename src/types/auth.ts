@@ -12,6 +12,8 @@ export interface Contractor {
   companyId: string
   companyLogoUrl: string | null
   language: string
+  type: string
+  isForeman: boolean
 }
 
 export interface Admin {

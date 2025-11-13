@@ -5,6 +5,24 @@ export interface Subcontractor {
   name: string
   contractAmount?: string
   companyId: string
+  projectId?: string // Legacy field for backward compatibility
+  projectIds?: string[]
+  projectName?: string // Legacy field for backward compatibility  
+  projectNames?: string[]
+  foreman?: string
+  address?: string
+  contact?: string
+  email?: string
+  phone?: string
+  // New fields
+  trade?: string
+  contractorLicenseNo?: string
+  specialtyLicenseNo?: string
+  federalTaxId?: string
+  motorCarrierPermitNo?: string
+  isUnion?: boolean
+  isSelfInsured?: boolean
+  workersCompPolicy?: string
   createdAt: string
   updatedAt: string
 }
@@ -12,12 +30,44 @@ export interface Subcontractor {
 export interface CreateSubcontractorRequest {
   name: string
   contractAmount?: string
+  projectId?: string // Legacy field for backward compatibility
+  projectIds?: string[]
+  foreman?: string
+  address?: string
+  contact?: string
+  email?: string
+  phone?: string
+  // New fields
+  trade?: string
+  contractorLicenseNo?: string
+  specialtyLicenseNo?: string
+  federalTaxId?: string
+  motorCarrierPermitNo?: string
+  isUnion?: boolean
+  isSelfInsured?: boolean
+  workersCompPolicy?: string
 }
 
 export interface UpdateSubcontractorRequest {
   id: string
   name: string
   contractAmount?: string
+  projectId?: string // Legacy field for backward compatibility
+  projectIds?: string[]
+  foreman?: string
+  address?: string
+  contact?: string
+  email?: string
+  phone?: string
+  // New fields
+  trade?: string
+  contractorLicenseNo?: string
+  specialtyLicenseNo?: string
+  federalTaxId?: string
+  motorCarrierPermitNo?: string
+  isUnion?: boolean
+  isSelfInsured?: boolean
+  workersCompPolicy?: string
 }
 
 export interface PaginationInfo {
@@ -47,6 +97,10 @@ export interface DeleteSubcontractorResponse {
 export interface BulkSubcontractorData {
   name: string
   contractAmount?: string
+  projectId?: string
+  projectIds?: string[]
+  foreman?: string
+  foremanEmail?: string
 }
 
 export interface BulkCreateSubcontractorsRequest {
@@ -81,16 +135,19 @@ export const subcontractorsApi = createApi({
       return headers
     },
   }),
-  tagTypes: ['Subcontractor'],
+  tagTypes: ['Subcontractor', 'Contractor'],
   endpoints: (builder) => ({
-    getSubcontractors: builder.query<SubcontractorsResponse, { search?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin' }>({
-      query: ({ search, page = 1, pageSize = 50, authType } = {} as any) => {
+    getSubcontractors: builder.query<SubcontractorsResponse, { search?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin'; projectId?: string }>({
+      query: ({ search, page = 1, pageSize = 50, authType, projectId } = {} as any) => {
         const params = new URLSearchParams({
           page: page.toString(),
           pageSize: pageSize.toString(),
         })
         if (search) {
           params.append('search', search)
+        }
+        if (projectId) {
+          params.append('projectId', projectId)
         }
         params.append('authType', authType)
         return `?${params}`
@@ -103,7 +160,7 @@ export const subcontractorsApi = createApi({
         method: 'POST',
         body: subcontractor,
       }),
-      invalidatesTags: ['Subcontractor'],
+      invalidatesTags: ['Subcontractor', 'Contractor'],
     }),
     updateSubcontractor: builder.mutation<SubcontractorResponse, UpdateSubcontractorRequest>({
       query: (subcontractor) => ({
@@ -111,7 +168,7 @@ export const subcontractorsApi = createApi({
         method: 'PUT',
         body: subcontractor,
       }),
-      invalidatesTags: ['Subcontractor'],
+      invalidatesTags: ['Subcontractor', 'Contractor'],
     }),
     deleteSubcontractor: builder.mutation<DeleteSubcontractorResponse, string>({
       query: (id) => ({

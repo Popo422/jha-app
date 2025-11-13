@@ -8,6 +8,8 @@ export interface TimesheetData {
   projectName: string
   jobDescription: string
   timeSpent: string
+  overtimeHours?: string
+  doubleHours?: string
   authType?: 'contractor' | 'admin' | 'any'
 }
 
@@ -20,6 +22,8 @@ export interface Timesheet {
   projectName: string
   jobDescription: string
   timeSpent: string
+  overtimeHours?: string
+  doubleHours?: string
   createdAt: string
   updatedAt: string
   status: 'pending' | 'approved' | 'rejected'
@@ -44,9 +48,15 @@ export interface PaginationInfo {
   hasPreviousPage: boolean
 }
 
+export interface ContractorRates {
+  rate: string
+  overtimeRate: string | null
+  doubleTimeRate: string | null
+}
+
 export interface GetTimesheetsResponse {
   timesheets: Timesheet[]
-  contractorRates?: Record<string, string>
+  contractorRates?: Record<string, ContractorRates>
   pagination?: PaginationInfo | null
   meta: {
     limit: number | null
@@ -81,6 +91,45 @@ export interface GetTimesheetAggregatesResponse {
   }
 }
 
+export interface SyncToProcoreRequest {
+  timesheetIds: string[]
+  procoreProjectId?: string
+}
+
+export interface SyncToProcoreResponse {
+  success: boolean
+  message: string
+  results: Array<{
+    timesheetId: string
+    employee: string
+    status: 'success' | 'error'
+    procoreEntryId?: string
+    error?: string
+  }>
+  errors?: Array<{
+    timesheetId: string
+    employee: string
+    status: 'error'
+    error: string
+  }>
+}
+
+export interface WorkmenWeeklyData {
+  contractorId: string
+  employeeName: string
+  billingRate: string
+  weeklyHours: Record<string, number> // date -> hours
+  totalHours: number
+  grossPay: number
+}
+
+export interface WorkmenWeeklyResponse {
+  success: boolean
+  data: WorkmenWeeklyData[]
+  weekDates: string[]
+  error?: string
+}
+
 export interface UpdateTimesheetData {
   id: string
   date: string
@@ -89,6 +138,8 @@ export interface UpdateTimesheetData {
   projectName: string
   jobDescription: string
   timeSpent: string
+  overtimeHours?: string
+  doubleHours?: string
 }
 
 export interface UpdateTimesheetResponse {
@@ -263,6 +314,24 @@ export const timesheetsApi = createApi({
       },
       providesTags: ['Timesheet'],
     }),
+    syncToProcore: builder.mutation<SyncToProcoreResponse, SyncToProcoreRequest>({
+      query: (data) => ({
+        url: 'sync-procore',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Timesheet'],
+    }),
+    getWorkmenWeeklyData: builder.query<WorkmenWeeklyResponse, { 
+      projectId: string
+      hourType?: 'all' | 'regular' | 'overtime' | 'double'
+    }>({
+      query: ({ projectId, hourType = 'all' }) => ({
+        url: `workmen-weekly?projectId=${projectId}&hourType=${hourType}`,
+        method: 'GET',
+      }),
+      providesTags: ['Timesheet'],
+    }),
   }),
 })
 
@@ -273,5 +342,7 @@ export const {
   useDeleteTimesheetMutation,
   useUpdateTimesheetMutation,
   useGetTimesheetAggregatesQuery,
-  useLazyGetTimesheetAggregatesQuery
+  useLazyGetTimesheetAggregatesQuery,
+  useSyncToProcoreMutation,
+  useGetWorkmenWeeklyDataQuery
 } = timesheetsApi

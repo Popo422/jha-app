@@ -1,0 +1,1375 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { useTranslation } from 'react-i18next';
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useGetContractorsQuery, useDeleteContractorMutation, useCreateContractorMutation, useUpdateContractorMutation, type Contractor } from "@/lib/features/contractors/contractorsApi";
+import { useContractorExportAll } from "@/hooks/useExportAll";
+import { useCreateSubcontractorMutation } from "@/lib/features/subcontractors/subcontractorsApi";
+import { AdminDataTable } from "@/components/admin/AdminDataTable";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Toast, useToast } from "@/components/ui/toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import SubcontractorSelect from "@/components/SubcontractorSelect";
+import { ProjectWorkmenBulkUploadModal } from "@/components/admin/ProjectWorkmenBulkUploadModal";
+import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy, ChevronDown, Upload } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+
+type ViewMode = 'list' | 'add' | 'edit';
+
+interface ProjectWorkmenProps {
+  projectId: string;
+}
+
+export default function ProjectWorkmen({ projectId }: ProjectWorkmenProps) {
+  const { t } = useTranslation('common');
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [editingContractor, setEditingContractor] = useState<Contractor | null>(null);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    code: "",
+    rate: "",
+    overtimeRate: "",
+    doubleTimeRate: "",
+    companyName: "",
+    language: "en",
+    type: "contractor",
+    address: "",
+    phone: "",
+    race: "",
+    gender: "",
+    dateOfHire: "",
+    workClassification: "",
+    projectType: "",
+    group: "",
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailMessage, setEmailMessage] = useState<string>("");
+  const [isSubcontractorModalOpen, setIsSubcontractorModalOpen] = useState(false);
+  const [newSubcontractorName, setNewSubcontractorName] = useState("");
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
+  
+  const { toast, showToast, hideToast } = useToast();
+  
+  const { data: contractorsData, isLoading, error, refetch } = useGetContractorsQuery({
+    search: debouncedSearch || undefined,
+    company: companyFilter !== "all" ? companyFilter : undefined,
+    projectId: projectId,
+    authType: 'admin'
+  });
+  
+  // Get all contractors for filter options (separate query)
+  const { data: allContractorsData } = useGetContractorsQuery({
+    fetchAll: true,
+    projectId: projectId,
+    authType: 'admin'
+  });
+  
+  const [deleteContractor, { isLoading: isDeleting }] = useDeleteContractorMutation();
+  const exportAllContractors = useContractorExportAll();
+  const [createContractor, { isLoading: isCreating, error: createError }] = useCreateContractorMutation();
+  const [updateContractor, { isLoading: isUpdating, error: updateError }] = useUpdateContractorMutation();
+  const [createSubcontractor, { isLoading: isCreatingSubcontractor }] = useCreateSubcontractorMutation();
+
+  const handleExportAll = useCallback(async () => {
+    return await exportAllContractors({
+      search: debouncedSearch || undefined,
+      projectId: projectId,
+      authType: 'admin'
+    });
+  }, [exportAllContractors, debouncedSearch, projectId]);
+
+  const isFormLoading = isCreating || isUpdating;
+  const formError = createError || updateError;
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(t('contractors.codeCopiedToClipboard').replace('{{code}}', text), 'success');
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      showToast(t('contractors.failedToCopyCode'), 'error');
+    }
+  };
+
+  const handleEdit = (contractor: Contractor) => {
+    setEditingContractor(contractor);
+    setFormData({
+      firstName: contractor.firstName,
+      lastName: contractor.lastName,
+      email: contractor.email,
+      code: contractor.code,
+      rate: contractor.rate || "0.00",
+      overtimeRate: contractor.overtimeRate || "",
+      doubleTimeRate: contractor.doubleTimeRate || "",
+      companyName: contractor.companyName || "",
+      language: contractor.language || "en",
+      type: contractor.type || "contractor",
+      address: contractor.address || "",
+      phone: contractor.phone || "",
+      race: contractor.race || "",
+      gender: contractor.gender || "",
+      dateOfHire: contractor.dateOfHire ? new Date(contractor.dateOfHire).toISOString().split('T')[0] : "",
+      workClassification: contractor.workClassification || "",
+      projectType: contractor.projectType || "",
+      group: contractor.group?.toString() || "",
+    });
+    setFormErrors({});
+    setEmailMessage("");
+    setViewMode('edit');
+  };
+
+  const handleAdd = () => {
+    setEditingContractor(null);
+    setFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      code: "",
+      rate: "0.00",
+      overtimeRate: "",
+      doubleTimeRate: "",
+      companyName: "",
+      language: "en",
+      type: "contractor",
+      address: "",
+      phone: "",
+      race: "",
+      gender: "",
+      dateOfHire: "",
+      workClassification: "",
+      projectType: "",
+      group: "",
+    });
+    setFormErrors({});
+    setEmailMessage("");
+    setViewMode('add');
+  };
+
+  const handleCancel = () => {
+    setViewMode('list');
+    setEditingContractor(null);
+    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", phone: "", race: "", gender: "", dateOfHire: "", workClassification: "", projectType: "", group: "" });
+    setFormErrors({});
+    setEmailMessage("");
+  };
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.firstName.trim()) {
+      errors.firstName = t('contractors.firstNameRequired');
+    }
+    if (!formData.lastName.trim()) {
+      errors.lastName = t('contractors.lastNameRequired');
+    }
+    if (!formData.email.trim()) {
+      errors.email = t('contractors.emailRequired');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = t('contractors.validEmailRequired');
+    }
+    if (!formData.code.trim()) {
+      errors.code = t('contractors.contractorCodeRequired');
+    } else if (formData.code.trim().length < 2) {
+      errors.code = t('contractors.contractorCodeMinLength');
+    }
+
+    if (formData.rate && formData.rate.trim()) {
+      const rateValue = parseFloat(formData.rate);
+      if (isNaN(rateValue) || rateValue < 0) {
+        errors.rate = t('contractors.rateValidPositiveNumber');
+      } else if (rateValue > 9999.99) {
+        errors.rate = t('contractors.rateMaxValue');
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent, saveAndAddMore = false) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      if (editingContractor) {
+        // For updates, preserve existing project assignments and ensure this project is included
+        const existingProjectIds = (editingContractor as any).projectIds || [];
+        const updatedProjectIds = [...new Set([...existingProjectIds, projectId])];
+        
+        await updateContractor({
+          id: editingContractor.id,
+          ...formData,
+          projectIds: updatedProjectIds,
+        }).unwrap();
+      } else {
+        // For new contractors, assign only to this project
+        await createContractor({
+          ...formData,
+          projectIds: [projectId],
+        }).unwrap();
+      }
+      
+      if (saveAndAddMore) {
+        const savedCompanyName = formData.companyName;
+        setFormData({ 
+          firstName: "", 
+          lastName: "", 
+          email: "", 
+          code: "", 
+          rate: "",
+          overtimeRate: "",
+          doubleTimeRate: "", 
+          companyName: savedCompanyName, 
+          language: "en",
+          type: "contractor",
+          address: "",
+          phone: "",
+          race: "",
+          gender: "",
+          dateOfHire: "",
+          workClassification: "",
+          projectType: "",
+          group: "",
+        });
+        setFormErrors({});
+      } else {
+        setViewMode('list');
+        setEditingContractor(null);
+        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "",  overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", phone: "", race: "", gender: "", dateOfHire: "", workClassification: "", projectType: "", group: ""});
+      }
+    } catch (error: any) {
+      console.error('Failed to save contractor:', error);
+      
+      if (error?.data?.error === 'Contractor limit exceeded') {
+        showToast(
+          `${t('contractors.contractorLimitExceeded')}: ${error.data.message}`,
+          'error'
+        );
+      } else if (error?.data?.error) {
+        showToast(error.data.error, 'error');
+      } else {
+        showToast('Failed to save contractor', 'error');
+      }
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: value,
+      };
+      
+      // Auto-calculate overtime and double time rates when rate changes
+      if (name === 'rate' && value) {
+        const rateValue = parseFloat(value);
+        if (!isNaN(rateValue)) {
+          // Always recalculate when standard rate changes
+          newData.overtimeRate = (rateValue * 1.5).toFixed(2);
+          newData.doubleTimeRate = (rateValue * 2).toFixed(2);
+        }
+      }
+      
+      return newData;
+    });
+    
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const handleDelete = async (contractorId: string) => {
+    try {
+      await deleteContractor(contractorId).unwrap();
+    } catch (error) {
+      console.error('Failed to delete contractor:', error);
+    }
+  };
+
+  const generateCode = () => {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let randomCode = '';
+    for (let i = 0; i < 6; i++) {
+      randomCode += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    
+    setFormData(prev => ({ ...prev, code: randomCode }));
+    
+    if (formErrors.code) {
+      setFormErrors(prev => ({ ...prev, code: "" }));
+    }
+  };
+
+  const handleSendCodeEmail = async () => {
+    if (!editingContractor?.id) return;
+
+    setIsSendingEmail(true);
+    setEmailMessage("");
+
+    try {
+      const response = await fetch('/api/email/send-code-update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contractorId: editingContractor.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setEmailMessage(`✅ ${t('contractors.codeUpdateEmailSentSuccessfully')}`);
+      } else {
+        setEmailMessage(`❌ ${t('contractors.failedToSendEmail')}: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error sending code update email:', error);
+      setEmailMessage(`❌ ${t('contractors.failedToSendEmailTryAgain')}`);
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  const getErrorMessage = () => {
+    if (formError && 'data' in formError && typeof formError.data === 'object' && formError.data && 'error' in formError.data) {
+      return (formError.data as any).error;
+    }
+    return t('contractors.errorSavingContractor');
+  };
+
+  const handleCreateSubcontractor = async () => {
+    if (!newSubcontractorName.trim()) return;
+
+    try {
+      const result = await createSubcontractor({
+        name: newSubcontractorName.trim()
+      }).unwrap();
+      
+      setFormData(prev => ({ ...prev, companyName: result.subcontractor.name }));
+      
+      setIsSubcontractorModalOpen(false);
+      setNewSubcontractorName("");
+      
+      showToast('Company/Subcontractor created successfully', 'success');
+    } catch (error: any) {
+      showToast(error.data?.error || 'Failed to create company/subcontractor', 'error');
+    }
+  };
+
+  // Backend already filters by project, so we just need to apply type filter
+  const allContractors = contractorsData?.contractors || [];
+  const allProjectContractors = allContractorsData?.contractors || [];
+  
+  const contractors = typeFilter === "all" 
+    ? allContractors 
+    : allContractors.filter(contractor => {
+        const contractorType = contractor.type || 'contractor';
+        return contractorType === typeFilter;
+      });
+
+  const columns: ColumnDef<Contractor>[] = [
+    {
+      accessorKey: "firstName",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('contractors.firstName')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+    },
+    {
+      accessorKey: "lastName", 
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('contractors.lastName')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+    },
+    {
+      accessorKey: "email",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('auth.email')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+    },
+    {
+      accessorKey: "code",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('contractors.code')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const code = getValue() as string;
+        return (
+          <Badge 
+            variant="secondary" 
+            className="cursor-pointer hover:bg-secondary/80 transition-colors inline-flex items-center gap-1 w-fit"
+            onClick={() => copyToClipboard(code)}
+            title={t('contractors.clickToCopyCode')}
+          >
+            {code}
+            <Copy className="h-3 w-3" />
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "rate",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('contractors.rate')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const rate = getValue() as string | null;
+        const rateValue = rate ? parseFloat(rate) : 0;
+        return `$${rateValue.toFixed(2)}${t('contractors.perHour')}`;
+      },
+    },
+    {
+      accessorKey: "companyName",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          {t('contractors.companySubcontractor')}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const companyName = getValue() as string | null;
+        return (
+          <div className="text-sm">
+            {companyName || ""}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "type",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Type
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const type = getValue() as string | null;
+        return (
+          <Badge 
+            variant={type === 'foreman' ? 'default' : 'secondary'}
+            className="text-xs"
+          >
+            {type === 'foreman' ? 'Foreman' : 'Contractor'}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "language",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium text-sm"
+        >
+          Language
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const language = getValue() as string | null;
+        const getLanguageDisplay = (lang: string | null) => {
+          switch (lang) {
+            case 'es': return 'Español';
+            case 'pl': return 'Polski';
+            case 'zh': return '中文';
+            default: return 'English';
+          }
+        };
+        return (
+          <div className="text-sm">
+            {getLanguageDisplay(language)}
+          </div>
+        );
+      },
+    },
+  ];
+
+  const renderFormView = () => (
+    <div className="w-full">
+      <div className="mb-6">
+        <div className="flex items-center space-x-4 mb-4">
+          <Button variant="ghost" onClick={handleCancel} className="flex items-center space-x-2">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Workmen</span>
+          </Button>
+        </div>
+        <h1 className="text-2xl font-bold text-foreground">
+          {viewMode === 'add' ? 'Add New Workman' : 'Edit Workman'}
+        </h1>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Workman Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <SubcontractorSelect
+                    id="companyName"
+                    name="companyName"
+                    label={t('contractors.companySubcontractor')}
+                    value={formData.companyName}
+                    onChange={(value) => setFormData(prev => ({ ...prev, companyName: value }))}
+                    placeholder={t('contractors.companyNamePlaceholder')}
+                    disabled={isFormLoading}
+                    authType="admin"
+                    returnValue="name"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="default"
+                    onClick={() => setIsSubcontractorModalOpen(true)}
+                    disabled={isFormLoading}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              {formErrors.companyName && (
+                <p className="text-sm text-red-500">{formErrors.companyName}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Optional: Select or enter a company/subcontractor name
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">{t('contractors.firstName')}</Label>
+                <Input
+                  id="firstName"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
+                  className={formErrors.firstName ? "border-red-500" : ""}
+                  disabled={isFormLoading}
+                />
+                {formErrors.firstName && (
+                  <p className="text-sm text-red-500">{formErrors.firstName}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="lastName">{t('contractors.lastName')}</Label>
+                <Input
+                  id="lastName"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
+                  className={formErrors.lastName ? "border-red-500" : ""}
+                  disabled={isFormLoading}
+                />
+                {formErrors.lastName && (
+                  <p className="text-sm text-red-500">{formErrors.lastName}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">{t('contractors.emailAddress')}</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className={formErrors.email ? "border-red-500" : ""}
+                disabled={isFormLoading}
+              />
+              {formErrors.email && (
+                <p className="text-sm text-red-500">{formErrors.email}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address (Optional)</Label>
+              <Input
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                placeholder="Enter address"
+                disabled={isFormLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                Complete address for the contractor
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone (Optional)</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="Enter phone number"
+                  disabled={isFormLoading}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="race">Race (Optional)</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isFormLoading}
+                      className="w-full justify-between"
+                    >
+                      {formData.race || "Select race"}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: '' }))}
+                    >
+                      Not specified
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'American Indian or Alaska Native' }))}
+                    >
+                      American Indian or Alaska Native
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'Asian' }))}
+                    >
+                      Asian
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'Black or African American' }))}
+                    >
+                      Black or African American
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'Native Hawaiian or Other Pacific Islander' }))}
+                    >
+                      Native Hawaiian or Other Pacific Islander
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'White' }))}
+                    >
+                      White
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setFormData(prev => ({ ...prev, race: 'Hispanic or Latino' }))}
+                    >
+                      Hispanic or Latino
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender (Optional)</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isFormLoading}
+                    className="w-full justify-between"
+                  >
+                    {formData.gender || "Select gender"}
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full">
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, gender: '' }))}
+                  >
+                    Not specified
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, gender: 'Male' }))}
+                  >
+                    Male
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, gender: 'Female' }))}
+                  >
+                    Female
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, gender: 'Other' }))}
+                  >
+                    Other
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dateOfHire">Date of Hire (Optional)</Label>
+              <Input
+                id="dateOfHire"
+                name="dateOfHire"
+                type="date"
+                value={formData.dateOfHire}
+                onChange={handleInputChange}
+                disabled={isFormLoading}
+              />
+              <p className="text-xs text-muted-foreground">
+                When this contractor was hired
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="workClassification">Work Classification (Optional)</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isFormLoading}
+                    className="w-full justify-between"
+                  >
+                    {formData.workClassification || "Select work classification"}
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full max-h-60 overflow-y-auto">
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: '' }))}>
+                    Not specified
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Asbestos Worker / Remover' }))}>
+                    Asbestos Worker / Remover
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Boilermaker' }))}>
+                    Boilermaker
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Bricklayer' }))}>
+                    Bricklayer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Carpenter' }))}>
+                    Carpenter
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Cement Mason / Concrete Finisher' }))}>
+                    Cement Mason / Concrete Finisher
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Construction Equipment Operator' }))}>
+                    Construction Equipment Operator
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Construction Laborer' }))}>
+                    Construction Laborer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Drywall Installer' }))}>
+                    Drywall Installer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Electrician' }))}>
+                    Electrician
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Elevator Constructor' }))}>
+                    Elevator Constructor
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Glazier' }))}>
+                    Glazier
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Insulation Worker' }))}>
+                    Insulation Worker
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Iron Worker' }))}>
+                    Iron Worker
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Mason' }))}>
+                    Mason
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Millwright' }))}>
+                    Millwright
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Operating Engineer' }))}>
+                    Operating Engineer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Painter' }))}>
+                    Painter
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Pile Driver' }))}>
+                    Pile Driver
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Pipefitter' }))}>
+                    Pipefitter
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Plasterer' }))}>
+                    Plasterer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Plumber' }))}>
+                    Plumber
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Roofer' }))}>
+                    Roofer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Sheet Metal Worker' }))}>
+                    Sheet Metal Worker
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Structural Iron Worker' }))}>
+                    Structural Iron Worker
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, workClassification: 'Tile Setter' }))}>
+                    Tile Setter
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className="text-xs text-muted-foreground">
+                Specific work classification for this contractor
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="projectType">Project Type (Optional)</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={isFormLoading}
+                      className="w-full justify-between"
+                    >
+                      {formData.projectType || "Select project type"}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full">
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, projectType: '' }))}>
+                      Not specified
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, projectType: 'ALL' }))}>
+                      ALL
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, projectType: 'BLD' }))}>
+                      BLD (Building)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, projectType: 'HWY' }))}>
+                      HWY (Highway)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setFormData(prev => ({ ...prev, projectType: 'FLT' }))}>
+                      FLT (Floating)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="group">Group (Optional)</Label>
+                <Input
+                  id="group"
+                  name="group"
+                  type="number"
+                  min="0"
+                  value={formData.group}
+                  onChange={handleInputChange}
+                  placeholder="Enter group number"
+                  disabled={isFormLoading}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Group classification number
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="code">{t('contractors.contractorCode')}</Label>
+              <div className="flex space-x-2">
+                <Input
+                  id="code"
+                  name="code"
+                  value={formData.code}
+                  onChange={handleInputChange}
+                  placeholder={t('contractors.contractorCodePlaceholder')}
+                  className={formErrors.code ? "border-red-500" : ""}
+                  disabled={isFormLoading}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={generateCode}
+                  disabled={isFormLoading}
+                  className="flex items-center space-x-1 whitespace-nowrap"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  <span>{t('contractors.generate')}</span>
+                </Button>
+              </div>
+              {formErrors.code && (
+                <p className="text-sm text-red-500">{formErrors.code}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {t('contractors.contractorCodeHelp')}
+              </p>
+              {viewMode === 'edit' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSendCodeEmail}
+                  disabled={isSendingEmail || isFormLoading || true}
+                  className="mt-2 flex items-center space-x-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  <span>{isSendingEmail ? t('contractors.sending') : t('contractors.sendUpdatedCodeEmail')}</span>
+                </Button>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="rate">{t('contractors.hourlyRate')}</Label>
+              <Input
+                id="rate"
+                name="rate"
+                type="number"
+                step="0.01"
+                min="0"
+                max="9999.99"
+                value={formData.rate}
+                onChange={handleInputChange}
+                placeholder={t('contractors.hourlyRatePlaceholder')}
+                className={formErrors.rate ? "border-red-500" : ""}
+                disabled={isFormLoading}
+              />
+              {formErrors.rate && (
+                <p className="text-sm text-red-500">{formErrors.rate}</p>
+              )}
+            </div>
+
+            {/* Overtime Rate - Only show when standard rate has value */}
+            {formData.rate && (
+              <div className="space-y-2">
+                <Label htmlFor="overtimeRate">Overtime Rate</Label>
+                <Input
+                  id="overtimeRate"
+                  name="overtimeRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="9999.99"
+                  value={formData.overtimeRate}
+                  onChange={handleInputChange}
+                  placeholder="Auto-calculated as 1.5x standard rate"
+                  className={formErrors.overtimeRate ? "border-red-500" : ""}
+                  disabled={isFormLoading}
+                />
+                {formErrors.overtimeRate && (
+                  <p className="text-sm text-red-500">{formErrors.overtimeRate}</p>
+                )}
+              </div>
+            )}
+
+            {/* Double Time Rate - Only show when standard rate has value */}
+            {formData.rate && (
+              <div className="space-y-2">
+                <Label htmlFor="doubleTimeRate">Double Time Rate</Label>
+                <Input
+                  id="doubleTimeRate"
+                  name="doubleTimeRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="9999.99"
+                  value={formData.doubleTimeRate}
+                  onChange={handleInputChange}
+                  placeholder="Auto-calculated as 2x standard rate"
+                  className={formErrors.doubleTimeRate ? "border-red-500" : ""}
+                  disabled={isFormLoading}
+                />
+                {formErrors.doubleTimeRate && (
+                  <p className="text-sm text-red-500">{formErrors.doubleTimeRate}</p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="type">Type</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isFormLoading}
+                    className="w-full justify-between"
+                  >
+                    {formData.type === 'foreman' ? 'Foreman' : 'Contractor'}
+                    <ArrowUpDown className="ml-2 h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full">
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, type: 'contractor' }))}
+                  >
+                    Contractor
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, type: 'foreman' }))}
+                  >
+                    Foreman
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className="text-xs text-muted-foreground">
+                Select whether this person is a contractor or foreman
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="language">Language Preference</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isFormLoading}
+                    className="w-full justify-between"
+                  >
+                    {formData.language === 'en' ? 'English' : 
+                     formData.language === 'es' ? 'Español' :
+                     formData.language === 'pl' ? 'Polski' :
+                     formData.language === 'zh' ? '中文' : 'English'}
+                    <ArrowUpDown className="ml-2 h-4 w-4 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full">
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, language: 'en' }))}
+                  >
+                    English
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, language: 'es' }))}
+                  >
+                    Español
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, language: 'pl' }))}
+                  >
+                    Polski
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setFormData(prev => ({ ...prev, language: 'zh' }))}
+                  >
+                    中文
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className="text-xs text-muted-foreground">
+                {t('contractors.languagePreferenceHelp')}
+              </p>
+            </div>
+
+            {formError && (
+              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm">
+                {getErrorMessage()}
+              </div>
+            )}
+
+            {emailMessage && (
+              <div className={`p-3 rounded-lg text-sm ${
+                emailMessage.includes('✅') 
+                  ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                  : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+              }`}>
+                {emailMessage}
+              </div>
+            )}
+
+            <div className="flex space-x-4 pt-4">
+              {viewMode === 'add' && (
+                <Button
+                  type="button"
+                  onClick={(e) => handleSubmit(e, true)}
+                  disabled={isFormLoading}
+                  variant="outline"
+                  className="flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>{isFormLoading ? t('contractors.saving') : 'Save and Add More'}</span>
+                </Button>
+              )}
+              <Button
+                type="submit"
+                disabled={isFormLoading}
+                className="flex items-center space-x-2"
+              >
+                <Save className="h-4 w-4" />
+                <span>{isFormLoading ? t('contractors.saving') : (viewMode === 'add' ? 'Save and Finish' : 'Update Workman')}</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isFormLoading}
+                className="flex items-center space-x-2"
+              >
+                <X className="h-4 w-4" />
+                <span>{t('contractors.cancel')}</span>
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderListView = () => (
+    <div className="w-full">
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold mb-2">Project Workmen</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Manage workmen assigned to this project
+            </p>
+          </div>
+          <div className="flex space-x-2">
+            <Button 
+              onClick={() => setIsBulkUploadModalOpen(true)}
+              variant="outline"
+              className="flex items-center space-x-2"
+              size="sm"
+            >
+              <Upload className="h-4 w-4" />
+              <span>Bulk Upload</span>
+            </Button>
+            <Button 
+              onClick={handleAdd} 
+              className="flex items-center space-x-2"
+              size="sm"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Workman</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <AdminDataTable
+        filters={
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="space-y-1">
+              <div className="text-xs font-medium">Company</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-36 justify-between text-xs">
+                    <span className="truncate">
+                      {companyFilter === "all" ? "All Companies" : 
+                       companyFilter === "no-company" ? "No Company" : companyFilter}
+                    </span>
+                    <ChevronDown className="h-3 w-3 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="max-h-48 overflow-y-auto">
+                  <DropdownMenuItem onClick={() => setCompanyFilter("all")}>
+                    All Companies
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCompanyFilter("no-company")}>
+                    No Company Assigned
+                  </DropdownMenuItem>
+                  {[...new Set(allProjectContractors.map(c => c.companyName).filter(Boolean))].map(company => (
+                    <DropdownMenuItem 
+                      key={company!}
+                      onClick={() => setCompanyFilter(company!)}
+                      className="max-w-xs"
+                    >
+                      <span className="truncate">{company}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-xs font-medium">Type</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-28 justify-between text-xs">
+                    <span className="truncate">
+                      {typeFilter === "all" ? "All Types" : 
+                       typeFilter === "contractor" ? "Contractors" : 
+                       typeFilter === "foreman" ? "Foremen" : "All Types"}
+                    </span>
+                    <ChevronDown className="h-3 w-3 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setTypeFilter("all")}>
+                    All Types
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTypeFilter("contractor")}>
+                    Contractors
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTypeFilter("foreman")}>
+                    Foremen
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {(companyFilter !== "all" || typeFilter !== "all") && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setCompanyFilter("all");
+                  setTypeFilter("all");
+                }}
+                className="gap-1 text-xs"
+              >
+                <X className="h-3 w-3" />
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        }
+        data={contractors}
+        columns={columns}
+        isLoading={isLoading}
+        isFetching={isLoading}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        getRowId={(contractor) => contractor.id}
+        exportFilename="project-workmen"
+        exportHeaders={[t('contractors.firstName'), t('contractors.lastName'), t('auth.email'), t('contractors.code'), t('contractors.rate'), t('contractors.companySubcontractor'), 'Type', 'Language']}
+        getExportData={(contractor) => [
+          contractor.firstName,
+          contractor.lastName,
+          contractor.email,
+          contractor.code,
+          `$${(contractor.rate ? parseFloat(contractor.rate) : 0).toFixed(2)}${t('contractors.perHour')}`,
+          contractor.companyName || "",
+          (contractor as any).type === 'foreman' ? 'Foreman' : 'Contractor',
+          contractor.language === 'es' ? 'Español' :
+          contractor.language === 'pl' ? 'Polski' :
+          contractor.language === 'zh' ? '中文' : 'English'
+        ]}
+        searchValue={search}
+        onSearchChange={setSearch}
+        onExportAll={handleExportAll}
+      />
+    </div>
+  );
+
+  return (
+    <div>
+      {viewMode === 'list' ? renderListView() : renderFormView()}
+
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onClose={hideToast}
+      />
+
+      <AlertDialog open={isSubcontractorModalOpen} onOpenChange={setIsSubcontractorModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add New {t('contractors.companySubcontractor')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter the company/subcontractor name below. It will be automatically selected in the form.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="subcontractor-name">{t('contractors.companySubcontractor')} Name</Label>
+              <Input
+                id="subcontractor-name"
+                value={newSubcontractorName}
+                onChange={(e) => setNewSubcontractorName(e.target.value)}
+                placeholder="Enter name"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setIsSubcontractorModalOpen(false);
+              setNewSubcontractorName("");
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleCreateSubcontractor} 
+              disabled={isCreatingSubcontractor || !newSubcontractorName.trim()}
+            >
+              {isCreatingSubcontractor ? 'Creating...' : 'Create'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <ProjectWorkmenBulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+        projectId={projectId}
+        onUploadSuccess={() => refetch()}
+      />
+    </div>
+  );
+}

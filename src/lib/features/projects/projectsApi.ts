@@ -6,6 +6,12 @@ export interface Project {
   projectManager: string
   location: string
   companyId: string
+  projectCost?: string
+  startDate?: string
+  endDate?: string
+  projectCode?: string
+  contractId?: string
+  subcontractorCount?: number
   createdAt: string
   updatedAt: string
 }
@@ -14,6 +20,11 @@ export interface CreateProjectRequest {
   name: string
   projectManager: string
   location: string
+  projectCost?: string
+  startDate?: string
+  endDate?: string
+  projectCode?: string
+  contractId?: string
 }
 
 export interface UpdateProjectRequest {
@@ -21,6 +32,11 @@ export interface UpdateProjectRequest {
   name: string
   projectManager: string
   location: string
+  projectCost?: string
+  startDate?: string
+  endDate?: string
+  projectCode?: string
+  contractId?: string
 }
 
 export interface PaginationInfo {
@@ -47,10 +63,71 @@ export interface DeleteProjectResponse {
   message: string
 }
 
+export interface SyncToProcoreRequest {
+  projectIds: string[]
+  createInProcore?: boolean
+}
+
+export interface SyncToProcoreResponse {
+  success: boolean
+  message: string
+  results: Array<{
+    projectId: string
+    projectName: string
+    procoreProjectId?: string
+    procoreProjectName?: string
+    status: 'created' | 'matched' | 'no_match'
+    suggestion?: string
+  }>
+  errors?: Array<{
+    projectId: string
+    projectName: string
+    error: string
+  }>
+}
+
+export interface CheckProcoreRequest {
+  projectIds?: string[]
+}
+
+export interface CheckProcoreResponse {
+  success: boolean
+  summary: {
+    total: number
+    found: number
+    notFound: number
+    needsReview: number
+  }
+  results: Array<{
+    projectId: string
+    projectName: string
+    location: string
+    projectManager: string
+    procoreStatus: 'found' | 'not_found' | 'multiple_matches'
+    procoreProject?: {
+      id: string
+      name: string
+      address: string
+      project_number?: string
+    }
+    procoreMatches?: Array<{
+      id: string
+      name: string
+      address: string
+      project_number?: string
+      similarity: number
+    }>
+    recommendation: 'use_existing' | 'create_new' | 'manual_review'
+  }>
+}
+
 export interface BulkProjectData {
   name: string
   location: string
   projectManager?: string
+  projectCost?: string
+  startDate?: string
+  endDate?: string
 }
 
 export interface BulkCreateProjectsRequest {
@@ -94,8 +171,8 @@ export const projectsApi = createApi({
   }),
   tagTypes: ['Project'],
   endpoints: (builder) => ({
-    getProjects: builder.query<ProjectsResponse, { search?: string; projectManager?: string; location?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin' }>({
-      query: ({ search, projectManager, location, page = 1, pageSize = 50, authType } = {} as any) => {
+    getProjects: builder.query<ProjectsResponse, { search?: string; projectManager?: string; location?: string; page?: number; pageSize?: number; authType: 'contractor' | 'admin'; subcontractorName?: string; dateFrom?: string; dateTo?: string }>({
+      query: ({ search, projectManager, location, page = 1, pageSize = 50, authType, subcontractorName, dateFrom, dateTo } = {} as any) => {
         const params = new URLSearchParams({
           page: page.toString(),
           pageSize: pageSize.toString(),
@@ -108,6 +185,15 @@ export const projectsApi = createApi({
         }
         if (location && location !== 'all') {
           params.append('location', location)
+        }
+        if (subcontractorName) {
+          params.append('subcontractorName', subcontractorName)
+        }
+        if (dateFrom) {
+          params.append('dateFrom', dateFrom)
+        }
+        if (dateTo) {
+          params.append('dateTo', dateTo)
         }
         params.append('authType', authType)
         return `?${params}`
@@ -149,6 +235,20 @@ export const projectsApi = createApi({
       query: () => '/limit',
       providesTags: ['Project'],
     }),
+    syncToProcore: builder.mutation<SyncToProcoreResponse, SyncToProcoreRequest>({
+      query: (data) => ({
+        url: 'sync-procore',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    checkProcore: builder.mutation<CheckProcoreResponse, CheckProcoreRequest>({
+      query: (data) => ({
+        url: 'check-procore',
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 })
 
@@ -159,4 +259,6 @@ export const {
   useDeleteProjectMutation,
   useBulkCreateProjectsMutation,
   useGetProjectLimitQuery,
+  useSyncToProcoreMutation,
+  useCheckProcoreMutation,
 } = projectsApi

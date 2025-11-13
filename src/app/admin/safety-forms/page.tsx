@@ -18,6 +18,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import JobHazardAnalysisEdit from "@/components/admin/JobHazardAnalysisEdit";
 import StartOfDayEdit from "@/components/admin/StartOfDayEdit";
 import EndOfDayEdit from "@/components/admin/EndOfDayEdit";
+import StartOfDayV2PdfExport, { generateAndDownloadPDF } from "@/components/admin/StartOfDayV2PdfExport";
+import EndOfDayV2PdfExport, { generateAndDownloadEndOfDayV2PDF } from "@/components/admin/EndOfDayV2PdfExport";
+import VehicleInspectionPdfExport, { generateAndDownloadVehicleInspectionPDF } from "@/components/admin/VehicleInspectionPdfExport";
+import NearMissReportPdfExport, { generateAndDownloadNearMissReportPDF } from "@/components/admin/NearMissReportPdfExport";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -30,9 +34,11 @@ import {
   ArrowUpDown,
   MoreVertical,
   Edit,
+  Eye,
   Trash2,
   X,
   Search,
+  FileText,
 } from "lucide-react";
 import {
   createColumnHelper,
@@ -59,6 +65,7 @@ export default function SafetyFormsPage() {
   const { t } = useTranslation('common');
   const router = useRouter();
   const [editingSubmission, setEditingSubmission] = useState<Submission | null>(null);
+  const [isViewMode, setIsViewMode] = useState(false);
   const [filters, setFilters] = useState({
     type: '',
     dateFrom: '',
@@ -210,8 +217,12 @@ export default function SafetyFormsPage() {
         return 'JHA';
       case 'start-of-day':
         return t('admin.startOfDay');
+      case 'start-of-day-v2':
+        return 'Foreman Start of Day';
       case 'end-of-day':
         return t('admin.endOfDay');
+      case 'end-of-day-v2':
+        return 'Foreman End of Day';
       case 'incident-report':
         return t('forms.incidentReport');
       case 'quick-incident-report':
@@ -231,8 +242,12 @@ export default function SafetyFormsPage() {
         return 'bg-blue-100 text-blue-800';
       case 'start-of-day':
         return 'bg-green-100 text-green-800';
+      case 'start-of-day-v2':
+        return 'bg-emerald-100 text-emerald-800';
       case 'end-of-day':
         return 'bg-orange-100 text-orange-800';
+      case 'end-of-day-v2':
+        return 'bg-amber-100 text-amber-800';
       case 'incident-report':
         return 'bg-red-100 text-red-800';
       case 'quick-incident-report':
@@ -271,6 +286,49 @@ export default function SafetyFormsPage() {
       return;
     }
     
+    // For start-of-day-v2 reports, redirect to the wizard edit page
+    if (submission.submissionType === 'start-of-day-v2') {
+      router.push(`/admin/start-of-day-v2/${submission.id}/edit`);
+      return;
+    }
+    
+    // For end-of-day-v2 reports, redirect to the wizard edit page
+    if (submission.submissionType === 'end-of-day-v2') {
+      router.push(`/admin/end-of-day-v2/${submission.id}/edit`);
+      return;
+    }
+    
+    setIsViewMode(false);
+    setEditingSubmission(submission);
+  }, [router]);
+
+  const handleView = useCallback((submission: Submission) => {
+    // For near-miss reports, redirect to the wizard view page
+    if (submission.submissionType === 'near-miss-report') {
+      router.push(`/admin/near-miss-reports/${submission.id}/edit?view=true`);
+      return;
+    }
+    
+    // For vehicle inspections, redirect to the vehicle inspection view page
+    if (submission.submissionType === 'vehicle-inspection') {
+      router.push(`/admin/vehicle-inspections/${submission.id}/edit?view=true`);
+      return;
+    }
+    
+    // For start-of-day-v2 reports, redirect to the wizard view page
+    if (submission.submissionType === 'start-of-day-v2') {
+      router.push(`/admin/start-of-day-v2/${submission.id}/edit?view=true`);
+      return;
+    }
+    
+    // For end-of-day-v2 reports, redirect to the wizard view page
+    if (submission.submissionType === 'end-of-day-v2') {
+      router.push(`/admin/end-of-day-v2/${submission.id}/edit?view=true`);
+      return;
+    }
+    
+    // For other submission types, open in edit component with readOnly prop
+    setIsViewMode(true);
     setEditingSubmission(submission);
   }, [router]);
 
@@ -358,7 +416,25 @@ export default function SafetyFormsPage() {
       ),
       cell: ({ row }) => <div className="text-sm">{row.getValue('projectName')}</div>,
     },
-  ], [getSubmissionTypeLabel, getSubmissionTypeBadgeColor]);
+    {
+      id: 'view',
+      header: '',
+      cell: ({ row }) => {
+        const submission = row.original;
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleView(submission)}
+            className="h-8"
+          >
+            <Eye className="h-4 w-4 mr-1" />
+            {t('common.view')}
+          </Button>
+        );
+      },
+    },
+  ], [getSubmissionTypeLabel, getSubmissionTypeBadgeColor, handleView]);
 
   const filterComponents = useMemo(() => (
     <div className="flex flex-wrap gap-3 items-end">
@@ -383,8 +459,14 @@ export default function SafetyFormsPage() {
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'start-of-day' }))}>
               {t('admin.startOfDay')}
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'start-of-day-v2' }))}>
+              Start of Day V2
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'end-of-day' }))}>
               {t('admin.endOfDay')}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'end-of-day-v2' }))}>
+              End of Day V2
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, type: 'incident-report' }))}>
               {t('forms.incidentReport')}
@@ -628,6 +710,50 @@ export default function SafetyFormsPage() {
     return [...basicData, ...formValues];
   }, []);
 
+  // Custom actions for the table
+  const customActions = useMemo(() => [
+    {
+      label: 'Export PDF',
+      icon: FileText,
+      onClick: async (submission: Submission) => {
+        if (submission.submissionType === 'start-of-day-v2') {
+          const fileName = `start-of-day-v2-${submission.completedBy.replace(/\s+/g, '-')}-${submission.date}.pdf`;
+          try {
+            await generateAndDownloadPDF(submission.formData, fileName);
+          } catch (error) {
+            console.error('Failed to generate PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+          }
+        } else if (submission.submissionType === 'end-of-day-v2') {
+          const fileName = `end-of-day-v2-${submission.completedBy.replace(/\s+/g, '-')}-${submission.date}.pdf`;
+          try {
+            await generateAndDownloadEndOfDayV2PDF(submission.formData as any, fileName);
+          } catch (error) {
+            console.error('Failed to generate PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+          }
+        } else if (submission.submissionType === 'vehicle-inspection') {
+          const fileName = `vehicle-inspection-${submission.completedBy.replace(/\s+/g, '-')}-${submission.date}.pdf`;
+          try {
+            await generateAndDownloadVehicleInspectionPDF(submission.formData as any, fileName);
+          } catch (error) {
+            console.error('Failed to generate PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+          }
+        } else if (submission.submissionType === 'near-miss-report') {
+          const fileName = `near-miss-report-${submission.completedBy.replace(/\s+/g, '-')}-${submission.date}.pdf`;
+          try {
+            await generateAndDownloadNearMissReportPDF(submission.formData as any, fileName);
+          } catch (error) {
+            console.error('Failed to generate PDF:', error);
+            alert('Failed to generate PDF. Please try again.');
+          }
+        }
+      },
+      show: (submission: Submission) => submission.submissionType === 'start-of-day-v2' || submission.submissionType === 'end-of-day-v2' || submission.submissionType === 'vehicle-inspection' || submission.submissionType === 'near-miss-report',
+    }
+  ], []);
+
   const renderMobileCard = useCallback((submission: Submission, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => (
     <Card className="p-4">
       <CardContent className="p-0">
@@ -660,6 +786,27 @@ export default function SafetyFormsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {customActions.map((action, index) => {
+                if (action.show && !action.show(submission)) return null;
+                const Icon = action.icon;
+                return (
+                  <DropdownMenuItem 
+                    key={index}
+                    onClick={() => action.onClick(submission)}
+                    className="cursor-pointer"
+                  >
+                    <Icon className="h-4 w-4 mr-2" />
+                    {action.label}
+                  </DropdownMenuItem>
+                );
+              })}
+              <DropdownMenuItem 
+                onClick={() => handleView(submission)}
+                className="cursor-pointer"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {t('common.view')}
+              </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => handleEdit(submission)}
                 className="cursor-pointer"
@@ -700,7 +847,7 @@ export default function SafetyFormsPage() {
         </div>
       </CardContent>
     </Card>
-  ), [getSubmissionTypeBadgeColor, getSubmissionTypeLabel, handleEdit, handleSingleDelete]);
+  ), [getSubmissionTypeBadgeColor, getSubmissionTypeLabel, handleView, handleEdit, handleSingleDelete, customActions]);
 
   // Render edit form if editing
   if (editingSubmission) {
@@ -712,18 +859,21 @@ export default function SafetyFormsPage() {
               <JobHazardAnalysisEdit 
                 submission={editingSubmission} 
                 onBack={() => setEditingSubmission(null)} 
+                readOnly={isViewMode}
               />
             )}
             {editingSubmission.submissionType === 'start-of-day' && (
               <StartOfDayEdit 
                 submission={editingSubmission} 
                 onBack={() => setEditingSubmission(null)} 
+                readOnly={isViewMode}
               />
             )}
             {editingSubmission.submissionType === 'end-of-day' && (
               <EndOfDayEdit 
                 submission={editingSubmission} 
                 onBack={() => setEditingSubmission(null)} 
+                readOnly={isViewMode}
               />
             )}
           </div>
@@ -763,6 +913,7 @@ export default function SafetyFormsPage() {
         onPageSizeChange={handlePageSizeChange}
         onExportAll={handleExportAll}
         generateDynamicHeaders={generateDynamicHeaders}
+        customActions={customActions}
       />
     </div>
   );

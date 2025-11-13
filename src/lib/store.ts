@@ -19,6 +19,14 @@ import { forecastingApi } from './features/forecasting/forecastingApi'
 import { projectManagersApi } from './features/project-managers/projectManagersApi'
 import { incidentsApi } from './features/incidents/incidentsApi'
 import { formTemplatesApi } from './features/form-templates/formTemplatesApi'
+import { workersCompApi } from './features/workers-comp/workersCompApi'
+import { contractorManagementApi } from './features/contractor-management/contractorManagementApi'
+import { projectTasksApi } from './features/project-tasks/projectTasksApi'
+import { projectDocumentsApi } from './features/project-documents/projectDocumentsApi'
+import { changeOrdersApi } from './features/change-orders/changeOrdersApi'
+import { expensesApi } from './features/expenses/expensesApi'
+import { projectExpensesApi } from './features/project-expenses/projectExpensesApi'
+import { certifiedPayrollApi } from './features/certified-payroll/certifiedPayrollApi'
 
 export const store = configureStore({
   reducer: {
@@ -42,6 +50,14 @@ export const store = configureStore({
     [projectManagersApi.reducerPath]: projectManagersApi.reducer,
     [incidentsApi.reducerPath]: incidentsApi.reducer,
     [formTemplatesApi.reducerPath]: formTemplatesApi.reducer,
+    [workersCompApi.reducerPath]: workersCompApi.reducer,
+    [contractorManagementApi.reducerPath]: contractorManagementApi.reducer,
+    [projectTasksApi.reducerPath]: projectTasksApi.reducer,
+    [projectDocumentsApi.reducerPath]: projectDocumentsApi.reducer,
+    [changeOrdersApi.reducerPath]: changeOrdersApi.reducer,
+    [expensesApi.reducerPath]: expensesApi.reducer,
+    [projectExpensesApi.reducerPath]: projectExpensesApi.reducer,
+    [certifiedPayrollApi.reducerPath]: certifiedPayrollApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -60,7 +76,15 @@ export const store = configureStore({
       forecastingApi.middleware,
       projectManagersApi.middleware,
       incidentsApi.middleware,
-      formTemplatesApi.middleware
+      formTemplatesApi.middleware,
+      workersCompApi.middleware,
+      contractorManagementApi.middleware,
+      projectTasksApi.middleware,
+      projectDocumentsApi.middleware,
+      changeOrdersApi.middleware,
+      expensesApi.middleware,
+      projectExpensesApi.middleware,
+      certifiedPayrollApi.middleware
     ),
 })
 
