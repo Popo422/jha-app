@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { db } from '@/lib/db';
-import { projects, contractors, timesheets, contractorProjects, subcontractors } from '@/lib/db/schema';
+import { projects, contractors, timesheets, contractorProjects, subcontractors, companies } from '@/lib/db/schema';
 import { eq, and, gte, lte, inArray } from 'drizzle-orm';
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
@@ -120,71 +120,72 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Get project information
-    console.log('🔍 Fetching project...');
-    const project = await db.select()
+    // Get project information with company
+    console.log('🔍 Fetching project with company...');
+    const projectWithCompany = await db.select({
+      project: projects,
+      company: companies
+    })
       .from(projects)
+      .leftJoin(companies, eq(projects.companyId, companies.id))
       .where(and(
         eq(projects.id, projectId),
         eq(projects.companyId, auth.admin.companyId)
       ))
       .limit(1);
 
-    if (project.length === 0) {
+    if (projectWithCompany.length === 0) {
       console.log('❌ Project not found');
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
-    console.log('✅ Project found:', project[0].name);
+    
+    const project = projectWithCompany[0].project;
+    const company = projectWithCompany[0].company;
+    console.log('✅ Project found:', project.name);
+    console.log('✅ Company found:', company?.name);
 
     // Split date range into weeks
     console.log('📅 Splitting into weeks...');
     const weeks = splitIntoWeeks(startDate, endDate);
     console.log('✅ Weeks created:', weeks.length, weeks);
     
+    // Get contractors assigned to this project (do this once for all weeks)
+    console.log('👥 Fetching project contractors...');
+    const projectContractors = await db.select({
+      contractor: contractors,
+    })
+      .from(contractorProjects)
+      .leftJoin(contractors, eq(contractorProjects.contractorId, contractors.id))
+      .where(and(
+        eq(contractorProjects.projectId, projectId),
+        eq(contractors.companyId, auth.admin.companyId),
+        inArray(contractors.id, selectedContractorIds)
+      ));
+    
+    console.log(`✅ Found ${projectContractors.length} project contractors`);
+
+    // Get contractor names for timesheet filtering 
+    const contractorNames = projectContractors
+      .filter(pc => pc.contractor)
+      .map(pc => `${pc.contractor!.firstName} ${pc.contractor!.lastName}`.trim());
+    
+    console.log('👤 Contractor names for timesheet lookup:', contractorNames);
+
+    // Get subcontractor information by matching company name and ID (do this once for all weeks)
+    console.log('🏢 Fetching subcontractor information by company name and ID...');
+    const subcontractorInfo = await db.select()
+      .from(subcontractors)
+      .where(and(
+        eq(subcontractors.companyId, auth.admin.companyId),
+        eq(subcontractors.name, company?.name || '')
+      ));
+    
+    console.log(`✅ Found ${subcontractorInfo.length} matching subcontractors`);
+
     // Process each week
     console.log('🔄 Processing weeks...');
     const weeklyData = await Promise.all(weeks.map(async (week, weekIndex) => {
       console.log(`📊 Processing week ${weekIndex + 1}: ${week.weekStart} - ${week.weekEnd}`);
-      
-      // Get contractors assigned to this project
-      console.log('👥 Fetching project contractors...');
-      const projectContractors = await db.select({
-        contractor: contractors,
-      })
-        .from(contractorProjects)
-        .leftJoin(contractors, eq(contractorProjects.contractorId, contractors.id))
-        .where(and(
-          eq(contractorProjects.projectId, projectId),
-          eq(contractors.companyId, auth.admin.companyId),
-          inArray(contractors.id, selectedContractorIds)
-        ));
-      
-      console.log(`✅ Found ${projectContractors.length} project contractors`);
-
-      // Get contractor names for timesheet filtering and subcontractor lookup
-      const contractorNames = projectContractors
-        .filter(pc => pc.contractor)
-        .map(pc => `${pc.contractor!.firstName} ${pc.contractor!.lastName}`.trim());
-      
-      console.log('👤 Contractor names for timesheet lookup:', contractorNames);
-
-      // Get subcontractor information by matching contractor names
-      console.log('🏢 Fetching subcontractor information by contractor names...');
-      const subcontractorInfo = await db.select()
-        .from(subcontractors)
-        .where(and(
-          eq(subcontractors.companyId, auth.admin.companyId),
-          inArray(subcontractors.name, contractorNames)
-        ));
-      
-      console.log(`✅ Found ${subcontractorInfo.length} matching subcontractors`);
-      
-      // Create a map for easy lookup
-      const subcontractorMap = new Map();
-      subcontractorInfo.forEach(sub => {
-        subcontractorMap.set(sub.name, sub);
-      });
-      console.log('🗺️ Subcontractor map created for contractor info lookup');
 
       // Get timesheet data for this week (filter by contractor names and project name)
       console.log('⏰ Fetching timesheets...');
@@ -192,7 +193,7 @@ export async function POST(request: NextRequest) {
         .from(timesheets)
         .where(and(
           eq(timesheets.companyId, auth.admin.companyId),
-          eq(timesheets.projectName, project[0].name), // Use project name, not ID
+          eq(timesheets.projectName, project.name), // Use project name, not ID
           eq(timesheets.status, 'approved'),
           gte(timesheets.date, week.weekStart),
           lte(timesheets.date, week.weekEnd),
@@ -263,7 +264,7 @@ export async function POST(request: NextRequest) {
           ethnicity: contractor.race || '',
           gender: contractor.gender || '',
           workClassification: contractor.workClassification || '',
-          location: project[0].location || '',
+          location: project.location || '',
           type: contractor.type || '',
           dailyHours,
           totalHours: { 
@@ -321,29 +322,53 @@ export async function POST(request: NextRequest) {
       
       console.log(`✅ Week ${weekIndex + 1} completed with ${weekWorkers.length} workers`);
 
-      // Get the first subcontractor for this week's header info (assuming one subcontractor per week)
-      const weekSubcontractor = subcontractorInfo.length > 0 ? subcontractorInfo[0] : null;
-      console.log(`🏢 Week ${weekIndex + 1} subcontractor:`, weekSubcontractor?.name || 'None found');
-
       return {
         weekStart: week.weekStart,
         weekEnd: week.weekEnd,
-        workers: weekWorkers,
-        subcontractorInfo: weekSubcontractor ? {
-          companyName: weekSubcontractor.name,
-          trade: weekSubcontractor.trade || 'Not specified',
-          contractorLicenseNo: weekSubcontractor.contractorLicenseNo || 'Not specified',
-          specialtyLicenseNo: weekSubcontractor.specialtyLicenseNo || 'Not specified',
-          federalTaxId: weekSubcontractor.federalTaxId || 'Not specified',
-          motorCarrierPermitNo: weekSubcontractor.motorCarrierPermitNo || 'Not specified',
-          isUnion: weekSubcontractor.isUnion || false,
-          isSelfInsured: weekSubcontractor.isSelfInsured || false,
-          workersCompPolicy: weekSubcontractor.workersCompPolicy || 'Not specified',
-          email: weekSubcontractor.email || 'Not specified',
-          phone: weekSubcontractor.phone || 'Not specified',
-          address: weekSubcontractor.address || 'Not specified',
-          contact: weekSubcontractor.contact || 'Not specified',
-          foreman: weekSubcontractor.foreman || 'Not specified',
+        workers: weekWorkers
+      };
+    }));
+
+    console.log('🎉 All weeks processed successfully!');
+    console.log('📊 Final data summary:', {
+      totalWeeks: weeklyData.length,
+      totalWorkerEntries: weeklyData.reduce((sum, week) => sum + week.workers.length, 0)
+    });
+
+    // Get the first subcontractor for the main header info (assuming one subcontractor per project)
+    const mainSubcontractor = subcontractorInfo.length > 0 ? subcontractorInfo[0] : null;
+    console.log(`🏢 Main subcontractor:`, mainSubcontractor?.name || 'None found');
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        weekStart: startDate,
+        weekEnd: endDate,
+        projectName: project.name,
+        projectInfo: {
+          name: project.name,
+          location: project.location,
+          projectCode: project.projectCode || 'Not specified',
+          contractId: project.contractId || 'Not specified',
+          projectManager: project.projectManager || 'Not specified',
+          startDate: project.startDate || null,
+          endDate: project.endDate || null,
+        },
+        subcontractorInfo: mainSubcontractor ? {
+          companyName: mainSubcontractor.name,
+          trade: mainSubcontractor.trade || 'Not specified',
+          contractorLicenseNo: mainSubcontractor.contractorLicenseNo || 'Not specified',
+          specialtyLicenseNo: mainSubcontractor.specialtyLicenseNo || 'Not specified',
+          federalTaxId: mainSubcontractor.federalTaxId || 'Not specified',
+          motorCarrierPermitNo: mainSubcontractor.motorCarrierPermitNo || 'Not specified',
+          isUnion: mainSubcontractor.isUnion || false,
+          isSelfInsured: mainSubcontractor.isSelfInsured || false,
+          workersCompPolicy: mainSubcontractor.workersCompPolicy || 'Not specified',
+          email: mainSubcontractor.email || 'Not specified',
+          phone: mainSubcontractor.phone || 'Not specified',
+          address: mainSubcontractor.address || 'Not specified',
+          contact: mainSubcontractor.contact || 'Not specified',
+          foreman: mainSubcontractor.foreman || 'Not specified',
         } : {
           companyName: 'Not specified',
           trade: 'Not specified',
@@ -359,30 +384,6 @@ export async function POST(request: NextRequest) {
           address: 'Not specified',
           contact: 'Not specified',
           foreman: 'Not specified',
-        }
-      };
-    }));
-
-    console.log('🎉 All weeks processed successfully!');
-    console.log('📊 Final data summary:', {
-      totalWeeks: weeklyData.length,
-      totalWorkerEntries: weeklyData.reduce((sum, week) => sum + week.workers.length, 0)
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        weekStart: startDate,
-        weekEnd: endDate,
-        projectName: project[0].name,
-        projectInfo: {
-          name: project[0].name,
-          location: project[0].location,
-          projectCode: project[0].projectCode || 'Not specified',
-          contractId: project[0].contractId || 'Not specified',
-          projectManager: project[0].projectManager || 'Not specified',
-          startDate: project[0].startDate || null,
-          endDate: project[0].endDate || null,
         },
         weeks: weeklyData
       }

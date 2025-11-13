@@ -93,7 +93,6 @@ interface PayrollWeekData {
   weekStart: string;
   weekEnd: string;
   workers: PayrollWorker[];
-  subcontractorInfo: SubcontractorInfo;
 }
 
 interface ProjectInfo {
@@ -111,6 +110,7 @@ interface PayrollReportData {
   weekEnd: string;
   projectName: string;
   projectInfo?: ProjectInfo;
+  subcontractorInfo?: SubcontractorInfo;
   workers: PayrollWorker[];
   weeks?: PayrollWeekData[]; // For multi-week reports
 }
@@ -293,7 +293,7 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
                 <View style={[styles.tableRow, { height:30 }]}>
                   <View style={{ width: '28%', padding: 2, borderColor: '#ccc', borderTopWidth: 1, borderBottomWidth: 1, borderRightWidth: 1, alignItems: 'flex-start' }}>
                     <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>NAME OF CONTRACTOR :</Text>
-                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>{week.subcontractorInfo?.companyName || 'Not specified'}</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>{data.subcontractorInfo?.companyName || 'Not specified'}</Text>
                     {data.projectInfo?.projectManager && (
                       <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>PROJECT MANAGER: {data.projectInfo.projectManager}</Text>
                     )}
@@ -302,24 +302,24 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
                     )}
                   </View>
                   <View style={{ width: '12.6%', padding: 2, borderColor: '#ccc', borderTopWidth: 1, borderBottomWidth: 1, justifyContent: 'flex-start', alignItems: 'flex-start' }}>
-                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>CONTRACTOR'S LICENSE No. {week.subcontractorInfo?.contractorLicenseNo || 'Not specified'}</Text>
-                    {week.subcontractorInfo?.specialtyLicenseNo && week.subcontractorInfo.specialtyLicenseNo !== 'Not specified' && (
-                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>SPECIALTY LICENSE No. {week.subcontractorInfo.specialtyLicenseNo}</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>CONTRACTOR'S LICENSE No. {data.subcontractorInfo?.contractorLicenseNo || 'Not specified'}</Text>
+                    {data.subcontractorInfo?.specialtyLicenseNo && data.subcontractorInfo.specialtyLicenseNo !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>SPECIALTY LICENSE No. {data.subcontractorInfo.specialtyLicenseNo}</Text>
                     )}
-                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>FEDERAL TAX ID#: {week.subcontractorInfo?.federalTaxId || 'Not specified'}</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>FEDERAL TAX ID#: {data.subcontractorInfo?.federalTaxId || 'Not specified'}</Text>
                   </View>
                   <View style={{ width: '29.4%', padding: 2, borderColor: '#ccc', borderTopWidth: 1, borderBottomWidth: 1, borderRightWidth: 1, justifyContent: 'flex-start', alignItems: 'flex-start' }}>
-                    {week.subcontractorInfo?.address && week.subcontractorInfo.address !== 'Not specified' && (
-                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>ADDRESS : {week.subcontractorInfo.address}</Text>
+                    {data.subcontractorInfo?.address && data.subcontractorInfo.address !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>ADDRESS : {data.subcontractorInfo.address}</Text>
                     )}
-                    {week.subcontractorInfo?.phone && week.subcontractorInfo.phone !== 'Not specified' && (
-                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>PHONE: {week.subcontractorInfo.phone}</Text>
+                    {data.subcontractorInfo?.phone && data.subcontractorInfo.phone !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>PHONE: {data.subcontractorInfo.phone}</Text>
                     )}
-                    {week.subcontractorInfo?.email && week.subcontractorInfo.email !== 'Not specified' && (
-                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>EMAIL: {week.subcontractorInfo.email}</Text>
+                    {data.subcontractorInfo?.email && data.subcontractorInfo.email !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>EMAIL: {data.subcontractorInfo.email}</Text>
                     )}
-                    {week.subcontractorInfo?.contact && week.subcontractorInfo.contact !== 'Not specified' && (
-                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>CONTACT: {week.subcontractorInfo.contact}</Text>
+                    {data.subcontractorInfo?.contact && data.subcontractorInfo.contact !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>CONTACT: {data.subcontractorInfo.contact}</Text>
                     )}
                   </View>
                   <View style={{ width: '30%', padding: 2,  borderColor: '#ccc', borderTopWidth: 1,justifyContent: 'flex-start', alignItems: 'flex-start' }}>
@@ -341,13 +341,13 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
                     <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>SUBMITTED ON: {new Date().toLocaleDateString('en-US')}</Text>
                   </View>
                   <View style={{ width: '35%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
-                    {week.subcontractorInfo?.motorCarrierPermitNo && week.subcontractorInfo.motorCarrierPermitNo !== 'Not specified' && (
-                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>MOTOR CARRIER PERMIT No: {week.subcontractorInfo.motorCarrierPermitNo}</Text>
+                    {data.subcontractorInfo?.motorCarrierPermitNo && data.subcontractorInfo.motorCarrierPermitNo !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>MOTOR CARRIER PERMIT No: {data.subcontractorInfo.motorCarrierPermitNo}</Text>
                     )}
-                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>SELF-INSURED: {week.subcontractorInfo?.isSelfInsured ? 'Yes' : 'No'}</Text>
-                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>UNION: {week.subcontractorInfo?.isUnion ? 'Yes' : 'No'}</Text>
-                    {week.subcontractorInfo?.workersCompPolicy && week.subcontractorInfo.workersCompPolicy !== 'Not specified' && (
-                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>WORKERS' COMP. POLICY: {week.subcontractorInfo.workersCompPolicy}</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>SELF-INSURED: {data.subcontractorInfo?.isSelfInsured ? 'Yes' : 'No'}</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>UNION: {data.subcontractorInfo?.isUnion ? 'Yes' : 'No'}</Text>
+                    {data.subcontractorInfo?.workersCompPolicy && data.subcontractorInfo.workersCompPolicy !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>WORKERS' COMP. POLICY: {data.subcontractorInfo.workersCompPolicy}</Text>
                     )}
                   </View>
                   <View style={{ width: '30%', padding: 2, borderTopWidth: 0, borderBottomWidth: 0, justifyContent: 'center', alignItems: 'center' }}>
@@ -389,7 +389,7 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
             
             {/* Contractor Data Row */}
             <View style={[styles.tableRow, { borderBottomWidth: 0 ,borderTopWidth: index === 0 ? 0 : 1 }]}>
-            <View style={styles.nameCol}>
+            <View style={[styles.nameCol, { minHeight: 60 }]}>
               <Text style={styles.cellText}>{worker.name}</Text>
               {worker.address && <Text style={styles.cellText}>{worker.address}</Text>}
               {worker.ethnicity && <Text style={styles.cellText}>{worker.ethnicity}</Text>}

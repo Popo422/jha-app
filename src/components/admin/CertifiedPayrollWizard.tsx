@@ -177,6 +177,8 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
           weekStart: apiData.weekStart,
           weekEnd: apiData.weekEnd,
           projectName: apiData.projectName,
+          projectInfo: apiData.projectInfo,
+          subcontractorInfo: apiData.subcontractorInfo,
           workers: [], // Not used for multi-week
           weeks: apiData.weeks
         };
@@ -186,6 +188,8 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
           weekStart: apiData.weekStart,
           weekEnd: apiData.weekEnd,
           projectName: apiData.projectName,
+          projectInfo: apiData.projectInfo,
+          subcontractorInfo: apiData.subcontractorInfo,
           workers: apiData.weeks?.[0]?.workers || []
         };
       }

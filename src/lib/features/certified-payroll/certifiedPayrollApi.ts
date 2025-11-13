@@ -95,7 +95,6 @@ export interface PayrollWeekData {
   weekStart: string;
   weekEnd: string;
   workers: PayrollWorker[];
-  subcontractorInfo: SubcontractorInfo;
 }
 
 export interface ProjectInfo {
@@ -113,6 +112,7 @@ export interface MultiWeekPayrollData {
   weekEnd: string;
   projectName: string;
   projectInfo: ProjectInfo;
+  subcontractorInfo: SubcontractorInfo;
   weeks: PayrollWeekData[];
 }
 
