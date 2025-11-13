@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { db } from '@/lib/db';
-import { projects, contractors, timesheets, contractorProjects } from '@/lib/db/schema';
+import { projects, contractors, timesheets, contractorProjects, subcontractors } from '@/lib/db/schema';
 import { eq, and, gte, lte, inArray } from 'drizzle-orm';
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
@@ -161,12 +161,30 @@ export async function POST(request: NextRequest) {
       
       console.log(`✅ Found ${projectContractors.length} project contractors`);
 
-      // Get contractor names for timesheet filtering
+      // Get contractor names for timesheet filtering and subcontractor lookup
       const contractorNames = projectContractors
         .filter(pc => pc.contractor)
         .map(pc => `${pc.contractor!.firstName} ${pc.contractor!.lastName}`.trim());
       
       console.log('👤 Contractor names for timesheet lookup:', contractorNames);
+
+      // Get subcontractor information by matching contractor names
+      console.log('🏢 Fetching subcontractor information by contractor names...');
+      const subcontractorInfo = await db.select()
+        .from(subcontractors)
+        .where(and(
+          eq(subcontractors.companyId, auth.admin.companyId),
+          inArray(subcontractors.name, contractorNames)
+        ));
+      
+      console.log(`✅ Found ${subcontractorInfo.length} matching subcontractors`);
+      
+      // Create a map for easy lookup
+      const subcontractorMap = new Map();
+      subcontractorInfo.forEach(sub => {
+        subcontractorMap.set(sub.name, sub);
+      });
+      console.log('🗺️ Subcontractor map created for contractor info lookup');
 
       // Get timesheet data for this week (filter by contractor names and project name)
       console.log('⏰ Fetching timesheets...');
@@ -239,14 +257,14 @@ export async function POST(request: NextRequest) {
         return {
           id: contractor.id,
           name: `${contractor.firstName || ''} ${contractor.lastName || ''}`.trim(),
-          address: contractor.address || 'Address not specified',
-          ssn: 'XXX-XX-XXXX', // Masked for security
-          driversLicense: 'Not specified', // Not in schema
-          ethnicity: contractor.race || 'Not specified',
-          gender: contractor.gender || 'Not specified',
-          workClassification: contractor.workClassification || 'Not specified',
-          location: project[0].location || 'Project Site',
-          type: contractor.type || 'contractor',
+          address: contractor.address || '',
+          ssn: '', // Removed for privacy - not available in database
+          driversLicense: '', // Not available in database schema
+          ethnicity: contractor.race || '',
+          gender: contractor.gender || '',
+          workClassification: contractor.workClassification || '',
+          location: project[0].location || '',
+          type: contractor.type || '',
           dailyHours,
           totalHours: { 
             straight: totalStraight, 
@@ -303,10 +321,45 @@ export async function POST(request: NextRequest) {
       
       console.log(`✅ Week ${weekIndex + 1} completed with ${weekWorkers.length} workers`);
 
+      // Get the first subcontractor for this week's header info (assuming one subcontractor per week)
+      const weekSubcontractor = subcontractorInfo.length > 0 ? subcontractorInfo[0] : null;
+      console.log(`🏢 Week ${weekIndex + 1} subcontractor:`, weekSubcontractor?.name || 'None found');
+
       return {
         weekStart: week.weekStart,
         weekEnd: week.weekEnd,
-        workers: weekWorkers
+        workers: weekWorkers,
+        subcontractorInfo: weekSubcontractor ? {
+          companyName: weekSubcontractor.name,
+          trade: weekSubcontractor.trade || 'Not specified',
+          contractorLicenseNo: weekSubcontractor.contractorLicenseNo || 'Not specified',
+          specialtyLicenseNo: weekSubcontractor.specialtyLicenseNo || 'Not specified',
+          federalTaxId: weekSubcontractor.federalTaxId || 'Not specified',
+          motorCarrierPermitNo: weekSubcontractor.motorCarrierPermitNo || 'Not specified',
+          isUnion: weekSubcontractor.isUnion || false,
+          isSelfInsured: weekSubcontractor.isSelfInsured || false,
+          workersCompPolicy: weekSubcontractor.workersCompPolicy || 'Not specified',
+          email: weekSubcontractor.email || 'Not specified',
+          phone: weekSubcontractor.phone || 'Not specified',
+          address: weekSubcontractor.address || 'Not specified',
+          contact: weekSubcontractor.contact || 'Not specified',
+          foreman: weekSubcontractor.foreman || 'Not specified',
+        } : {
+          companyName: 'Not specified',
+          trade: 'Not specified',
+          contractorLicenseNo: 'Not specified',
+          specialtyLicenseNo: 'Not specified',
+          federalTaxId: 'Not specified',
+          motorCarrierPermitNo: 'Not specified',
+          isUnion: false,
+          isSelfInsured: false,
+          workersCompPolicy: 'Not specified',
+          email: 'Not specified',
+          phone: 'Not specified',
+          address: 'Not specified',
+          contact: 'Not specified',
+          foreman: 'Not specified',
+        }
       };
     }));
 
@@ -322,6 +375,15 @@ export async function POST(request: NextRequest) {
         weekStart: startDate,
         weekEnd: endDate,
         projectName: project[0].name,
+        projectInfo: {
+          name: project[0].name,
+          location: project[0].location,
+          projectCode: project[0].projectCode || 'Not specified',
+          contractId: project[0].contractId || 'Not specified',
+          projectManager: project[0].projectManager || 'Not specified',
+          startDate: project[0].startDate || null,
+          endDate: project[0].endDate || null,
+        },
         weeks: weeklyData
       }
     });
