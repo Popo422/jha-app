@@ -13,6 +13,7 @@ interface PayrollDetailsFormProps {
   contractorId: string;
   dateRange: { startDate: string; endDate: string };
   initialData?: PayrollFormData | null;
+  isViewMode?: boolean;
   onBack: () => void;
   onSave: (payrollData: PayrollFormData) => void;
 }
@@ -63,6 +64,7 @@ export default function PayrollDetailsForm({
   contractorId,
   dateRange,
   initialData,
+  isViewMode = false,
   onBack,
   onSave
 }: PayrollDetailsFormProps) {
@@ -140,12 +142,12 @@ export default function PayrollDetailsForm({
               className="text-blue-600 hover:text-blue-700"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Payroll Options
+              {isViewMode ? "Back to List" : "Back to Payroll Options"}
             </Button>
             
             <div className="text-right">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Add Payroll Details
+                {isViewMode ? "View Payroll Details" : "Add Payroll Details"}
               </h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Employee: {contractorName} | Pay Period: {formatDateRange()}
