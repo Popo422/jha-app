@@ -1,6 +1,23 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 // Types
+export interface SubcontractorInfo {
+  companyName: string;
+  trade: string;
+  contractorLicenseNo: string;
+  specialtyLicenseNo: string;
+  federalTaxId: string;
+  motorCarrierPermitNo: string;
+  isUnion: boolean;
+  isSelfInsured: boolean;
+  workersCompPolicy: string;
+  email: string;
+  phone: string;
+  address: string;
+  contact: string;
+  foreman: string;
+}
+
 export interface PayrollWorker {
   id: string;
   name: string;
@@ -78,12 +95,24 @@ export interface PayrollWeekData {
   weekStart: string;
   weekEnd: string;
   workers: PayrollWorker[];
+  subcontractorInfo: SubcontractorInfo;
+}
+
+export interface ProjectInfo {
+  name: string;
+  location: string;
+  projectCode: string;
+  contractId: string;
+  projectManager: string;
+  startDate: string | null;
+  endDate: string | null;
 }
 
 export interface MultiWeekPayrollData {
   weekStart: string;
   weekEnd: string;
   projectName: string;
+  projectInfo: ProjectInfo;
   weeks: PayrollWeekData[];
 }
 

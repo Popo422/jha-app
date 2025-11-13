@@ -5,6 +5,23 @@ import { Document, Page, Text, View, StyleSheet, PDFViewer, PDFDownloadLink, pdf
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Types for the payroll data
+interface SubcontractorInfo {
+  companyName: string;
+  trade: string;
+  contractorLicenseNo: string;
+  specialtyLicenseNo: string;
+  federalTaxId: string;
+  motorCarrierPermitNo: string;
+  isUnion: boolean;
+  isSelfInsured: boolean;
+  workersCompPolicy: string;
+  email: string;
+  phone: string;
+  address: string;
+  contact: string;
+  foreman: string;
+}
+
 interface PayrollWorker {
   id: string;
   name: string;
@@ -76,12 +93,24 @@ interface PayrollWeekData {
   weekStart: string;
   weekEnd: string;
   workers: PayrollWorker[];
+  subcontractorInfo: SubcontractorInfo;
+}
+
+interface ProjectInfo {
+  name: string;
+  location: string;
+  projectCode: string;
+  contractId: string;
+  projectManager: string;
+  startDate: string | null;
+  endDate: string | null;
 }
 
 interface PayrollReportData {
   weekStart: string;
   weekEnd: string;
   projectName: string;
+  projectInfo?: ProjectInfo;
   workers: PayrollWorker[];
   weeks?: PayrollWeekData[]; // For multi-week reports
 }
@@ -134,6 +163,21 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     fontWeight: 'bold',
   },
+  blankHeaderRow: {
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    width: '100%',
+  },
+  blankHeaderRowMiddle: {
+    borderStyle: 'solid',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
+    borderColor: '#ccc',
+    width: '100%',
+  },
   contractorSeparator: {
     width: '100%',
     height: 50,
@@ -143,7 +187,7 @@ const styles = StyleSheet.create({
   classificationCol: { width: '8%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc' },
   typeCol: { width: '1.5%', padding: 0, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center', flexDirection: 'column' },
   dayCell: { width: '4.2%', padding: 0, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center', flexDirection: 'column' },
-  mergedDayHeader: { width: '29.4%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center', justifyContent: 'center', alignItems: 'center' },
+  mergedDayHeader: { width: '29.45%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center', justifyContent: 'center', alignItems: 'center' },
   dayCellRow: { 
     flex: 1, 
     borderBottomWidth: 1, 
@@ -172,7 +216,7 @@ const styles = StyleSheet.create({
   deductionsCol: { width: '34.65%', padding: 0, flexDirection: 'column' },
   deductionRow: { flex: 1, flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#ccc' },
   deductionSubCol: { width: '11.11%', padding: 0.5, borderRightWidth: 1, borderRightColor: '#ccc', textAlign: 'center' },
-  deductionSubColLast: { width: '11.11%', padding: 0.5, textAlign: 'center' },
+  deductionSubColLast: { width: '11.12%', padding: 0.5, textAlign: 'center' },
   
   // Daily hours sub-table
   dailyHoursContainer: {
@@ -242,11 +286,82 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
           
           {/* Individual contractor table */}
           <View style={styles.table}>
+            {/* Blank Header Rows - Only for first contractor */}
+            {index === 0 && (
+              <>
+                {/* First blank row */}
+                <View style={[styles.tableRow, { height:30 }]}>
+                  <View style={{ width: '28%', padding: 2, borderColor: '#ccc', borderTopWidth: 1, borderBottomWidth: 1, borderRightWidth: 1, alignItems: 'flex-start' }}>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>NAME OF CONTRACTOR :</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>{week.subcontractorInfo?.companyName || 'Not specified'}</Text>
+                    {data.projectInfo?.projectManager && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>PROJECT MANAGER: {data.projectInfo.projectManager}</Text>
+                    )}
+                    {data.projectInfo?.contractId && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>CONTRACT ID# {data.projectInfo.contractId}</Text>
+                    )}
+                  </View>
+                  <View style={{ width: '12.6%', padding: 2, borderColor: '#ccc', borderTopWidth: 1, borderBottomWidth: 1, justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>CONTRACTOR'S LICENSE No. {week.subcontractorInfo?.contractorLicenseNo || 'Not specified'}</Text>
+                    {week.subcontractorInfo?.specialtyLicenseNo && week.subcontractorInfo.specialtyLicenseNo !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>SPECIALTY LICENSE No. {week.subcontractorInfo.specialtyLicenseNo}</Text>
+                    )}
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>FEDERAL TAX ID#: {week.subcontractorInfo?.federalTaxId || 'Not specified'}</Text>
+                  </View>
+                  <View style={{ width: '29.4%', padding: 2, borderColor: '#ccc', borderTopWidth: 1, borderBottomWidth: 1, borderRightWidth: 1, justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                    {week.subcontractorInfo?.address && week.subcontractorInfo.address !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>ADDRESS : {week.subcontractorInfo.address}</Text>
+                    )}
+                    {week.subcontractorInfo?.phone && week.subcontractorInfo.phone !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>PHONE: {week.subcontractorInfo.phone}</Text>
+                    )}
+                    {week.subcontractorInfo?.email && week.subcontractorInfo.email !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>EMAIL: {week.subcontractorInfo.email}</Text>
+                    )}
+                    {week.subcontractorInfo?.contact && week.subcontractorInfo.contact !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>CONTACT: {week.subcontractorInfo.contact}</Text>
+                    )}
+                  </View>
+                  <View style={{ width: '30%', padding: 2,  borderColor: '#ccc', borderTopWidth: 1,justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>PROJECT LOCATION/ CODE / NAME :</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>
+                      {data.projectInfo?.location || 'Not specified'}{data.projectInfo?.projectCode ? ` / ${data.projectInfo.projectCode}` : ''}
+                    </Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>{data.projectInfo?.name || 'Not specified'}</Text>
+                  </View>
+                </View>
+                
+                {/* Second blank row */}
+                <View style={[styles.tableRow, { borderBottomWidth: 0, borderTopWidth: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#ccc', height: 20 }]}>
+                  <View style={{ width: '23.33%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>PAYROLL No. {weekIndex + 1}</Text>
+                  </View>
+                  <View style={{ width: '11.67%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>FOR WEEK ENDING: {new Date(week.weekEnd).toLocaleDateString('en-US')}</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>SUBMITTED ON: {new Date().toLocaleDateString('en-US')}</Text>
+                  </View>
+                  <View style={{ width: '35%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                    {week.subcontractorInfo?.motorCarrierPermitNo && week.subcontractorInfo.motorCarrierPermitNo !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>MOTOR CARRIER PERMIT No: {week.subcontractorInfo.motorCarrierPermitNo}</Text>
+                    )}
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>SELF-INSURED: {week.subcontractorInfo?.isSelfInsured ? 'Yes' : 'No'}</Text>
+                    <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>UNION: {week.subcontractorInfo?.isUnion ? 'Yes' : 'No'}</Text>
+                    {week.subcontractorInfo?.workersCompPolicy && week.subcontractorInfo.workersCompPolicy !== 'Not specified' && (
+                      <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>WORKERS' COMP. POLICY: {week.subcontractorInfo.workersCompPolicy}</Text>
+                    )}
+                  </View>
+                  <View style={{ width: '30%', padding: 2, borderTopWidth: 0, borderBottomWidth: 0, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={styles.cellText}></Text>
+                  </View>
+                </View>
+              </>
+            )}
+            
             {/* Header Row - Only for first contractor */}
             {index === 0 && (
               <View style={[styles.tableRow, styles.headerRow]}>
                 <View style={[styles.nameCol, { justifyContent: 'center', alignItems: 'center', width: '11%' }]}>
-                  <Text style={[styles.cellText, { textAlign: 'center' }]}>Name, Address, SSN, Drivers License, Ethnicity, Gender</Text>
+                  <Text style={[styles.cellText, { textAlign: 'center' }]}>Name, Address, Ethnicity, Gender</Text>
                 </View>
                 <View style={[styles.classificationCol, { justifyContent: 'center', alignItems: 'center' }]}>
                   <Text style={[styles.cellText, { textAlign: 'center' }]}>Work Classification, Location and Type</Text>
@@ -276,17 +391,15 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
             <View style={[styles.tableRow, { borderBottomWidth: 0 ,borderTopWidth: index === 0 ? 0 : 1 }]}>
             <View style={styles.nameCol}>
               <Text style={styles.cellText}>{worker.name}</Text>
-              <Text style={styles.cellText}>{worker.address}</Text>
-              <Text style={styles.cellText}>{worker.ssn}</Text>
-              <Text style={styles.cellText}>{worker.driversLicense}</Text>
-              <Text style={styles.cellText}>{worker.ethnicity}</Text>
-              <Text style={styles.cellText}>{worker.gender}</Text>
+              {worker.address && <Text style={styles.cellText}>{worker.address}</Text>}
+              {worker.ethnicity && <Text style={styles.cellText}>{worker.ethnicity}</Text>}
+              {worker.gender && <Text style={styles.cellText}>{worker.gender}</Text>}
             </View>
 
             <View style={styles.classificationCol}>
-              <Text style={styles.cellText}>{worker.workClassification}</Text>
-              <Text style={styles.cellText}>{worker.location}</Text>
-              <Text style={styles.cellText}>Type: {worker.type}</Text>
+              {worker.workClassification && <Text style={styles.cellText}>{worker.workClassification}</Text>}
+              {worker.location && <Text style={styles.cellText}>{worker.location}</Text>}
+              {worker.type && <Text style={styles.cellText}>Type: {worker.type}</Text>}
             </View>
 
             <View style={styles.typeCol}>
