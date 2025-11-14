@@ -29,6 +29,7 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
   const [selectedContractorForPayroll, setSelectedContractorForPayroll] = useState<string | null>(null);
   const [savedPayrollData, setSavedPayrollData] = useState<Map<string, any>>(new Map());
   const [extractedPayrollData, setExtractedPayrollData] = useState<any>(null);
+  const [isViewMode, setIsViewMode] = useState<boolean>(false);
   
   // Get contractor data for the payroll wizard
   const { data: contractorsData } = useGetProjectContractorsQuery(projectId);
@@ -86,7 +87,16 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
     setSelectedContractorForPayroll(contractorId);
     // Clear any previous extracted data when switching contractors
     setExtractedPayrollData(null);
+    setIsViewMode(false);
     setCurrentStep("payroll-wizard");
+  };
+
+  const handleViewPayrollData = (contractorId: string) => {
+    setSelectedContractorForPayroll(contractorId);
+    // Clear any previous extracted data when switching contractors
+    setExtractedPayrollData(null);
+    setIsViewMode(true);
+    setCurrentStep("payroll-form");
   };
 
   const handleBackFromPayrollWizard = () => {
@@ -105,7 +115,15 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
   };
 
   const handleBackFromPayrollForm = () => {
-    setCurrentStep("payroll-wizard");
+    if (isViewMode) {
+      // If coming from View button, go back to the list
+      setCurrentStep("add-details");
+      setSelectedContractorForPayroll(null);
+      setIsViewMode(false);
+    } else {
+      // If coming from regular flow, go back to payroll options
+      setCurrentStep("payroll-wizard");
+    }
   };
 
   const handleSavePayrollData = (payrollData: any) => {
@@ -124,6 +142,7 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
     setCurrentStep("add-details");
     setSelectedContractorForPayroll(null);
     setExtractedPayrollData(null);
+    setIsViewMode(false);
   };
 
   const handleGenerateReport = () => {
@@ -316,6 +335,7 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
       : null;
     
     const initialFormData = extractedPayrollData || existingPayrollData;
+    const isViewingExistingData = !!existingPayrollData && !extractedPayrollData;
 
     return (
       <PayrollDetailsForm
@@ -323,6 +343,7 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
         contractorId={selectedContractorInfo.id}
         dateRange={selectedDateRange}
         initialData={initialFormData}
+        isViewMode={isViewingExistingData}
         onBack={handleBackFromPayrollForm}
         onSave={handleSavePayrollData}
       />
@@ -391,9 +412,11 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
               projectId={projectId}
               selectedContractors={selectedContractors}
               selectedDateRange={selectedDateRange}
+              savedPayrollData={savedPayrollData}
               onNext={handleNext}
               onBack={handleBack}
               onAddPayrollData={handleAddPayrollData}
+              onViewPayrollData={handleViewPayrollData}
               onBulkAIUpload={handleBulkAIUpload}
               onGenerateReport={handleGenerateReport}
             />

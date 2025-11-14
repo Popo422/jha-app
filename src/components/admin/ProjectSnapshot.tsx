@@ -26,6 +26,7 @@ import HoursOverTimeChart from '@/components/HoursOverTimeChart';
 import SubcontractorHoursAnalytics from '@/components/SubcontractorHoursAnalytics';
 import WorkmenWeeklyAnalytics from '@/components/admin/WorkmenWeeklyAnalytics';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
+import ProjectDailyLogs from '@/components/admin/ProjectDailyLogs';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -426,6 +427,11 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
         <WeatherWidget 
           projectLocation={selectedProjectLocation}
         />
+      </div>
+
+      {/* Daily Logs */}
+      <div className="w-full">
+        <ProjectDailyLogs projectId={projectId} />
       </div>
 
       {/* Workforce Tabs */}

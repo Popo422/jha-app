@@ -441,3 +441,29 @@ export const expenseDocuments = pgTable('expense_documents', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
+// Daily Logs Schema
+export const dailyLogs = pgTable('daily_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  companyId: uuid('company_id').notNull(),
+
+  // Task Information
+  taskName: text('task_name').notNull(),
+  startDate: date('start_date'),
+  endDate: date('end_date'),
+  predecessor: text('predecessor'), // References other daily log entries or task numbers
+  progress: numeric('progress', { precision: 5, scale: 2 }).default('0'), // 0-100 percentage
+
+  // Log Information
+  logDate: date('log_date').notNull(), // Date this log entry was made
+  notes: text('notes'), // Additional notes or details
+
+  // Creation Information
+  createdBy: uuid('created_by').notNull(), // Admin user ID who created
+  createdByName: text('created_by_name').notNull(), // Admin name for display
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+
