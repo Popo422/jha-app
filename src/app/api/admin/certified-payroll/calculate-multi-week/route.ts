@@ -264,8 +264,9 @@ export async function POST(request: NextRequest) {
           ethnicity: contractor.race || '',
           gender: contractor.gender || '',
           workClassification: contractor.workClassification || '',
+          projectType: contractor.projectType || '',
+          group: contractor.group || '',
           location: project.location || '',
-          type: contractor.type || '',
           dailyHours,
           totalHours: { 
             straight: totalStraight, 

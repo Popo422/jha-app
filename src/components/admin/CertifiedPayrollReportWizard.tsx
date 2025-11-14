@@ -31,8 +31,9 @@ interface PayrollWorker {
   ethnicity: string;
   gender: string;
   workClassification: string;
+  projectType: string;
+  group: string;
   location: string;
-  type: string;
   dailyHours: {
     sunday: { straight: number; overtime: number; double: number };
     monday: { straight: number; overtime: number; double: number };
@@ -125,7 +126,10 @@ const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
-    padding: 20,
+    paddingTop: 40,
+    paddingRight: 20,
+    paddingBottom: 20,
+    paddingLeft: 20,
     fontSize: 8,
   },
   header: {
@@ -260,6 +264,15 @@ const getDateForDay = (weekStart: string, dayOffset: number) => {
 export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
   <Document title={`Certified_Payroll_${data.weekStart.replace(/-/g, '-')}_to_${data.weekEnd.replace(/-/g, '-')}.pdf`}>
     <Page size="A3" orientation="landscape" style={styles.page}>
+      {/* Fixed Header - Repeats on every page */}
+      <View fixed style={{ position: 'absolute', top: 10, right: 10, zIndex: 10 }}>
+        <Text style={{ fontSize: 8 }}>
+          Project Name: {data.projectInfo?.name || data.projectName}
+        </Text>
+        <Text style={{ fontSize: 8 }}>
+          Project Code: {data.projectInfo?.projectCode || ''}
+        </Text>
+      </View>
 
       {/* Multi-week or single week rendering */}
       {data.weeks ? (
@@ -267,10 +280,14 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
         data.weeks.map((week, weekIndex) => (
           <Fragment key={`week-${weekIndex}`}>
             {/* New page for each week after the first */}
-            {weekIndex > 0 && <View break />}
+            {weekIndex > 0 && (
+              <>
+                <View break />
+              </>
+            )}
             
             {/* Week header */}
-            <View style={[styles.header, { marginBottom: 5 }]}>
+            <View style={[styles.header, { marginBottom: 5, marginTop: 20 }]}>
               <Text style={styles.title}>CERTIFIED PAYROLL</Text>
               <Text style={styles.weekRange}>
                 Period: {week.weekStart} - {week.weekEnd}
@@ -332,7 +349,7 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
                 </View>
                 
                 {/* Second blank row */}
-                <View style={[styles.tableRow, { borderBottomWidth: 0, borderTopWidth: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#ccc', height: 20 }]}>
+                <View style={[styles.tableRow, { borderBottomWidth: 0, borderTopWidth: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#ccc', height: 30 }]}>
                   <View style={{ width: '23.33%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
                     <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>PAYROLL No. {weekIndex + 1}</Text>
                   </View>
@@ -397,9 +414,10 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
             </View>
 
             <View style={styles.classificationCol}>
-              {worker.workClassification && <Text style={styles.cellText}>{worker.workClassification}</Text>}
+              <Text style={styles.cellText}>
+                {[worker.workClassification, worker.projectType, worker.group].filter(Boolean).join(' ')}
+              </Text>
               {worker.location && <Text style={styles.cellText}>{worker.location}</Text>}
-              {worker.type && <Text style={styles.cellText}>Type: {worker.type}</Text>}
             </View>
 
             <View style={styles.typeCol}>
@@ -905,17 +923,75 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
                 </View>
               </View>
             </View>
+
+            {/* Additional Blank Row 3 */}
+            <View style={[styles.tableRow, { borderBottomWidth: 0,borderRightColor: "white", borderLeftColor: "white", height: 12 }]}>
+              <View style={{ width: '100%', borderTopWidth: 0, borderRightWidth: 0 }}>
+                <Text style={[styles.cellText, { fontSize: 5 }]}></Text>
+              </View>
+            </View>
+
+            {/* Additional Blank Row 4 */}
+            <View style={[styles.tableRow, { borderBottomWidth: 0,borderRightColor: "white", borderLeftColor: "white", height: 12 }]}>
+              <View style={{ width: '100%', borderTopWidth: 0, borderRightWidth: 0 }}>
+                <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>
+                  {(worker.deductions?.allOtherDeductions || 0) > 0 
+                    ? `OTHER DEDUCTION NOTES: 1) Other $${(worker.deductions?.allOtherDeductions || 0).toFixed(2)}. Total Amount Deducted: ${(worker.deductions?.allOtherDeductions || 0).toFixed(2)}`
+                    : 'OTHER DEDUCTION NOTES:'
+                  }
+                </Text>
+              </View>
+            </View>
+
           </View>
           </Fragment>
             ))}
+            
+            {/* Totals Table for this week */}
+            {(() => {
+              // Calculate totals for this week
+              const totalStraight = week.workers.reduce((sum, worker) => sum + (worker.totalHours?.straight || 0), 0);
+              const totalOvertime = week.workers.reduce((sum, worker) => sum + (worker.totalHours?.overtime || 0), 0);
+              const totalDouble = week.workers.reduce((sum, worker) => sum + (worker.totalHours?.double || 0), 0);
+              const grandTotal = totalStraight + totalOvertime + totalDouble;
+              
+              return (
+                <View style={[styles.table, { marginTop: 10 }]}>
+                  <View style={[styles.tableRow, { borderTopWidth: 1, borderTopColor: '#ccc', borderBottomWidth: 1, borderBottomColor: '#ccc' }]}>
+                    <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>TOTAL STANDARD HOURS: {totalStraight.toFixed(2)}</Text>
+                    </View>
+                    <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>TOTAL 1.5 OT HOURS: {totalOvertime.toFixed(2)}</Text>
+                    </View>
+                    <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>TOTAL 2.0 OT HOURS: {totalDouble.toFixed(2)}</Text>
+                    </View>
+                    <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>GRAND TOTAL HOURS: {grandTotal.toFixed(2)}</Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })()}
           </Fragment>
         ))
       ) : (
         // Single week report (fallback to existing logic)
-        data.workers.map((worker, index) => (
-          <Fragment key={worker.id}>
-            {/* Large spacing for contractors after the first one */}
-            {index > 0 && <View style={styles.contractorSeparator}></View>}
+        <>
+          {/* Single Week header */}
+          <View style={[styles.header, { marginBottom: 5, marginTop: 35 }]}>
+            <Text style={styles.title}>CERTIFIED PAYROLL</Text>
+            <Text style={styles.weekRange}>
+              Period: {data.weekStart} - {data.weekEnd}
+            </Text>
+            <Text>Project: {data.projectName}</Text>
+          </View>
+          
+          {data.workers.map((worker, index) => (
+            <Fragment key={worker.id}>
+              {/* Large spacing for contractors after the first one */}
+              {index > 0 && <View style={styles.contractorSeparator}></View>}
             
             {/* Individual contractor table */}
             <View style={styles.table}>
@@ -952,7 +1028,36 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
               {/* Single week contractor data would go here - truncated for brevity */}
             </View>
           </Fragment>
-        ))
+        ))}
+        
+        {/* Totals Table for single week */}
+        {(() => {
+          // Calculate totals for all workers
+          const totalStraight = data.workers.reduce((sum, worker) => sum + (worker.totalHours?.straight || 0), 0);
+          const totalOvertime = data.workers.reduce((sum, worker) => sum + (worker.totalHours?.overtime || 0), 0);
+          const totalDouble = data.workers.reduce((sum, worker) => sum + (worker.totalHours?.double || 0), 0);
+          const grandTotal = totalStraight + totalOvertime + totalDouble;
+          
+          return (
+            <View style={[styles.table, { marginTop: 10 }]}>
+              <View style={[styles.tableRow, { borderTopWidth: 1, borderTopColor: '#ccc', borderBottomWidth: 1, borderBottomColor: '#ccc' }]}>
+                <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>TOTAL STANDARD HOURS: {totalStraight.toFixed(2)}</Text>
+                </View>
+                <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>TOTAL 1.5 OT HOURS: {totalOvertime.toFixed(2)}</Text>
+                </View>
+                <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>TOTAL 2.0 OT HOURS: {totalDouble.toFixed(2)}</Text>
+                </View>
+                <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>GRAND TOTAL HOURS: {grandTotal.toFixed(2)}</Text>
+                </View>
+              </View>
+            </View>
+          );
+        })()}
+        </>
       )}
     </Page>
   </Document>
