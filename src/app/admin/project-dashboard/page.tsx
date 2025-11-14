@@ -63,7 +63,9 @@ export default function ProjectDashboardPage() {
     location: '',
     projectCost: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    projectCode: '',
+    contractId: ''
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -132,7 +134,9 @@ export default function ProjectDashboardPage() {
       location: project.location,
       projectCost: project.projectCost || '',
       startDate: project.startDate || '',
-      endDate: project.endDate || ''
+      endDate: project.endDate || '',
+      projectCode: project.projectCode || '',
+      contractId: project.contractId || ''
     });
     setFormErrors({});
     setEditModalOpen(true);
@@ -183,7 +187,9 @@ export default function ProjectDashboardPage() {
       location: '',
       projectCost: '',
       startDate: '',
-      endDate: ''
+      endDate: '',
+      projectCode: '',
+      contractId: ''
     });
     setFormErrors({});
   };
@@ -475,15 +481,23 @@ export default function ProjectDashboardPage() {
 
       {/* Edit Project Modal */}
       <AlertDialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
+        <AlertDialogContent className="sm:max-w-lg max-w-[95vw] max-h-[90vh] overflow-y-auto">
+          <AlertDialogHeader className="relative">
+            <button
+              onClick={cancelEdit}
+              className="absolute right-0 top-0 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+              disabled={isUpdating}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </button>
             <AlertDialogTitle>Edit Project</AlertDialogTitle>
             <AlertDialogDescription>
               Update the project details below.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <form onSubmit={handleUpdateProject}>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <Label htmlFor="edit-name">Project Name</Label>
                 <Input
@@ -538,7 +552,7 @@ export default function ProjectDashboardPage() {
               </div>
               <div>
                 <Label className="text-base font-medium">Project Timeline</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                <div className="grid grid-cols-1 gap-4 mt-2">
                   <div className="space-y-2">
                     <Label htmlFor="edit-startDate" className="text-sm text-gray-600">Start Date</Label>
                     <DateInput
@@ -558,11 +572,34 @@ export default function ProjectDashboardPage() {
                     />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-projectCode" className="text-sm text-gray-600">Project Code (Optional)</Label>
+                    <Input
+                      id="edit-projectCode"
+                      value={editForm.projectCode}
+                      onChange={(e) => setEditForm({ ...editForm, projectCode: e.target.value })}
+                      placeholder="Enter project code"
+                      disabled={isUpdating}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-contractId" className="text-sm text-gray-600">Contract ID (Optional)</Label>
+                    <Input
+                      id="edit-contractId"
+                      value={editForm.contractId}
+                      onChange={(e) => setEditForm({ ...editForm, contractId: e.target.value })}
+                      placeholder="Enter contract ID"
+                      disabled={isUpdating}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-            <AlertDialogFooter className="mt-6">
-              <AlertDialogCancel onClick={cancelEdit}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleUpdateProject} disabled={isUpdating}>
+            <AlertDialogFooter className="mt-4 flex-col sm:flex-row gap-2 sm:gap-0">
+              <AlertDialogCancel onClick={cancelEdit} className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleUpdateProject} disabled={isUpdating} className="w-full sm:w-auto">
                 {isUpdating ? 'Updating...' : 'Update Project'}
               </AlertDialogAction>
             </AlertDialogFooter>
