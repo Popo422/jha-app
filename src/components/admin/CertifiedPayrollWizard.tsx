@@ -13,13 +13,14 @@ import PayrollDetailsForm from "./PayrollDetailsForm";
 import PayrollUploadWizard from "./PayrollUploadWizard";
 import BulkAIUploadWizard from "./BulkAIUploadWizard";
 import CertifiedPayrollReportPreview from "./CertifiedPayrollReportPreview";
+import CertificationFormStep from "./CertificationFormStep";
 import { useGetProjectContractorsQuery, useCalculateMultiWeekPayrollMutation, useUploadPayrollMutation, useBulkExtractPayrollMutation } from "@/lib/features/certified-payroll/certifiedPayrollApi";
 
 interface CertifiedPayrollWizardProps {
   projectId: string;
 }
 
-type WizardStep = "onboarding" | "select-workmen" | "select-timeframe" | "add-details" | "payroll-wizard" | "payroll-form" | "payroll-upload" | "bulk-ai-upload" | "generate-report";
+type WizardStep = "onboarding" | "select-workmen" | "select-timeframe" | "add-details" | "payroll-wizard" | "payroll-form" | "payroll-upload" | "bulk-ai-upload" | "certification-form" | "generate-report";
 
 export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWizardProps) {
   const router = useRouter();
@@ -30,6 +31,14 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
   const [savedPayrollData, setSavedPayrollData] = useState<Map<string, any>>(new Map());
   const [extractedPayrollData, setExtractedPayrollData] = useState<any>(null);
   const [isViewMode, setIsViewMode] = useState<boolean>(false);
+  const [certificationFormData, setCertificationFormData] = useState({
+    projectManager: '',
+    position: '',
+    payrollEndDate: '',
+    exceptions: [] as { exception: string; explanation: string }[],
+    remarks: '',
+    signature: ''
+  });
   
   // Get contractor data for the payroll wizard
   const { data: contractorsData } = useGetProjectContractorsQuery(projectId);
@@ -146,11 +155,20 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
   };
 
   const handleGenerateReport = () => {
+    setCurrentStep("certification-form");
+  };
+
+  const handleBackFromCertification = () => {
+    setCurrentStep("add-details");
+  };
+
+  const handleCertificationNext = (certData: typeof certificationFormData) => {
+    setCertificationFormData(certData);
     setCurrentStep("generate-report");
   };
 
   const handleBackFromReport = () => {
-    setCurrentStep("add-details");
+    setCurrentStep("certification-form");
   };
 
   // Convert Map to stable object for dependency tracking
@@ -366,6 +384,32 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
     );
   }
 
+  // Show Certification Form Step
+  if (currentStep === "certification-form") {
+    return (
+      <div className="space-y-6">
+        {/* Go Back button outside the widget */}
+        <Button 
+          variant="ghost" 
+          onClick={handleGoBack}
+          className="text-blue-600 hover:text-blue-700"
+        >
+          Go Back
+        </Button>
+        
+        <Card className="bg-white dark:bg-gray-800 shadow-sm">
+          <CardContent className="p-8">
+            <CertificationFormStep
+              initialData={certificationFormData}
+              onNext={handleCertificationNext}
+              onBack={handleBackFromCertification}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Show Enhanced Report Generation
   if (currentStep === "generate-report") {
     return (
@@ -434,7 +478,7 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Create your certified payroll by following this guided experience.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
                 <div className="text-center space-y-3">
                   <div className={`w-12 h-12 mx-auto rounded-lg flex items-center justify-center ${
                     currentStep === "onboarding" 
@@ -469,6 +513,14 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
                   </div>
                   <h3 className="font-semibold text-gray-700 dark:text-gray-300">Add Payroll Details</h3>
                   <p className="text-sm text-muted-foreground">Add payroll information using a form or upload your payroll report.</p>
+                </div>
+
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 mx-auto rounded-lg flex items-center justify-center bg-purple-50 dark:bg-purple-900/20">
+                    <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h3 className="font-semibold text-gray-700 dark:text-gray-300">Additonal Details</h3>
+                  <p className="text-sm text-muted-foreground">Complete certification form and generate the final report.</p>
                 </div>
               </div>
 

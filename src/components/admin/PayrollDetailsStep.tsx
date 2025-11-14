@@ -173,7 +173,7 @@ export default function PayrollDetailsStep({
           onClick={onGenerateReport || onNext}
           className="bg-black hover:bg-gray-800 text-white"
         >
-          Generate Report
+         Next
         </Button>
       </div>
     </div>
