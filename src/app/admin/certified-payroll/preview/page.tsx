@@ -70,7 +70,7 @@ const mockReportData = {
         voluntaryMedical: 32.50,
         vacDues: 28.75,
         travSubs: 18.25,
-        allOtherDeductions: 25.00,
+        allOtherDeductions: 82.000,
         totalDeduction: 517.33,
       },
       fringes: {
@@ -137,7 +137,7 @@ const mockReportData = {
         voluntaryMedical: 25.75,
         vacDues: 22.50,
         travSubs: 15.25,
-        allOtherDeductions: 15.00,
+        allOtherDeductions: 140.430,
         totalDeduction: 402.73,
       },
       fringes: {
@@ -204,7 +204,7 @@ const mockReportData = {
         voluntaryMedical: 42.50,
         vacDues: 38.75,
         travSubs: 25.00,
-        allOtherDeductions: 35.00,
+        allOtherDeductions: 155.800,
         totalDeduction: 719.37,
       },
       fringes: {
@@ -235,7 +235,29 @@ const mockReportData = {
         dateOfHire: "01/10/2024"
       }
     }
-  ]
+  ],
+  certification: {
+    certificationDate: "2024-12-01",
+    projectManager: "Sarah Johnson",
+    position: "Project Manager",
+    companyName: "ABC Construction Services LLC",
+    projectName: "Highway Construction Project",
+    payrollStartDate: "2024-11-04",
+    payrollEndDate: "2024-11-10",
+    fringeBenefitsOption: "plans" as "plans" | "cash",
+    exceptions: [
+      {
+        exception: "Apprentice Carpenter",
+        explanation: "First year apprentice working under supervision, reduced wage rate per apprenticeship agreement"
+      },
+      {
+        exception: "Equipment Operator Trainee", 
+        explanation: "Training period - 90% of journeyman rate as per union contract"
+      }
+    ],
+    remarks: "All workers have completed required safety training. Project is on schedule and within budget parameters.",
+    signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+  }
 };
 
 // Multi-week mock data example
@@ -414,7 +436,25 @@ const mockMultiWeekReportData = {
         }
       ]
     }
-  ]
+  ],
+  certification: {
+    certificationDate: "2024-12-01",
+    projectManager: "Sarah Johnson",
+    position: "Senior Project Manager", 
+    companyName: "ABC Construction Services LLC",
+    projectName: "Highway Construction Project - Multi Week",
+    payrollStartDate: "2024-11-04",
+    payrollEndDate: "2024-11-17",
+    fringeBenefitsOption: "cash" as "plans" | "cash",
+    exceptions: [
+      {
+        exception: "Heavy Equipment Operator",
+        explanation: "Certified operator with additional safety premium per collective bargaining agreement"
+      }
+    ],
+    remarks: "Multi-week certification covering two consecutive payroll periods. All safety protocols followed.",
+    signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+  }
 };
 
 export default function CertifiedPayrollPreviewPage() {

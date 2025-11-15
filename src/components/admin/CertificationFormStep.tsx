@@ -10,9 +10,12 @@ import SignatureButton from "@/components/SignatureButton";
 import { ArrowLeft, FileText, Plus, Minus } from "lucide-react";
 
 interface CertificationFormData {
+  certificationDate: string;
   projectManager: string;
   position: string;
+  payrollStartDate: string;
   payrollEndDate: string;
+  fringeBenefitsOption: 'plans' | 'cash';
   exceptions: { exception: string; explanation: string }[];
   remarks: string;
   signature: string;
@@ -58,9 +61,12 @@ export default function CertificationFormStep({
     }
   };
 
-  const isValid = formData.projectManager && 
+  const isValid = formData.certificationDate &&
+                  formData.projectManager && 
                   formData.position && 
+                  formData.payrollStartDate &&
                   formData.payrollEndDate && 
+                  formData.fringeBenefitsOption &&
                   formData.signature;
 
   return (
@@ -76,15 +82,22 @@ export default function CertificationFormStep({
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-8">
         <div className="space-y-8">
-          {/* Current Date Display */}
-          <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              <strong>Date:</strong> {new Date().toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </p>
+          {/* Certification Date */}
+          <div className="space-y-6">
+            <h4 className="font-medium text-gray-900 dark:text-gray-100">Certification Date</h4>
+            <div className="space-y-2">
+              <label htmlFor="certificationDate" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Date *
+              </label>
+              <Input
+                id="certificationDate"
+                type="date"
+                value={formData.certificationDate}
+                onChange={(e) => setFormData({ ...formData, certificationDate: e.target.value })}
+                required
+                className="w-full"
+              />
+            </div>
           </div>
 
           {/* Basic Information */}
@@ -121,19 +134,57 @@ export default function CertificationFormStep({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="payrollEndDate" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Payroll End Date *
-              </label>
-              <Input
-                id="payrollEndDate"
-                type="date"
-                value={formData.payrollEndDate}
-                onChange={(e) => setFormData({ ...formData, payrollEndDate: e.target.value })}
-                required
-                className="w-full"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label htmlFor="payrollStartDate" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Payroll Start Date *
+                </label>
+                <Input
+                  id="payrollStartDate"
+                  type="date"
+                  value={formData.payrollStartDate}
+                  onChange={(e) => setFormData({ ...formData, payrollStartDate: e.target.value })}
+                  required
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="payrollEndDate" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Payroll End Date *
+                </label>
+                <Input
+                  id="payrollEndDate"
+                  type="date"
+                  value={formData.payrollEndDate}
+                  onChange={(e) => setFormData({ ...formData, payrollEndDate: e.target.value })}
+                  required
+                  className="w-full"
+                />
+              </div>
             </div>
+          </div>
+
+          {/* Fringe Benefits Payment Method */}
+          <div className="space-y-6">
+            <h4 className="font-medium text-gray-900 dark:text-gray-100">Fringe Benefits Payment Method</h4>
+            <RadioGroup 
+              value={formData.fringeBenefitsOption} 
+              onValueChange={(value: 'plans' | 'cash') => setFormData({ ...formData, fringeBenefitsOption: value })}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="plans" id="plans" />
+                <label htmlFor="plans" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Fringe benefits are paid to approved plans, funds or programs
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="cash" id="cash" />
+                <label htmlFor="cash" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Fringe benefits are paid in cash
+                </label>
+              </div>
+            </RadioGroup>
           </div>
 
           {/* Exceptions */}

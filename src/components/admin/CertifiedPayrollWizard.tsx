@@ -32,13 +32,17 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
   const [extractedPayrollData, setExtractedPayrollData] = useState<any>(null);
   const [isViewMode, setIsViewMode] = useState<boolean>(false);
   const [certificationFormData, setCertificationFormData] = useState({
+    certificationDate: new Date().toISOString().split('T')[0], // Default to today
     projectManager: '',
     position: '',
+    payrollStartDate: '',
     payrollEndDate: '',
+    fringeBenefitsOption: 'plans' as 'plans' | 'cash',
     exceptions: [] as { exception: string; explanation: string }[],
     remarks: '',
     signature: ''
   });
+  
   
   // Get contractor data for the payroll wizard
   const { data: contractorsData } = useGetProjectContractorsQuery(projectId);
@@ -89,6 +93,12 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
 
   const handleTimeFrameNext = (startDate: string, endDate: string) => {
     setSelectedDateRange({ startDate, endDate });
+    // Also set the certification form payroll dates
+    setCertificationFormData(prev => ({
+      ...prev,
+      payrollStartDate: startDate,
+      payrollEndDate: endDate
+    }));
     setCurrentStep("add-details");
   };
 
@@ -217,7 +227,8 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
           projectInfo: apiData.projectInfo,
           subcontractorInfo: apiData.subcontractorInfo,
           workers: [], // Not used for multi-week
-          weeks: apiData.weeks
+          weeks: apiData.weeks,
+          certification: certificationFormData // Add certification data
         };
       } else {
         // Single week format (fallback)
@@ -227,7 +238,8 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
           projectName: apiData.projectName,
           projectInfo: apiData.projectInfo,
           subcontractorInfo: apiData.subcontractorInfo,
-          workers: apiData.weeks?.[0]?.workers || []
+          workers: apiData.weeks?.[0]?.workers || [],
+          certification: certificationFormData // Add certification data
         };
       }
     } catch (error) {
@@ -239,7 +251,8 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
     selectedDateRange,
     selectedContractors,
     projectId,
-    payrollDataObject
+    payrollDataObject,
+    certificationFormData
   ]);
 
   const handleBackFromUpload = () => {

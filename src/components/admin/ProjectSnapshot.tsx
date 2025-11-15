@@ -26,7 +26,7 @@ import HoursOverTimeChart from '@/components/HoursOverTimeChart';
 import SubcontractorHoursAnalytics from '@/components/SubcontractorHoursAnalytics';
 import WorkmenWeeklyAnalytics from '@/components/admin/WorkmenWeeklyAnalytics';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
-import ProjectDailyLogs from '@/components/admin/ProjectDailyLogs';
+import ProjectTasksDailyLog from '@/components/admin/ProjectTasksDailyLog';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -429,9 +429,9 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
         />
       </div>
 
-      {/* Daily Logs */}
+      {/* Daily Task Log */}
       <div className="w-full">
-        <ProjectDailyLogs projectId={projectId} />
+        <ProjectTasksDailyLog projectId={projectId} />
       </div>
 
       {/* Workforce Tabs */}
