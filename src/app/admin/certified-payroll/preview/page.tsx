@@ -11,6 +11,8 @@ const mockReportData = {
   projectInfo: {
     name: "Highway Construction Project",
     location: "Highway 101, Mile Markers 10-25",
+    city: "Chicago",
+    state: "Illinois",
     projectCode: "HWY-2024-001",
     contractId: "DOT-Contract-789456",
     projectManager: "Sarah Johnson",
@@ -257,6 +259,11 @@ const mockReportData = {
     ],
     remarks: "All workers have completed required safety training. Project is on schedule and within budget parameters.",
     signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+  },
+  cityResidentTotals: {
+    projectCity: "Chicago",
+    totalResidentHours: 56.0,
+    totalNonResidentHours: 82.0
   }
 };
 
@@ -268,6 +275,8 @@ const mockMultiWeekReportData = {
   projectInfo: {
     name: "Highway Construction Project - Multi Week",
     location: "Highway 101, Mile Markers 10-25",
+    city: "Chicago",
+    state: "Illinois", 
     projectCode: "HWY-2024-001",
     contractId: "DOT-Contract-789456",
     projectManager: "Sarah Johnson",
@@ -454,6 +463,11 @@ const mockMultiWeekReportData = {
     ],
     remarks: "Multi-week certification covering two consecutive payroll periods. All safety protocols followed.",
     signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+  },
+  cityResidentTotals: {
+    projectCity: "Chicago",
+    totalResidentHours: 108.5,
+    totalNonResidentHours: 76.0
   }
 };
 

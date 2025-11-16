@@ -175,8 +175,17 @@ export default function TimeFrameSelectionStep({
   };
 
   const selectPreviousWeek = () => {
-    const currentWeekStart = getCurrentWeekStart();
-    const prevWeekStart = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), currentWeekStart.getDate() - 7);
+    // If we have a currently selected start date, use it as the base
+    // Otherwise use the current week start
+    let baseWeekStart;
+    if (startDate) {
+      baseWeekStart = new Date(startDate);
+    } else {
+      baseWeekStart = getCurrentWeekStart();
+    }
+    
+    // Go back one week from the currently selected week
+    const prevWeekStart = new Date(baseWeekStart.getFullYear(), baseWeekStart.getMonth(), baseWeekStart.getDate() - 7);
     const prevWeekEnd = new Date(prevWeekStart.getFullYear(), prevWeekStart.getMonth(), prevWeekStart.getDate() + 6);
 
     const startDateStr = formatLocalDate(prevWeekStart);
@@ -190,6 +199,49 @@ export default function TimeFrameSelectionStep({
     // Validate the selected range
     const errors = validateDateRange(startDateStr, endDateStr);
     setValidationErrors(errors);
+  };
+
+  const selectNextWeek = () => {
+    // If we have a currently selected start date, use it as the base
+    // Otherwise use the current week start
+    let baseWeekStart;
+    if (startDate) {
+      baseWeekStart = new Date(startDate);
+    } else {
+      baseWeekStart = getCurrentWeekStart();
+    }
+    
+    // Go forward one week from the currently selected week
+    const nextWeekStart = new Date(baseWeekStart.getFullYear(), baseWeekStart.getMonth(), baseWeekStart.getDate() + 7);
+    const nextWeekEnd = new Date(nextWeekStart.getFullYear(), nextWeekStart.getMonth(), nextWeekStart.getDate() + 6);
+
+    const startDateStr = formatLocalDate(nextWeekStart);
+    const endDateStr = formatLocalDate(nextWeekEnd);
+
+    console.log('Next week:', startDateStr, 'to', endDateStr);
+
+    setStartDate(startDateStr);
+    setEndDate(endDateStr);
+    
+    // Validate the selected range
+    const errors = validateDateRange(startDateStr, endDateStr);
+    setValidationErrors(errors);
+  };
+
+  // Check if next week would be in the future
+  const isNextWeekInFuture = () => {
+    let baseWeekStart;
+    if (startDate) {
+      baseWeekStart = new Date(startDate);
+    } else {
+      baseWeekStart = getCurrentWeekStart();
+    }
+    
+    const nextWeekStart = new Date(baseWeekStart.getFullYear(), baseWeekStart.getMonth(), baseWeekStart.getDate() + 7);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    
+    return nextWeekStart > today;
   };
 
   // Check if current week START would be in the future
@@ -238,6 +290,14 @@ export default function TimeFrameSelectionStep({
                 className="text-sm"
               >
                 Previous Week
+              </Button>
+              <Button
+                variant="outline"
+                onClick={selectNextWeek}
+                disabled={isNextWeekInFuture()}
+                className="text-sm"
+              >
+                Next Week
               </Button>
             </div>
             {isCurrentWeekInFuture() && (

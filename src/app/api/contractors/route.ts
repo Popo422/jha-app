@@ -462,7 +462,7 @@ export async function POST(request: NextRequest) {
 
     // Single contractor creation (existing logic)
     console.log('🔍 [API] Single contractor creation - body:', body)
-    const { firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, address, phone, race, gender, dateOfHire, workClassification, projectType, group, projectIds } = body
+    const { firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, address, city, state, phone, race, gender, dateOfHire, workClassification, projectType, group, projectIds } = body
     console.log('🔍 [API] Extracted projectIds:', projectIds)
 
     // Validate required fields
@@ -596,6 +596,14 @@ export async function POST(request: NextRequest) {
       contractorData.address = address.trim()
     }
 
+    if (city && city.trim()) {
+      contractorData.city = city.trim()
+    }
+
+    if (state && state.trim()) {
+      contractorData.state = state.trim()
+    }
+
     if (phone && phone.trim()) {
       contractorData.phone = phone.trim()
     }
@@ -724,7 +732,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json()
     console.log('🔍 [API] Update contractor body:', body)
-    const { id, firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, address, phone, race, gender, dateOfHire, workClassification, projectType, group, projectIds } = body
+    const { id, firstName, lastName, email, code, rate, overtimeRate, doubleTimeRate, companyName, language, type, address, city, state, phone, race, gender, dateOfHire, workClassification, projectType, group, projectIds } = body
     console.log('🔍 [API] Update projectIds:', projectIds)
 
     if (!id) {
@@ -832,6 +840,14 @@ export async function PUT(request: NextRequest) {
     // Add optional fields
     if (address !== undefined) {
       updateData.address = address && address.trim() ? address.trim() : null
+    }
+
+    if (city !== undefined) {
+      updateData.city = city && city.trim() ? city.trim() : null
+    }
+
+    if (state !== undefined) {
+      updateData.state = state && state.trim() ? state.trim() : null
     }
 
     if (phone !== undefined) {

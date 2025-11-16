@@ -228,6 +228,7 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
           subcontractorInfo: apiData.subcontractorInfo,
           workers: [], // Not used for multi-week
           weeks: apiData.weeks,
+          cityResidentTotals: apiData.cityResidentTotals, // Add city resident totals
           certification: certificationFormData // Add certification data
         };
       } else {
@@ -239,6 +240,7 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
           projectInfo: apiData.projectInfo,
           subcontractorInfo: apiData.subcontractorInfo,
           workers: apiData.weeks?.[0]?.workers || [],
+          cityResidentTotals: apiData.cityResidentTotals, // Add city resident totals
           certification: certificationFormData // Add certification data
         };
       }

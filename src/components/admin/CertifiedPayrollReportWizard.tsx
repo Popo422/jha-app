@@ -99,11 +99,19 @@ interface PayrollWeekData {
 interface ProjectInfo {
   name: string;
   location: string;
+  city: string | null;
+  state: string | null;
   projectCode: string;
   contractId: string;
   projectManager: string;
   startDate: string | null;
   endDate: string | null;
+}
+
+interface CityResidentTotals {
+  projectCity: string;
+  totalResidentHours: number;
+  totalNonResidentHours: number;
 }
 
 interface CertificationData {
@@ -129,6 +137,7 @@ interface PayrollReportData {
   workers: PayrollWorker[];
   weeks?: PayrollWeekData[]; // For multi-week reports
   certification?: CertificationData; // Certification form data
+  cityResidentTotals?: CityResidentTotals | null;
 }
 
 interface CertifiedPayrollReportProps {
@@ -573,7 +582,7 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
               <Text style={styles.cellText}>
                 {[worker.workClassification, worker.projectType, worker.group].filter(Boolean).join(' ')}
               </Text>
-              {worker.location && <Text style={styles.cellText}>{worker.location}</Text>}
+              <Text style={styles.cellText}>{worker.location || 'Not specified'}</Text>
             </View>
 
             <View style={styles.typeCol}>
@@ -1130,6 +1139,21 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
                 </View>
               );
             })()}
+            
+            {/* City Resident Totals section - simple text format */}
+            {data.cityResidentTotals && data.cityResidentTotals.projectCity && (
+              <View style={{ marginTop: 10, marginLeft: 10 }}>
+                <Text style={[styles.cellText, { fontSize: 7, textAlign: 'left' }]}>
+                  City Resident Totals for: {data.cityResidentTotals.projectCity}
+                </Text>
+                <Text style={[styles.cellText, { fontSize: 7, textAlign: 'left' }]}>
+                  Total City Resident Hours: {data.cityResidentTotals.totalResidentHours?.toFixed(2) || '0.00'}
+                </Text>
+                <Text style={[styles.cellText, { fontSize: 7, textAlign: 'left' }]}>
+                  Total Non-Resident Hours: {data.cityResidentTotals.totalNonResidentHours?.toFixed(2) || '0.00'}
+                </Text>
+              </View>
+            )}
             
             {/* Other Deductions Notes page after each week */}
             <View style={styles.otherDeductionsPage} break>
