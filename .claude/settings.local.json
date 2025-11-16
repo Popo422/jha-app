@@ -33,7 +33,10 @@
       "Bash(git add:*)",
       "Bash(mv:*)",
       "WebFetch(domain:open-meteo.com)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:gist.githubusercontent.com)",
+      "WebFetch(domain:countriesnow.space)"
     ],
     "deny": []
   }

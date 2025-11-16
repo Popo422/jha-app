@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import SupervisorSelect from "@/components/SupervisorSelect";
 import LocationAutocomplete from "@/components/ui/location-autocomplete";
+import { StateCitySelect } from "@/components/ui/state-city-select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +62,8 @@ export default function ProjectDashboardPage() {
     name: '',
     projectManager: '',
     location: '',
+    city: '',
+    state: '',
     projectCost: '',
     startDate: '',
     endDate: '',
@@ -132,6 +135,8 @@ export default function ProjectDashboardPage() {
       name: project.name,
       projectManager: project.projectManager,
       location: project.location,
+      city: project.city || '',
+      state: project.state || '',
       projectCost: project.projectCost || '',
       startDate: project.startDate || '',
       endDate: project.endDate || '',
@@ -185,6 +190,8 @@ export default function ProjectDashboardPage() {
       name: '',
       projectManager: '',
       location: '',
+      city: '',
+      state: '',
       projectCost: '',
       startDate: '',
       endDate: '',
@@ -380,7 +387,12 @@ export default function ProjectDashboardPage() {
                     
                     <div>
                       <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Location</div>
-                      <div className="text-sm text-blue-600 dark:text-blue-400">{project.location}</div>
+                      <div className="text-sm text-blue-600 dark:text-blue-400">
+                        {project.location}
+                        {project.city && project.state && (
+                          <div className="text-xs text-gray-500 mt-1">{project.city}, {project.state}</div>
+                        )}
+                      </div>
                     </div>
                     
                     <div>
@@ -538,6 +550,18 @@ export default function ProjectDashboardPage() {
                   <p className="text-sm text-red-500 mt-1">{formErrors.location}</p>
                 )}
               </div>
+              
+              {/* State and City Dropdowns */}
+              <StateCitySelect
+                stateValue={editForm.state}
+                cityValue={editForm.city}
+                onStateChange={(state) => setEditForm({ ...editForm, state })}
+                onCityChange={(city) => setEditForm({ ...editForm, city })}
+                stateLabel="State (Optional)"
+                cityLabel="City (Optional)"
+                disabled={isUpdating}
+              />
+              
               <div>
                 <Label htmlFor="edit-projectCost">Project Cost (Optional)</Label>
                 <Input

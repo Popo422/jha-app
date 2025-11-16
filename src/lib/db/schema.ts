@@ -83,6 +83,8 @@ export const contractors = pgTable('contractors', {
   language: text('language').default('en'), // Language preference: 'en' or 'es'
   type: text('type').default('contractor'), // Type: 'contractor' or 'foreman'
   address: text('address'),
+  city: text('city'), // City
+  state: text('state'), // State
   phone: text('phone'),
   race: text('race'),
   gender: text('gender'),
@@ -102,6 +104,8 @@ export const projects = pgTable('projects', {
   name: text('name').notNull(),
   projectManager: text('project_manager').notNull(),
   location: text('location').notNull(),
+  city: text('city'), // City
+  state: text('state'), // State
   companyId: uuid('company_id').notNull(),
   projectCost: numeric('project_cost', { precision: 12, scale: 2 }), // Optional project cost
   startDate: date('start_date'),

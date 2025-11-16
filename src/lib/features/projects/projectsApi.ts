@@ -5,6 +5,8 @@ export interface Project {
   name: string
   projectManager: string
   location: string
+  city?: string
+  state?: string
   companyId: string
   projectCost?: string
   startDate?: string
@@ -20,6 +22,8 @@ export interface CreateProjectRequest {
   name: string
   projectManager: string
   location: string
+  city?: string
+  state?: string
   projectCost?: string
   startDate?: string
   endDate?: string
@@ -32,6 +36,8 @@ export interface UpdateProjectRequest {
   name: string
   projectManager: string
   location: string
+  city?: string
+  state?: string
   projectCost?: string
   startDate?: string
   endDate?: string
@@ -124,6 +130,8 @@ export interface CheckProcoreResponse {
 export interface BulkProjectData {
   name: string
   location: string
+  city?: string
+  state?: string
   projectManager?: string
   projectCost?: string
   startDate?: string

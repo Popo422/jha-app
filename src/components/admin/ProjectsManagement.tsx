@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DateInput } from "@/components/ui/date-input";
 import LocationAutocomplete from "@/components/ui/location-autocomplete";
+import { StateCitySelect } from "@/components/ui/state-city-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast, Toast } from "@/components/ui/toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -31,6 +32,8 @@ export function ProjectsManagement() {
     name: "",
     projectManager: "",
     location: "",
+    city: "",
+    state: "",
     projectCost: "",
     startDate: "",
     endDate: "",
@@ -108,6 +111,8 @@ export function ProjectsManagement() {
       name: project.name,
       projectManager: project.projectManager,
       location: project.location,
+      city: project.city || "",
+      state: project.state || "",
       projectCost: project.projectCost || "",
       startDate: project.startDate || "",
       endDate: project.endDate || "",
@@ -124,6 +129,8 @@ export function ProjectsManagement() {
       name: "",
       projectManager: "",
       location: "",
+      city: "",
+      state: "",
       projectCost: "",
       startDate: "",
       endDate: "",
@@ -138,7 +145,7 @@ export function ProjectsManagement() {
     setIsCreateDialogOpen(false);
     setIsEditDialogOpen(false);
     setEditingProject(null);
-    setFormData({ name: "", projectManager: "", location: "", projectCost: "", startDate: "", endDate: "", projectCode: "", contractId: "" });
+    setFormData({ name: "", projectManager: "", location: "", city: "", state: "", projectCost: "", startDate: "", endDate: "", projectCode: "", contractId: "" });
     setFormErrors({});
   };
 
@@ -464,6 +471,18 @@ export function ProjectsManagement() {
                   <p className="text-sm text-red-500 mt-1">{formErrors.location}</p>
                 )}
               </div>
+              
+              {/* State and City Dropdowns */}
+              <StateCitySelect
+                stateValue={formData.state}
+                cityValue={formData.city}
+                onStateChange={(state) => setFormData({ ...formData, state })}
+                onCityChange={(city) => setFormData({ ...formData, city })}
+                stateLabel="State (Optional)"
+                cityLabel="City (Optional)"
+                disabled={isFormLoading}
+              />
+              
               <div>
                 <Label htmlFor="projectCost">Project Cost (Optional)</Label>
                 <Input
@@ -591,6 +610,18 @@ export function ProjectsManagement() {
                   <p className="text-sm text-red-500 mt-1">{formErrors.location}</p>
                 )}
               </div>
+              
+              {/* State and City Dropdowns */}
+              <StateCitySelect
+                stateValue={formData.state}
+                cityValue={formData.city}
+                onStateChange={(state) => setFormData({ ...formData, state })}
+                onCityChange={(city) => setFormData({ ...formData, city })}
+                stateLabel="State (Optional)"
+                cityLabel="City (Optional)"
+                disabled={isFormLoading}
+              />
+              
               <div>
                 <Label htmlFor="edit-projectCost">Project Cost (Optional)</Label>
                 <Input
