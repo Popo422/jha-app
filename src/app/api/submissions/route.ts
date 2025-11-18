@@ -361,6 +361,7 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom')
     const dateTo = searchParams.get('dateTo')
     const company = searchParams.get('company')
+    const projectName = searchParams.get('projectName')
     const search = searchParams.get('search')
 
     // Build query conditions
@@ -396,6 +397,11 @@ export async function GET(request: NextRequest) {
     // Add company filter if specified
     if (company) {
       conditions.push(eq(submissions.company, company))
+    }
+
+    // Add project name filter if specified
+    if (projectName) {
+      conditions.push(eq(submissions.projectName, projectName))
     }
 
     // Add search filter if specified

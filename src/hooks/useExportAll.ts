@@ -23,6 +23,7 @@ interface SubmissionExportParams {
   dateFrom?: string;
   dateTo?: string;
   company?: string;
+  projectName?: string;
   search?: string;
   authType?: 'contractor' | 'admin' | 'any';
 }

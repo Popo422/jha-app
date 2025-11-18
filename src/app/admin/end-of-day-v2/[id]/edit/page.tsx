@@ -202,8 +202,8 @@ export default function AdminEditEndOfDayV2Page() {
           <div className="max-w-6xl mx-auto">
             <div className="text-center py-12">
               <p className="text-red-600 dark:text-red-400">End of day report not found.</p>
-              <Button asChild className="mt-4">
-                <Link href="/admin/safety-forms">Back to Safety Forms</Link>
+              <Button onClick={() => router.back()} className="mt-4">
+                Back to Safety Forms
               </Button>
             </div>
           </div>
@@ -218,13 +218,13 @@ export default function AdminEditEndOfDayV2Page() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <Link
-              href="/admin/safety-forms"
+            <button
+              onClick={() => router.back()}
               className="inline-flex items-center text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Safety Forms
-            </Link>
+            </button>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {readOnly ? 'View Foreman End of Day Report' : 'Edit Foreman End of Day Report'}
             </h1>

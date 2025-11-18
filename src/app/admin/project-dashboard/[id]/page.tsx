@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, FolderOpen, CheckSquare, FileText, Users, ClipboardList, Calendar, Receipt, BarChart3 } from "lucide-react";
+import { ArrowLeft, FolderOpen, CheckSquare, FileText, Users, ClipboardList, Calendar, Receipt, BarChart3, Shield } from "lucide-react";
 import ProjectTasks from "@/components/admin/ProjectTasks";
 import ProjectSnapshot from "@/components/admin/ProjectSnapshot";
 import ProjectDocuments from "@/components/admin/ProjectDocuments";
@@ -16,6 +16,7 @@ import ProjectTimeline from "@/components/admin/ProjectTimeline";
 import OverallProgress from "@/components/admin/OverallProgress";
 import ProjectExpenses from "@/components/admin/ProjectExpenses";
 import TimeAndCostReporting from "@/components/admin/TimeAndCostReporting";
+import ProjectSafetyModule from "@/components/admin/ProjectSafetyModule";
 import { useGetProjectTimelineQuery } from "@/lib/features/project-snapshot/projectSnapshotApi";
 
 export default function ProjectDetailsPage() {
@@ -33,6 +34,14 @@ export default function ProjectDetailsPage() {
     skip: !projectId,
     refetchOnMountOrArgChange: true
   });
+
+  // Function to handle tab changes and update URL
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    router.replace(url.pathname + url.search);
+  }, [router]);
 
   // Set active tab from URL parameter
   useEffect(() => {
@@ -64,8 +73,8 @@ export default function ProjectDetailsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-8">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="snapshot" className="text-xs sm:text-sm flex items-center gap-1">
             <FolderOpen className="h-4 w-4" />
             <span className="hidden sm:inline">Project Snapshot</span>
@@ -105,6 +114,11 @@ export default function ProjectDetailsPage() {
             <Receipt className="h-4 w-4" />
             <span className="hidden sm:inline">Expenses</span>
             <span className="sm:hidden">Expenses</span>
+          </TabsTrigger>
+          <TabsTrigger value="safety" className="text-xs sm:text-sm flex items-center gap-1">
+            <Shield className="h-4 w-4" />
+            <span className="hidden sm:inline">Safety Module</span>
+            <span className="sm:hidden">Safety</span>
           </TabsTrigger>
         </TabsList>
         
@@ -176,6 +190,12 @@ export default function ProjectDetailsPage() {
         <TabsContent value="expenses" className="mt-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
             <ProjectExpenses projectId={projectId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="safety" className="mt-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
+            <ProjectSafetyModule projectId={projectId} />
           </div>
         </TabsContent>
       </Tabs>

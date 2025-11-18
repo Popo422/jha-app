@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateAdminSession } from '@/lib/auth-utils';
 import { db } from '@/lib/db';
-import { submissions, timesheets } from '@/lib/db/schema';
+import { submissions, timesheets, projects } from '@/lib/db/schema';
 import { eq, and, or, gte, lte, sql, count } from 'drizzle-orm';
 
 interface IncidentFormData {
@@ -24,6 +24,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Company not found' }, { status: 400 });
   }
 
+  // Get optional project filtering
+  const { searchParams } = new URL(request.url);
+  const projectId = searchParams.get('projectId');
+
   try {
     // Get date ranges for calculations
     const now = new Date();
@@ -45,6 +49,25 @@ export async function GET(request: NextRequest) {
       eq(submissions.companyId, companyId),
       eq(submissions.submissionType, 'near-miss-report')
     ];
+
+    // Add project filtering if projectId is provided
+    if (projectId) {
+      // Get project name from projectId
+      const project = await db
+        .select({ name: projects.name })
+        .from(projects)
+        .where(and(
+          eq(projects.id, projectId),
+          eq(projects.companyId, companyId)
+        ))
+        .limit(1);
+      
+      const projectName = project[0]?.name;
+      if (projectName) {
+        incidentConditions.push(eq(submissions.projectName, projectName));
+        nearMissConditions.push(eq(submissions.projectName, projectName));
+      }
+    }
 
     // 1. Recent Incidents (last 30 days)
     const recentIncidentsResult = await db

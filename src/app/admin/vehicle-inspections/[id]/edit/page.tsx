@@ -306,8 +306,8 @@ export default function AdminEditVehicleInspectionPage() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center py-12">
               <p className="text-red-600 dark:text-red-400">Vehicle inspection not found.</p>
-              <Button asChild className="mt-4">
-                <Link href="/admin/safety-forms">Back to Safety Forms</Link>
+              <Button onClick={() => router.back()} className="mt-4">
+                Back to Safety Forms
               </Button>
             </div>
           </div>
@@ -320,11 +320,9 @@ export default function AdminEditVehicleInspectionPage() {
     <div className="p-4 sm:p-8 overflow-x-hidden">
       <div className="max-w-4xl mx-auto space-y-6 overflow-x-hidden">
             <div className="mb-6">
-              <Button variant="ghost" asChild className="mb-4">
-                <Link href="/admin/safety-forms">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Safety Forms
-                </Link>
+              <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Safety Forms
               </Button>
               <h1 className="text-3xl font-bold text-foreground">{readOnly ? 'View Vehicle Inspection' : 'Edit Vehicle Inspection'}</h1>
               <p className="text-muted-foreground mt-2">
