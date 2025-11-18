@@ -534,7 +534,7 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
                   <div className="w-12 h-12 mx-auto rounded-lg flex items-center justify-center bg-purple-50 dark:bg-purple-900/20">
                     <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <h3 className="font-semibold text-gray-700 dark:text-gray-300">Additonal Details</h3>
+                  <h3 className="font-semibold text-gray-700 dark:text-gray-300">Additional Details</h3>
                   <p className="text-sm text-muted-foreground">Complete certification form and generate the final report.</p>
                 </div>
               </div>
