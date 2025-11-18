@@ -82,6 +82,11 @@ export interface DeleteContractorResponse {
   message: string;
 }
 
+export interface ProjectContractorsResponse {
+  success: boolean;
+  contractors: Contractor[];
+}
+
 export const contractorManagementApi = createApi({
   reducerPath: 'contractorManagementApi',
   baseQuery: fetchBaseQuery({
@@ -132,6 +137,16 @@ export const contractorManagementApi = createApi({
         { type: 'Contractor', id: 'LIST' },
       ],
     }),
+    getProjectContractors: builder.query<ProjectContractorsResponse, { projectId: string }>({
+      query: ({ projectId }) => `/project-contractors/${projectId}`,
+      providesTags: (result, error, { projectId }) =>
+        result
+          ? [
+              ...result.contractors.map(({ id }) => ({ type: 'Contractor' as const, id })),
+              { type: 'Contractor', id: `PROJECT_${projectId}` },
+            ]
+          : [{ type: 'Contractor', id: `PROJECT_${projectId}` }],
+    }),
   }),
 });
 
@@ -140,4 +155,5 @@ export const {
   useCreateContractorMutation,
   useUpdateContractorMutation,
   useDeleteContractorMutation,
+  useGetProjectContractorsQuery,
 } = contractorManagementApi;

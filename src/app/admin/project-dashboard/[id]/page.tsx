@@ -77,13 +77,11 @@ export default function ProjectDetailsPage() {
         <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="snapshot" className="text-xs sm:text-sm flex items-center gap-1">
             <FolderOpen className="h-4 w-4" />
-            <span className="hidden sm:inline">Project Snapshot</span>
-            <span className="sm:hidden">Snapshot</span>
+            Snapshot
           </TabsTrigger>
           <TabsTrigger value="timeline" className="text-xs sm:text-sm flex items-center gap-1">
             <Calendar className="h-4 w-4" />
-            <span className="hidden sm:inline">Timeline</span>
-            <span className="sm:hidden">Timeline</span>
+            Schedule
           </TabsTrigger>
           <TabsTrigger value="tasks" className="text-xs sm:text-sm flex items-center gap-1">
             <CheckSquare className="h-4 w-4" />

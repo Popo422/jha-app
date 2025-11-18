@@ -6,6 +6,7 @@ import { BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import WeeklyNavigator from "./WeeklyNavigator";
 import CertifiedPayrollReport from "./CertifiedPayrollReport";
+import ProjectManhoursTable from "./ProjectManhoursTable";
 import { useGetCertifiedPayrollQuery } from "@/lib/features/certified-payroll/certifiedPayrollApi";
 
 interface TimeAndCostReportingProps {
@@ -70,6 +71,12 @@ export default function TimeAndCostReporting({ projectId }: TimeAndCostReporting
       </div>
       
       <WeeklyNavigator onWeekChange={handleWeekChange} />
+      
+      <ProjectManhoursTable 
+        projectId={projectId}
+        weekStart={weekRange.weekStart}
+        weekEnd={weekRange.weekEnd}
+      />
       
       <CertifiedPayrollReport 
         data={payrollData || null}

@@ -96,21 +96,14 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       ]
     },
     {
-      label: 'Forms',
-      icon: FolderOpen,
-      isAccordion: true,
-      children: [
-        {
-          label: t('admin.submissionTracker'),
-          href: '/admin/contractor-tracker',
-          icon: FileText
-        },
-        {
-          label: t('admin.reviewTimeForms'),
-          href: '/admin/time-forms',
-          icon: Clock
-        }
-      ]
+      label: t('admin.submissionTracker'),
+      href: '/admin/contractor-tracker',
+      icon: FileText
+    },
+    {
+      label: t('admin.reviewTimeForms'),
+      href: '/admin/time-forms',
+      icon: Clock
     },
       // {
       //   label: t('admin.reporting'),
