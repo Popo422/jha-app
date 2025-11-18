@@ -203,9 +203,9 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error fetching workers comp data:', error);
+    console.error('Error fetching Safety comp data:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch workers compensation data' },
+      { error: 'Failed to fetch Safety compensation data' },
       { status: 500 }
     );
   }

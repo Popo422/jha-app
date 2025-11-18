@@ -963,7 +963,7 @@
     "failedToDelete": "Failed to delete supervisor"
   },
   "workersComp": {
-    "title": "Workers Compensation Dashboard",
+    "title": "Safety Dashboard",
     "description": "Manage and track workplace incidents and safety reports",
     "cards": {
       "knowTheRisk": "Know the Risk",

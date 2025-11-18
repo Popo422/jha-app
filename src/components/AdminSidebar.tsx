@@ -79,6 +79,23 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       icon: Receipt
     },
     {
+      label: 'Safety Module',
+      icon: Shield,
+      isAccordion: true,
+      children: [
+        {
+          label: 'Safety Dashboard',
+          href: '/admin/workers-comp',
+          icon: Heart
+        },
+        {
+          label: 'Safety Forms',
+          href: '/admin/safety-forms',
+          icon: ClipboardCheck
+        }
+      ]
+    },
+    {
       label: 'Forms',
       icon: FolderOpen,
       isAccordion: true,
@@ -87,11 +104,6 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           label: t('admin.submissionTracker'),
           href: '/admin/contractor-tracker',
           icon: FileText
-        },
-        {
-          label: t('admin.reviewSafetyForms'),
-          href: '/admin/safety-forms',
-          icon: ClipboardCheck
         },
         {
           label: t('admin.reviewTimeForms'),
@@ -117,11 +129,6 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       //     }
       //   ]
       // },
-    {
-      label: 'Workers Comp',
-      href: '/admin/workers-comp',
-      icon: Heart
-    },
     {
       label: t('admin.toolboxTalks'),
       href: '/admin/toolbox-talks',
