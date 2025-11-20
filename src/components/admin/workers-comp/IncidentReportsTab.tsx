@@ -55,7 +55,11 @@ interface Incident {
 
 const columnHelper = createColumnHelper<Incident>();
 
-export default function IncidentReportsTab() {
+interface IncidentReportsTabProps {
+  projectId?: string;
+}
+
+export default function IncidentReportsTab({ projectId }: IncidentReportsTabProps) {
   const { t } = useTranslation('common');
   const [editingIncident, setEditingIncident] = useState<Incident | null>(null);
   const [isCreatingIncident, setIsCreatingIncident] = useState(false);
@@ -78,6 +82,10 @@ export default function IncidentReportsTab() {
   const { data: projectsData } = useGetProjectsQuery({ pageSize: 1000, authType: 'admin' });
   const { data: subcontractorsData } = useGetSubcontractorsQuery({ pageSize: 1000, authType: 'admin' });
 
+  // Get project name for filtering if projectId is provided
+  const currentProject = projectId ? projectsData?.projects?.find(p => p.id === projectId) : null;
+  const projectFilter = currentProject ? currentProject.name : filters.project;
+
   const { data: incidentsData, refetch, isLoading, isFetching } = useGetIncidentsQuery({
     page: pagination.page,
     pageSize: pagination.pageSize,
@@ -85,7 +93,7 @@ export default function IncidentReportsTab() {
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
     company: filters.company || undefined,
-    search: [debouncedSearch, filters.reportedBy, filters.injuredEmployee, filters.project].filter(Boolean).join(' ') || undefined,
+    search: [debouncedSearch, filters.reportedBy, filters.injuredEmployee, projectFilter].filter(Boolean).join(' ') || undefined,
     authType: 'admin'
   }, {
     refetchOnMountOrArgChange: true
@@ -288,35 +296,37 @@ export default function IncidentReportsTab() {
         />
       </div>
 
-      <div className="space-y-1">
-        <div className="text-xs font-medium">{t('workersComp.filters.projectName')}</div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
-              <span className="truncate">
-                {filters.project || t('workersComp.filters.allProjects')}
-              </span>
-              <ChevronDown className="h-3 w-3 shrink-0" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="max-h-48 overflow-y-auto">
-            <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, project: '' }))}>
-              {t('workersComp.filters.allProjects')}
-            </DropdownMenuItem>
-            {projectsData?.projects?.map((project) => (
-              <DropdownMenuItem 
-                key={project.id}
-                onClick={() => setFilters(prev => ({ ...prev, project: project.name }))}
-                className="max-w-xs"
-              >
+      {!projectId && (
+        <div className="space-y-1">
+          <div className="text-xs font-medium">{t('workersComp.filters.projectName')}</div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
                 <span className="truncate">
-                  {project.name}
+                  {filters.project || t('workersComp.filters.allProjects')}
                 </span>
+                <ChevronDown className="h-3 w-3 shrink-0" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="max-h-48 overflow-y-auto">
+              <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, project: '' }))}>
+                {t('workersComp.filters.allProjects')}
               </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+              {projectsData?.projects?.map((project) => (
+                <DropdownMenuItem 
+                  key={project.id}
+                  onClick={() => setFilters(prev => ({ ...prev, project: project.name }))}
+                  className="max-w-xs"
+                >
+                  <span className="truncate">
+                    {project.name}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
 
       {hasActiveFilters && (
         <div className="space-y-1">

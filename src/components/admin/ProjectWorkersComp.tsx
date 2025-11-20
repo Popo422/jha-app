@@ -108,15 +108,15 @@ export default function ProjectWorkersComp({ projectId }: ProjectWorkersCompProp
             </TabsList>
             
             <TabsContent value="recent" className="mt-4">
-              <RecentIncidentsTab />
+              <RecentIncidentsTab projectId={projectId} />
             </TabsContent>
             
             <TabsContent value="quick-reports" className="mt-4">
-              <QuickIncidentReportsTab />
+              <QuickIncidentReportsTab projectId={projectId} />
             </TabsContent>
             
             <TabsContent value="incident-reports" className="mt-4">
-              <IncidentReportsTab />
+              <IncidentReportsTab projectId={projectId} />
             </TabsContent>
           </Tabs>
         </CardContent>

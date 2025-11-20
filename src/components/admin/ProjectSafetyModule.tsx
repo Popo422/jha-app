@@ -855,7 +855,7 @@ export default function ProjectSafetyModule({ projectId }: ProjectSafetyModulePr
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Safety Module</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Safety forms and workers compensation for {currentProject?.name}
+            Safety forms and Safety Logs for {currentProject?.name}
           </p>
         </div>
       </div>
@@ -880,7 +880,7 @@ export default function ProjectSafetyModule({ projectId }: ProjectSafetyModulePr
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
             }`}
           >
-            Workers Comp
+            Safety Logs
           </button>
           <button
             onClick={() => setActiveSubTab('submissions')}
@@ -890,7 +890,7 @@ export default function ProjectSafetyModule({ projectId }: ProjectSafetyModulePr
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
             }`}
           >
-            Submissions
+            Submissions Tracker
           </button>
         </div>
         
