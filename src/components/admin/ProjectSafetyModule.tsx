@@ -23,6 +23,7 @@ import EndOfDayV2PdfExport, { generateAndDownloadEndOfDayV2PDF } from "@/compone
 import VehicleInspectionPdfExport, { generateAndDownloadVehicleInspectionPDF } from "@/components/admin/VehicleInspectionPdfExport";
 import NearMissReportPdfExport, { generateAndDownloadNearMissReportPDF } from "@/components/admin/NearMissReportPdfExport";
 import ProjectWorkersComp from "@/components/admin/ProjectWorkersComp";
+import ProjectSubmissionTracker from "@/components/admin/ProjectSubmissionTracker";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -881,6 +882,16 @@ export default function ProjectSafetyModule({ projectId }: ProjectSafetyModulePr
           >
             Workers Comp
           </button>
+          <button
+            onClick={() => setActiveSubTab('submissions')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeSubTab === 'submissions'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+            }`}
+          >
+            Submissions
+          </button>
         </div>
         
         {/* Render both components but hide inactive ones */}
@@ -913,6 +924,10 @@ export default function ProjectSafetyModule({ projectId }: ProjectSafetyModulePr
         
         <div className={`${activeSubTab === 'workers-comp' ? 'block' : 'hidden'}`}>
           <ProjectWorkersComp projectId={projectId} />
+        </div>
+        
+        <div className={`${activeSubTab === 'submissions' ? 'block' : 'hidden'}`}>
+          <ProjectSubmissionTracker projectId={projectId} projectName={projectName} />
         </div>
       </Tabs>
     </div>

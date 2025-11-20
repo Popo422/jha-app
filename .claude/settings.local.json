@@ -36,7 +36,8 @@
       "Bash(cp:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:gist.githubusercontent.com)",
-      "WebFetch(domain:countriesnow.space)"
+      "WebFetch(domain:countriesnow.space)",
+      "Bash(awk:*)"
     ],
     "deny": []
   }

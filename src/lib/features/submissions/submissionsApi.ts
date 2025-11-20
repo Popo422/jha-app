@@ -150,6 +150,7 @@ export const submissionsApi = createApi({
       dateTo?: string
       company?: string
       projectName?: string
+      projectId?: string
       search?: string
       page?: number
       pageSize?: number
@@ -158,7 +159,7 @@ export const submissionsApi = createApi({
       fetchAll?: boolean
       authType?: 'contractor' | 'admin' | 'any'
     }>({
-      query: ({ type, excludeTypes, dateFrom, dateTo, company, projectName, search, page, pageSize, limit, offset, fetchAll, authType }) => {
+      query: ({ type, excludeTypes, dateFrom, dateTo, company, projectName, projectId, search, page, pageSize, limit, offset, fetchAll, authType }) => {
         const params = new URLSearchParams()
         
         if (fetchAll) {
@@ -191,6 +192,9 @@ export const submissionsApi = createApi({
         }
         if (projectName) {
           params.append('projectName', projectName)
+        }
+        if (projectId) {
+          params.append('projectId', projectId)
         }
         if (search) {
           params.append('search', search)

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { eq, desc, and, gte, lte, or, ilike, sql, not, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { submissions } from '@/lib/db/schema'
+import { submissions, projects, contractorProjects } from '@/lib/db/schema'
 import { put } from '@vercel/blob'
 import { sendEventToUser } from '@/lib/sse-service'
 
@@ -362,6 +362,7 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('dateTo')
     const company = searchParams.get('company')
     const projectName = searchParams.get('projectName')
+    const projectId = searchParams.get('projectId')
     const search = searchParams.get('search')
 
     // Build query conditions
@@ -402,6 +403,62 @@ export async function GET(request: NextRequest) {
     // Add project name filter if specified
     if (projectName) {
       conditions.push(eq(submissions.projectName, projectName))
+    }
+
+    // Handle project ID filter - get project name and filter contractors
+    let projectContractorIds: string[] | null = null
+    let targetProjectName: string | null = null
+    
+    if (projectId && auth.isAdmin) {
+      // First, get the project name
+      const projectResult = await db.select({ name: projects.name })
+        .from(projects)
+        .where(and(
+          eq(projects.id, projectId),
+          eq(projects.companyId, auth.admin.companyId)
+        ))
+        .limit(1)
+      
+      if (projectResult.length > 0) {
+        targetProjectName = projectResult[0].name
+        
+        // Get contractor IDs assigned to this project
+        const contractorProjectResult = await db.select({ contractorId: contractorProjects.contractorId })
+          .from(contractorProjects)
+          .where(eq(contractorProjects.projectId, projectId))
+        
+        projectContractorIds = contractorProjectResult.map(cp => cp.contractorId)
+        
+        // Filter submissions by project name
+        conditions.push(eq(submissions.projectName, targetProjectName))
+        
+        // If there are contractors assigned to this project, also filter by those contractors
+        if (projectContractorIds.length > 0) {
+          conditions.push(inArray(submissions.userId, projectContractorIds))
+        }
+      } else {
+        // Project not found or not accessible, return empty results
+        return NextResponse.json({
+          submissions: [],
+          pagination: fetchAll ? null : {
+            page,
+            pageSize,
+            total: 0,
+            totalPages: 0,
+            hasNextPage: false,
+            hasPreviousPage: false
+          },
+          meta: {
+            limit: fetchAll ? null : limit,
+            offset: fetchAll ? null : offset,
+            fetchAll,
+            isAdmin: auth.isAdmin,
+            userId: auth.userId || null,
+            projectId,
+            projectNotFound: true
+          }
+        })
+      }
     }
 
     // Add search filter if specified

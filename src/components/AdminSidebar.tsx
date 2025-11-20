@@ -95,16 +95,16 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         }
       ]
     },
-    {
-      label: t('admin.submissionTracker'),
-      href: '/admin/contractor-tracker',
-      icon: FileText
-    },
-    {
-      label: t('admin.reviewTimeForms'),
-      href: '/admin/time-forms',
-      icon: Clock
-    },
+    // {
+    //   label: t('admin.submissionTracker'),
+    //   href: '/admin/contractor-tracker',
+    //   icon: FileText
+    // },
+    // {
+    //   label: t('admin.reviewTimeForms'),
+    //   href: '/admin/time-forms',
+    //   icon: Clock
+    // },
       // {
       //   label: t('admin.reporting'),
       //   icon: BarChart3,

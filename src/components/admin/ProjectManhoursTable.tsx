@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Clock, DollarSign } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ColumnDef } from "@tanstack/react-table";
 
 interface ProjectManhoursTableProps {
@@ -60,34 +61,29 @@ export default function ProjectManhoursTable({ projectId, weekStart, weekEnd }: 
     );
   }, [contractorProjectsData]);
 
-  // Get all timesheets
+  // Get timesheets for the specific date range
   const { data: timesheetsData, isLoading, isFetching, refetch } = useGetTimesheetsQuery({
+    dateFrom: weekStart,
+    dateTo: weekEnd,
+    projectName: projectName,
     authType: 'admin',
-    fetchAll: true
+    pageSize: 1000
+  }, {
+    skip: !projectName || !weekStart || !weekEnd
   });
 
 
   const [updateTimesheetStatus] = useUpdateTimesheetStatusMutation();
 
-  // Filter and transform timesheet data with rates and calculations
+  // Transform timesheet data with rates and calculations (API already filters by date/project)
   const processedTimesheets = useMemo(() => {
     if (!timesheetsData?.timesheets || !timesheetsData?.contractorRates || !projectName) return [];
     
     return timesheetsData.timesheets
       .filter(timesheet => {
-        // Filter by project contractors
+        // Only filter by project contractors since date/project filtering happens in API
         const isProjectContractor = projectContractorNames.includes(timesheet.employee);
-        
-        // Filter by date range
-        const timesheetDate = new Date(timesheet.date);
-        const startDate = new Date(weekStart);
-        const endDate = new Date(weekEnd);
-        const inDateRange = timesheetDate >= startDate && timesheetDate <= endDate;
-        
-        // Filter by project name (optional - you can remove this if not needed)
-        const isProjectMatch = timesheet.projectName === projectName;
-        
-        return isProjectContractor && inDateRange && isProjectMatch;
+        return isProjectContractor;
       })
       .map(timesheet => {
         const rates = timesheetsData.contractorRates?.[timesheet.employee] || {
@@ -296,6 +292,39 @@ export default function ProjectManhoursTable({ projectId, weekStart, weekEnd }: 
     return (
       <div className="text-center py-8 text-gray-500">
         No contractors assigned to this project.
+      </div>
+    );
+  }
+
+  // Show skeleton while loading data
+  if (isLoading || isFetching) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            <Skeleton className="h-6 w-32" />
+          </div>
+          <Skeleton className="h-5 w-24" />
+        </div>
+
+        {/* Totals Summary Skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="text-center space-y-2">
+              <Skeleton className="h-3 w-16 mx-auto" />
+              <Skeleton className="h-6 w-12 mx-auto" />
+            </div>
+          ))}
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-full" />
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton key={index} className="h-12 w-full" />
+          ))}
+        </div>
       </div>
     );
   }

@@ -344,6 +344,7 @@
     "employeesAddedCount": "employees added successfully",
     "waitForEmployees": "Please wait while employees are being processed...",
     "previewEmployees": "Preview Employees",
+    "status": "Status",
     "errors": {
       "firstNameRequired": "First name is required",
       "lastNameRequired": "Last name is required",
@@ -492,6 +493,8 @@
   },
   "formFields": {
     "date": "Date:",
+    "dateFrom": "Date From",
+    "dateTo": "Date To",
     "supervisor": "Supervisor:",
     "jobSite": "Job Site:",
     "jobName": "Job Name:",

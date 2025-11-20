@@ -74,7 +74,7 @@ export default function ProjectDetailsPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="snapshot" className="text-xs sm:text-sm flex items-center gap-1">
             <FolderOpen className="h-4 w-4" />
             Snapshot
@@ -107,11 +107,6 @@ export default function ProjectDetailsPage() {
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">Time & Cost</span>
             <span className="sm:hidden">T&C</span>
-          </TabsTrigger>
-          <TabsTrigger value="expenses" className="text-xs sm:text-sm flex items-center gap-1">
-            <Receipt className="h-4 w-4" />
-            <span className="hidden sm:inline">Expenses</span>
-            <span className="sm:hidden">Expenses</span>
           </TabsTrigger>
           <TabsTrigger value="safety" className="text-xs sm:text-sm flex items-center gap-1">
             <Shield className="h-4 w-4" />
@@ -182,12 +177,6 @@ export default function ProjectDetailsPage() {
         <TabsContent value="time-cost" className="mt-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
             <TimeAndCostReporting projectId={projectId} />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="expenses" className="mt-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-6">
-            <ProjectExpenses projectId={projectId} />
           </div>
         </TabsContent>
 

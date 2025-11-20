@@ -27,6 +27,7 @@ import SubcontractorHoursAnalytics from '@/components/SubcontractorHoursAnalytic
 import WorkmenWeeklyAnalytics from '@/components/admin/WorkmenWeeklyAnalytics';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
 import ProjectTasksDailyLog from '@/components/admin/ProjectTasksDailyLog';
+import ProjectSubmissionTracker from '@/components/admin/ProjectSubmissionTracker';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -437,9 +438,10 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
       {/* Workforce Tabs */}
       <div className="w-full">
         <Tabs defaultValue="workmen" className="w-full">
-          <TabsList className="grid grid-cols-2 w-80">
+          <TabsList className="grid grid-cols-3 w-96">
             <TabsTrigger value="workmen">Workmen</TabsTrigger>
             <TabsTrigger value="subcontractor">Subcontractor</TabsTrigger>
+            <TabsTrigger value="submissions">Submissions</TabsTrigger>
           </TabsList>
           
           <TabsContent value="workmen" className="mt-6">
@@ -462,6 +464,10 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
                 projectFilter={projectName}
               />
             </div>
+          </TabsContent>
+          
+          <TabsContent value="submissions" className="mt-6">
+            <ProjectSubmissionTracker projectId={projectId} projectName={projectName} />
           </TabsContent>
         </Tabs>
       </div>

@@ -13,6 +13,7 @@ interface TimesheetExportParams {
   search?: string;
   status?: string;
   jobName?: string;
+  projectName?: string;
   employees?: string;
   authType?: 'contractor' | 'admin' | 'any';
 }

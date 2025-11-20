@@ -203,6 +203,7 @@ export const timesheetsApi = createApi({
       search?: string
       status?: string
       jobName?: string
+      projectName?: string
       employees?: string
       page?: number
       pageSize?: number
@@ -211,7 +212,7 @@ export const timesheetsApi = createApi({
       fetchAll?: boolean
       authType?: 'contractor' | 'admin' | 'any'
     }>({
-      query: ({ dateFrom, dateTo, company, search, status, jobName, employees, page, pageSize, limit, offset, fetchAll, authType }) => {
+      query: ({ dateFrom, dateTo, company, search, status, jobName, projectName, employees, page, pageSize, limit, offset, fetchAll, authType }) => {
         const params = new URLSearchParams()
         
         if (fetchAll) {
@@ -244,6 +245,9 @@ export const timesheetsApi = createApi({
         }
         if (jobName) {
           params.append('jobName', jobName)
+        }
+        if (projectName) {
+          params.append('projectName', projectName)
         }
         if (employees) {
           params.append('employees', employees)
