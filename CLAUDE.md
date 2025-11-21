@@ -640,6 +640,31 @@ When adding any new feature to the application, follow this systematic approach:
 // 4. Handle async params properly in Next.js 14 routes
 ```
 
+## Database Date Field Standards
+
+### Date Field Schema Guidelines
+
+**IMPORTANT**: For all new date fields, use `timestamp` or `date` types instead of `text` to avoid timezone issues:
+
+```typescript
+// ❌ AVOID - Text dates can cause timezone display issues
+date: text('date').notNull(),
+
+// ✅ PREFERRED - Use timestamp for date + time
+createdAt: timestamp('created_at').notNull().defaultNow(),
+updatedAt: timestamp('updated_at').notNull().defaultNow(),
+
+// ✅ PREFERRED - Use date for date-only fields  
+workDate: date('work_date').notNull(),
+dueDate: date('due_date'),
+```
+
+**Legacy Note**: Some existing tables use `text('date')` format which can cause timezone display inconsistencies between table views and form inputs. For new features, always use proper date/timestamp types.
+
+**Universal Date Utilities**: Use the standardized date formatting utilities:
+- Backend: `formatObjectDatesForAPI()` in `/lib/utils/api-date-formatting.ts`
+- Frontend: `useDateDisplay()` hook and `DateTableCell` component for consistent date displays
+
 ## Adding New Database Fields Workflow
 
 ### Full-Stack Field Addition Pattern
