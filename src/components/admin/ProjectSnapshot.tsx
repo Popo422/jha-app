@@ -489,12 +489,6 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
           </TabsList>
           
           <TabsContent value="workmen" className="mt-6 space-y-6">
-            <ProjectManhoursTable 
-              projectId={projectId} 
-              weekStart={weekRange.weekStart}
-              weekEnd={weekRange.weekEnd}
-            />
-            
             {/* Week Navigation */}
             <div className="flex justify-center items-center gap-4 py-4">
               <Button
@@ -521,6 +515,12 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
+            
+            <ProjectManhoursTable 
+              projectId={projectId} 
+              weekStart={weekRange.weekStart}
+              weekEnd={weekRange.weekEnd}
+            />
             
             <ProjectSubmissionTracker projectId={projectId} projectName={projectName} />
           </TabsContent>
