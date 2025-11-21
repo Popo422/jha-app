@@ -140,7 +140,7 @@ export default function ProjectManhoursTable({ projectId, weekStart, weekEnd }: 
                 Total Hours
               </th>
               <th className="p-3 text-center font-medium w-24">
-                Base Rate
+                Rates
               </th>
               <th className="p-3 text-center font-medium w-24">
                 Gross Amount
@@ -276,16 +276,44 @@ export default function ProjectManhoursTable({ projectId, weekStart, weekEnd }: 
                   </div>
                 </td>
 
-                {/* Total Hours */}
-                <td className="p-3 border-r w-20 text-center">
-                  <div className="text-xs font-medium">
-                    {(worker.totalHours.straight + worker.totalHours.overtime + worker.totalHours.double).toFixed(1)}
+                {/* Total Hours - Split into S/O/D like daily columns */}
+                <td className="p-0 border-r w-20 text-center">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs font-medium">{worker.totalHours.straight.toFixed(1)}</span>
+                    </div>
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs font-medium">{worker.totalHours.overtime.toFixed(1)}</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center py-1">
+                      <span className="text-xs font-medium">{worker.totalHours.double.toFixed(1)}</span>
+                    </div>
                   </div>
                 </td>
 
-                {/* Base Rate */}
-                <td className="p-3 border-r w-24 text-center">
-                  <div className="text-xs">${worker.baseHourlyRate}</div>
+                {/* Rates - Split into S/O/D showing actual backend rates with fallbacks */}
+                <td className="p-0 border-r w-24 text-center">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">
+                        {worker.baseHourlyRate ? `$${worker.baseHourlyRate.toFixed(2)}` : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">
+                        {worker.overtimeRate ? 
+                          `$${worker.overtimeRate.toFixed(2)}` : 
+                          worker.baseHourlyRate ? `$${(worker.baseHourlyRate * 1.5).toFixed(2)}` : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center py-1">
+                      <span className="text-xs">
+                        {worker.doubleTimeRate ? 
+                          `$${worker.doubleTimeRate.toFixed(2)}` : 
+                          worker.baseHourlyRate ? `$${(worker.baseHourlyRate * 2).toFixed(2)}` : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
                 </td>
 
                 {/* Gross Amount */}

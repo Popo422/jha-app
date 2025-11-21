@@ -966,7 +966,7 @@
     "failedToDelete": "Failed to delete supervisor"
   },
   "workersComp": {
-    "title": "Safety Dashboard",
+    "title": "Safety Logs",
     "description": "Manage and track workplace incidents and safety reports",
     "cards": {
       "knowTheRisk": "Know the Risk",
