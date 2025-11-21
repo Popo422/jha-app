@@ -24,7 +24,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
-import { formatDateForPDF } from "@/lib/utils/date-formatting";
+import { DateTableCell } from "@/components/ui/date-table-cell";
+import { useDateDisplay } from "@/hooks/useDateDisplay";
 
 const columnHelper = createColumnHelper<Timesheet>();
 
@@ -35,6 +36,7 @@ interface ProjectTimesheetProps {
 export default function ProjectTimesheet({ projectId }: ProjectTimesheetProps) {
   const { t } = useTranslation('common');
   const { showToast } = useToast();
+  const { formatDate } = useDateDisplay();
   const [selectedTimesheet, setSelectedTimesheet] = useState<Timesheet | null>(null);
   const [viewMode, setViewMode] = useState(false);
   const [approvalDialog, setApprovalDialog] = useState<{ timesheet: Timesheet; action: 'approve' | 'reject' | 'pending' } | null>(null);
@@ -307,7 +309,7 @@ export default function ProjectTimesheet({ projectId }: ProjectTimesheetProps) {
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div className="text-sm">{formatDateForPDF(row.getValue('date'))}</div>,
+      cell: ({ row }) => <DateTableCell value={row.getValue('date')} />,
     },
     {
       accessorKey: 'jobDescription',
@@ -473,7 +475,7 @@ export default function ProjectTimesheet({ projectId }: ProjectTimesheetProps) {
                 <p className="text-xs text-muted-foreground">{timesheet.company}</p>
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><span className="font-medium">Date:</span> {formatDateForPDF(timesheet.date)}</div>
+                <div><span className="font-medium">Date:</span> {formatDate(timesheet.date)}</div>
                 <div><span className="font-medium">Hours:</span> {timesheet.timeSpent}</div>
                 <div><span className="font-medium">Status:</span> {getStatusBadge(timesheet.status)}</div>
                 <div><span className="font-medium">Job:</span> {timesheet.jobDescription}</div>
@@ -528,7 +530,7 @@ export default function ProjectTimesheet({ projectId }: ProjectTimesheetProps) {
         getExportData={(timesheet) => [
           timesheet.employee,
           timesheet.company,
-          formatDateForPDF(timesheet.date),
+          formatDate(timesheet.date),
           timesheet.jobDescription,
           timesheet.timeSpent,
           timesheet.status

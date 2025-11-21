@@ -12,7 +12,7 @@ import { useUpdateTimesheetMutation } from "@/lib/features/timesheets/timesheets
 import { ArrowLeft, XCircle, Check } from "lucide-react";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
-import { formatDateForPDF } from "@/lib/utils/date-formatting";
+import { useDateDisplay } from "@/hooks/useDateDisplay";
 
 interface Timesheet {
   id: string;
@@ -41,6 +41,7 @@ interface TimesheetEditProps {
 
 export default function TimesheetEdit({ timesheet, onBack, readOnly = false }: TimesheetEditProps) {
   const { t } = useTranslation('common');
+  const { formatDate } = useDateDisplay();
   const [formData, setFormData] = useState({
     date: timesheet.date,
     employee: timesheet.employee,
@@ -285,7 +286,7 @@ export default function TimesheetEdit({ timesheet, onBack, readOnly = false }: T
                   </div>
                   {timesheet.approvedByName && timesheet.approvedAt && (
                     <div className="text-xs text-red-600 dark:text-red-400">
-                      Rejected by {timesheet.approvedByName} on {formatDateForPDF(timesheet.approvedAt)}
+                      Rejected by {timesheet.approvedByName} on {formatDate(timesheet.approvedAt)}
                     </div>
                   )}
                 </div>
@@ -305,7 +306,7 @@ export default function TimesheetEdit({ timesheet, onBack, readOnly = false }: T
                     Timesheet Approved
                   </h4>
                   <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                    Approved by {timesheet.approvedByName} on {formatDateForPDF(timesheet.approvedAt)}
+                    Approved by {timesheet.approvedByName} on {formatDate(timesheet.approvedAt)}
                   </div>
                 </div>
               </div>
