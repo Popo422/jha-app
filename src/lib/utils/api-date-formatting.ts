@@ -25,7 +25,7 @@ export function formatDateForAPI(dateValue: string | Date | null | undefined): s
  * Automatically handles common date field names
  */
 export function formatObjectDatesForAPI<T extends Record<string, any>>(obj: T): T {
-  const result = { ...obj };
+  const result: Record<string, any> = { ...obj };
   
   // Common date field names to auto-format
   const dateFields = ['date', 'dateRead', 'approvedAt', 'createdAt', 'updatedAt'];
@@ -36,5 +36,5 @@ export function formatObjectDatesForAPI<T extends Record<string, any>>(obj: T): 
     }
   });
   
-  return result;
+  return result as T;
 }
