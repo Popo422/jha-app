@@ -1,17 +1,8 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { useGetTimesheetsQuery, useUpdateTimesheetStatusMutation } from "@/lib/features/timesheets/timesheetsApi";
-import { useGetProjectsQuery } from "@/lib/features/projects/projectsApi";
-import { useGetProjectContractorsQuery } from "@/lib/features/contractor-management/contractorManagementApi";
-import { AdminDataTable } from "@/components/admin/AdminDataTable";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Clock, DollarSign } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useGetCertifiedPayrollQuery, type PayrollWorker } from "@/lib/features/certified-payroll/certifiedPayrollApi";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ColumnDef } from "@tanstack/react-table";
 
 interface ProjectManhoursTableProps {
   projectId: string;
@@ -19,374 +10,293 @@ interface ProjectManhoursTableProps {
   weekEnd: string;
 }
 
-interface TimesheetWithRate {
-  id: string;
-  employee: string;
-  company: string;
-  date: string;
-  timeSpent: string;
-  overtimeHours?: string;
-  doubleHours?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  approvedBy?: string;
-  approvedByName?: string;
-  approvedAt?: string;
-  rejectionReason?: string;
-  jobDescription: string;
-  // Calculated fields
-  regularHours: number;
-  overtime: number;
-  doubleTime: number;
-  totalHours: number;
-  baseRate: number;
-  overtimeRate: number;
-  doubleTimeRate: number;
-  totalCost: number;
-}
+// Helper function to get date for each day of the week
+const getDateForDay = (weekStart: string, dayOffset: number) => {
+  const date = new Date(weekStart);
+  date.setDate(date.getDate() + dayOffset);
+  return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
+};
 
 export default function ProjectManhoursTable({ projectId, weekStart, weekEnd }: ProjectManhoursTableProps) {
-  const [pendingApprovals, setPendingApprovals] = useState<Set<string>>(new Set());
-
-  // Get project details
-  const { data: projectsData } = useGetProjectsQuery({ pageSize: 1000, authType: 'admin' });
-  const currentProject = projectsData?.projects?.find(p => p.id === projectId);
-  const projectName = currentProject?.name;
-
-  // Get contractors assigned to this project
-  const { data: contractorProjectsData } = useGetProjectContractorsQuery({ projectId });
-  const projectContractorNames = useMemo(() => {
-    if (!contractorProjectsData?.contractors) return [];
-    return contractorProjectsData.contractors.map(c => 
-      `${c.firstName} ${c.lastName}`.trim()
-    );
-  }, [contractorProjectsData]);
-
-  // Get timesheets for the specific date range
-  const { data: timesheetsData, isLoading, isFetching, refetch } = useGetTimesheetsQuery({
-    dateFrom: weekStart,
-    dateTo: weekEnd,
-    projectName: projectName,
-    authType: 'admin',
-    pageSize: 1000
-  }, {
-    skip: !projectName || !weekStart || !weekEnd
+  // Get certified payroll data
+  const { data: payrollData, isLoading, isFetching } = useGetCertifiedPayrollQuery({
+    projectId,
+    weekStart,
+    weekEnd
   });
-
-
-  const [updateTimesheetStatus] = useUpdateTimesheetStatusMutation();
-
-  // Transform timesheet data with rates and calculations (API already filters by date/project)
-  const processedTimesheets = useMemo(() => {
-    if (!timesheetsData?.timesheets || !timesheetsData?.contractorRates || !projectName) return [];
-    
-    return timesheetsData.timesheets
-      .filter(timesheet => {
-        // Only filter by project contractors since date/project filtering happens in API
-        const isProjectContractor = projectContractorNames.includes(timesheet.employee);
-        return isProjectContractor;
-      })
-      .map(timesheet => {
-        const rates = timesheetsData.contractorRates?.[timesheet.employee] || {
-          rate: '0',
-          overtimeRate: null,
-          doubleTimeRate: null
-        };
-
-        const baseRate = parseFloat(rates.rate || '0');
-        const overtimeRate = parseFloat(rates.overtimeRate || '0') || (baseRate * 1.5);
-        const doubleTimeRate = parseFloat(rates.doubleTimeRate || '0') || (baseRate * 2);
-
-        const regularHours = parseFloat(timesheet.timeSpent || '0');
-        const overtime = parseFloat(timesheet.overtimeHours || '0');
-        const doubleTime = parseFloat(timesheet.doubleHours || '0');
-        const totalHours = regularHours + overtime + doubleTime;
-
-        const totalCost = (regularHours * baseRate) + (overtime * overtimeRate) + (doubleTime * doubleTimeRate);
-
-        return {
-          ...timesheet,
-          regularHours,
-          overtime,
-          doubleTime,
-          totalHours,
-          baseRate,
-          overtimeRate,
-          doubleTimeRate,
-          totalCost
-        } as TimesheetWithRate;
-      });
-  }, [timesheetsData, projectContractorNames]);
-
-  const handleApprove = useCallback(async (id: string) => {
-    setPendingApprovals(prev => new Set(prev).add(id));
-    try {
-      await updateTimesheetStatus({ 
-        id, 
-        status: 'approved',
-        authType: 'admin' 
-      }).unwrap();
-      refetch();
-    } catch (error) {
-      console.error('Failed to approve timesheet:', error);
-    } finally {
-      setPendingApprovals(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
-    }
-  }, [updateTimesheetStatus, refetch]);
-
-  const handleReject = useCallback(async (id: string) => {
-    setPendingApprovals(prev => new Set(prev).add(id));
-    try {
-      await updateTimesheetStatus({ 
-        id, 
-        status: 'rejected',
-        authType: 'admin' 
-      }).unwrap();
-      refetch();
-    } catch (error) {
-      console.error('Failed to reject timesheet:', error);
-    } finally {
-      setPendingApprovals(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
-    }
-  }, [updateTimesheetStatus, refetch]);
-
-  const getStatusBadge = useCallback((status: string) => {
-    switch (status) {
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800 text-xs">Approved</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800 text-xs">Rejected</Badge>;
-      case 'pending':
-      default:
-        return <Badge className="bg-yellow-100 text-yellow-800 text-xs">Pending</Badge>;
-    }
-  }, []);
-
-  const columns = useMemo<ColumnDef<TimesheetWithRate>[]>(() => [
-    {
-      accessorKey: 'employee',
-      header: 'Contractor',
-      cell: ({ row }) => (
-        <div className="text-sm font-medium">{row.getValue('employee')}</div>
-      ),
-    },
-    {
-      accessorKey: 'date',
-      header: 'Date',
-      cell: ({ row }) => (
-        <div className="text-sm">{new Date(row.getValue('date')).toLocaleDateString()}</div>
-      ),
-    },
-    {
-      accessorKey: 'regularHours',
-      header: 'Regular Hours',
-      cell: ({ row }) => (
-        <div className="text-sm text-center">{row.original.regularHours.toFixed(2)}</div>
-      ),
-    },
-    {
-      accessorKey: 'overtime',
-      header: 'Overtime',
-      cell: ({ row }) => (
-        <div className="text-sm text-center">{row.original.overtime.toFixed(2)}</div>
-      ),
-    },
-    {
-      accessorKey: 'doubleTime',
-      header: 'Double Time',
-      cell: ({ row }) => (
-        <div className="text-sm text-center">{row.original.doubleTime.toFixed(2)}</div>
-      ),
-    },
-    {
-      accessorKey: 'totalHours',
-      header: 'Total Hours',
-      cell: ({ row }) => (
-        <div className="text-sm text-center font-medium">{row.original.totalHours.toFixed(2)}</div>
-      ),
-    },
-    {
-      accessorKey: 'totalCost',
-      header: 'Total Cost',
-      cell: ({ row }) => (
-        <div className="text-sm text-right font-medium">${row.original.totalCost.toFixed(2)}</div>
-      ),
-    },
-    {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ row }) => getStatusBadge(row.getValue('status')),
-    },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => {
-        const timesheet = row.original;
-        const isProcessing = pendingApprovals.has(timesheet.id);
-        
-        if (timesheet.status === 'approved' || timesheet.status === 'rejected') {
-          return (
-            <div className="text-xs text-gray-500 text-center">
-              {timesheet.status === 'approved' ? 'Approved' : 'Rejected'}
-            </div>
-          );
-        }
-
-        return (
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              onClick={() => handleApprove(timesheet.id)}
-              disabled={isProcessing}
-              className="h-8 bg-green-600 hover:bg-green-700 text-white"
-            >
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Approve
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => handleReject(timesheet.id)}
-              disabled={isProcessing}
-              className="h-8"
-            >
-              <XCircle className="h-3 w-3 mr-1" />
-              Reject
-            </Button>
-          </div>
-        );
-      },
-    },
-  ], [getStatusBadge, handleApprove, handleReject, pendingApprovals]);
 
   // Calculate totals
   const totals = useMemo(() => {
-    return processedTimesheets.reduce(
-      (acc, timesheet) => ({
-        regularHours: acc.regularHours + timesheet.regularHours,
-        overtime: acc.overtime + timesheet.overtime,
-        doubleTime: acc.doubleTime + timesheet.doubleTime,
-        totalHours: acc.totalHours + timesheet.totalHours,
-        totalCost: acc.totalCost + timesheet.totalCost,
-      }),
-      { regularHours: 0, overtime: 0, doubleTime: 0, totalHours: 0, totalCost: 0 }
-    );
-  }, [processedTimesheets]);
+    if (!payrollData?.workers) {
+      return {
+        straightHours: 0,
+        overtimeHours: 0,
+        doubleHours: 0,
+        totalHours: 0,
+        grossAmount: 0
+      };
+    }
 
-  if (!currentProject) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        Loading project information...
-      </div>
-    );
-  }
+    return payrollData.workers.reduce((acc, worker) => {
+      return {
+        straightHours: acc.straightHours + worker.totalHours.straight,
+        overtimeHours: acc.overtimeHours + worker.totalHours.overtime,
+        doubleHours: acc.doubleHours + worker.totalHours.double,
+        totalHours: acc.totalHours + worker.totalHours.straight + worker.totalHours.overtime + worker.totalHours.double,
+        grossAmount: acc.grossAmount + worker.grossAmount
+      };
+    }, {
+      straightHours: 0,
+      overtimeHours: 0,
+      doubleHours: 0,
+      totalHours: 0,
+      grossAmount: 0
+    });
+  }, [payrollData?.workers]);
 
-  if (projectContractorNames.length === 0) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        No contractors assigned to this project.
-      </div>
-    );
-  }
-
-  // Show skeleton while loading data
-  if (isLoading || isFetching) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            <Skeleton className="h-6 w-32" />
-          </div>
-          <Skeleton className="h-5 w-24" />
-        </div>
-
-        {/* Totals Summary Skeleton */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        {/* Summary cards skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="text-center space-y-2">
-              <Skeleton className="h-3 w-16 mx-auto" />
-              <Skeleton className="h-6 w-12 mx-auto" />
-            </div>
+            <Skeleton key={index} className="h-16 w-full rounded-lg" />
           ))}
         </div>
-
-        {/* Table Skeleton */}
-        <div className="space-y-3">
-          <Skeleton className="h-10 w-full" />
-          {Array.from({ length: 5 }).map((_, index) => (
-            <Skeleton key={index} className="h-12 w-full" />
-          ))}
-        </div>
+        
+        {/* Single block skeleton for the entire table */}
+        <Skeleton className="h-96 w-full rounded-lg" />
       </div>
     );
   }
+
+  const data = payrollData?.workers || [];
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h4 className="text-base font-semibold flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Manhours Table
-        </h4>
-        <div className="text-sm text-gray-600">
-          {projectContractorNames.length} contractor{projectContractorNames.length !== 1 ? 's' : ''} assigned
+
+      {/* Summary totals */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border">
+          <div className="text-xs text-gray-500">Straight Hours</div>
+          <div className="text-lg font-semibold">{totals.straightHours.toFixed(1)}</div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border">
+          <div className="text-xs text-gray-500">Overtime Hours</div>
+          <div className="text-lg font-semibold">{totals.overtimeHours.toFixed(1)}</div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border">
+          <div className="text-xs text-gray-500">Double Hours</div>
+          <div className="text-lg font-semibold">{totals.doubleHours.toFixed(1)}</div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border">
+          <div className="text-xs text-gray-500">Total Hours</div>
+          <div className="text-lg font-semibold text-blue-600">{totals.totalHours.toFixed(1)}</div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border">
+          <div className="text-xs text-gray-500">Gross Amount</div>
+          <div className="text-lg font-semibold text-green-600">${totals.grossAmount.toFixed(2)}</div>
         </div>
       </div>
 
-      {/* Totals Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <div className="text-center">
-          <div className="text-xs text-gray-600 dark:text-gray-400">Regular Hours</div>
-          <div className="text-lg font-semibold">{totals.regularHours.toFixed(2)}</div>
-        </div>
-        <div className="text-center">
-          <div className="text-xs text-gray-600 dark:text-gray-400">Overtime</div>
-          <div className="text-lg font-semibold">{totals.overtime.toFixed(2)}</div>
-        </div>
-        <div className="text-center">
-          <div className="text-xs text-gray-600 dark:text-gray-400">Double Time</div>
-          <div className="text-lg font-semibold">{totals.doubleTime.toFixed(2)}</div>
-        </div>
-        <div className="text-center">
-          <div className="text-xs text-gray-600 dark:text-gray-400">Total Hours</div>
-          <div className="text-lg font-semibold">{totals.totalHours.toFixed(2)}</div>
-        </div>
-        <div className="text-center">
-          <div className="text-xs text-gray-600 dark:text-gray-400">Total Cost</div>
-          <div className="text-lg font-semibold">${totals.totalCost.toFixed(2)}</div>
-        </div>
-      </div>
+      {/* Payroll Table - matches PDF structure */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b bg-gray-50 dark:bg-gray-700">
+              <th className="p-3 text-left font-medium w-32 min-w-32">
+                Name
+              </th>
+              <th className="p-3 text-center font-medium w-8"></th>
+              <th className="p-3 text-center font-medium w-20">
+                {getDateForDay(weekStart, 0)}<br/>
+                Sun
+              </th>
+              <th className="p-3 text-center font-medium w-20">
+                {getDateForDay(weekStart, 1)}<br/>
+                Mon
+              </th>
+              <th className="p-3 text-center font-medium w-20">
+                {getDateForDay(weekStart, 2)}<br/>
+                Tue
+              </th>
+              <th className="p-3 text-center font-medium w-20">
+                {getDateForDay(weekStart, 3)}<br/>
+                Wed
+              </th>
+              <th className="p-3 text-center font-medium w-20">
+                {getDateForDay(weekStart, 4)}<br/>
+                Thu
+              </th>
+              <th className="p-3 text-center font-medium w-20">
+                {getDateForDay(weekStart, 5)}<br/>
+                Fri
+              </th>
+              <th className="p-3 text-center font-medium w-20">
+                {getDateForDay(weekStart, 6)}<br/>
+                Sat
+              </th>
+              <th className="p-3 text-center font-medium w-20">
+                Total Hours
+              </th>
+              <th className="p-3 text-center font-medium w-24">
+                Base Rate
+              </th>
+              <th className="p-3 text-center font-medium w-24">
+                Gross Amount
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((worker, index) => (
+              <tr key={worker.id} className="border-b">
+                {/* Worker Info */}
+                <td className="p-3 border-r w-32 min-w-32">
+                  <div className="text-xs font-medium">{worker.name}</div>
+                </td>
 
-      <AdminDataTable
-        data={processedTimesheets}
-        columns={columns}
-        isLoading={isLoading}
-        isFetching={isFetching}
-        getRowId={(timesheet) => timesheet.id}
-        exportFilename="project_manhours"
-        exportHeaders={[
-          'Contractor', 'Date', 'Regular Hours', 'Overtime', 'Double Time', 
-          'Total Hours', 'Total Cost', 'Status'
-        ]}
-        getExportData={(timesheet) => [
-          timesheet.employee,
-          timesheet.date,
-          timesheet.regularHours.toFixed(2),
-          timesheet.overtime.toFixed(2),
-          timesheet.doubleTime.toFixed(2),
-          timesheet.totalHours.toFixed(2),
-          timesheet.totalCost.toFixed(2),
-          timesheet.status
-        ]}
-      />
+
+                {/* S/O/D Label Column */}
+                <td className="p-0 border-r w-8 text-center">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs font-medium">S</span>
+                    </div>
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs font-medium">O</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center py-1">
+                      <span className="text-xs font-medium">D</span>
+                    </div>
+                  </div>
+                </td>
+
+                {/* Sunday */}
+                <td className="p-0 border-r w-20 text-center">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.sunday.straight || '0'}</span>
+                    </div>
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.sunday.overtime || '0'}</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.sunday.double || '0'}</span>
+                    </div>
+                  </div>
+                </td>
+
+                {/* Monday */}
+                <td className="p-0 border-r w-20 text-center">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.monday.straight || '0'}</span>
+                    </div>
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.monday.overtime || '0'}</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.monday.double || '0'}</span>
+                    </div>
+                  </div>
+                </td>
+
+                {/* Tuesday */}
+                <td className="p-0 border-r w-20 text-center">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.tuesday.straight || '0'}</span>
+                    </div>
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.tuesday.overtime || '0'}</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.tuesday.double || '0'}</span>
+                    </div>
+                  </div>
+                </td>
+
+                {/* Wednesday */}
+                <td className="p-0 border-r w-20 text-center">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.wednesday.straight || '0'}</span>
+                    </div>
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.wednesday.overtime || '0'}</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.wednesday.double || '0'}</span>
+                    </div>
+                  </div>
+                </td>
+
+                {/* Thursday */}
+                <td className="p-0 border-r w-20 text-center">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.thursday.straight || '0'}</span>
+                    </div>
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.thursday.overtime || '0'}</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.thursday.double || '0'}</span>
+                    </div>
+                  </div>
+                </td>
+
+                {/* Friday */}
+                <td className="p-0 border-r w-20 text-center">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.friday.straight || '0'}</span>
+                    </div>
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.friday.overtime || '0'}</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.friday.double || '0'}</span>
+                    </div>
+                  </div>
+                </td>
+
+                {/* Saturday */}
+                <td className="p-0 border-r w-20 text-center">
+                  <div className="h-full flex flex-col">
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.saturday.straight || '0'}</span>
+                    </div>
+                    <div className="flex-1 border-b flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.saturday.overtime || '0'}</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center py-1">
+                      <span className="text-xs">{worker.dailyHours.saturday.double || '0'}</span>
+                    </div>
+                  </div>
+                </td>
+
+                {/* Total Hours */}
+                <td className="p-3 border-r w-20 text-center">
+                  <div className="text-xs font-medium">
+                    {(worker.totalHours.straight + worker.totalHours.overtime + worker.totalHours.double).toFixed(1)}
+                  </div>
+                </td>
+
+                {/* Base Rate */}
+                <td className="p-3 border-r w-24 text-center">
+                  <div className="text-xs">${worker.baseHourlyRate}</div>
+                </td>
+
+                {/* Gross Amount */}
+                <td className="p-3 w-24 text-center">
+                  <div className="text-xs font-medium text-green-600">${worker.grossAmount.toFixed(2)}</div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

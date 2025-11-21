@@ -33,10 +33,13 @@ interface ContractorStatus {
   name: string;
   email: string;
   companyName: string;
+  type: string;
   timesheetStatus: 'approved' | 'pending' | 'missing' | 'rejected';
   jhaStatus: 'submitted' | 'missing';
   eodStatus: 'submitted' | 'missing';
   sodStatus: 'submitted' | 'missing';
+  eodV2Status: 'submitted' | 'missing' | 'n/a';
+  sodV2Status: 'submitted' | 'missing' | 'n/a';
 }
 
 interface ProjectSubmissionTrackerProps {
@@ -102,6 +105,8 @@ export default function ProjectSubmissionTracker({ projectId, projectName }: Pro
         const jhaSubmission = userSubmissions.find(sub => sub.submissionType === 'job-hazard-analysis');
         const eodSubmission = userSubmissions.find(sub => sub.submissionType === 'end-of-day');
         const sodSubmission = userSubmissions.find(sub => sub.submissionType === 'start-of-day');
+        const eodV2Submission = userSubmissions.find(sub => sub.submissionType === 'end-of-day-v2');
+        const sodV2Submission = userSubmissions.find(sub => sub.submissionType === 'start-of-day-v2');
         
         // Check timesheet status properly based on approval
         let timesheetStatus: 'approved' | 'pending' | 'missing' | 'rejected' = 'missing';
@@ -116,15 +121,21 @@ export default function ProjectSubmissionTracker({ projectId, projectName }: Pro
           }
         }
 
+        // V2 forms are only for foremen, others get N/A
+        const isForeman = contractor.type === 'foreman';
+        
         return {
           id: contractor.id,
           name: contractorName,
           email: contractor.email,
           companyName: contractor.companyName || '',
+          type: contractor.type || 'contractor',
           timesheetStatus: timesheetStatus,
           jhaStatus: jhaSubmission ? 'submitted' : 'missing',
           eodStatus: eodSubmission ? 'submitted' : 'missing',
-          sodStatus: sodSubmission ? 'submitted' : 'missing'
+          sodStatus: sodSubmission ? 'submitted' : 'missing',
+          eodV2Status: isForeman ? (eodV2Submission ? 'submitted' : 'missing') : 'n/a',
+          sodV2Status: isForeman ? (sodV2Submission ? 'submitted' : 'missing') : 'n/a'
         };
       });
       setContractorStatuses(statuses);
@@ -195,7 +206,7 @@ export default function ProjectSubmissionTracker({ projectId, projectName }: Pro
     setClientPagination({ currentPage: 1, pageSize });
   }, []);
 
-  const getStatusBadge = useCallback((status: 'approved' | 'pending' | 'missing' | 'rejected' | 'submitted') => {
+  const getStatusBadge = useCallback((status: 'approved' | 'pending' | 'missing' | 'rejected' | 'submitted' | 'n/a') => {
     switch (status) {
       case 'approved':
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{t('status.approved')}</Badge>;
@@ -207,6 +218,8 @@ export default function ProjectSubmissionTracker({ projectId, projectName }: Pro
         return <Badge className="bg-red-900 text-red-100 hover:bg-red-900">{t('status.rejected')}</Badge>;
       case 'missing':
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{t('status.missing')}</Badge>;
+      case 'n/a':
+        return <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100">N/A</Badge>;
       default:
         return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">{t('status.unknown')}</Badge>;
     }
@@ -264,6 +277,24 @@ export default function ProjectSubmissionTracker({ projectId, projectName }: Pro
       header: t('admin.endOfDay'),
       cell: ({ row }: { row: any }) => {
         const status = row.getValue('eodStatus') as 'submitted' | 'missing';
+        return <div className="text-left">{getStatusBadge(status)}</div>;
+      },
+    });
+
+    columns.push({
+      accessorKey: 'sodV2Status',
+      header: 'Foreman Start of Day',
+      cell: ({ row }: { row: any }) => {
+        const status = row.getValue('sodV2Status') as 'submitted' | 'missing' | 'n/a';
+        return <div className="text-left">{getStatusBadge(status)}</div>;
+      },
+    });
+
+    columns.push({
+      accessorKey: 'eodV2Status',
+      header: 'Foreman End of Day',
+      cell: ({ row }: { row: any }) => {
+        const status = row.getValue('eodV2Status') as 'submitted' | 'missing' | 'n/a';
         return <div className="text-left">{getStatusBadge(status)}</div>;
       },
     });
@@ -370,6 +401,8 @@ export default function ProjectSubmissionTracker({ projectId, projectName }: Pro
     data.push(contractor.jhaStatus);
     data.push(contractor.sodStatus);
     data.push(contractor.eodStatus);
+    data.push(contractor.sodV2Status);
+    data.push(contractor.eodV2Status);
     
     // Finally add company and email (rightmost)
     data.push(contractor.companyName || '-', contractor.email);
@@ -407,8 +440,10 @@ export default function ProjectSubmissionTracker({ projectId, projectName }: Pro
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div><span className="font-medium">{t('nav.timesheet')}:</span> {getStatusBadge(contractor.timesheetStatus)}</div>
                 <div><span className="font-medium">{t('forms.jobHazardAnalysis')}:</span> {getStatusBadge(contractor.jhaStatus)}</div>
-                <div><span className="font-medium">{t('admin.endOfDay')}:</span> {getStatusBadge(contractor.eodStatus)}</div>
                 <div><span className="font-medium">{t('admin.startOfDay')}:</span> {getStatusBadge(contractor.sodStatus)}</div>
+                <div><span className="font-medium">{t('admin.endOfDay')}:</span> {getStatusBadge(contractor.eodStatus)}</div>
+                <div><span className="font-medium">Foreman Start of Day:</span> {getStatusBadge(contractor.sodV2Status)}</div>
+                <div><span className="font-medium">Foreman End of Day:</span> {getStatusBadge(contractor.eodV2Status)}</div>
               </div>
             </div>
           </div>
@@ -444,6 +479,8 @@ export default function ProjectSubmissionTracker({ projectId, projectName }: Pro
           headers.push(t('forms.jobHazardAnalysis'));
           headers.push(t('admin.startOfDay'));
           headers.push(t('admin.endOfDay'));
+          headers.push('Foreman Start of Day');
+          headers.push('Foreman End of Day');
           
           // Finally add company and email (rightmost)
           headers.push(t('admin.company'), t('auth.email'));
