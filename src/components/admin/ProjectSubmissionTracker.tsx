@@ -299,36 +299,6 @@ export default function ProjectSubmissionTracker({ projectId, projectName }: Pro
       },
     });
 
-    // Finally add company and email columns (rightmost)
-    columns.push({
-      accessorKey: 'companyName',
-      header: ({ column }: { column: any }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium text-sm"
-        >
-          {t('admin.company')}
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }: { row: any }) => <div className="text-sm">{row.getValue('companyName') || '-'}</div>,
-    });
-
-    columns.push({
-      accessorKey: 'email',
-      header: ({ column }: { column: any }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium text-sm"
-        >
-          {t('auth.email')}
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }: { row: any }) => <div className="text-sm">{row.getValue('email')}</div>,
-    });
 
     return columns;
   }, [getStatusBadge, t]);
@@ -396,16 +366,13 @@ export default function ProjectSubmissionTracker({ projectId, projectName }: Pro
     // Add contractor name first (leftmost)
     data.push(contractor.name);
     
-    // Then add form type data (in the middle)
+    // Then add form type data
     data.push(contractor.timesheetStatus);
     data.push(contractor.jhaStatus);
     data.push(contractor.sodStatus);
     data.push(contractor.eodStatus);
     data.push(contractor.sodV2Status);
     data.push(contractor.eodV2Status);
-    
-    // Finally add company and email (rightmost)
-    data.push(contractor.companyName || '-', contractor.email);
     
     return data;
   }, []);
@@ -474,16 +441,13 @@ export default function ProjectSubmissionTracker({ projectId, projectName }: Pro
           // Add contractor name first (leftmost)
           headers.push(t('admin.contractor'));
           
-          // Then add form type headers (in the middle)
+          // Then add form type headers
           headers.push(t('nav.timesheet'));
           headers.push(t('forms.jobHazardAnalysis'));
           headers.push(t('admin.startOfDay'));
           headers.push(t('admin.endOfDay'));
           headers.push('Foreman Start of Day');
           headers.push('Foreman End of Day');
-          
-          // Finally add company and email (rightmost)
-          headers.push(t('admin.company'), t('auth.email'));
           
           return headers;
         }, [t])}
