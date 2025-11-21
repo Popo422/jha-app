@@ -21,6 +21,7 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ArrowUpDown, MoreVertical, Edit, Trash2, ChevronDown, X, Check, XCircle, Clock, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 
@@ -35,6 +36,8 @@ export default function ProjectTimesheet({ projectId }: ProjectTimesheetProps) {
   const { showToast } = useToast();
   const [selectedTimesheet, setSelectedTimesheet] = useState<Timesheet | null>(null);
   const [viewMode, setViewMode] = useState(false);
+  const [approvalDialog, setApprovalDialog] = useState<{ timesheet: Timesheet; action: 'approve' | 'reject' | 'pending' } | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
   const [filters, setFilters] = useState({
     dateFrom: '',
     dateTo: '',
@@ -199,6 +202,46 @@ export default function ProjectTimesheet({ projectId }: ProjectTimesheetProps) {
       showToast(error?.data?.error || t('admin.errorDeletingTimesheets'), 'error');
     }
   };
+
+  const handleApprovalAction = useCallback(async (timesheet: Timesheet, action: 'approve' | 'reject' | 'pending') => {
+    setApprovalDialog({ timesheet, action });
+    setRejectionReason('');
+  }, []);
+
+  const executeApprovalAction = useCallback(async () => {
+    if (!approvalDialog) return;
+    
+    try {
+      const response = await fetch('/api/timesheet', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: approvalDialog.timesheet.id,
+          action: approvalDialog.action,
+          rejectionReason: approvalDialog.action === 'reject' ? rejectionReason : undefined
+        })
+      });
+      
+      if (response.ok) {
+        showToast(
+          approvalDialog.action === 'approve' ? t('admin.timesheetApproved') :
+          approvalDialog.action === 'reject' ? t('admin.timesheetRejected') :
+          t('admin.timesheetSetToPending'), 
+          'success'
+        );
+        refetch();
+        setApprovalDialog(null);
+        setRejectionReason('');
+      } else {
+        showToast(t('admin.errorUpdatingTimesheet'), 'error');
+      }
+    } catch (error) {
+      console.error('Error updating timesheet:', error);
+      showToast(t('admin.errorUpdatingTimesheet'), 'error');
+    }
+  }, [approvalDialog, rejectionReason, refetch, showToast, t]);
 
   const handleExportAll = useCallback(async () => {
     return await exportAllTimesheets({
@@ -498,7 +541,86 @@ export default function ProjectTimesheet({ projectId }: ProjectTimesheetProps) {
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
         onExportAll={handleExportAll}
+        customActions={[
+          {
+            label: t('admin.approve'),
+            icon: Check,
+            onClick: (timesheet) => handleApprovalAction(timesheet, 'approve'),
+            className: 'text-green-600',
+            show: (timesheet) => timesheet.status === 'pending' || timesheet.status === 'rejected'
+          },
+          {
+            label: t('admin.reject'),
+            icon: XCircle,
+            onClick: (timesheet) => handleApprovalAction(timesheet, 'reject'),
+            className: 'text-red-600',
+            show: (timesheet) => timesheet.status === 'pending' || timesheet.status === 'approved'
+          },
+          {
+            label: t('admin.setPending'),
+            icon: Clock,
+            onClick: (timesheet) => handleApprovalAction(timesheet, 'pending'),
+            className: 'text-orange-600',
+            show: (timesheet) => timesheet.status === 'approved' || timesheet.status === 'rejected'
+          }
+        ]}
       />
+
+      {/* Approval Dialog */}
+      <AlertDialog open={!!approvalDialog} onOpenChange={() => setApprovalDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {approvalDialog?.action === 'approve' ? t('admin.approveTimesheet') : 
+               approvalDialog?.action === 'reject' ? t('admin.rejectTimesheet') : 
+               t('admin.setPendingTimesheet')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {approvalDialog?.action === 'approve' 
+                ? `Are you sure you want to approve the timesheet for ${approvalDialog?.timesheet?.employee || 'this employee'}?`
+                : approvalDialog?.action === 'reject'
+                ? `Are you sure you want to reject the timesheet for ${approvalDialog?.timesheet?.employee || 'this employee'}?`
+                : `Are you sure you want to set this timesheet to pending for ${approvalDialog?.timesheet?.employee || 'this employee'}?`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          {approvalDialog?.action === 'reject' && (
+            <div className="space-y-2">
+              <label htmlFor="rejectionReason" className="text-sm font-medium">
+                {t('admin.rejectionReason')}
+              </label>
+              <Textarea
+                id="rejectionReason"
+                placeholder={t('admin.rejectionReasonPlaceholder')}
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+          )}
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setApprovalDialog(null)}>
+              {t('common.cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={executeApprovalAction}
+              disabled={approvalDialog?.action === 'reject' && !rejectionReason.trim()}
+              className={approvalDialog?.action === 'approve' 
+                ? 'bg-green-600 hover:bg-green-700' 
+                : approvalDialog?.action === 'reject'
+                ? 'bg-red-600 hover:bg-red-700'
+                : 'bg-orange-600 hover:bg-orange-700'
+              }
+            >
+              {approvalDialog?.action === 'approve' ? t('admin.approve') : 
+               approvalDialog?.action === 'reject' ? t('admin.reject') : 
+               t('admin.setPending')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );
