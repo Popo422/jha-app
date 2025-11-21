@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
+import { formatDateForPDF } from "@/lib/utils/date-formatting";
 
 const columnHelper = createColumnHelper<Timesheet>();
 
@@ -306,7 +307,7 @@ export default function ProjectTimesheet({ projectId }: ProjectTimesheetProps) {
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <div className="text-sm">{new Date(row.getValue('date')).toLocaleDateString()}</div>,
+      cell: ({ row }) => <div className="text-sm">{formatDateForPDF(row.getValue('date'))}</div>,
     },
     {
       accessorKey: 'jobDescription',
@@ -472,7 +473,7 @@ export default function ProjectTimesheet({ projectId }: ProjectTimesheetProps) {
                 <p className="text-xs text-muted-foreground">{timesheet.company}</p>
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><span className="font-medium">Date:</span> {new Date(timesheet.date).toLocaleDateString()}</div>
+                <div><span className="font-medium">Date:</span> {formatDateForPDF(timesheet.date)}</div>
                 <div><span className="font-medium">Hours:</span> {timesheet.timeSpent}</div>
                 <div><span className="font-medium">Status:</span> {getStatusBadge(timesheet.status)}</div>
                 <div><span className="font-medium">Job:</span> {timesheet.jobDescription}</div>
@@ -527,7 +528,7 @@ export default function ProjectTimesheet({ projectId }: ProjectTimesheetProps) {
         getExportData={(timesheet) => [
           timesheet.employee,
           timesheet.company,
-          new Date(timesheet.date).toLocaleDateString(),
+          formatDateForPDF(timesheet.date),
           timesheet.jobDescription,
           timesheet.timeSpent,
           timesheet.status
@@ -536,7 +537,7 @@ export default function ProjectTimesheet({ projectId }: ProjectTimesheetProps) {
         renderMobileCard={renderMobileCard}
         searchValue={searchValue}
         onSearchChange={setSearchValue}
-        serverSide={true}
+        serverSide={false}
         pagination={paginationInfo}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
