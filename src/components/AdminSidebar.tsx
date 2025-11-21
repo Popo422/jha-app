@@ -84,7 +84,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       isAccordion: true,
       children: [
         {
-          label: 'Safety Dashboard',
+          label: 'Safety Logs',
           href: '/admin/workers-comp',
           icon: Heart
         },
