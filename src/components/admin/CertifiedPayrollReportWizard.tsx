@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, Fragment } from 'react';
-import { Document, Page, Text, View, StyleSheet, PDFViewer, PDFDownloadLink, pdf } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, PDFViewer, PDFDownloadLink, pdf, Image } from '@react-pdf/renderer';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Types for the payroll data
@@ -31,8 +31,9 @@ interface PayrollWorker {
   ethnicity: string;
   gender: string;
   workClassification: string;
+  projectType: string;
+  group: string;
   location: string;
-  type: string;
   dailyHours: {
     sunday: { straight: number; overtime: number; double: number };
     monday: { straight: number; overtime: number; double: number };
@@ -98,11 +99,33 @@ interface PayrollWeekData {
 interface ProjectInfo {
   name: string;
   location: string;
+  city: string | null;
+  state: string | null;
   projectCode: string;
   contractId: string;
   projectManager: string;
   startDate: string | null;
   endDate: string | null;
+}
+
+interface CityResidentTotals {
+  projectCity: string;
+  totalResidentHours: number;
+  totalNonResidentHours: number;
+}
+
+interface CertificationData {
+  certificationDate: string;
+  projectManager: string;
+  position: string;
+  companyName: string;
+  projectName: string;
+  payrollStartDate: string;
+  payrollEndDate: string;
+  fringeBenefitsOption: 'plans' | 'cash'; // 'plans' = paid to approved plans/funds, 'cash' = paid in cash
+  exceptions: { exception: string; explanation: string }[];
+  remarks: string;
+  signature: string;
 }
 
 interface PayrollReportData {
@@ -113,6 +136,8 @@ interface PayrollReportData {
   subcontractorInfo?: SubcontractorInfo;
   workers: PayrollWorker[];
   weeks?: PayrollWeekData[]; // For multi-week reports
+  certification?: CertificationData; // Certification form data
+  cityResidentTotals?: CityResidentTotals | null;
 }
 
 interface CertifiedPayrollReportProps {
@@ -125,7 +150,10 @@ const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
-    padding: 20,
+    paddingTop: 40,
+    paddingRight: 20,
+    paddingBottom: 20,
+    paddingLeft: 20,
     fontSize: 8,
   },
   header: {
@@ -246,6 +274,147 @@ const styles = StyleSheet.create({
     transform: 'rotate(-90deg)',
     fontSize: 6,
   },
+  
+  // Certification section styles
+  certificationSection: {
+    marginTop: 20,
+    padding: 10,
+  },
+  certificationTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  certificationText: {
+    fontSize: 10,
+    lineHeight: 1.4,
+    marginBottom: 10,
+  },
+  certificationStatement: {
+    fontSize: 9,
+    lineHeight: 1.3,
+    marginBottom: 8,
+    textAlign: 'justify',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 5,
+  },
+  checkbox: {
+    width: 10,
+    height: 10,
+    border: '1pt solid #000',
+    marginRight: 5,
+    textAlign: 'center',
+    fontSize: 8,
+  },
+  checkboxText: {
+    fontSize: 9,
+    flex: 1,
+    lineHeight: 1.2,
+  },
+  exceptionsTable: {
+    marginTop: 10,
+    marginBottom: 15,
+  },
+  exceptionRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    padding: 5,
+  },
+  exceptionHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f0f0f0',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    padding: 5,
+  },
+  exceptionCol: {
+    width: '50%',
+    fontSize: 9,
+    padding: 2,
+  },
+  signatureArea: {
+    marginTop: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  signatureColumn: {
+    width: '45%',
+  },
+  signatureLabel: {
+    fontSize: 9,
+    marginBottom: 5,
+  },
+  signatureLine: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    height: 25,
+  },
+  warningText: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 15,
+    textTransform: 'uppercase',
+  },
+  
+  // Other Deductions Notes styles
+  otherDeductionsPage: {
+    marginTop: 40,
+  },
+  otherDeductionsTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  otherDeductionsTable: {
+    display: 'flex',
+    flexDirection: 'column',
+    border: '1pt solid #000',
+    marginBottom: 20,
+  },
+  otherDeductionsHeaderRow: {
+    flexDirection: 'row',
+    backgroundColor: '#f0f0f0',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+  },
+  otherDeductionsRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    minHeight: 20,
+  },
+  deductionsNameCol: {
+    width: '20%',
+    padding: 3,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    justifyContent: 'center',
+  },
+  deductionsCraftCol: {
+    width: '20%',
+    padding: 3,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    justifyContent: 'center',
+  },
+  deductionsClassificationCol: {
+    width: '20%',
+    padding: 3,
+    borderRightWidth: 1,
+    borderRightColor: '#000',
+    justifyContent: 'center',
+  },
+  deductionsNotesCol: {
+    width: '40%',
+    padding: 3,
+    justifyContent: 'center',
+  },
 });
 
 // Helper function to get date for each day of the week
@@ -260,6 +429,15 @@ const getDateForDay = (weekStart: string, dayOffset: number) => {
 export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
   <Document title={`Certified_Payroll_${data.weekStart.replace(/-/g, '-')}_to_${data.weekEnd.replace(/-/g, '-')}.pdf`}>
     <Page size="A3" orientation="landscape" style={styles.page}>
+      {/* Fixed Header - Repeats on every page */}
+      <View fixed style={{ position: 'absolute', top: 10, right: 10, zIndex: 10 }}>
+        <Text style={{ fontSize: 8 }}>
+          Project Name: {data.projectInfo?.name || data.projectName}
+        </Text>
+        <Text style={{ fontSize: 8 }}>
+          Project Code: {data.projectInfo?.projectCode || ''}
+        </Text>
+      </View>
 
       {/* Multi-week or single week rendering */}
       {data.weeks ? (
@@ -267,10 +445,14 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
         data.weeks.map((week, weekIndex) => (
           <Fragment key={`week-${weekIndex}`}>
             {/* New page for each week after the first */}
-            {weekIndex > 0 && <View break />}
+            {weekIndex > 0 && (
+              <>
+                <View break />
+              </>
+            )}
             
             {/* Week header */}
-            <View style={[styles.header, { marginBottom: 5 }]}>
+            <View style={[styles.header, { marginBottom: 5, marginTop: 20 }]}>
               <Text style={styles.title}>CERTIFIED PAYROLL</Text>
               <Text style={styles.weekRange}>
                 Period: {week.weekStart} - {week.weekEnd}
@@ -332,7 +514,7 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
                 </View>
                 
                 {/* Second blank row */}
-                <View style={[styles.tableRow, { borderBottomWidth: 0, borderTopWidth: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#ccc', height: 20 }]}>
+                <View style={[styles.tableRow, { borderBottomWidth: 0, borderTopWidth: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#ccc', height: 30 }]}>
                   <View style={{ width: '23.33%', padding: 2, borderRightWidth: 1, borderRightColor: '#ccc', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
                     <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>PAYROLL No. {weekIndex + 1}</Text>
                   </View>
@@ -397,9 +579,10 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
             </View>
 
             <View style={styles.classificationCol}>
-              {worker.workClassification && <Text style={styles.cellText}>{worker.workClassification}</Text>}
-              {worker.location && <Text style={styles.cellText}>{worker.location}</Text>}
-              {worker.type && <Text style={styles.cellText}>Type: {worker.type}</Text>}
+              <Text style={styles.cellText}>
+                {[worker.workClassification, worker.projectType, worker.group].filter(Boolean).join(' ')}
+              </Text>
+              <Text style={styles.cellText}>{worker.location || 'Not specified'}</Text>
             </View>
 
             <View style={styles.typeCol}>
@@ -905,17 +1088,139 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
                 </View>
               </View>
             </View>
+
+            {/* Additional Blank Row 3 */}
+            <View style={[styles.tableRow, { borderBottomWidth: 0,borderRightColor: "white", borderLeftColor: "white", height: 12 }]}>
+              <View style={{ width: '100%', borderTopWidth: 0, borderRightWidth: 0 }}>
+                <Text style={[styles.cellText, { fontSize: 5 }]}></Text>
+              </View>
+            </View>
+
+            {/* Additional Blank Row 4 */}
+            <View style={[styles.tableRow, { borderBottomWidth: 0,borderRightColor: "white", borderLeftColor: "white", height: 12 }]}>
+              <View style={{ width: '100%', borderTopWidth: 0, borderRightWidth: 0 }}>
+                <Text style={[styles.cellText, { fontSize: 5, textAlign: 'left' }]}>
+                  {(worker.deductions?.allOtherDeductions || 0) > 0 
+                    ? `OTHER DEDUCTION NOTES: 1) Other $${(worker.deductions?.allOtherDeductions || 0).toFixed(2)}. Total Amount Deducted: ${(worker.deductions?.allOtherDeductions || 0).toFixed(2)}`
+                    : 'OTHER DEDUCTION NOTES:'
+                  }
+                </Text>
+              </View>
+            </View>
+
           </View>
           </Fragment>
             ))}
+            
+            {/* Totals Table for this week */}
+            {(() => {
+              // Calculate totals for this week
+              const totalStraight = week.workers.reduce((sum, worker) => sum + (worker.totalHours?.straight || 0), 0);
+              const totalOvertime = week.workers.reduce((sum, worker) => sum + (worker.totalHours?.overtime || 0), 0);
+              const totalDouble = week.workers.reduce((sum, worker) => sum + (worker.totalHours?.double || 0), 0);
+              const grandTotal = totalStraight + totalOvertime + totalDouble;
+              
+              return (
+                <View style={[styles.table, { marginTop: 10 }]}>
+                  <View style={[styles.tableRow, { borderTopWidth: 1, borderTopColor: '#ccc', borderBottomWidth: 1, borderBottomColor: '#ccc' }]}>
+                    <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>TOTAL STANDARD HOURS: {totalStraight.toFixed(2)}</Text>
+                    </View>
+                    <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>TOTAL 1.5 OT HOURS: {totalOvertime.toFixed(2)}</Text>
+                    </View>
+                    <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>TOTAL 2.0 OT HOURS: {totalDouble.toFixed(2)}</Text>
+                    </View>
+                    <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                      <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>GRAND TOTAL HOURS: {grandTotal.toFixed(2)}</Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })()}
+            
+            {/* City Resident Totals section - simple text format */}
+            {data.cityResidentTotals && data.cityResidentTotals.projectCity && (
+              <View style={{ marginTop: 10, marginLeft: 10 }}>
+                <Text style={[styles.cellText, { fontSize: 7, textAlign: 'left' }]}>
+                  City Resident Totals for: {data.cityResidentTotals.projectCity}
+                </Text>
+                <Text style={[styles.cellText, { fontSize: 7, textAlign: 'left' }]}>
+                  Total City Resident Hours: {data.cityResidentTotals.totalResidentHours?.toFixed(2) || '0.00'}
+                </Text>
+                <Text style={[styles.cellText, { fontSize: 7, textAlign: 'left' }]}>
+                  Total Non-Resident Hours: {data.cityResidentTotals.totalNonResidentHours?.toFixed(2) || '0.00'}
+                </Text>
+              </View>
+            )}
+            
+            {/* Other Deductions Notes page after each week */}
+            <View style={styles.otherDeductionsPage} break>
+              <Text style={styles.otherDeductionsTitle}>Other Deductions Notes</Text>
+              
+              <View style={styles.otherDeductionsTable}>
+                {/* Header Row */}
+                <View style={styles.otherDeductionsHeaderRow}>
+                  <View style={styles.deductionsNameCol}>
+                    <Text style={[styles.cellText, { fontWeight: 'bold', fontSize: 8, textDecoration: 'underline' }]}>Employee Name</Text>
+                  </View>
+                  <View style={styles.deductionsCraftCol}>
+                    <Text style={[styles.cellText, { fontWeight: 'bold', fontSize: 8, textDecoration: 'underline' }]}>Craft</Text>
+                  </View>
+                  <View style={styles.deductionsClassificationCol}>
+                    <Text style={[styles.cellText, { fontWeight: 'bold', fontSize: 8, textDecoration: 'underline' }]}>Classification</Text>
+                  </View>
+                  <View style={styles.deductionsNotesCol}>
+                    <Text style={[styles.cellText, { fontWeight: 'bold', fontSize: 8, textDecoration: 'underline' }]}>Other Deduction Notes</Text>
+                  </View>
+                </View>
+                
+                {/* Data Rows - Only include workers with "other deductions" */}
+                {week.workers.filter(worker => 
+                  worker.deductions?.allOtherDeductions && worker.deductions.allOtherDeductions > 0
+                ).map((worker, workerIndex) => (
+                  <View key={workerIndex} style={styles.otherDeductionsRow}>
+                    <View style={styles.deductionsNameCol}>
+                      <Text style={[styles.cellText, { fontSize: 8 }]}>{worker.name}</Text>
+                    </View>
+                    <View style={styles.deductionsCraftCol}>
+                      <Text style={[styles.cellText, { fontSize: 8 }]}>
+                        {worker.workClassification}{worker.projectType} {worker.group}
+                      </Text>
+                    </View>
+                    <View style={styles.deductionsClassificationCol}>
+                      <Text style={[styles.cellText, { fontSize: 8 }]}>
+                        {worker.workClassification} {worker.projectType} {worker.group}
+                      </Text>
+                    </View>
+                    <View style={styles.deductionsNotesCol}>
+                      <Text style={[styles.cellText, { fontSize: 8 }]}>
+                        {`1) Other $${worker.deductions?.allOtherDeductions?.toFixed(3) || '0.000'}. Total Amount Deducted: ${worker.deductions?.allOtherDeductions?.toFixed(3) || '0.000'}`}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
           </Fragment>
         ))
       ) : (
         // Single week report (fallback to existing logic)
-        data.workers.map((worker, index) => (
-          <Fragment key={worker.id}>
-            {/* Large spacing for contractors after the first one */}
-            {index > 0 && <View style={styles.contractorSeparator}></View>}
+        <>
+          {/* Single Week header */}
+          <View style={[styles.header, { marginBottom: 5, marginTop: 35 }]}>
+            <Text style={styles.title}>CERTIFIED PAYROLL</Text>
+            <Text style={styles.weekRange}>
+              Period: {data.weekStart} - {data.weekEnd}
+            </Text>
+            <Text>Project: {data.projectName}</Text>
+          </View>
+          
+          {data.workers.map((worker, index) => (
+            <Fragment key={worker.id}>
+              {/* Large spacing for contractors after the first one */}
+              {index > 0 && <View style={styles.contractorSeparator}></View>}
             
             {/* Individual contractor table */}
             <View style={styles.table}>
@@ -952,9 +1257,200 @@ export const PayrollPDFDocument = ({ data }: { data: PayrollReportData }) => (
               {/* Single week contractor data would go here - truncated for brevity */}
             </View>
           </Fragment>
-        ))
+        ))}
+        
+        {/* Totals Table for single week */}
+        {(() => {
+          // Calculate totals for all workers
+          const totalStraight = data.workers.reduce((sum, worker) => sum + (worker.totalHours?.straight || 0), 0);
+          const totalOvertime = data.workers.reduce((sum, worker) => sum + (worker.totalHours?.overtime || 0), 0);
+          const totalDouble = data.workers.reduce((sum, worker) => sum + (worker.totalHours?.double || 0), 0);
+          const grandTotal = totalStraight + totalOvertime + totalDouble;
+          
+          return (
+            <View style={[styles.table, { marginTop: 10 }]}>
+              <View style={[styles.tableRow, { borderTopWidth: 1, borderTopColor: '#ccc', borderBottomWidth: 1, borderBottomColor: '#ccc' }]}>
+                <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>TOTAL STANDARD HOURS: {totalStraight.toFixed(2)}</Text>
+                </View>
+                <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>TOTAL 1.5 OT HOURS: {totalOvertime.toFixed(2)}</Text>
+                </View>
+                <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>TOTAL 2.0 OT HOURS: {totalDouble.toFixed(2)}</Text>
+                </View>
+                <View style={[{ width: '25%', padding: 5, borderRightColor: 'white', borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={[styles.cellText, { fontSize: 8, textAlign: 'center' }]}>GRAND TOTAL HOURS: {grandTotal.toFixed(2)}</Text>
+                </View>
+              </View>
+            </View>
+          );
+        })()}
+        
+        {/* Other Deductions Notes page for single week */}
+        <View style={styles.otherDeductionsPage} break>
+          <Text style={styles.otherDeductionsTitle}>Other Deductions Notes</Text>
+          
+          <View style={styles.otherDeductionsTable}>
+            {/* Header Row */}
+            <View style={styles.otherDeductionsHeaderRow}>
+              <View style={styles.deductionsNameCol}>
+                <Text style={[styles.cellText, { fontWeight: 'bold', fontSize: 8, textDecoration: 'underline' }]}>Employee Name</Text>
+              </View>
+              <View style={styles.deductionsCraftCol}>
+                <Text style={[styles.cellText, { fontWeight: 'bold', fontSize: 8, textDecoration: 'underline' }]}>Craft</Text>
+              </View>
+              <View style={styles.deductionsClassificationCol}>
+                <Text style={[styles.cellText, { fontWeight: 'bold', fontSize: 8, textDecoration: 'underline' }]}>Classification</Text>
+              </View>
+              <View style={styles.deductionsNotesCol}>
+                <Text style={[styles.cellText, { fontWeight: 'bold', fontSize: 8, textDecoration: 'underline' }]}>Other Deduction Notes</Text>
+              </View>
+            </View>
+            
+            {/* Data Rows - Only include workers with "other deductions" */}
+            {data.workers.filter(worker => 
+              worker.deductions?.allOtherDeductions && worker.deductions.allOtherDeductions > 0
+            ).map((worker, workerIndex) => (
+              <View key={workerIndex} style={styles.otherDeductionsRow}>
+                <View style={styles.deductionsNameCol}>
+                  <Text style={[styles.cellText, { fontSize: 8 }]}>{worker.name}</Text>
+                </View>
+                <View style={styles.deductionsCraftCol}>
+                  <Text style={[styles.cellText, { fontSize: 8 }]}>
+                    {worker.workClassification}{worker.projectType} {worker.group}
+                  </Text>
+                </View>
+                <View style={styles.deductionsClassificationCol}>
+                  <Text style={[styles.cellText, { fontSize: 8 }]}>
+                    {worker.workClassification} {worker.projectType} {worker.group}
+                  </Text>
+                </View>
+                <View style={styles.deductionsNotesCol}>
+                  <Text style={[styles.cellText, { fontSize: 8 }]}>
+                    {`1) Other $${worker.deductions?.allOtherDeductions?.toFixed(3) || '0.000'}. Total Amount Deducted: ${worker.deductions?.allOtherDeductions?.toFixed(3) || '0.000'}`}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+        </>
       )}
     </Page>
+    
+    {/* Certification Page - Always on a new page */}
+    {data.certification && (
+      <Page size="A3" orientation="landscape" style={styles.page}>
+        {/* Fixed Header - Same as payroll pages */}
+        <View fixed style={{ position: 'absolute', top: 10, right: 10, zIndex: 10 }}>
+          <Text style={{ fontSize: 8 }}>
+            Project Name: {data.projectInfo?.name || data.projectName}
+          </Text>
+          <Text style={{ fontSize: 8 }}>
+            Project Code: {data.projectInfo?.projectCode || ''}
+          </Text>
+        </View>
+        
+        <View style={styles.certificationSection}>
+          <Text style={styles.certificationTitle}>Statement of Compliance</Text>
+          
+          <Text style={styles.certificationStatement}>
+            Date: {new Date(data.certification.certificationDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </Text>
+          
+          <Text style={styles.certificationStatement}>
+            I, {data.certification.projectManager}, {data.certification.position} do hereby state:
+          </Text>
+          
+          <Text style={styles.certificationStatement}>
+            (1) That I pay or supervise the payment of the persons employed by {data.subcontractorInfo?.companyName || data.certification.companyName} on the {data.projectInfo?.name || data.certification.projectName}; that during the payroll period commencing on {data.certification.payrollStartDate} and ending on {data.certification.payrollEndDate}, all persons employed on said project have been paid the full weekly wages earned, that no rebates have been or will be made either directly or indirectly to or on behalf of said {data.subcontractorInfo?.companyName || data.certification.companyName} from the full weekly wages earned by any person and that no deductions have been made either directly or indirectly from the full wages earned by any person, other than permissible deductions as defined in Regulations, Part 3 (29 C.F.R. Subtitle A), issued by the Secretary of Labor under the Copeland Act, as amended (48 Stat. 948, 63 Stat. 108, 72 Stat. 967; 76 Stat. 357; 40 U.S.C. § 3145), and described below:
+            {'\n'}All comments are in the notes on the submitted Certified Payroll Report.
+          </Text>
+          
+          <Text style={styles.certificationStatement}>
+            (2) That any payrolls otherwise under this contract required to be submitted for the above period are correct and complete; that the wage rates for laborers or mechanics contained therein are not less than the applicable wage rates contained in any wage determination incorporated into the contract; that the classifications set forth therein for each laborer or mechanic conform with the work he performed.
+          </Text>
+          
+          <Text style={styles.certificationStatement}>
+            (3) That any apprentices employed in the above period are duly registered in a bona fide apprenticeship program registered with a State apprenticeship agency recognized by the Bureau of Apprenticeship and Training, United States Department of Labor, or if no such recognized agency exists in a State, are registered with the Bureau of Apprenticeship and Training, United States Department of Labor.
+          </Text>
+          
+          <Text style={styles.certificationStatement}>
+            (4)That:
+          </Text>
+          
+          <View style={styles.checkboxRow}>
+            <Text style={styles.checkbox}>{data.certification.fringeBenefitsOption === 'plans' ? 'X' : ''}</Text>
+            <Text style={styles.checkboxText}>
+              (a) WHERE FRINGE BENEFITS ARE PAID TO APPROVED PLANS, FUNDS OR PROGRAMS - in addition to the basic hourly wage rates paid to each laborer or mechanic listed in the above referenced payroll, payments of fringe benefits as listed in the contract have been or will be made to appropriate programs for the benefit of such employees, except as noted in section 4(c) below.
+            </Text>
+          </View>
+          
+          <View style={styles.checkboxRow}>
+            <Text style={styles.checkbox}>{data.certification.fringeBenefitsOption === 'cash' ? 'X' : ''}</Text>
+            <Text style={styles.checkboxText}>
+              (b) WHERE FRINGE BENEFITS ARE PAID IN CASH - Each laborer or mechanic listed in the above referenced payroll has been paid, as indicated on the payroll, an amount not less than the sum of the applicable basic hourly wage rate plus the amount of the required fringe benefits as listed in the contract, except as noted in Section 4(c) below.
+            </Text>
+          </View>
+          
+          <Text style={[styles.certificationText, { fontWeight: 'bold', marginTop: 10 }]}>
+            (c) EXCEPTIONS:
+          </Text>
+          
+          {/* Exceptions Table - Always show header */}
+          <View style={styles.exceptionsTable}>
+            <View style={styles.exceptionHeader}>
+              <Text style={[styles.exceptionCol, { fontWeight: 'bold' }]}>EXCEPTION (CRAFT)</Text>
+              <Text style={[styles.exceptionCol, { fontWeight: 'bold' }]}>EXPLANATION</Text>
+            </View>
+            {data.certification.exceptions && data.certification.exceptions.length > 0 ? (
+              data.certification.exceptions.map((exception, index) => (
+                <View key={index} style={styles.exceptionRow}>
+                  <Text style={styles.exceptionCol}>{exception.exception}</Text>
+                  <Text style={styles.exceptionCol}>{exception.explanation}</Text>
+                </View>
+              ))
+            ) : (
+              <View style={styles.exceptionRow}>
+                <Text style={styles.exceptionCol}></Text>
+                <Text style={styles.exceptionCol}></Text>
+              </View>
+            )}
+          </View>
+          
+          {/* Remarks */}
+          {data.certification.remarks && (
+            <Text style={styles.certificationText}>
+              <Text style={{ fontWeight: 'bold' }}>Remarks:</Text> {data.certification.remarks}
+            </Text>
+          )}
+          
+          {/* Signature Area */}
+          <View style={styles.signatureArea}>
+            <View style={styles.signatureColumn}>
+              <Text style={styles.signatureLabel}>Name: {data.certification.projectManager}</Text>
+              <Text style={styles.signatureLabel}>Title: {data.certification.position}</Text>
+            </View>
+            <View style={styles.signatureColumn}>
+              <Text style={styles.signatureLabel}>Signature:</Text>
+              {data.certification.signature ? (
+                <Image
+                  src={data.certification.signature}
+                  style={{ width: 150, height: 50, objectFit: 'contain' }}
+                />
+              ) : (
+                <View style={styles.signatureLine} />
+              )}
+            </View>
+          </View>
+          
+          <Text style={styles.warningText}>
+            THE WILLFUL FALSIFICATION OF ANY OF THE ABOVE STATEMENTS MAY SUBJECT THE CONTRACTOR OR SUBCONTRACTOR TO CIVIL OR CRIMINAL PROSECUTION. SEE SECTION 1001 OF TITLE 18 AND SECTION 3729 OF TITLE 31 OF THE UNITED STATES CODE.
+          </Text>
+        </View>
+      </Page>
+    )}
   </Document>
 );
 

@@ -13,6 +13,7 @@ interface TimesheetExportParams {
   search?: string;
   status?: string;
   jobName?: string;
+  projectName?: string;
   employees?: string;
   authType?: 'contractor' | 'admin' | 'any';
 }
@@ -23,6 +24,7 @@ interface SubmissionExportParams {
   dateFrom?: string;
   dateTo?: string;
   company?: string;
+  projectName?: string;
   search?: string;
   authType?: 'contractor' | 'admin' | 'any';
 }

@@ -4,15 +4,17 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useGetProjectContractorsQuery } from '@/lib/features/certified-payroll/certifiedPayrollApi';
-import { Plus, User, Upload } from 'lucide-react';
+import { Plus, User, Upload, Check, Eye } from 'lucide-react';
 
 interface PayrollDetailsStepProps {
   projectId: string;
   selectedContractors: string[];
   selectedDateRange: { startDate: string; endDate: string } | null;
+  savedPayrollData: Map<string, any>;
   onNext: () => void;
   onBack: () => void;
   onAddPayrollData: (contractorId: string) => void;
+  onViewPayrollData: (contractorId: string) => void;
   onBulkAIUpload?: () => void;
   onGenerateReport?: () => void;
 }
@@ -21,9 +23,11 @@ export default function PayrollDetailsStep({
   projectId, 
   selectedContractors,
   selectedDateRange,
+  savedPayrollData,
   onNext,
   onBack,
   onAddPayrollData,
+  onViewPayrollData,
   onBulkAIUpload,
   onGenerateReport
 }: PayrollDetailsStepProps) {
@@ -128,14 +132,28 @@ export default function PayrollDetailsStep({
                         {contractor.email}
                       </td>
                       <td className="p-4">
-                        <Button
-                          size="sm"
-                          onClick={() => onAddPayrollData(contractor.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add Payroll Data
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => onViewPayrollData(contractor.id)}
+                            variant="outline"
+                            className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => onAddPayrollData(contractor.id)}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Payroll Data
+                          </Button>
+                          {savedPayrollData.has(contractor.id) && (
+                            <Check className="w-4 h-4 text-green-600" />
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -155,7 +173,7 @@ export default function PayrollDetailsStep({
           onClick={onGenerateReport || onNext}
           className="bg-black hover:bg-gray-800 text-white"
         >
-          Generate Report
+         Next
         </Button>
       </div>
     </div>

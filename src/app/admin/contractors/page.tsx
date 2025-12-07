@@ -17,6 +17,7 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { StateCitySelect } from "@/components/ui/state-city-select";
 import SubcontractorSelect from "@/components/SubcontractorSelect";
 import { ContractorBulkUploadModal } from "@/components/admin/ContractorBulkUploadModal";
 import { Plus, Edit, Save, X, ArrowLeft, RefreshCw, Mail, ArrowUpDown, Copy, Upload, ChevronDown, Building } from "lucide-react";
@@ -44,6 +45,8 @@ export default function ContractorsPage() {
     language: "en",
     type: "contractor",
     address: "",
+    city: "",
+    state: "",
     phone: "",
     race: "",
     gender: "",
@@ -128,6 +131,8 @@ export default function ContractorsPage() {
       language: contractor.language || "en",
       type: contractor.type || "contractor",
       address: contractor.address || "",
+      city: contractor.city || "",
+      state: contractor.state || "",
       phone: contractor.phone || "",
       race: contractor.race || "",
       gender: contractor.gender || "",
@@ -156,6 +161,8 @@ export default function ContractorsPage() {
       language: "en",
       type: "contractor",
       address: "",
+      city: "",
+      state: "",
       phone: "",
       race: "",
       gender: "",
@@ -173,7 +180,7 @@ export default function ContractorsPage() {
   const handleCancel = () => {
     setViewMode('list');
     setEditingContractor(null);
-    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", phone: "", race: "", gender: "", dateOfHire: "", workClassification: "", projectType: "", group: "", projectIds: [] });
+    setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", city: "", state: "", phone: "", race: "", gender: "", dateOfHire: "", workClassification: "", projectType: "", group: "", projectIds: [] });
     setFormErrors({});
     setEmailMessage("");
   };
@@ -243,6 +250,8 @@ export default function ContractorsPage() {
           language: "en",
           type: "contractor",
           address: "",
+          city: "",
+          state: "",
           phone: "",
           race: "",
           gender: "",
@@ -256,7 +265,7 @@ export default function ContractorsPage() {
       } else {
         setViewMode('list');
         setEditingContractor(null);
-        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", phone: "", race: "", gender: "", dateOfHire: "", workClassification: "", projectType: "", group: "", projectIds: [] });
+        setFormData({ firstName: "", lastName: "", email: "", code: "", rate: "", overtimeRate: "", doubleTimeRate: "", companyName: "", language: "en", type: "contractor", address: "", city: "", state: "", phone: "", race: "", gender: "", dateOfHire: "", workClassification: "", projectType: "", group: "", projectIds: [] });
       }
     } catch (error: any) {
       console.error('Failed to save contractor:', error);
@@ -949,6 +958,16 @@ export default function ContractorsPage() {
                 Complete address for the contractor
               </p>
             </div>
+
+            <StateCitySelect
+              stateValue={formData.state}
+              cityValue={formData.city}
+              onStateChange={(state) => setFormData(prev => ({ ...prev, state }))}
+              onCityChange={(city) => setFormData(prev => ({ ...prev, city }))}
+              stateLabel="State (Optional)"
+              cityLabel="City (Optional)"
+              disabled={isFormLoading}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">

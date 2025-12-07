@@ -14,6 +14,8 @@ export interface Contractor {
   language?: string | null
   type?: string | null
   address?: string | null
+  city?: string | null
+  state?: string | null
   phone?: string | null
   race?: string | null
   gender?: string | null
@@ -37,6 +39,8 @@ export interface CreateContractorRequest {
   language?: string
   type?: string
   address?: string
+  city?: string
+  state?: string
   phone?: string
   race?: string
   gender?: string
@@ -60,6 +64,8 @@ export interface UpdateContractorRequest {
   language?: string
   type?: string
   address?: string
+  city?: string
+  state?: string
   phone?: string
   race?: string
   gender?: string

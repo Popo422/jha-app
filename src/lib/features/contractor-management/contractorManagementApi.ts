@@ -12,6 +12,10 @@ export interface Contractor {
   companyName?: string;
   language: string;
   type: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  phone?: string;
   dateOfHire?: string;
   workClassification?: string;
   projectType?: string;
@@ -30,6 +34,10 @@ export interface CreateContractorRequest {
   doubleTimeRate?: string;
   language: string;
   type: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  phone?: string;
   dateOfHire?: string;
   workClassification?: string;
   projectType?: string;
@@ -47,6 +55,10 @@ export interface UpdateContractorRequest {
   doubleTimeRate?: string;
   language: string;
   type: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  phone?: string;
   dateOfHire?: string;
   workClassification?: string;
   projectType?: string;
@@ -68,6 +80,11 @@ export interface ContractorResponse {
 export interface DeleteContractorResponse {
   success: boolean;
   message: string;
+}
+
+export interface ProjectContractorsResponse {
+  success: boolean;
+  contractors: Contractor[];
 }
 
 export const contractorManagementApi = createApi({
@@ -120,6 +137,16 @@ export const contractorManagementApi = createApi({
         { type: 'Contractor', id: 'LIST' },
       ],
     }),
+    getProjectContractors: builder.query<ProjectContractorsResponse, { projectId: string }>({
+      query: ({ projectId }) => `/project-contractors/${projectId}`,
+      providesTags: (result, error, { projectId }) =>
+        result
+          ? [
+              ...result.contractors.map(({ id }) => ({ type: 'Contractor' as const, id })),
+              { type: 'Contractor', id: `PROJECT_${projectId}` },
+            ]
+          : [{ type: 'Contractor', id: `PROJECT_${projectId}` }],
+    }),
   }),
 });
 
@@ -128,4 +155,5 @@ export const {
   useCreateContractorMutation,
   useUpdateContractorMutation,
   useDeleteContractorMutation,
+  useGetProjectContractorsQuery,
 } = contractorManagementApi;

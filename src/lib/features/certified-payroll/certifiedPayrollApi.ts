@@ -100,11 +100,19 @@ export interface PayrollWeekData {
 export interface ProjectInfo {
   name: string;
   location: string;
+  city: string | null;
+  state: string | null;
   projectCode: string;
   contractId: string;
   projectManager: string;
   startDate: string | null;
   endDate: string | null;
+}
+
+export interface CityResidentTotals {
+  projectCity: string;
+  totalResidentHours: number;
+  totalNonResidentHours: number;
 }
 
 export interface MultiWeekPayrollData {
@@ -114,6 +122,7 @@ export interface MultiWeekPayrollData {
   projectInfo: ProjectInfo;
   subcontractorInfo: SubcontractorInfo;
   weeks: PayrollWeekData[];
+  cityResidentTotals?: CityResidentTotals | null;
 }
 
 export interface CalculateMultiWeekRequest {

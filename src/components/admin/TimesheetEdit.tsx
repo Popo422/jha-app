@@ -9,9 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Toast, useToast } from "@/components/ui/toast";
 import { useUpdateTimesheetMutation } from "@/lib/features/timesheets/timesheetsApi";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, XCircle, Check } from "lucide-react";
 import ContractorSelect from "@/components/ContractorSelect";
 import ProjectSelect from "@/components/ProjectSelect";
+import { useDateDisplay } from "@/hooks/useDateDisplay";
 
 interface Timesheet {
   id: string;
@@ -24,6 +25,10 @@ interface Timesheet {
   timeSpent: string;
   overtimeHours?: string;
   doubleHours?: string;
+  status: string;
+  rejectionReason?: string;
+  approvedByName?: string;
+  approvedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +41,7 @@ interface TimesheetEditProps {
 
 export default function TimesheetEdit({ timesheet, onBack, readOnly = false }: TimesheetEditProps) {
   const { t } = useTranslation('common');
+  const { formatDate } = useDateDisplay();
   const [formData, setFormData] = useState({
     date: timesheet.date,
     employee: timesheet.employee,
@@ -263,6 +269,49 @@ export default function TimesheetEdit({ timesheet, onBack, readOnly = false }: T
               readOnly={readOnly}
             />
           </div>
+
+          {/* Rejection Reason Display */}
+          {timesheet.status === 'rejected' && timesheet.rejectionReason && (
+            <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+              <div className="flex items-start gap-3">
+                <div className="p-1 bg-red-100 dark:bg-red-900 rounded-full">
+                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <h4 className="text-sm font-medium text-red-800 dark:text-red-200">
+                    Timesheet Rejected
+                  </h4>
+                  <div className="text-sm text-red-700 dark:text-red-300">
+                    <span className="font-medium">Reason:</span> {timesheet.rejectionReason}
+                  </div>
+                  {timesheet.approvedByName && timesheet.approvedAt && (
+                    <div className="text-xs text-red-600 dark:text-red-400">
+                      Rejected by {timesheet.approvedByName} on {formatDate(timesheet.approvedAt)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Approval Status Display */}
+          {timesheet.status === 'approved' && timesheet.approvedByName && timesheet.approvedAt && (
+            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+              <div className="flex items-start gap-3">
+                <div className="p-1 bg-green-100 dark:bg-green-900 rounded-full">
+                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-green-800 dark:text-green-200">
+                    Timesheet Approved
+                  </h4>
+                  <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    Approved by {timesheet.approvedByName} on {formatDate(timesheet.approvedAt)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-3">
             <Button variant="outline" onClick={onBack}>

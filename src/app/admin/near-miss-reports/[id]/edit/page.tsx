@@ -293,8 +293,8 @@ export default function AdminEditNearMissPage() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center py-12">
               <p className="text-red-600 dark:text-red-400">Near miss report not found.</p>
-              <Button asChild className="mt-4">
-                <Link href="/admin/safety-forms">Back to Safety Forms</Link>
+              <Button onClick={() => router.back()} className="mt-4">
+                Back to Safety Forms
               </Button>
             </div>
           </div>
@@ -309,11 +309,9 @@ export default function AdminEditNearMissPage() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <Button variant="ghost" asChild className="mb-4">
-              <Link href="/admin/safety-forms" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Safety Forms
-              </Link>
+            <Button variant="ghost" onClick={() => router.back()} className="mb-4 flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Safety Forms
             </Button>
             <h1 className="text-3xl font-bold text-foreground text-center">
               {readOnly ? 'View Near Miss Report' : 'Edit Near Miss Report'}

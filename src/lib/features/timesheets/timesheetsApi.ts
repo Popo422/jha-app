@@ -149,6 +149,13 @@ export interface UpdateTimesheetResponse {
   error?: string
 }
 
+export interface UpdateTimesheetStatusData {
+  id: string
+  status: 'pending' | 'approved' | 'rejected'
+  rejectionReason?: string
+  authType?: 'contractor' | 'admin' | 'any'
+}
+
 export const timesheetsApi = createApi({
   reducerPath: 'timesheetsApi',
   baseQuery: fetchBaseQuery({
@@ -196,6 +203,7 @@ export const timesheetsApi = createApi({
       search?: string
       status?: string
       jobName?: string
+      projectName?: string
       employees?: string
       page?: number
       pageSize?: number
@@ -204,7 +212,7 @@ export const timesheetsApi = createApi({
       fetchAll?: boolean
       authType?: 'contractor' | 'admin' | 'any'
     }>({
-      query: ({ dateFrom, dateTo, company, search, status, jobName, employees, page, pageSize, limit, offset, fetchAll, authType }) => {
+      query: ({ dateFrom, dateTo, company, search, status, jobName, projectName, employees, page, pageSize, limit, offset, fetchAll, authType }) => {
         const params = new URLSearchParams()
         
         if (fetchAll) {
@@ -237,6 +245,9 @@ export const timesheetsApi = createApi({
         }
         if (jobName) {
           params.append('jobName', jobName)
+        }
+        if (projectName) {
+          params.append('projectName', projectName)
         }
         if (employees) {
           params.append('employees', employees)
@@ -332,6 +343,20 @@ export const timesheetsApi = createApi({
       }),
       providesTags: ['Timesheet'],
     }),
+    updateTimesheetStatus: builder.mutation<UpdateTimesheetResponse, UpdateTimesheetStatusData>({
+      query: ({ id, status, rejectionReason, authType }) => {
+        let url = `/status/${id}`
+        if (authType) {
+          url += `?authType=${authType}`
+        }
+        return {
+          url,
+          method: 'PUT',
+          body: { status, rejectionReason },
+        }
+      },
+      invalidatesTags: ['Timesheet'],
+    }),
   }),
 })
 
@@ -344,5 +369,6 @@ export const {
   useGetTimesheetAggregatesQuery,
   useLazyGetTimesheetAggregatesQuery,
   useSyncToProcoreMutation,
-  useGetWorkmenWeeklyDataQuery
+  useGetWorkmenWeeklyDataQuery,
+  useUpdateTimesheetStatusMutation
 } = timesheetsApi

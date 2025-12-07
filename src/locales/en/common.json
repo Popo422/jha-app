@@ -344,6 +344,7 @@
     "employeesAddedCount": "employees added successfully",
     "waitForEmployees": "Please wait while employees are being processed...",
     "previewEmployees": "Preview Employees",
+    "status": "Status",
     "errors": {
       "firstNameRequired": "First name is required",
       "lastNameRequired": "Last name is required",
@@ -492,6 +493,8 @@
   },
   "formFields": {
     "date": "Date:",
+    "dateFrom": "Date From",
+    "dateTo": "Date To",
     "supervisor": "Supervisor:",
     "jobSite": "Job Site:",
     "jobName": "Job Name:",
@@ -963,7 +966,7 @@
     "failedToDelete": "Failed to delete supervisor"
   },
   "workersComp": {
-    "title": "Workers Compensation Dashboard",
+    "title": "Safety Logs",
     "description": "Manage and track workplace incidents and safety reports",
     "cards": {
       "knowTheRisk": "Know the Risk",

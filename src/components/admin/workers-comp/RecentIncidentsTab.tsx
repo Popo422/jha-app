@@ -23,7 +23,11 @@ import IncidentReportEdit from "@/components/admin/IncidentReportEdit";
 import QuickIncidentReportEdit from "@/components/admin/QuickIncidentReportEdit";
 import { Incident } from "@/lib/features/incidents/incidentsApi";
 
-export default function RecentIncidentsTab() {
+interface RecentIncidentsTabProps {
+  projectId?: string;
+}
+
+export default function RecentIncidentsTab({ projectId }: RecentIncidentsTabProps) {
   const { t } = useTranslation();
   const [filters, setFilters] = useState({
     dateFrom: '',
@@ -46,12 +50,16 @@ export default function RecentIncidentsTab() {
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
   const defaultDateFrom = filters.dateFrom || threeDaysAgo.toISOString().split('T')[0];
 
+  // Get project name for filtering if projectId is provided
+  const currentProject = projectId ? projectsData?.projects?.find(p => p.id === projectId) : null;
+  const projectFilter = currentProject ? currentProject.name : filters.project;
+
   const { data: incidentsData, isLoading } = useGetIncidentsQuery({
     page: pagination.page,
     pageSize: pagination.pageSize,
     dateFrom: defaultDateFrom,
     dateTo: filters.dateTo || undefined,
-    search: [filters.project, filters.employee].filter(Boolean).join(' ') || undefined,
+    search: [projectFilter, filters.employee].filter(Boolean).join(' ') || undefined,
     authType: 'admin'
   }, {
     refetchOnMountOrArgChange: true
@@ -151,35 +159,37 @@ export default function RecentIncidentsTab() {
           />
         </div>
 
-        <div className="space-y-1">
-          <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('workersComp.filters.projectName')}</div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
-                <span className="truncate">
-                  {filters.project || t('workersComp.filters.selectProject')}
-                </span>
-                <ChevronDown className="h-3 w-3 shrink-0" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="max-h-48 overflow-y-auto">
-              <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, project: '' }))}>
-                {t('workersComp.filters.allProjects')}
-              </DropdownMenuItem>
-              {projectsData?.projects?.map((project) => (
-                <DropdownMenuItem 
-                  key={project.id}
-                  onClick={() => setFilters(prev => ({ ...prev, project: project.name }))}
-                  className="max-w-xs"
-                >
+        {!projectId && (
+          <div className="space-y-1">
+            <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('workersComp.filters.projectName')}</div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="w-40 justify-between text-xs">
                   <span className="truncate">
-                    {project.name}
+                    {filters.project || t('workersComp.filters.selectProject')}
                   </span>
+                  <ChevronDown className="h-3 w-3 shrink-0" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="max-h-48 overflow-y-auto">
+                <DropdownMenuItem onClick={() => setFilters(prev => ({ ...prev, project: '' }))}>
+                  {t('workersComp.filters.allProjects')}
                 </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                {projectsData?.projects?.map((project) => (
+                  <DropdownMenuItem 
+                    key={project.id}
+                    onClick={() => setFilters(prev => ({ ...prev, project: project.name }))}
+                    className="max-w-xs"
+                  >
+                    <span className="truncate">
+                      {project.name}
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
 
         <div className="space-y-1">
           <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{t('workersComp.filters.employee')}</div>

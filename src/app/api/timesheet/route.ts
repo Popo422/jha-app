@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { timesheets, contractors } from '@/lib/db/schema';
 import { eq, gte, lte, desc, and, or, ilike, sql } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
+import { formatObjectDatesForAPI } from '@/lib/utils/api-date-formatting';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here';
 
@@ -386,7 +387,7 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / pageSize);
 
     return NextResponse.json({
-      timesheets: results.map(row => row.timesheet),
+      timesheets: results.map(row => formatObjectDatesForAPI(row.timesheet)),
       contractorRates: results.reduce((acc, row) => {
         acc[row.timesheet.userId] = {
           rate: row.contractorRate || '0.00',
@@ -501,7 +502,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      timesheet: result[0],
+      timesheet: formatObjectDatesForAPI(result[0]),
       message: 'Timesheet updated successfully'
     });
 
@@ -589,7 +590,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      timesheet: result[0],
+      timesheet: formatObjectDatesForAPI(result[0]),
       message: `Timesheet ${action}d successfully`
     });
 

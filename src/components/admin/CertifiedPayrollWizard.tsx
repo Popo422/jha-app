@@ -13,13 +13,14 @@ import PayrollDetailsForm from "./PayrollDetailsForm";
 import PayrollUploadWizard from "./PayrollUploadWizard";
 import BulkAIUploadWizard from "./BulkAIUploadWizard";
 import CertifiedPayrollReportPreview from "./CertifiedPayrollReportPreview";
+import CertificationFormStep from "./CertificationFormStep";
 import { useGetProjectContractorsQuery, useCalculateMultiWeekPayrollMutation, useUploadPayrollMutation, useBulkExtractPayrollMutation } from "@/lib/features/certified-payroll/certifiedPayrollApi";
 
 interface CertifiedPayrollWizardProps {
   projectId: string;
 }
 
-type WizardStep = "onboarding" | "select-workmen" | "select-timeframe" | "add-details" | "payroll-wizard" | "payroll-form" | "payroll-upload" | "bulk-ai-upload" | "generate-report";
+type WizardStep = "onboarding" | "select-workmen" | "select-timeframe" | "add-details" | "payroll-wizard" | "payroll-form" | "payroll-upload" | "bulk-ai-upload" | "certification-form" | "generate-report";
 
 export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWizardProps) {
   const router = useRouter();
@@ -29,6 +30,19 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
   const [selectedContractorForPayroll, setSelectedContractorForPayroll] = useState<string | null>(null);
   const [savedPayrollData, setSavedPayrollData] = useState<Map<string, any>>(new Map());
   const [extractedPayrollData, setExtractedPayrollData] = useState<any>(null);
+  const [isViewMode, setIsViewMode] = useState<boolean>(false);
+  const [certificationFormData, setCertificationFormData] = useState({
+    certificationDate: new Date().toISOString().split('T')[0], // Default to today
+    projectManager: '',
+    position: '',
+    payrollStartDate: '',
+    payrollEndDate: '',
+    fringeBenefitsOption: 'plans' as 'plans' | 'cash',
+    exceptions: [] as { exception: string; explanation: string }[],
+    remarks: '',
+    signature: ''
+  });
+  
   
   // Get contractor data for the payroll wizard
   const { data: contractorsData } = useGetProjectContractorsQuery(projectId);
@@ -79,6 +93,12 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
 
   const handleTimeFrameNext = (startDate: string, endDate: string) => {
     setSelectedDateRange({ startDate, endDate });
+    // Also set the certification form payroll dates
+    setCertificationFormData(prev => ({
+      ...prev,
+      payrollStartDate: startDate,
+      payrollEndDate: endDate
+    }));
     setCurrentStep("add-details");
   };
 
@@ -86,7 +106,16 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
     setSelectedContractorForPayroll(contractorId);
     // Clear any previous extracted data when switching contractors
     setExtractedPayrollData(null);
+    setIsViewMode(false);
     setCurrentStep("payroll-wizard");
+  };
+
+  const handleViewPayrollData = (contractorId: string) => {
+    setSelectedContractorForPayroll(contractorId);
+    // Clear any previous extracted data when switching contractors
+    setExtractedPayrollData(null);
+    setIsViewMode(true);
+    setCurrentStep("payroll-form");
   };
 
   const handleBackFromPayrollWizard = () => {
@@ -105,7 +134,15 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
   };
 
   const handleBackFromPayrollForm = () => {
-    setCurrentStep("payroll-wizard");
+    if (isViewMode) {
+      // If coming from View button, go back to the list
+      setCurrentStep("add-details");
+      setSelectedContractorForPayroll(null);
+      setIsViewMode(false);
+    } else {
+      // If coming from regular flow, go back to payroll options
+      setCurrentStep("payroll-wizard");
+    }
   };
 
   const handleSavePayrollData = (payrollData: any) => {
@@ -124,14 +161,24 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
     setCurrentStep("add-details");
     setSelectedContractorForPayroll(null);
     setExtractedPayrollData(null);
+    setIsViewMode(false);
   };
 
   const handleGenerateReport = () => {
+    setCurrentStep("certification-form");
+  };
+
+  const handleBackFromCertification = () => {
+    setCurrentStep("add-details");
+  };
+
+  const handleCertificationNext = (certData: typeof certificationFormData) => {
+    setCertificationFormData(certData);
     setCurrentStep("generate-report");
   };
 
   const handleBackFromReport = () => {
-    setCurrentStep("add-details");
+    setCurrentStep("certification-form");
   };
 
   // Convert Map to stable object for dependency tracking
@@ -180,7 +227,9 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
           projectInfo: apiData.projectInfo,
           subcontractorInfo: apiData.subcontractorInfo,
           workers: [], // Not used for multi-week
-          weeks: apiData.weeks
+          weeks: apiData.weeks,
+          cityResidentTotals: apiData.cityResidentTotals, // Add city resident totals
+          certification: certificationFormData // Add certification data
         };
       } else {
         // Single week format (fallback)
@@ -190,7 +239,9 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
           projectName: apiData.projectName,
           projectInfo: apiData.projectInfo,
           subcontractorInfo: apiData.subcontractorInfo,
-          workers: apiData.weeks?.[0]?.workers || []
+          workers: apiData.weeks?.[0]?.workers || [],
+          cityResidentTotals: apiData.cityResidentTotals, // Add city resident totals
+          certification: certificationFormData // Add certification data
         };
       }
     } catch (error) {
@@ -202,7 +253,8 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
     selectedDateRange,
     selectedContractors,
     projectId,
-    payrollDataObject
+    payrollDataObject,
+    certificationFormData
   ]);
 
   const handleBackFromUpload = () => {
@@ -316,6 +368,7 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
       : null;
     
     const initialFormData = extractedPayrollData || existingPayrollData;
+    const isViewingExistingData = !!existingPayrollData && !extractedPayrollData;
 
     return (
       <PayrollDetailsForm
@@ -323,6 +376,7 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
         contractorId={selectedContractorInfo.id}
         dateRange={selectedDateRange}
         initialData={initialFormData}
+        isViewMode={isViewingExistingData}
         onBack={handleBackFromPayrollForm}
         onSave={handleSavePayrollData}
       />
@@ -342,6 +396,32 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
         onBack={handleBackFromBulkAI}
         onCompleted={handleBulkAICompleted}
       />
+    );
+  }
+
+  // Show Certification Form Step
+  if (currentStep === "certification-form") {
+    return (
+      <div className="space-y-6">
+        {/* Go Back button outside the widget */}
+        <Button 
+          variant="ghost" 
+          onClick={handleGoBack}
+          className="text-blue-600 hover:text-blue-700"
+        >
+          Go Back
+        </Button>
+        
+        <Card className="bg-white dark:bg-gray-800 shadow-sm">
+          <CardContent className="p-8">
+            <CertificationFormStep
+              initialData={certificationFormData}
+              onNext={handleCertificationNext}
+              onBack={handleBackFromCertification}
+            />
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -391,9 +471,11 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
               projectId={projectId}
               selectedContractors={selectedContractors}
               selectedDateRange={selectedDateRange}
+              savedPayrollData={savedPayrollData}
               onNext={handleNext}
               onBack={handleBack}
               onAddPayrollData={handleAddPayrollData}
+              onViewPayrollData={handleViewPayrollData}
               onBulkAIUpload={handleBulkAIUpload}
               onGenerateReport={handleGenerateReport}
             />
@@ -411,7 +493,7 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Create your certified payroll by following this guided experience.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
                 <div className="text-center space-y-3">
                   <div className={`w-12 h-12 mx-auto rounded-lg flex items-center justify-center ${
                     currentStep === "onboarding" 
@@ -446,6 +528,14 @@ export default function CertifiedPayrollWizard({ projectId }: CertifiedPayrollWi
                   </div>
                   <h3 className="font-semibold text-gray-700 dark:text-gray-300">Add Payroll Details</h3>
                   <p className="text-sm text-muted-foreground">Add payroll information using a form or upload your payroll report.</p>
+                </div>
+
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 mx-auto rounded-lg flex items-center justify-center bg-purple-50 dark:bg-purple-900/20">
+                    <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h3 className="font-semibold text-gray-700 dark:text-gray-300">Additional Details</h3>
+                  <p className="text-sm text-muted-foreground">Complete certification form and generate the final report.</p>
                 </div>
               </div>
 

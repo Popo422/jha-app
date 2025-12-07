@@ -20,12 +20,15 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronDown, Download, Building, Users, DollarSign, User, Check, X, AlertTriangle, Shield, Clock, CheckCircle } from "lucide-react";
+import { ChevronDown, Download, Building, Users, DollarSign, User, Check, X, AlertTriangle, Shield, Clock, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import WeatherWidget from '@/components/WeatherWidget';
 import HoursOverTimeChart from '@/components/HoursOverTimeChart';
 import SubcontractorHoursAnalytics from '@/components/SubcontractorHoursAnalytics';
 import WorkmenWeeklyAnalytics from '@/components/admin/WorkmenWeeklyAnalytics';
+import ProjectManhoursTable from '@/components/admin/ProjectManhoursTable';
 import { AdminDataTable } from '@/components/admin/AdminDataTable';
+import ProjectTasksDailyLog from '@/components/admin/ProjectTasksDailyLog';
+import ProjectSubmissionTracker from '@/components/admin/ProjectSubmissionTracker';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -45,6 +48,50 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
   const { t } = useTranslation('common');
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, 300);
+  
+  // Get current week for manhours table
+  const getCurrentWeekStart = (date: Date = new Date()) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day; // First day is Sunday
+    return new Date(d.setDate(diff));
+  };
+
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => getCurrentWeekStart());
+
+  const weekRange = useMemo(() => {
+    const startDate = new Date(currentWeekStart);
+    const endDate = new Date(currentWeekStart);
+    endDate.setDate(startDate.getDate() + 6);
+
+    const formatDateForAPI = (date: Date) => {
+      return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    };
+
+    return {
+      startDate,
+      endDate,
+      weekStart: formatDateForAPI(startDate),
+      weekEnd: formatDateForAPI(endDate)
+    };
+  }, [currentWeekStart]);
+
+  const handleWeekChange = (startDate: Date, endDate: Date) => {
+    setCurrentWeekStart(startDate);
+  };
+
+  const handlePreviousWeek = () => {
+    const newWeekStart = new Date(currentWeekStart);
+    newWeekStart.setDate(newWeekStart.getDate() - 7);
+    setCurrentWeekStart(newWeekStart);
+  };
+
+  const handleNextWeek = () => {
+    const newWeekStart = new Date(currentWeekStart);
+    newWeekStart.setDate(newWeekStart.getDate() + 7);
+    setCurrentWeekStart(newWeekStart);
+  };
+  
   const [clientPagination, setClientPagination] = useState({
     currentPage: 1,
     pageSize: 10
@@ -428,16 +475,54 @@ export default function ProjectSnapshot({ projectId }: ProjectSnapshotProps) {
         />
       </div>
 
+      {/* Daily Task Log */}
+      <div className="w-full">
+        <ProjectTasksDailyLog projectId={projectId} />
+      </div>
+
       {/* Workforce Tabs */}
       <div className="w-full">
         <Tabs defaultValue="workmen" className="w-full">
-          <TabsList className="grid grid-cols-2 w-80">
+          <TabsList className="grid grid-cols-2 w-64">
             <TabsTrigger value="workmen">Workmen</TabsTrigger>
             <TabsTrigger value="subcontractor">Subcontractor</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="workmen" className="mt-6">
-            <WorkmenWeeklyAnalytics projectId={projectId} />
+          <TabsContent value="workmen" className="mt-6 space-y-6">
+            {/* Week Navigation */}
+            <div className="flex justify-center items-center gap-4 py-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousWeek}
+                className="flex items-center gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous Week
+              </Button>
+              
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400 px-4">
+                {weekRange.startDate.toLocaleDateString()} - {weekRange.endDate.toLocaleDateString()}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextWeek}
+                className="flex items-center gap-2"
+              >
+                Next Week
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <ProjectManhoursTable 
+              projectId={projectId} 
+              weekStart={weekRange.weekStart}
+              weekEnd={weekRange.weekEnd}
+            />
+            
+            <ProjectSubmissionTracker projectId={projectId} projectName={projectName} />
           </TabsContent>
           
           <TabsContent value="subcontractor" className="mt-6 space-y-6">

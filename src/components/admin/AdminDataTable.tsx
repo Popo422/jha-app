@@ -1,26 +1,29 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { 
-  MoreVertical, 
-  Download, 
-  Trash2, 
-  Edit, 
-  Eye,
-  ChevronDown,
-} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { MoreVertical, Download, Trash2, Edit, Eye, ChevronDown } from "lucide-react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -65,7 +68,12 @@ export interface AdminDataTableProps<T> {
   getExportData: (item: T, headers?: string[]) => string[];
   generateDynamicHeaders?: (data: T[]) => string[];
   filters?: React.ReactNode;
-  renderMobileCard?: (item: T, isSelected: boolean, onToggleSelect: () => void, showCheckboxes: boolean) => React.ReactNode;
+  renderMobileCard?: (
+    item: T,
+    isSelected: boolean,
+    onToggleSelect: () => void,
+    showCheckboxes: boolean
+  ) => React.ReactNode;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   canDelete?: (item: T) => boolean;
@@ -106,18 +114,35 @@ export function AdminDataTable<T>({
   onExportAll,
   generateDynamicHeaders,
 }: AdminDataTableProps<T>) {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation("common");
   const [rowSelection, setRowSelection] = useState({});
   const [showCheckboxes, setShowCheckboxes] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const isMobile = useIsMobile();
 
-  const handleSingleDelete = useCallback(async (id: string) => {
-    if (onDelete) {
-      await onDelete(id);
+  const handleSingleDelete = useCallback(
+    async (id: string) => {
+      if (onDelete) {
+        await onDelete(id);
+      }
+    },
+    [onDelete]
+  );
+  const handleBulkDelete = useCallback(async () => {
+    const selectedIds = Object.keys(rowSelection);
+    if (onBulkDelete) {
+      try {
+        await onBulkDelete(selectedIds);
+        // Only clear selection if deletion was successful
+        setRowSelection({});
+        setShowCheckboxes(false);
+      } catch (error) {
+        console.error("Failed to delete selected items:", error);
+        // Keep selection active so user can retry
+      }
     }
-  }, [onDelete]);
-
+  }, [rowSelection, onBulkDelete]);
+  
   const handleDeleteButtonClick = useCallback(() => {
     if (!showCheckboxes) {
       setShowCheckboxes(true);
@@ -130,16 +155,7 @@ export function AdminDataTable<T>({
         handleBulkDelete();
       }
     }
-  }, [showCheckboxes, rowSelection]);
-
-  const handleBulkDelete = useCallback(async () => {
-    const selectedIds = Object.keys(rowSelection);
-    if (onBulkDelete) {
-      await onBulkDelete(selectedIds);
-    }
-    setRowSelection({});
-    setShowCheckboxes(false);
-  }, [rowSelection, onBulkDelete]);
+  }, [showCheckboxes, rowSelection, handleBulkDelete]);
 
   const handleCancelSelection = useCallback(() => {
     setShowCheckboxes(false);
@@ -151,7 +167,7 @@ export function AdminDataTable<T>({
 
     if (showCheckboxes) {
       tableColumns.push({
-        id: 'select',
+        id: "select",
         header: ({ table }) => (
           <input
             type="checkbox"
@@ -175,8 +191,8 @@ export function AdminDataTable<T>({
 
     if (onEdit || onView || onDelete || customActions.length > 0) {
       tableColumns.push({
-        id: 'actions',
-        header: '',
+        id: "actions",
+        header: "",
         cell: ({ row }) => {
           const item = row.original;
           return (
@@ -191,10 +207,12 @@ export function AdminDataTable<T>({
                   if (action.show && !action.show(item)) return null;
                   const Icon = action.icon;
                   return (
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       key={index}
                       onClick={() => !action.disabled && action.onClick(item)}
-                      className={`cursor-pointer ${action.className || ''} ${action.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`cursor-pointer ${action.className || ""} ${
+                        action.disabled ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                       disabled={action.disabled}
                     >
                       <Icon className="h-4 w-4 mr-2" />
@@ -203,48 +221,37 @@ export function AdminDataTable<T>({
                   );
                 })}
                 {onView && (
-                  <DropdownMenuItem 
-                    onClick={() => onView(item)}
-                    className="cursor-pointer"
-                  >
+                  <DropdownMenuItem onClick={() => onView(item)} className="cursor-pointer">
                     <Eye className="h-4 w-4 mr-2" />
-                    {t('common.view')}
+                    {t("common.view")}
                   </DropdownMenuItem>
                 )}
                 {onEdit && (
-                  <DropdownMenuItem 
-                    onClick={() => onEdit(item)}
-                    className="cursor-pointer"
-                  >
+                  <DropdownMenuItem onClick={() => onEdit(item)} className="cursor-pointer">
                     <Edit className="h-4 w-4 mr-2" />
-                    {t('common.edit')}
+                    {t("common.edit")}
                   </DropdownMenuItem>
                 )}
                 {onDelete && (!canDelete || canDelete(item)) && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <DropdownMenuItem 
-                        onSelect={(e) => e.preventDefault()}
-                        className="cursor-pointer text-red-600"
-                      >
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer text-red-600">
                         <Trash2 className="h-4 w-4 mr-2" />
-                        {t('common.delete')}
+                        {t("common.delete")}
                       </DropdownMenuItem>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>{t('admin.deleteItem')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t('admin.deleteConfirmation')}
-                        </AlertDialogDescription>
+                        <AlertDialogTitle>{t("admin.deleteItem")}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("admin.deleteConfirmation")}</AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction 
+                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                        <AlertDialogAction
                           onClick={() => handleSingleDelete(getRowId(item))}
                           className="bg-red-600 hover:bg-red-700"
                         >
-                          {t('common.delete')}
+                          {t("common.delete")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -270,17 +277,21 @@ export function AdminDataTable<T>({
     onRowSelectionChange: setRowSelection,
     state: {
       rowSelection,
-      ...(serverSide && pagination ? {
-        pagination: {
-          pageIndex: pagination.page - 1,
-          pageSize: pagination.pageSize,
-        },
-      } : {}),
+      ...(serverSide && pagination
+        ? {
+            pagination: {
+              pageIndex: pagination.page - 1,
+              pageSize: pagination.pageSize,
+            },
+          }
+        : {}),
     },
-    ...(serverSide ? {
-      manualPagination: true,
-      pageCount: pagination?.totalPages || 0,
-    } : {}),
+    ...(serverSide
+      ? {
+          manualPagination: true,
+          pageCount: pagination?.totalPages || 0,
+        }
+      : {}),
     getRowId: (row) => getRowId(row),
   });
 
@@ -288,41 +299,41 @@ export function AdminDataTable<T>({
     setIsExporting(true);
     let csvData: string[][];
     let dynamicHeaders: string[] = exportHeaders;
-    
+
     try {
       // Fetch data for export
       let exportData: T[];
-      
+
       if (onExportAll) {
         try {
           exportData = await onExportAll();
         } catch (error) {
-          console.error('Failed to fetch all data for export:', error);
+          console.error("Failed to fetch all data for export:", error);
           // Fallback to table data
-          exportData = table.getFilteredRowModel().rows.map(row => row.original);
+          exportData = table.getFilteredRowModel().rows.map((row) => row.original);
         }
       } else {
         // Use current table view data (old behavior)
-        exportData = table.getFilteredRowModel().rows.map(row => row.original);
+        exportData = table.getFilteredRowModel().rows.map((row) => row.original);
       }
-      
+
       // Generate dynamic headers if function is provided
       if (generateDynamicHeaders) {
         dynamicHeaders = generateDynamicHeaders(exportData);
       }
-      
+
       // Generate CSV data with dynamic headers
-      csvData = exportData.map(item => getExportData(item, dynamicHeaders));
+      csvData = exportData.map((item) => getExportData(item, dynamicHeaders));
 
       const csvContent = [dynamicHeaders, ...csvData]
-        .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
-        .join('\n');
+        .map((row) => row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(","))
+        .join("\n");
 
-      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const blob = new Blob([csvContent], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.download = `${exportFilename}_${new Date().toISOString().split('T')[0]}.csv`;
+      link.download = `${exportFilename}_${new Date().toISOString().split("T")[0]}.csv`;
       link.click();
       window.URL.revokeObjectURL(url);
     } finally {
@@ -398,19 +409,18 @@ export function AdminDataTable<T>({
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
       <div className="p-6 space-y-4">
-
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
             <div className="space-y-1">
-              <div className="text-sm font-medium">{t('common.search')}</div>
+              <div className="text-sm font-medium">{t("common.search")}</div>
               <Input
-                placeholder={t('admin.searchAllColumns')}
+                placeholder={t("admin.searchAllColumns")}
                 value={searchValue}
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 className="w-full md:w-64"
               />
             </div>
-            
+
             {filters}
           </div>
 
@@ -429,52 +439,52 @@ export function AdminDataTable<T>({
                         <AlertDialogTrigger asChild>
                           <Button variant="destructive">
                             <Trash2 className="h-4 w-4 mr-2" />
-                            {t('admin.deleteSelected')} ({Object.keys(rowSelection).length})
+                            {t("admin.deleteSelected")} ({Object.keys(rowSelection).length})
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>{t('admin.deleteSelectedItems')}</AlertDialogTitle>
+                            <AlertDialogTitle>{t("admin.deleteSelectedItems")}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              {t('admin.deleteSelectedConfirmation', { count: Object.keys(rowSelection).length })}
+                              {t("admin.deleteSelectedConfirmation", { count: Object.keys(rowSelection).length })}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleBulkDelete}>{t('common.delete')}</AlertDialogAction>
+                            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleBulkDelete}>{t("common.delete")}</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
                     ) : (
                       <Button variant="destructive" onClick={handleDeleteButtonClick}>
                         <Trash2 className="h-4 w-4 mr-2" />
-                        {t('admin.cancelSelection')}
+                        {t("admin.cancelSelection")}
                       </Button>
                     )}
                     <Button variant="outline" onClick={handleCancelSelection}>
-                      {t('common.cancel')}
+                      {t("common.cancel")}
                     </Button>
                   </>
                 ) : (
                   onDelete && (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleDeleteButtonClick}
                       disabled={table.getFilteredRowModel().rows.length === 0}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      {t('common.delete')}
+                      {t("common.delete")}
                     </Button>
                   )
                 )}
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   onClick={exportToCSV}
                   disabled={table.getFilteredRowModel().rows.length === 0 || isFetching || isExporting}
                 >
-                  <Download className={`h-4 w-4 mr-2 ${isExporting ? 'animate-spin' : ''}`} />
-                  {isExporting ? t('common.loading') : t('admin.exportCSV')}
+                  <Download className={`h-4 w-4 mr-2 ${isExporting ? "animate-spin" : ""}`} />
+                  {isExporting ? t("common.loading") : t("admin.exportCSV")}
                 </Button>
               </>
             )}
@@ -482,7 +492,11 @@ export function AdminDataTable<T>({
         </div>
 
         {isLoading || isFetching ? (
-          isMobile ? <MobileCardSkeleton /> : <TableSkeleton />
+          isMobile ? (
+            <MobileCardSkeleton />
+          ) : (
+            <TableSkeleton />
+          )
         ) : isMobile ? (
           <div className="space-y-4">
             {table.getRowModel().rows?.length ? (
@@ -490,15 +504,11 @@ export function AdminDataTable<T>({
                 const item = row.original;
                 const isSelected = row.getIsSelected();
                 const onToggleSelect = () => row.toggleSelected();
-                
+
                 if (renderMobileCard) {
-                  return (
-                    <div key={row.id}>
-                      {renderMobileCard(item, isSelected, onToggleSelect, showCheckboxes)}
-                    </div>
-                  );
+                  return <div key={row.id}>{renderMobileCard(item, isSelected, onToggleSelect, showCheckboxes)}</div>;
                 }
-                
+
                 // Default mobile card if no custom renderer provided
                 return (
                   <Card key={row.id} className="p-4">
@@ -513,18 +523,22 @@ export function AdminDataTable<T>({
                           />
                         )}
                         <div className="flex-1">
-                          {row.getVisibleCells().slice(showCheckboxes ? 1 : 0, -1).map((cell) => (
-                            <div key={cell.id} className="mb-2">
-                              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                {typeof cell.column.columnDef.header === 'string' 
-                                  ? cell.column.columnDef.header 
-                                  : cell.column.id}:
-                              </span>
-                              <div className="text-sm">
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          {row
+                            .getVisibleCells()
+                            .slice(showCheckboxes ? 1 : 0, -1)
+                            .map((cell) => (
+                              <div key={cell.id} className="mb-2">
+                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                  {typeof cell.column.columnDef.header === "string"
+                                    ? cell.column.columnDef.header
+                                    : cell.column.id}
+                                  :
+                                </span>
+                                <div className="text-sm">
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
                         </div>
                         {(onEdit || onDelete || customActions.length > 0) && (
                           <DropdownMenu>
@@ -538,10 +552,10 @@ export function AdminDataTable<T>({
                                 if (action.show && !action.show(item)) return null;
                                 const Icon = action.icon;
                                 return (
-                                  <DropdownMenuItem 
+                                  <DropdownMenuItem
                                     key={index}
                                     onClick={() => action.onClick(item)}
-                                    className={`cursor-pointer ${action.className || ''}`}
+                                    className={`cursor-pointer ${action.className || ""}`}
                                   >
                                     <Icon className="h-4 w-4 mr-2" />
                                     {action.label}
@@ -549,39 +563,34 @@ export function AdminDataTable<T>({
                                 );
                               })}
                               {onEdit && (
-                                <DropdownMenuItem 
-                                  onClick={() => onEdit(item)}
-                                  className="cursor-pointer"
-                                >
+                                <DropdownMenuItem onClick={() => onEdit(item)} className="cursor-pointer">
                                   <Edit className="h-4 w-4 mr-2" />
-                                  {t('common.edit')}
+                                  {t("common.edit")}
                                 </DropdownMenuItem>
                               )}
                               {onDelete && (!canDelete || canDelete(item)) && (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <DropdownMenuItem 
+                                    <DropdownMenuItem
                                       onSelect={(e) => e.preventDefault()}
                                       className="cursor-pointer text-red-600"
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
-                                      {t('common.delete')}
+                                      {t("common.delete")}
                                     </DropdownMenuItem>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>{t('admin.deleteItem')}</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        {t('admin.deleteConfirmation')}
-                                      </AlertDialogDescription>
+                                      <AlertDialogTitle>{t("admin.deleteItem")}</AlertDialogTitle>
+                                      <AlertDialogDescription>{t("admin.deleteConfirmation")}</AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                      <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                                      <AlertDialogAction 
+                                      <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                                      <AlertDialogAction
                                         onClick={() => handleSingleDelete(getRowId(item))}
                                         className="bg-red-600 hover:bg-red-700"
                                       >
-                                        {t('common.delete')}
+                                        {t("common.delete")}
                                       </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
@@ -597,9 +606,7 @@ export function AdminDataTable<T>({
               })
             ) : (
               <Card className="p-8">
-                <div className="text-center text-sm text-gray-500">
-                  {t('admin.noResults')}
-                </div>
+                <div className="text-center text-sm text-gray-500">{t("admin.noResults")}</div>
               </Card>
             )}
           </div>
@@ -611,12 +618,7 @@ export function AdminDataTable<T>({
                   <tr key={headerGroup.id} className="border-b border-gray-200 dark:border-gray-700">
                     {headerGroup.headers.map((header) => (
                       <th key={header.id} className="text-left px-3 py-2 font-medium text-sm whitespace-nowrap">
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                       </th>
                     ))}
                   </tr>
@@ -639,7 +641,7 @@ export function AdminDataTable<T>({
                 ) : (
                   <tr>
                     <td colSpan={columns.length} className="h-16 text-center text-sm text-gray-500">
-                      {t('admin.noResults')}
+                      {t("admin.noResults")}
                     </td>
                   </tr>
                 )}
@@ -654,13 +656,14 @@ export function AdminDataTable<T>({
               <Skeleton className="h-4 w-48" />
             ) : serverSide && pagination ? (
               <>
-                {Object.keys(rowSelection).length} of{" "}
-                {data.length} row(s) selected. Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} total.
+                {Object.keys(rowSelection).length} of {data.length} row(s) selected. Showing{" "}
+                {(pagination.page - 1) * pagination.pageSize + 1} to{" "}
+                {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} total.
               </>
             ) : (
               <>
-                {table.getFilteredSelectedRowModel().rows.length} of{" "}
-                {table.getFilteredRowModel().rows.length} row(s) selected.
+                {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s)
+                selected.
               </>
             )}
           </div>
@@ -703,7 +706,7 @@ export function AdminDataTable<T>({
                   disabled={!pagination.hasPreviousPage}
                   className="flex-1 md:flex-none"
                 >
-                  {t('common.previous')}
+                  {t("common.previous")}
                 </Button>
                 <div className="flex items-center gap-1 px-2">
                   <span className="text-sm">
@@ -717,7 +720,7 @@ export function AdminDataTable<T>({
                   disabled={!pagination.hasNextPage}
                   className="flex-1 md:flex-none"
                 >
-                  {t('common.next')}
+                  {t("common.next")}
                 </Button>
               </>
             ) : (
@@ -729,7 +732,7 @@ export function AdminDataTable<T>({
                   disabled={!table.getCanPreviousPage()}
                   className="flex-1 md:flex-none"
                 >
-                  {t('common.previous')}
+                  {t("common.previous")}
                 </Button>
                 <Button
                   variant="outline"
@@ -738,7 +741,7 @@ export function AdminDataTable<T>({
                   disabled={!table.getCanNextPage()}
                   className="flex-1 md:flex-none"
                 >
-                  {t('common.next')}
+                  {t("common.next")}
                 </Button>
               </>
             )}

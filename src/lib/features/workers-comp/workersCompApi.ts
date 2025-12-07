@@ -23,6 +23,10 @@ export interface WorkersCompData {
   lastUpdated: string;
 }
 
+export interface GetWorkersCompParams {
+  projectId?: string;
+}
+
 export const workersCompApi = createApi({
   reducerPath: 'workersCompApi',
   baseQuery: fetchBaseQuery({
@@ -37,8 +41,15 @@ export const workersCompApi = createApi({
   }),
   tagTypes: ['WorkersCompData'],
   endpoints: (builder) => ({
-    getWorkersCompData: builder.query<WorkersCompData, void>({
-      query: () => '',
+    getWorkersCompData: builder.query<WorkersCompData, GetWorkersCompParams | void>({
+      query: (params) => {
+        if (!params || !params.projectId) {
+          return '';
+        }
+        const urlParams = new URLSearchParams();
+        urlParams.append('projectId', params.projectId);
+        return `?${urlParams}`;
+      },
       providesTags: ['WorkersCompData'],
     }),
   }),

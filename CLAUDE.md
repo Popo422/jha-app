@@ -464,6 +464,98 @@ export async function GET(
 
 ## Common Issues & Solutions
 
+### RTK Query Cache Invalidation (CRITICAL)
+**Issue**: Data not refreshing after create/update/delete operations
+**Solution**: Use RTK Query's tag-based cache invalidation instead of manual refetch()
+```typescript
+// ❌ WRONG - Manual refetch (causes extra network requests)
+const { refetch } = useGetItemsQuery()
+const [createItem] = useCreateItemMutation()
+
+const handleCreate = async () => {
+  await createItem(data)
+  refetch() // Manual refetch - NOT needed with proper invalidation
+}
+
+// ✅ CORRECT - Tag-based invalidation (automatic refresh)
+createItem: builder.mutation({
+  invalidatesTags: ['Item'] // Automatically refetches all queries with 'Item' tag
+})
+
+// For project-scoped data:
+invalidatesTags: (result, error, { projectId }) => [
+  { type: 'Item', id: `PROJECT_${projectId}` }
+]
+
+// Individual item updates:
+updateItem: builder.mutation({
+  invalidatesTags: (result, error, { id }) => [
+    { type: 'Item', id }
+  ]
+})
+```
+
+### Multi-Delete Implementation
+**Issue**: Multi-delete functionality not working in AdminDataTable
+**Solution**: Ensure `onBulkDelete` prop is passed to AdminDataTable
+```typescript
+// Add bulk delete handler
+const handleBulkDelete = async (ids: string[]) => {
+  // Use Promise.all for parallel deletion
+  await Promise.all(
+    ids.map(id => deleteItem({ id, projectId }).unwrap())
+  )
+}
+
+// Pass to AdminDataTable (REQUIRED for multi-delete to appear)
+<AdminDataTable
+  onDelete={handleDelete}
+  onBulkDelete={handleBulkDelete} // This prop enables multi-delete UI
+  // ... other props
+/>
+```
+
+### Browser Confirm vs Custom AlertDialog
+**Issue**: Seeing browser alert instead of styled confirmation dialog
+**Solution**: AdminDataTable uses custom AlertDialog - avoid manual confirm() calls
+```typescript
+// ❌ WRONG - Browser confirm (breaks UI consistency)
+const handleDelete = (id) => {
+  if (confirm("Are you sure?")) {
+    deleteItem(id)
+  }
+}
+
+// ✅ CORRECT - Let AdminDataTable handle confirmation
+const handleDelete = async (id) => {
+  await deleteItem(id) // AdminDataTable shows styled AlertDialog automatically
+}
+```
+
+### TypeScript Step State Errors
+**Issue**: Step type errors in modal components (e.g., "upload" | "preview" vs "error")
+**Solution**: Include all possible step values in type definition
+```typescript
+// ❌ WRONG - Missing step values
+const [step, setStep] = useState<"upload" | "preview">("upload")
+
+// ✅ CORRECT - All step values included  
+const [step, setStep] = useState<"upload" | "preview" | "uploading" | "success" | "error">("upload")
+```
+
+### Construction Project Examples
+**Issue**: Unrealistic example data in templates
+**Solution**: Use construction-specific examples
+```typescript
+// ❌ Generic examples
+predecessor: "Task 1"
+progress: "50"
+
+// ✅ Construction scheduling format
+predecessor: "10FS+11 wks" // Task 10, Finish-to-Start + 11 weeks lag
+progress: "75" // Percentage complete
+```
+
 ### RTK Query Store Configuration
 **Issue**: "Cannot read properties of undefined" errors
 **Solution**: Ensure all API slices are added to store reducers and middleware
@@ -547,6 +639,31 @@ When adding any new feature to the application, follow this systematic approach:
 // 3. Use type assertions for dynamic object access (keyof typeof)
 // 4. Handle async params properly in Next.js 14 routes
 ```
+
+## Database Date Field Standards
+
+### Date Field Schema Guidelines
+
+**IMPORTANT**: For all new date fields, use `timestamp` or `date` types instead of `text` to avoid timezone issues:
+
+```typescript
+// ❌ AVOID - Text dates can cause timezone display issues
+date: text('date').notNull(),
+
+// ✅ PREFERRED - Use timestamp for date + time
+createdAt: timestamp('created_at').notNull().defaultNow(),
+updatedAt: timestamp('updated_at').notNull().defaultNow(),
+
+// ✅ PREFERRED - Use date for date-only fields  
+workDate: date('work_date').notNull(),
+dueDate: date('due_date'),
+```
+
+**Legacy Note**: Some existing tables use `text('date')` format which can cause timezone display inconsistencies between table views and form inputs. For new features, always use proper date/timestamp types.
+
+**Universal Date Utilities**: Use the standardized date formatting utilities:
+- Backend: `formatObjectDatesForAPI()` in `/lib/utils/api-date-formatting.ts`
+- Frontend: `useDateDisplay()` hook and `DateTableCell` component for consistent date displays
 
 ## Adding New Database Fields Workflow
 

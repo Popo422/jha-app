@@ -181,6 +181,8 @@ export async function GET(request: NextRequest) {
       name: projects.name,
       projectManager: projects.projectManager,
       location: projects.location,
+      city: projects.city,
+      state: projects.state,
       companyId: projects.companyId,
       projectCost: projects.projectCost,
       startDate: projects.startDate,
@@ -303,6 +305,8 @@ export async function POST(request: NextRequest) {
           name: project.name.trim(),
           projectManager: 'Project Manager', // Default for onboarding, can be updated later
           location: project.location.trim(),
+          city: project.city ? project.city.trim() : null,
+          state: project.state ? project.state.trim() : null,
           companyId: auth.admin.companyId,
           projectCost: project.projectCost ? project.projectCost.toString() : null,
           startDate: project.startDate || null,
@@ -322,7 +326,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Single project creation (existing logic)
-    const { name, projectManager, location, projectCost, startDate, endDate, projectCode, contractId } = body
+    const { name, projectManager, location, city, state, projectCost, startDate, endDate, projectCode, contractId } = body
 
     // Validate required fields
     if (!name || !projectManager || !location) {
@@ -371,6 +375,8 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       projectManager: projectManager.trim(),
       location: location.trim(),
+      city: city ? city.trim() : null,
+      state: state ? state.trim() : null,
       companyId: auth.admin.companyId,
       projectCost: projectCost ? projectCost.toString() : null,
       startDate: startDate || null,
@@ -430,7 +436,7 @@ export async function PUT(request: NextRequest) {
 
 
     const body = await request.json()
-    const { id, name, projectManager, location, projectCost, startDate, endDate, projectCode, contractId } = body
+    const { id, name, projectManager, location, city, state, projectCost, startDate, endDate, projectCode, contractId } = body
 
     if (!id) {
       return NextResponse.json(
@@ -467,6 +473,8 @@ export async function PUT(request: NextRequest) {
       name: name.trim(),
       projectManager: projectManager.trim(),
       location: location.trim(),
+      city: city ? city.trim() : null,
+      state: state ? state.trim() : null,
       projectCost: projectCost ? projectCost.toString() : null,
       startDate: startDate || null,
       endDate: endDate || null,

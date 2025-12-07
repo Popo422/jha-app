@@ -83,6 +83,8 @@ export const contractors = pgTable('contractors', {
   language: text('language').default('en'), // Language preference: 'en' or 'es'
   type: text('type').default('contractor'), // Type: 'contractor' or 'foreman'
   address: text('address'),
+  city: text('city'), // City
+  state: text('state'), // State
   phone: text('phone'),
   race: text('race'),
   gender: text('gender'),
@@ -102,6 +104,8 @@ export const projects = pgTable('projects', {
   name: text('name').notNull(),
   projectManager: text('project_manager').notNull(),
   location: text('location').notNull(),
+  city: text('city'), // City
+  state: text('state'), // State
   companyId: uuid('company_id').notNull(),
   projectCost: numeric('project_cost', { precision: 12, scale: 2 }), // Optional project cost
   startDate: date('start_date'),
@@ -439,5 +443,31 @@ export const expenseDocuments = pgTable('expense_documents', {
   uploadedBy: uuid('uploaded_by').notNull(), // Admin user ID who uploaded
   uploadedByName: text('uploaded_by_name').notNull(), // Admin name for display
   createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
+// Daily Logs Schema
+export const dailyLogs = pgTable('daily_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  companyId: uuid('company_id').notNull(),
+
+  // Task Information
+  taskName: text('task_name').notNull(),
+  startDate: date('start_date'),
+  endDate: date('end_date'),
+  predecessor: text('predecessor'), // References other daily log entries or task numbers
+  progress: numeric('progress', { precision: 5, scale: 2 }).default('0'), // 0-100 percentage
+
+  // Log Information
+  logDate: date('log_date').notNull(), // Date this log entry was made
+  notes: text('notes'), // Additional notes or details
+
+  // Creation Information
+  createdBy: uuid('created_by').notNull(), // Admin user ID who created
+  createdByName: text('created_by_name').notNull(), // Admin name for display
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 

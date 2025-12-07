@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DateInput } from "@/components/ui/date-input";
+import { StateCitySelect } from "@/components/ui/state-city-select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
@@ -43,6 +44,8 @@ type OnboardingStep = 'details' | 'documents' | 'schedule';
 interface ProjectDetailsForm {
   name: string;
   location: string;
+  city: string;
+  state: string;
   projectManager: string;
   projectCost: string;
   startDate: string;
@@ -82,6 +85,8 @@ export default function ProjectOnboardingPage() {
   const [projectForm, setProjectForm] = useState<ProjectDetailsForm>({
     name: '',
     location: '',
+    city: '',
+    state: '',
     projectManager: '',
     projectCost: '',
     startDate: '',
@@ -181,6 +186,8 @@ export default function ProjectOnboardingPage() {
       const result = await createProject({
         name: projectForm.name,
         location: projectForm.location,
+        city: projectForm.city || undefined,
+        state: projectForm.state || undefined,
         projectManager: projectForm.projectManager,
         projectCost: projectForm.projectCost || undefined,
         startDate: projectForm.startDate || undefined,
@@ -480,6 +487,16 @@ export default function ProjectOnboardingPage() {
               <p className="text-sm text-red-500">{formErrors.location}</p>
             )}
           </div>
+          
+          {/* State and City Dropdowns */}
+          <StateCitySelect
+            stateValue={projectForm.state}
+            cityValue={projectForm.city}
+            onStateChange={(state) => setProjectForm(prev => ({ ...prev, state }))}
+            onCityChange={(city) => setProjectForm(prev => ({ ...prev, city }))}
+            stateLabel="State (Optional)"
+            cityLabel="City (Optional)"
+          />
 
           <div className="space-y-2">
             <Label htmlFor="projectManager" className="flex items-center gap-2 text-base">

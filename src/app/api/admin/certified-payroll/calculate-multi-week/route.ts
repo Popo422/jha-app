@@ -89,6 +89,48 @@ const getDayName = (date: Date): 'sunday' | 'monday' | 'tuesday' | 'wednesday' |
   return days[date.getDay()] as any;
 };
 
+// Helper function to extract city from address string
+const extractCityFromAddress = (address: string): string | null => {
+  if (!address) return null;
+  
+  // Split address by commas and clean up
+  const parts = address.split(',').map(part => part.trim());
+  
+  // Typical address format: "Street, City, State" or "Street, City, State ZIP"
+  if (parts.length >= 2) {
+    const cityPart = parts[parts.length - 2]; // Second to last part is usually city
+    
+    // Clean up common state/zip patterns
+    const cleaned = cityPart.replace(/\s+\d{5}(-\d{4})?$/, '').trim(); // Remove ZIP codes
+    
+    if (cleaned.length > 0 && !/^\d+$/.test(cleaned)) { // Make sure it's not just numbers
+      return cleaned;
+    }
+  }
+  
+  return null;
+};
+
+// Helper function to check if contractor is city resident
+const isContractorCityResident = (contractorCity: string | null, contractorAddress: string | null, projectCity: string | null): boolean => {
+  if (!projectCity) return false;
+  
+  // First check direct city match
+  if (contractorCity && contractorCity.toLowerCase().trim() === projectCity.toLowerCase().trim()) {
+    return true;
+  }
+  
+  // If no direct city, try to extract from address
+  if (!contractorCity && contractorAddress) {
+    const extractedCity = extractCityFromAddress(contractorAddress);
+    if (extractedCity && extractedCity.toLowerCase().trim() === projectCity.toLowerCase().trim()) {
+      return true;
+    }
+  }
+  
+  return false;
+};
+
 export async function POST(request: NextRequest) {
   try {
     console.log('🚀 Starting multi-week payroll calculation...');
@@ -264,8 +306,9 @@ export async function POST(request: NextRequest) {
           ethnicity: contractor.race || '',
           gender: contractor.gender || '',
           workClassification: contractor.workClassification || '',
-          location: project.location || '',
-          type: contractor.type || '',
+          projectType: contractor.projectType || '',
+          group: contractor.group || '',
+          location: contractor.address || '',
           dailyHours,
           totalHours: { 
             straight: totalStraight, 
@@ -335,6 +378,59 @@ export async function POST(request: NextRequest) {
       totalWorkerEntries: weeklyData.reduce((sum, week) => sum + week.workers.length, 0)
     });
 
+    // Calculate city resident totals if project has a city
+    const projectCity = project.city;
+    let cityResidentTotals = null;
+    
+    if (projectCity && projectCity.trim()) {
+      console.log(`🏙️ Calculating city resident totals for project city: ${projectCity}`);
+      
+      let totalResidentHours = 0;
+      let totalNonResidentHours = 0;
+      
+      // Process all workers across all weeks
+      weeklyData.forEach(week => {
+        week.workers.forEach(worker => {
+          // Add null check for worker
+          if (!worker) return;
+          
+          const totalHours = (worker.totalHours?.straight || 0) + 
+                           (worker.totalHours?.overtime || 0) + 
+                           (worker.totalHours?.double || 0);
+          
+          // Find the original contractor data to get city and address
+          const originalContractor = projectContractors.find(pc => pc.contractor?.id === worker.id)?.contractor;
+          
+          if (originalContractor && totalHours > 0) {
+            const isResident = isContractorCityResident(
+              originalContractor.city, 
+              originalContractor.address, 
+              projectCity
+            );
+            
+            if (isResident) {
+              totalResidentHours += totalHours;
+            } else {
+              totalNonResidentHours += totalHours;
+            }
+          } else if (totalHours > 0) {
+            // Default to non-resident if no contractor data found
+            totalNonResidentHours += totalHours;
+          }
+        });
+      });
+      
+      cityResidentTotals = {
+        projectCity: projectCity.trim(),
+        totalResidentHours: Math.round(totalResidentHours * 100) / 100, // Round to 2 decimal places
+        totalNonResidentHours: Math.round(totalNonResidentHours * 100) / 100
+      };
+      
+      console.log('🏙️ City resident totals calculated:', cityResidentTotals);
+    } else {
+      console.log('🏙️ No project city specified, skipping city resident totals');
+    }
+
     // Get the first subcontractor for the main header info (assuming one subcontractor per project)
     const mainSubcontractor = subcontractorInfo.length > 0 ? subcontractorInfo[0] : null;
     console.log(`🏢 Main subcontractor:`, mainSubcontractor?.name || 'None found');
@@ -348,6 +444,8 @@ export async function POST(request: NextRequest) {
         projectInfo: {
           name: project.name,
           location: project.location,
+          city: project.city || null,
+          state: project.state || null,
           projectCode: project.projectCode || 'Not specified',
           contractId: project.contractId || 'Not specified',
           projectManager: project.projectManager || 'Not specified',
@@ -385,7 +483,8 @@ export async function POST(request: NextRequest) {
           contact: 'Not specified',
           foreman: 'Not specified',
         },
-        weeks: weeklyData
+        weeks: weeklyData,
+        cityResidentTotals
       }
     });
 

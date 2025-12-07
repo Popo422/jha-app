@@ -8,6 +8,33 @@ const mockReportData = {
   weekStart: "2024-11-04",
   weekEnd: "2024-11-10", 
   projectName: "Highway Construction Project",
+  projectInfo: {
+    name: "Highway Construction Project",
+    location: "Highway 101, Mile Markers 10-25",
+    city: "Chicago",
+    state: "Illinois",
+    projectCode: "HWY-2024-001",
+    contractId: "DOT-Contract-789456",
+    projectManager: "Sarah Johnson",
+    startDate: "2024-10-01",
+    endDate: "2024-12-31"
+  },
+  subcontractorInfo: {
+    companyName: "ABC Construction Services LLC",
+    trade: "Heavy Highway Construction",
+    contractorLicenseNo: "CLN-123456789",
+    specialtyLicenseNo: "SLN-987654321",
+    federalTaxId: "12-3456789",
+    motorCarrierPermitNo: "MCP-555888",
+    isUnion: true,
+    isSelfInsured: false,
+    workersCompPolicy: "WCP-Policy-2024-001",
+    email: "contact@abcconstruction.com",
+    phone: "(555) 123-4567",
+    address: "1234 Industrial Blvd, Construction City, CA 90210",
+    contact: "Mike Rodriguez",
+    foreman: "Tony Martinez"
+  },
   workers: [
     {
       id: "1",
@@ -17,9 +44,10 @@ const mockReportData = {
       driversLicense: "DL123456789",
       ethnicity: "White",
       gender: "Male",
-      workClassification: "Operating Engineer HWY 1/",
-      location: "Project Site",
-      type: "contractor",
+      workClassification: "Operating Engineer",
+      projectType: "HWY",
+      group: "1",
+      location: "Highway 101 Mile Marker 15",
       dailyHours: {
         sunday: { straight: 0, overtime: 0, double: 0 },
         monday: { straight: 8, overtime: 0, double: 0 },
@@ -44,7 +72,7 @@ const mockReportData = {
         voluntaryMedical: 32.50,
         vacDues: 28.75,
         travSubs: 18.25,
-        allOtherDeductions: 25.00,
+        allOtherDeductions: 82.000,
         totalDeduction: 517.33,
       },
       fringes: {
@@ -72,6 +100,7 @@ const mockReportData = {
         fringesPaidToEmployee: "No",
         vacationHolidayDuesInGrossPay: "Yes", 
         voluntaryContributionsInGrossPay: "No",
+        dateOfHire: "03/15/2023"
       }
     },
     {
@@ -82,9 +111,10 @@ const mockReportData = {
       driversLicense: "DL987654321",
       ethnicity: "Hispanic",
       gender: "Female",
-      workClassification: "Laborer Common/",
-      location: "Project Site",
-      type: "subcontractor",
+      workClassification: "Laborer Common",
+      projectType: "BLD",
+      group: "2",
+      location: "Building Site Foundation Area",
       dailyHours: {
         sunday: { straight: 0, overtime: 0, double: 0 },
         monday: { straight: 8, overtime: 0, double: 0 },
@@ -109,7 +139,7 @@ const mockReportData = {
         voluntaryMedical: 25.75,
         vacDues: 22.50,
         travSubs: 15.25,
-        allOtherDeductions: 15.00,
+        allOtherDeductions: 140.430,
         totalDeduction: 402.73,
       },
       fringes: {
@@ -137,6 +167,7 @@ const mockReportData = {
         fringesPaidToEmployee: "No",
         vacationHolidayDuesInGrossPay: "Yes",
         voluntaryContributionsInGrossPay: "No",
+        dateOfHire: "08/22/2022"
       }
     },
     {
@@ -147,9 +178,10 @@ const mockReportData = {
       driversLicense: "DL456123789",
       ethnicity: "Black",
       gender: "Male",
-      workClassification: "Equipment Operator/",
-      location: "Project Site", 
-      type: "contractor",
+      workClassification: "Equipment Operator",
+      projectType: "FLT",
+      group: "3",
+      location: "Flatwork Concrete Pour Zone",
       dailyHours: {
         sunday: { straight: 0, overtime: 0, double: 0 },
         monday: { straight: 8, overtime: 2, double: 0 },
@@ -174,7 +206,7 @@ const mockReportData = {
         voluntaryMedical: 42.50,
         vacDues: 38.75,
         travSubs: 25.00,
-        allOtherDeductions: 35.00,
+        allOtherDeductions: 155.800,
         totalDeduction: 719.37,
       },
       fringes: {
@@ -202,9 +234,37 @@ const mockReportData = {
         fringesPaidToEmployee: "No",
         vacationHolidayDuesInGrossPay: "Yes",
         voluntaryContributionsInGrossPay: "No",
+        dateOfHire: "01/10/2024"
       }
     }
-  ]
+  ],
+  certification: {
+    certificationDate: "2024-12-01",
+    projectManager: "Sarah Johnson",
+    position: "Project Manager",
+    companyName: "ABC Construction Services LLC",
+    projectName: "Highway Construction Project",
+    payrollStartDate: "2024-11-04",
+    payrollEndDate: "2024-11-10",
+    fringeBenefitsOption: "plans" as "plans" | "cash",
+    exceptions: [
+      {
+        exception: "Apprentice Carpenter",
+        explanation: "First year apprentice working under supervision, reduced wage rate per apprenticeship agreement"
+      },
+      {
+        exception: "Equipment Operator Trainee", 
+        explanation: "Training period - 90% of journeyman rate as per union contract"
+      }
+    ],
+    remarks: "All workers have completed required safety training. Project is on schedule and within budget parameters.",
+    signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+  },
+  cityResidentTotals: {
+    projectCity: "Chicago",
+    totalResidentHours: 56.0,
+    totalNonResidentHours: 82.0
+  }
 };
 
 // Multi-week mock data example
@@ -212,6 +272,33 @@ const mockMultiWeekReportData = {
   weekStart: "2024-11-04",
   weekEnd: "2024-11-17", 
   projectName: "Highway Construction Project - Multi Week",
+  projectInfo: {
+    name: "Highway Construction Project - Multi Week",
+    location: "Highway 101, Mile Markers 10-25",
+    city: "Chicago",
+    state: "Illinois", 
+    projectCode: "HWY-2024-001",
+    contractId: "DOT-Contract-789456",
+    projectManager: "Sarah Johnson",
+    startDate: "2024-10-01",
+    endDate: "2024-12-31"
+  },
+  subcontractorInfo: {
+    companyName: "ABC Construction Services LLC",
+    trade: "Heavy Highway Construction",
+    contractorLicenseNo: "CLN-123456789",
+    specialtyLicenseNo: "SLN-987654321",
+    federalTaxId: "12-3456789",
+    motorCarrierPermitNo: "MCP-555888",
+    isUnion: true,
+    isSelfInsured: false,
+    workersCompPolicy: "WCP-Policy-2024-001",
+    email: "contact@abcconstruction.com",
+    phone: "(555) 123-4567",
+    address: "1234 Industrial Blvd, Construction City, CA 90210",
+    contact: "Mike Rodriguez",
+    foreman: "Tony Martinez"
+  },
   workers: [], // Not used for multi-week
   weeks: [
     {
@@ -226,9 +313,10 @@ const mockMultiWeekReportData = {
           driversLicense: "DL123456789",
           ethnicity: "White",
           gender: "Male",
-          workClassification: "Operating Engineer HWY 1/",
-          location: "Project Site",
-          type: "contractor",
+          workClassification: "Operating Engineer",
+          projectType: "HWY",
+          group: "1",
+          location: "Highway 101 Mile Marker 15",
           dailyHours: {
             sunday: { straight: 0, overtime: 0, double: 0 },
             monday: { straight: 8, overtime: 0, double: 0 },
@@ -297,9 +385,10 @@ const mockMultiWeekReportData = {
           driversLicense: "DL123456789",
           ethnicity: "White",
           gender: "Male",
-          workClassification: "Operating Engineer HWY 1/",
-          location: "Project Site",
-          type: "contractor",
+          workClassification: "Operating Engineer",
+          projectType: "HWY",
+          group: "1",
+          location: "Highway 101 Mile Marker 15",
           dailyHours: {
             sunday: { straight: 0, overtime: 0, double: 0 },
             monday: { straight: 8, overtime: 2, double: 0 },
@@ -356,7 +445,30 @@ const mockMultiWeekReportData = {
         }
       ]
     }
-  ]
+  ],
+  certification: {
+    certificationDate: "2024-12-01",
+    projectManager: "Sarah Johnson",
+    position: "Senior Project Manager", 
+    companyName: "ABC Construction Services LLC",
+    projectName: "Highway Construction Project - Multi Week",
+    payrollStartDate: "2024-11-04",
+    payrollEndDate: "2024-11-17",
+    fringeBenefitsOption: "cash" as "plans" | "cash",
+    exceptions: [
+      {
+        exception: "Heavy Equipment Operator",
+        explanation: "Certified operator with additional safety premium per collective bargaining agreement"
+      }
+    ],
+    remarks: "Multi-week certification covering two consecutive payroll periods. All safety protocols followed.",
+    signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+  },
+  cityResidentTotals: {
+    projectCity: "Chicago",
+    totalResidentHours: 108.5,
+    totalNonResidentHours: 76.0
+  }
 };
 
 export default function CertifiedPayrollPreviewPage() {
